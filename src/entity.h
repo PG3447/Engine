@@ -137,17 +137,17 @@ public:
 	std::list<std::unique_ptr<Entity>> children;
 	Entity* parent = nullptr;
 
-	float orbitAngle = 0.0f;
-	float orbitSpeed = 0.0f;   // ró¿na dla ka¿dego
-	float orbitRadius = 0.0f;
-	float orbitTilt = 0.0f;
-	glm::vec3 orbitAxis = { 0, 1, 0 };
-	bool orbitEnabled = true;
-
-
-	float planetRotationAngle = 0.0f;         // Aktualny obrót wokó³ w³asnej osi
-	float planetRotationSpeed = 0.0f;        // Stopnie na sekundê
-	glm::vec3 planetRotationAxis = { 0, 1, 0 }; // Domyœlnie Y
+	//float orbitAngle = 0.0f;
+	//float orbitSpeed = 0.0f;   // ró¿na dla ka¿dego
+	//float orbitRadius = 0.0f;
+	//float orbitTilt = 0.0f;
+	//glm::vec3 orbitAxis = { 0, 1, 0 };
+	//bool orbitEnabled = true;
+	//
+	//
+	//float planetRotationAngle = 0.0f;         // Aktualny obrót wokó³ w³asnej osi
+	//float planetRotationSpeed = 0.0f;        // Stopnie na sekundê
+	//glm::vec3 planetRotationAxis = { 0, 1, 0 }; // Domyœlnie Y
 
 	// Appearance
 	glm::vec3 color = { 1.0f, 1.0f, 1.0f }; // Kolor planety
@@ -172,17 +172,17 @@ public:
 	void setAppearance(const glm::vec3& newColor, float rotSpeed, const glm::vec3& rotAxis)
 	{
 		color = newColor;
-		planetRotationSpeed = rotSpeed;
-		planetRotationAxis = rotAxis;
+		//planetRotationSpeed = rotSpeed;
+		//planetRotationAxis = rotAxis;
 	}
 
 
 	void initialOrbit(float orbitAngleVal, float orbitSpeedVal, float orbitRadiusVal, float orbitTiltVal)
 	{
-		orbitAngle = orbitAngleVal;
-		orbitSpeed = orbitSpeedVal;
-		orbitRadius = orbitRadiusVal;
-		orbitTilt = orbitTiltVal;
+		//orbitAngle = orbitAngleVal;
+		//orbitSpeed = orbitSpeedVal;
+		//orbitRadius = orbitRadiusVal;
+		//orbitTilt = orbitTiltVal;
 	}
 
 	//Add child. Argument input is argument of any constructor that you create. By default you can use the default constructor and don't put argument input.
@@ -196,41 +196,41 @@ public:
 
 	void updateOrbit(float deltaTime)
 	{
-		for (auto& child : children)
-		{
-			if (child->orbitEnabled)
-				child->orbitAngle += child->orbitSpeed * deltaTime;
-
-			// Konwersja k¹tów na radiany
-			float orbitAngleRad = glm::radians(child->orbitAngle);
-			float tiltRad = glm::radians(child->orbitTilt);
-
-			// Pozycja wzglêdem rodzica
-			glm::vec3 orbitPos;
-			orbitPos.x = child->orbitRadius * cos(orbitAngleRad);
-			orbitPos.y = child->orbitRadius * sin(orbitAngleRad) * sin(tiltRad);
-			orbitPos.z = child->orbitRadius * sin(orbitAngleRad) * cos(tiltRad);
-
-			child->transform.setLocalPosition(orbitPos);
-
-
-			child->planetRotationAngle += child->planetRotationSpeed * deltaTime;
-
-			glm::vec3 euler = child->transform.getLocalRotation();
-			// spin wokó³ osi Y
-			euler.y = child->planetRotationAngle;
-
-			// tilt zostaje w euler.z (ustawiony wczeœniej)
-			child->transform.setLocalRotation(euler);
-
-			// Obrót wokó³ w³asnej osi w formie eulerów (stopnie)
-			//child->planetRotationAngle += child->planetRotationSpeed * deltaTime;
-			//glm::vec3 eulerRotation = child->planetRotationAxis * child->planetRotationAngle + child->transform.getLocalRotation().z;
-			//child->transform.setLocalRotation(eulerRotation);
-
-			// Rekurencja
-			child->updateOrbit(deltaTime);
-		}
+		//for (auto& child : children)
+		//{
+		//	if (child->orbitEnabled)
+		//		child->orbitAngle += child->orbitSpeed * deltaTime;
+		//
+		//	// Konwersja k¹tów na radiany
+		//	float orbitAngleRad = glm::radians(child->orbitAngle);
+		//	float tiltRad = glm::radians(child->orbitTilt);
+		//
+		//	// Pozycja wzglêdem rodzica
+		//	glm::vec3 orbitPos;
+		//	orbitPos.x = child->orbitRadius * cos(orbitAngleRad);
+		//	orbitPos.y = child->orbitRadius * sin(orbitAngleRad) * sin(tiltRad);
+		//	orbitPos.z = child->orbitRadius * sin(orbitAngleRad) * cos(tiltRad);
+		//
+		//	child->transform.setLocalPosition(orbitPos);
+		//
+		//
+		//	child->planetRotationAngle += child->planetRotationSpeed * deltaTime;
+		//
+		//	glm::vec3 euler = child->transform.getLocalRotation();
+		//	// spin wokó³ osi Y
+		//	euler.y = child->planetRotationAngle;
+		//
+		//	// tilt zostaje w euler.z (ustawiony wczeœniej)
+		//	child->transform.setLocalRotation(euler);
+		//
+		//	// Obrót wokó³ w³asnej osi w formie eulerów (stopnie)
+		//	//child->planetRotationAngle += child->planetRotationSpeed * deltaTime;
+		//	//glm::vec3 eulerRotation = child->planetRotationAxis * child->planetRotationAngle + child->transform.getLocalRotation().z;
+		//	//child->transform.setLocalRotation(eulerRotation);
+		//
+		//	// Rekurencja
+		//	child->updateOrbit(deltaTime);
+		//}
 	}
 
 
