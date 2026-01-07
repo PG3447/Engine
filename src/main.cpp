@@ -547,17 +547,17 @@ void createSolarSystem()
         saturnOrbit->addChild(*modelOrbitMoonsSaturn[i]);
     }
 
-    modelOribtUranus = Model::createOrbit(145 * scaleFactor, 100, -0.77f, 1.0f, &uranus->pModel->textures_loaded);
-    modelOribtMirandas = Model::createOrbit(2 * moonScale, 100, -0.2f, 1.0f, &miranda->pModel->textures_loaded);
-    modelOribtNeptun = Model::createOrbit(185 * scaleFactor, 100, -1.77f, 1.0f, &neptune->pModel->textures_loaded);
+    //modelOribtUranus = Model::createOrbit(145 * scaleFactor, 100, -0.77f, 1.0f, &uranus->pModel->textures_loaded);
+    //modelOribtMirandas = Model::createOrbit(2 * moonScale, 100, -0.2f, 1.0f, &miranda->pModel->textures_loaded);
+    //modelOribtNeptun = Model::createOrbit(185 * scaleFactor, 100, -1.77f, 1.0f, &neptune->pModel->textures_loaded);
 
-    sunOrbit->addChild(*modelOribtUranus);
-    uranusOrbit->addChild(*modelOribtMirandas);
-    sunOrbit->addChild(*modelOribtNeptun);
+    //sunOrbit->addChild(*modelOribtUranus);
+    //uranusOrbit->addChild(*modelOribtMirandas);
+    //sunOrbit->addChild(*modelOribtNeptun);
     
-    modelOribtTritons = Model::createOrbit(2 * moonScale, 100, -0.2f, 1.0f, &triton->pModel->textures_loaded);
+    //modelOribtTritons = Model::createOrbit(2 * moonScale, 100, -0.2f, 1.0f, &triton->pModel->textures_loaded);
 
-    neptuneOrbit->addChild(*modelOribtTritons);
+    //neptuneOrbit->addChild(*modelOribtTritons);
 
 
     // Wstępne obliczenie pozycji orbit
