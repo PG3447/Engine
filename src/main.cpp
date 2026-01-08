@@ -49,7 +49,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void regenerateSphere();
-void createSolarSystem();
+void createHouse();
 
 void imgui_begin();
 void imgui_render();
@@ -102,18 +102,11 @@ std::unique_ptr<Shader> sphereShader;
 
 std::unique_ptr<Model> sphereVenusModel;
 
-std::unique_ptr<Model> ourModel;
-std::unique_ptr<Model> emptyModel;
-
 std::unique_ptr<Model> sunModel;
-std::unique_ptr<Model> mercuryModel;
-std::unique_ptr<Model> venusModel;
-std::unique_ptr<Model> earthModel;
 
+std::unique_ptr<Model> wallModel;
+std::unique_ptr<Model> roofModel;
 
-std::unique_ptr<Model> moonModel;
-std::unique_ptr<Model> phobosModel;
-std::unique_ptr<Model> deimosModel;
 
 
 std::unique_ptr<Entity> root;
@@ -263,7 +256,7 @@ int main(int, char**)
 
     //loadTexture();
     compileShader();
-    createSolarSystem();
+    createHouse();
     startGroupInstanced(root.get());
     // Main loop
     while (!glfwWindowShouldClose(window))
@@ -395,59 +388,58 @@ void compileShader()
 
     sphereVenusModel = Model::createSphere(sphereRings, sphereSectors, "res/backpack/venusSurface.jpg");
 
-    ourModel = std::make_unique<Model>("res/backpack/backpack.obj");
-
     sunModel = std::make_unique<Model>("res/backpack/Sun.glb", 2.0f);
-    
-    mercuryModel = std::make_unique<Model>("res/backpack/Mercury.glb", 0.002f);
-    venusModel = std::make_unique<Model>("res/backpack/Venus.glb", 0.002f);
-    earthModel = std::make_unique<Model>("res/backpack/Earth.glb", 0.002f);
 
+    wallModel = std::make_unique<Model>("res/backpack/sciany.glb");
+    roofModel = std::make_unique<Model>("res/backpack/dach.glb");
 
-
-
-    moonModel = std::make_unique<Model>("res/backpack/Moon.glb", 0.001f);
-    phobosModel = std::make_unique<Model>("res/backpack/Phobos.glb", 0.02f);
-    deimosModel = std::make_unique<Model>("res/backpack/Deimos.glb", 0.02f);
-
-    emptyModel = std::make_unique<Model>("");
-    
     root = std::make_unique<Entity>();
     root->name = "root";
+
+
 
     spdlog::info("Success");
 
 }
 
-std::unique_ptr<Model> modelOribtMercury;
-std::unique_ptr<Model> modelOribtVenus;
-std::unique_ptr<Model> modelOribtEarth;
-std::unique_ptr<Model> modelOribtMoon;
-std::unique_ptr<Model> modelOribtMars;
-std::unique_ptr<Model> modelOribtPhobos;
-std::unique_ptr<Model> modelOribtDeimos;
 
-
-void createSolarSystem()
+void createHouse()
 {
+    Entity* houses = root->addChild();
+    houses->name = "domki";
+
+
     int GRID_X = 50;
     int GRID_Z = 50;
-    float SPACING = 10.0f; // odległość między domkami
+    float SPACING = 10.0f;
 
     for (int x = 0; x < GRID_X; ++x)
     {
         for (int z = 0; z < GRID_Z; ++z)
         {
-            Entity* house = root->addChild(sunModel.get(), ourShader.get());
+            Entity* house = houses->addChild();
+            house->name = "domek" + std::to_string(x) + std::to_string(z);
+
+
+            Entity* wall = house->addChild(wallModel.get(), ourShader.get());
+            wall->name = "sciany";
+            Entity* roof = house->addChild(roofModel.get(), ourShader.get());
+            roof->name = "dach";
 
             glm::vec3 pos;
             pos.x = x * SPACING;
-            pos.y = 0.0f;
-            pos.z = z * SPACING;
+            pos.y = 1.0f;
+            pos.z = -z * SPACING;
 
             house->transform.setLocalPosition(pos);
 
-            // opcjonalnie losowa rotacja / skala
+            pos.x = 0.0f;
+            pos.y = 2.0f;
+            pos.z = 0.0f;
+
+            roof->transform.setLocalPosition(pos);
+
+            // losowa rotacja / skala
             // house->transform.setLocalRotation(glm::vec3(0.0f, rand() % 360, 0.0f));
             // house->transform.setLocalScale(glm::vec3(0.8f));
         }
@@ -476,7 +468,7 @@ void input()
         if (mouseMove) {
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         }
-        mouseMove = false;
+        //mouseMove = false;
     }
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
