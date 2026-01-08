@@ -32,11 +32,11 @@ Model::Model(string const& path, float meshScale, bool gamma) : meshScale(meshSc
 
 
 // draws the model, and thus all its meshes
-void Model::Draw(Shader& shader)
+void Model::Draw(Shader& shader, GLsizei instanceCount)
 {
     for (unsigned int i = 0; i < meshes.size(); i++)
     {
-        meshes[i].Draw(shader);
+        meshes[i].Draw(shader, instanceCount);
     }
 }
 
@@ -289,10 +289,6 @@ std::unique_ptr<Model> Model::createSphere(int rings, int sectors, const std::st
 
     return model;
 }
-
-
-
-
 
 
 unsigned int TextureFromFile(const char* path, const string& directory, aiTexture* aiTex, bool gamma)

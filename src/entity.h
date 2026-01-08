@@ -137,41 +137,22 @@ public:
 	std::list<std::unique_ptr<Entity>> children;
 	Entity* parent = nullptr;
 
-	//float orbitAngle = 0.0f;
-	//float orbitSpeed = 0.0f;   // ró¿na dla ka¿dego
-	//float orbitRadius = 0.0f;
-	//float orbitTilt = 0.0f;
-	//glm::vec3 orbitAxis = { 0, 1, 0 };
-	//bool orbitEnabled = true;
-	//
-	//
-	//float planetRotationAngle = 0.0f;         // Aktualny obrót wokó³ w³asnej osi
-	//float planetRotationSpeed = 0.0f;        // Stopnie na sekundê
-	//glm::vec3 planetRotationAxis = { 0, 1, 0 }; // Domyœlnie Y
-
-	// Appearance
-	glm::vec3 color = { 1.0f, 1.0f, 1.0f }; // Kolor planety
-
-	//Space information
+	std::string name = "object";
 	Transform transform;
+	glm::vec3 color = { 1.0f, 1.0f, 1.0f };
 
-	Shader* pCustomShader = nullptr;
 	Model* pModel = nullptr;
+	Shader* pShader = nullptr;
 
-	
-	//Entity(string const& path, bool gamma = false) : Model(path, gamma)
-	//{
-	//}
-
-	// constructor, expects a filepath to a 3D model.
-	Entity(Model& model) : pModel{ &model }
+	// constructor
+	Entity(Model* model = nullptr, Shader* shader = nullptr) : pModel{ model }, pShader{ shader }
 	{
 
 	}
 
 	void setAppearance(const glm::vec3& newColor, float rotSpeed, const glm::vec3& rotAxis)
 	{
-		color = newColor;
+		//color = newColor;
 		//planetRotationSpeed = rotSpeed;
 		//planetRotationAxis = rotAxis;
 	}
@@ -184,15 +165,32 @@ public:
 		//orbitRadius = orbitRadiusVal;
 		//orbitTilt = orbitTiltVal;
 	}
+	
 
-	//Add child. Argument input is argument of any constructor that you create. By default you can use the default constructor and don't put argument input.
+	//
+	////Add child. Argument input is argument of any constructor that you create. By default you can use the default constructor and don't put argument input.
+//template<typename... TArgs>
+//void addChild(TArgs&&... args)
+//{
+//	children.emplace_back(std::make_unique<Entity>(std::forward<TArgs>(args)...));
+//	children.back()->parent = this;
+//}
+
 	template<typename... TArgs>
-	void addChild(TArgs&... args)
+	Entity* addChild(TArgs&&... args)
 	{
-		children.emplace_back(std::make_unique<Entity>(args...));
-		children.back()->parent = this;
+		children.emplace_back(std::make_unique<Entity>(std::forward<TArgs>(args)...));
+		Entity* newChild = children.back().get();
+		newChild->parent = this;
+		return newChild;
 	}
 
+	Entity* getLastChild()
+	{
+		if (children.empty())
+			return nullptr;
+		return children.back().get();
+	}
 
 	void updateOrbit(float deltaTime)
 	{
@@ -268,21 +266,24 @@ public:
 
 	void drawSelfAndChild(Shader& ourShader, glm::mat4 projection, glm::mat4 view, float radius, int rings, int sectors, glm::mat4 systemModel)
 	{
-		Shader* shaderToUse = (pCustomShader) ? pCustomShader : &ourShader;
+		Shader* shaderToUse = (pShader) ? pShader : &ourShader;
 		shaderToUse->use();
 
 		shaderToUse->setMat4("projection", projection);
 		shaderToUse->setMat4("view", view);
 		shaderToUse->setMat4("model", systemModel * transform.getModelMatrix());
 		
-		if (pCustomShader) {
+		if (pShader) {
 			// ustawiamy parametry sfery
 			shaderToUse->setFloat("radius", radius);
 			shaderToUse->setInt("rings", rings);
 			shaderToUse->setInt("sectors", sectors);
 		}
-
-		pModel->Draw(*shaderToUse);
+		if (pModel)
+		{
+			pModel->Draw(*shaderToUse);
+		}
+		
 
 		for (auto&& child : children)
 		{

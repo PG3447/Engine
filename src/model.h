@@ -33,12 +33,12 @@ public:
     string directory;
     bool gammaCorrection;
     float meshScale;
-
+    unsigned int instanceVBO = 0;
     
     Model();
     Model(const std::string& path, float meshScale = 1.0f, bool gamma = false);
 
-    void Draw(Shader& shader);
+    void Draw(Shader& shader, GLsizei instanceCount = 0);
 
     static std::unique_ptr<Model> createOrbit(float radius, int segments = 100, float tiltDegrees = 0.0f, float scale = 1.0f, vector<Texture>* textures = nullptr);
 

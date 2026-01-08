@@ -44,6 +44,7 @@ void loadTexture();
 void input();
 void update();
 void render();
+void renderInstanced(Model* model, Shader* shader, std::vector<Entity*>& entities);
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
@@ -108,23 +109,145 @@ std::unique_ptr<Model> sunModel;
 std::unique_ptr<Model> mercuryModel;
 std::unique_ptr<Model> venusModel;
 std::unique_ptr<Model> earthModel;
-std::unique_ptr<Model> marsModel;
-std::unique_ptr<Model> jupiterModel;
-std::unique_ptr<Model> europaModel;
-std::unique_ptr<Model> saturnModel;
-std::unique_ptr<Model> mimasModel;
-std::unique_ptr<Model> uranusModel;
-std::unique_ptr<Model> mirandaModel;
-std::unique_ptr<Model> neptuneModel;
-std::unique_ptr<Model> tritonModel;
+
 
 std::unique_ptr<Model> moonModel;
 std::unique_ptr<Model> phobosModel;
 std::unique_ptr<Model> deimosModel;
 
 
-std::unique_ptr<Entity> ourEntity;
+std::unique_ptr<Entity> root;
 Entity* venus;
+
+struct pair_hash {
+    std::size_t operator()(const std::pair<Model*, Shader*>& p) const {
+        return std::hash<Model*>()(p.first) ^ (std::hash<Shader*>()(p.second) << 1);
+    }
+};
+
+
+std::unordered_map<std::pair<Model*, Shader*>, std::vector<Entity*>, pair_hash> instancedGroups;
+
+void startGroupInstanced(Entity* root)
+{
+    instancedGroups.clear();
+       std::vector<Entity*> stackEntity;
+    stackEntity.push_back(root);
+
+    while (!stackEntity.empty())
+    {
+        Entity* entity = stackEntity.back();
+        stackEntity.pop_back();
+
+        if (entity->pModel)
+        {
+            std::pair<Model*, Shader*> key = { entity->pModel, entity->pShader };
+            instancedGroups[key].push_back(entity);
+        }
+
+        for (auto& child : entity->children)
+        {
+            stackEntity.push_back(child.get());
+        }
+    }
+;
+}
+
+void AddEntityToGroupInstanced(Entity* entity)
+{
+    if (!entity->pModel)
+        return;
+    
+    std::pair<Model*, Shader*> key = { entity->pModel, entity->pShader };
+    std::vector<Entity*>& group = instancedGroups[key];
+    
+    group.push_back(entity);
+
+ }
+
+bool start = true;
+bool change = false;
+
+void renderGroup(glm::mat4 projection, glm::mat4 view, glm::mat4 systemModel)
+{
+    for (auto& [key, entities] : instancedGroups)
+    {
+        Model* model = key.first;
+        Shader* shader = key.second;
+
+        shader->use();
+        shader->setMat4("projection", projection);
+        shader->setMat4("view", view);
+
+        if (entities.size() == 0)
+        {
+            continue;
+        }
+        else if (entities.size() == 1)
+        {
+            shader->setBool("useInstance", false);
+            shader->setMat4("model", systemModel * entities[0]->transform.getModelMatrix());
+            model->Draw(*shader);
+        }
+        else
+        {
+            shader->setBool("useInstance", true);
+            renderInstanced(model, shader, entities);
+            
+        }
+    }
+    start = false;
+    change = false;
+}
+
+
+void renderInstanced(Model* model, Shader* shader, std::vector<Entity*>& entities)
+{
+    if (start || change) {
+        size_t numEntities = entities.size();
+        glm::mat4* modelMatrices = new glm::mat4[numEntities];
+
+        for (size_t i = 0; i < numEntities; ++i)
+        {
+            modelMatrices[i] = entities[i]->transform.getModelMatrix();
+        }
+
+
+        if (model->instanceVBO == 0)
+            glGenBuffers(1, &model->instanceVBO);
+        glBindBuffer(GL_ARRAY_BUFFER, model->instanceVBO);
+        glBufferData(GL_ARRAY_BUFFER, numEntities * sizeof(glm::mat4), modelMatrices, GL_DYNAMIC_DRAW);
+    }
+
+    if (start) {
+        for (unsigned int i = 0; i < model->meshes.size(); i++)
+        {
+            unsigned int VAO = model->meshes[i].VAO;
+            glBindVertexArray(VAO);
+
+            // matrix
+            GLsizei vec4Size = sizeof(glm::vec4);
+            glEnableVertexAttribArray(7);
+            glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)0);
+            glEnableVertexAttribArray(8);
+            glVertexAttribPointer(8, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(vec4Size));
+            glEnableVertexAttribArray(9);
+            glVertexAttribPointer(9, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(2 * vec4Size));
+            glEnableVertexAttribArray(10);
+            glVertexAttribPointer(10, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(3 * vec4Size));
+
+            glVertexAttribDivisor(7, 1);
+            glVertexAttribDivisor(8, 1);
+            glVertexAttribDivisor(9, 1);
+            glVertexAttribDivisor(10, 1);
+
+            glBindVertexArray(0);
+        }
+    }
+
+    model->Draw(*shader, (GLsizei)entities.size());
+}
+
 
 int main(int, char**)
 {
@@ -141,7 +264,7 @@ int main(int, char**)
     //loadTexture();
     compileShader();
     createSolarSystem();
-
+    startGroupInstanced(root.get());
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
@@ -279,15 +402,8 @@ void compileShader()
     mercuryModel = std::make_unique<Model>("res/backpack/Mercury.glb", 0.002f);
     venusModel = std::make_unique<Model>("res/backpack/Venus.glb", 0.002f);
     earthModel = std::make_unique<Model>("res/backpack/Earth.glb", 0.002f);
-    marsModel = std::make_unique<Model>("res/backpack/Mars.glb", 0.002f);
-    jupiterModel = std::make_unique<Model>("res/backpack/Jupiter.glb", 0.002f);
-    europaModel = std::make_unique<Model>("res/backpack/Europa.glb", 0.001f);
-    saturnModel = std::make_unique<Model>("res/backpack/Saturn.glb", 0.002f);
-    mimasModel = std::make_unique<Model>("res/backpack/Mimas.glb", 0.002f);
-    uranusModel = std::make_unique<Model>("res/backpack/Uranus.glb", 0.002f);
-    mirandaModel = std::make_unique<Model>("res/backpack/Miranda.glb", 0.002f);
-    neptuneModel = std::make_unique<Model>("res/backpack/Neptune.glb", 0.002f);
-    tritonModel = std::make_unique<Model>("res/backpack/Triton.glb", 0.002f);
+
+
 
 
     moonModel = std::make_unique<Model>("res/backpack/Moon.glb", 0.001f);
@@ -296,7 +412,8 @@ void compileShader()
 
     emptyModel = std::make_unique<Model>("");
     
-    ourEntity = std::make_unique<Entity>(*emptyModel);
+    root = std::make_unique<Entity>();
+    root->name = "root";
 
     spdlog::info("Success");
 
@@ -309,260 +426,34 @@ std::unique_ptr<Model> modelOribtMoon;
 std::unique_ptr<Model> modelOribtMars;
 std::unique_ptr<Model> modelOribtPhobos;
 std::unique_ptr<Model> modelOribtDeimos;
-std::unique_ptr<Model> modelOribtJupiter;
-std::unique_ptr<Model> modelOrbitMoonsJupiter[4];
-std::unique_ptr<Model> modelOribtSaturn;
-std::unique_ptr<Model> modelOribtUranus;
-std::unique_ptr<Model> modelOribtMirandas;
-std::unique_ptr<Model> modelOrbitMoonsSaturn[2];
-std::unique_ptr<Model> modelOribtNeptun;
-std::unique_ptr<Model> modelOribtTritons;
+
 
 void createSolarSystem()
 {
-    const float scaleFactor = 1.5f;  // zwiększamy wszystkie odległości i promienie 10x
-    const float moonScale = 1.5f;     // księżyce w mniejszej skali
+    int GRID_X = 50;
+    int GRID_Z = 50;
+    float SPACING = 10.0f; // odległość między domkami
 
-    ourEntity->addChild(*emptyModel);
-    Entity* sunOrbit = ourEntity->children.back().get();
- 
-
-    // Słońce
-    ourEntity->addChild(*sunModel);
-    Entity* sun = ourEntity->children.back().get();
-    sun->initialOrbit(0, 0, 0, 0.0f);
-
-    // Merkury
-    sunOrbit->addChild(*emptyModel);
-    Entity* mercuryOrbit = sunOrbit->children.back().get();
-    mercuryOrbit->initialOrbit(40, 100, 6 * scaleFactor, 7.0f);
-    mercuryOrbit->transform.setLocalRotation(glm::vec3(0.0f, 0.0f, -0.03f));
-
-    mercuryOrbit->addChild(*mercuryModel);
-    Entity* mercury = mercuryOrbit->children.back().get();
-   
-    // Wenus
-    sunOrbit->addChild(*emptyModel);
-    Entity* venusOrbit = sunOrbit->children.back().get();
-    venusOrbit->initialOrbit(4, 50, 11 * scaleFactor, 3.4f);
-    venusOrbit->transform.setLocalRotation(glm::vec3(0.0f, 0.0f, -177.4f));
-    
-    venusOrbit->addChild(*sphereVenusModel);
-    venus = venusOrbit->children.back().get();
-    venus->pCustomShader = sphereShader.get();
-
-    // Ziemia
-    sunOrbit->addChild(*emptyModel);
-    Entity* earthOrbit = sunOrbit->children.back().get();
-    earthOrbit->initialOrbit(5, 30, 15 * scaleFactor, 7.25f);
-    earthOrbit->transform.setLocalRotation(glm::vec3(0.0f, 0.0f, -23.5f));
-
-
-    earthOrbit->addChild(*earthModel);
-    Entity* earth = earthOrbit->children.back().get();
-
-    // Księżyc
-    earthOrbit->addChild(*emptyModel);
-    Entity* moonOrbit = earthOrbit->children.back().get();
-    moonOrbit->initialOrbit(5, 150, 2 * moonScale, 5.1f);
-    moonOrbit->transform.setLocalRotation(glm::vec3(0.0f, 0.0f, -6.68f));
-
-    moonOrbit->addChild(*moonModel);
-    Entity* moon = moonOrbit->children.back().get();
-  
-
-    // Mars
-    sunOrbit->addChild(*emptyModel);
-    Entity* marsOrbit = sunOrbit->children.back().get();
-    marsOrbit->initialOrbit(8, 24, 22 * scaleFactor, 1.85f);
-    marsOrbit->transform.setLocalRotation(glm::vec3(0.0f, 0.0f, -25.0f));
-
-    marsOrbit->addChild(*marsModel);
-    Entity* mars = marsOrbit->children.back().get();
-    
-
-     // Phobos
-     marsOrbit->addChild(*emptyModel);
-     Entity* phobosOrbit = marsOrbit->children.back().get();
-     phobosOrbit->initialOrbit(0, 200, 1 * moonScale, 1.1f);
-     phobosOrbit->transform.setLocalRotation(glm::vec3(0.0f, 0.0f, -1.0f));
-    
-     phobosOrbit->addChild(*phobosModel);
-     Entity* phobos = phobosOrbit->children.back().get();
-    
-    
-     // Deimos
-     marsOrbit->addChild(*emptyModel);
-     Entity* deimosOrbit = marsOrbit->children.back().get();
-     deimosOrbit->initialOrbit(180, 100, 1.5f * moonScale, 1.8f);
-     deimosOrbit->transform.setLocalRotation(glm::vec3(0.0f, 0.0f, -1.0f));
-    
-     deimosOrbit->addChild(*deimosModel);
-     Entity* deimos = deimosOrbit->children.back().get();
-     
-     // Jowisz
-     sunOrbit->addChild(*emptyModel);
-     Entity* jupiterOrbit = sunOrbit->children.back().get();
-     jupiterOrbit->initialOrbit(0, 12, 50 * scaleFactor, 1.3f);
-     jupiterOrbit->transform.setLocalRotation(glm::vec3(0.0f, 0.0f, -3.0f));
-
-     jupiterOrbit->addChild(*jupiterModel);
-     Entity* jupiter = jupiterOrbit->children.back().get();
-    
-     // Księżyce Jowisza
-     struct { float angle, speed, radius, tilt; } jupiterMoons[4] = {
-         {0, 180, 2 * moonScale, 0.05f},
-         {90, 140, 2.5f * moonScale, 0.1f},
-         {180, 100, 3 * moonScale, 0.15f},
-         {270, 80, 3.5f * moonScale, 0.2f}
-     };
-     for (auto& m : jupiterMoons)
-     {
-         jupiterOrbit->addChild(*emptyModel);
-         Entity* moonJOrbit = jupiterOrbit->children.back().get();
-         moonJOrbit->initialOrbit(m.angle, m.speed, m.radius, m.tilt);
-         moonJOrbit->transform.setLocalRotation(glm::vec3(0.0f, 0.0f, 0.0f));
-
-         moonJOrbit->addChild(*europaModel);
-         Entity* moonJ = moonJOrbit->children.back().get();
-     }
-
-
-     sunOrbit->addChild(*emptyModel);
-     Entity* saturnOrbit = sunOrbit->children.back().get();
-     saturnOrbit->initialOrbit(0, 10, 95 * scaleFactor, 2.49f);
-     saturnOrbit->transform.setLocalRotation(glm::vec3(0.0f, 0.0f, -26.7f));
-    
-     // Saturn
-     saturnOrbit->addChild(*saturnModel);
-     Entity* saturn = saturnOrbit->children.back().get();
-    
-     // Księżyce Saturna
-     struct { float angle, speed, radius, tilt; } saturnMoons[2] = {
-         {0, 100, 4 * moonScale, 0.1f},
-         {180, 120, 3 * moonScale, 0.2f}
-     };
-     for (auto& m : saturnMoons)
-     {
-         saturnOrbit->addChild(*emptyModel);
-         Entity* moonSOrbit = saturnOrbit->children.back().get();
-         moonSOrbit->initialOrbit(m.angle, m.speed, m.radius, m.tilt);
-         moonSOrbit->transform.setLocalRotation(glm::vec3(0.0f, 0.0f, 0.0f));
-         
-         moonSOrbit->addChild(*mimasModel);
-         Entity* moonS = moonSOrbit->children.back().get();
-     }
-    
-     // Uran
-     sunOrbit->addChild(*emptyModel);
-     Entity* uranusOrbit = sunOrbit->children.back().get();
-     uranusOrbit->initialOrbit(0, 7, 145 * scaleFactor, 0.77f);
-     uranusOrbit->transform.setLocalRotation(glm::vec3(0.0f, 0.0f, -97.8f));
-
-     uranusOrbit->addChild(*uranusModel);
-     Entity* uranus = uranusOrbit->children.back().get();
-
-     // Księżyc Urana - dodajemy orbitę księżyca pod Uranem
-     uranusOrbit->addChild(*emptyModel);
-     Entity* mirandaOrbit = uranusOrbit->children.back().get();
-     mirandaOrbit->initialOrbit(0, 90, 2 * moonScale, 0.2f);
-     mirandaOrbit->transform.setLocalRotation(glm::vec3(0.0f, 0.0f, 0.0f));
-    
-     mirandaOrbit->addChild(*mirandaModel);
-     Entity* miranda = mirandaOrbit->children.back().get();
-
-     // Neptun
-     sunOrbit->addChild(*emptyModel);
-     Entity* neptuneOrbit = sunOrbit->children.back().get();
-     neptuneOrbit->initialOrbit(0, 5, 185 * scaleFactor, 1.77f);
-     neptuneOrbit->transform.setLocalRotation(glm::vec3(0.0f, 0.0f, -28.3f));
-
-     neptuneOrbit->addChild(*neptuneModel);
-     Entity* neptune = neptuneOrbit->children.back().get();
-    
-     // Księżyc Neptuna
-     neptuneOrbit->addChild(*emptyModel);
-     Entity* tritonOrbit = neptuneOrbit->children.back().get();
-     tritonOrbit->initialOrbit(0, 80, 2 * moonScale, 0.2f);
-     tritonOrbit->transform.setLocalRotation(glm::vec3(0.0f, 0.0f, 0.0f));
-
-     tritonOrbit->addChild(*tritonModel);
-     Entity* triton = tritonOrbit->children.back().get();
-
-        // Slonce
-    sun->setAppearance(glm::vec3(1.0f, 1.0f, 0.0f), glm::radians(425.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        // Merkury
-    mercury->setAppearance(glm::vec3(0.5f, 0.5f, 0.5f), glm::radians(184.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        // Wenus
-    venus->setAppearance(glm::vec3(1.0f, 0.8f, 0.2f), glm::radians(-44.6f), glm::vec3(0.0f, 1.0f, 0.0f));
-        // Ziemia
-    earth->setAppearance(glm::vec3(0.2f, 0.5f, 1.0f), glm::radians(10800.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        // Księżyc
-    moon->setAppearance(glm::vec3(0.8f, 0.8f, 0.8f), glm::radians(395.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        // Mars
-    mars->setAppearance(glm::vec3(1.0f, 0.3f, 0.2f), glm::radians(10515.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        // Phobos
-    phobos->setAppearance(glm::vec3(0.6f, 0.6f, 0.6f), glm::radians(1129.1f), glm::vec3(0.0f, 1.0f, 0.0f));
-        // Deimos
-    deimos->setAppearance(glm::vec3(0.7f, 0.7f, 0.7f), glm::radians(285.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        // Jowisz
-    jupiter->setAppearance(glm::vec3(1.0f, 0.7f, 0.4f), glm::radians(26121.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        // Saturn
-    saturn->setAppearance(glm::vec3(1.0f, 0.9f, 0.5f), glm::radians(24220.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        // Uran
-    uranus->setAppearance(glm::vec3(0.5f, 0.9f, 1.0f), glm::radians(15050.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        // Neptun
-    neptune->setAppearance(glm::vec3(0.3f, 0.5f, 1.0f), glm::radians(16117.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    
-    modelOribtMercury = Model::createOrbit(6 * scaleFactor, 100, -7.0f, 1.0f, &mercury->pModel->textures_loaded);
-    modelOribtVenus   = Model::createOrbit(11 * scaleFactor, 100, -3.4f, 1.0f, &venus->pModel->textures_loaded);
-    modelOribtEarth   = Model::createOrbit(15.0f * scaleFactor, 100, -7.25f, 1.0f, &earth->pModel->textures_loaded);
-    modelOribtMoon    = Model::createOrbit(2 * moonScale, 100, -5.1f, 1.0f, &moon->pModel->textures_loaded);
-    modelOribtMars    = Model::createOrbit(22 * scaleFactor, 100, -1.85f, 1.0f, &mars->pModel->textures_loaded);
-    modelOribtPhobos  = Model::createOrbit(1 * moonScale, 100, -1.1f, 1.0f, &phobos->pModel->textures_loaded);
-    modelOribtDeimos  = Model::createOrbit(1.5f * moonScale, 100, -1.8f, 1.0f, &deimos->pModel->textures_loaded);
-    modelOribtJupiter = Model::createOrbit(50 * scaleFactor,  100, -1.3f, 1.0f, &jupiter->pModel->textures_loaded);
-    modelOribtSaturn = Model::createOrbit(95 * scaleFactor, 100, -2.49f, 1.0f, &saturn->pModel->textures_loaded);
-
-    sunOrbit->addChild(*modelOribtMercury);
-    sunOrbit->addChild(*modelOribtVenus);
-    sunOrbit->addChild(*modelOribtEarth);
-    earthOrbit->addChild(*modelOribtMoon);
-    sunOrbit->addChild(*modelOribtMars);
-    marsOrbit->addChild(*modelOribtPhobos);
-    marsOrbit->addChild(*modelOribtDeimos);
-    sunOrbit->addChild(*modelOribtJupiter);
-
-    for (int i = 0; i < 4; ++i)
+    for (int x = 0; x < GRID_X; ++x)
     {
-        modelOrbitMoonsJupiter[i] = Model::createOrbit(jupiterMoons[i].radius, 100, -jupiterMoons[i].tilt, 1.0f, &moon->pModel->textures_loaded);
-        jupiterOrbit->addChild(*modelOrbitMoonsJupiter[i]);
+        for (int z = 0; z < GRID_Z; ++z)
+        {
+            Entity* house = root->addChild(sunModel.get(), ourShader.get());
+
+            glm::vec3 pos;
+            pos.x = x * SPACING;
+            pos.y = 0.0f;
+            pos.z = z * SPACING;
+
+            house->transform.setLocalPosition(pos);
+
+            // opcjonalnie losowa rotacja / skala
+            // house->transform.setLocalRotation(glm::vec3(0.0f, rand() % 360, 0.0f));
+            // house->transform.setLocalScale(glm::vec3(0.8f));
+        }
     }
-
-    sunOrbit->addChild(*modelOribtSaturn);
-
-    for (int i = 0; i < 4; ++i)
-    {
-        modelOrbitMoonsSaturn[i] = Model::createOrbit(saturnMoons[i].radius, 100, -saturnMoons[i].tilt, 1.0f, &moon->pModel->textures_loaded);
-        saturnOrbit->addChild(*modelOrbitMoonsSaturn[i]);
-    }
-
-    //modelOribtUranus = Model::createOrbit(145 * scaleFactor, 100, -0.77f, 1.0f, &uranus->pModel->textures_loaded);
-    //modelOribtMirandas = Model::createOrbit(2 * moonScale, 100, -0.2f, 1.0f, &miranda->pModel->textures_loaded);
-    //modelOribtNeptun = Model::createOrbit(185 * scaleFactor, 100, -1.77f, 1.0f, &neptune->pModel->textures_loaded);
-
-    //sunOrbit->addChild(*modelOribtUranus);
-    //uranusOrbit->addChild(*modelOribtMirandas);
-    //sunOrbit->addChild(*modelOribtNeptun);
-    
-    //modelOribtTritons = Model::createOrbit(2 * moonScale, 100, -0.2f, 1.0f, &triton->pModel->textures_loaded);
-
-    //neptuneOrbit->addChild(*modelOribtTritons);
-
-
     // Wstępne obliczenie pozycji orbit
-    ourEntity->updateOrbit(0.000001f);
-    ourEntity->updateSelfAndChild();
+    root->updateSelfAndChild();
 }
 
 void input()
@@ -631,12 +522,13 @@ void render()
     }
 
     // render the loaded model
-    ourEntity->updateOrbit(deltaTime); 
-    ourEntity->updateSelfAndChild();
+    root->updateOrbit(deltaTime); 
+    root->updateSelfAndChild();
     glm::mat4 systemRotationX = glm::rotate(glm::mat4(1.0f), glm::radians(rotationX), glm::vec3(1, 0, 0));
     glm::mat4 systemRotationY = glm::rotate(glm::mat4(1.0f), glm::radians(rotationY), glm::vec3(0, 1, 0));
     glm::mat4 systemModel = systemRotationY * systemRotationX;
-    ourEntity->drawSelfAndChild(*ourShader, projection, view, sphereRadius, sphereRings, sphereSectors, systemModel);
+    renderGroup(projection, view, systemModel);
+    //ourEntity->drawSelfAndChild(*ourShader, projection, view, sphereRadius, sphereRings, sphereSectors, systemModel);
 
 
     //glDrawElements(GL_TRIANGLES, 12, GL_UNSIGNED_INT, 0);
@@ -696,6 +588,20 @@ void imgui_begin()
     ImGui::NewFrame();
 }
 
+void showEntityTree(Entity* entity)
+{
+    // Używamy ImGui::TreeNode do wyświetlania hierarchii
+    if (ImGui::TreeNode((void*)entity, "%s", entity->name.c_str()))
+    {
+        // Wyświetlamy każde dziecko rekurencyjnie
+        for (auto& child : entity->children)
+        {
+            showEntityTree(child.get());
+        }
+        ImGui::TreePop();
+    }
+}
+
 void imgui_render()
 {
     /// Add new ImGui controls here
@@ -751,6 +657,12 @@ void imgui_render()
         ImGui::Text(" = %s", autoRotation ? "true" : "false");
 
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+        
+        if (root) // główny obiekt sceny
+        {
+            showEntityTree(root.get());
+        }
+        
         ImGui::End();
     }
 

@@ -101,8 +101,18 @@ public:
 
 
     // render the mesh
-    void Draw(Shader& shader)
+    void Draw(Shader& shader, GLsizei instanceCount = 0)
     {
+
+        static uint64_t drawCalls = 0;
+        static uint64_t instancedDrawCalls = 0;
+
+        drawCalls++;
+
+        if (instanceCount > 0)
+            instancedDrawCalls++;
+
+
         // bind appropriate textures
         unsigned int diffuseNr = 1;
         unsigned int specularNr = 1;
@@ -132,21 +142,37 @@ public:
 
         // draw mesh
         glBindVertexArray(VAO);
-        if (meshType == MESH_LINES)
-            glDrawElements(GL_LINE_LOOP, (unsigned int)indices.size(), GL_UNSIGNED_INT, 0);
-        else if (meshType == MESH_POINTS)
+
+        if (instanceCount == 0)
         {
-            glDrawArrays(GL_POINTS, 0, (GLsizei)numPoints);
+            if (meshType == MESH_LINES)
+                glDrawElements(GL_LINE_LOOP, (unsigned int)indices.size(), GL_UNSIGNED_INT, 0);
+            else if (meshType == MESH_POINTS)
+                glDrawArrays(GL_POINTS, 0, (GLsizei)numPoints);
+            else
+                glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(indices.size()), GL_UNSIGNED_INT, 0);
         }
         else
-            glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(indices.size()), GL_UNSIGNED_INT, 0);
+        {
+            if (meshType == MESH_LINES)
+                glDrawElementsInstanced(GL_LINE_LOOP, (unsigned int)indices.size(), GL_UNSIGNED_INT, 0, instanceCount);
+            else if (meshType == MESH_POINTS)
+                glDrawArraysInstanced(GL_POINTS, 0, (GLsizei)numPoints, instanceCount);
+            else
+                glDrawElementsInstanced(GL_TRIANGLES, static_cast<unsigned int>(indices.size()), GL_UNSIGNED_INT, 0, instanceCount);
+        }
         glBindVertexArray(0);
 
         // always good practice to set everything back to defaults once configured.
         glActiveTexture(GL_TEXTURE0);
+
+        spdlog::info(
+            "DrawCall #{}, instanced: {}, normal: {}",
+            drawCalls,
+            instancedDrawCalls,
+            drawCalls - instancedDrawCalls
+        );
     }
-
-
 
 private:
     // render data 
@@ -194,6 +220,8 @@ private:
         // weights
         glEnableVertexAttribArray(6);
         glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, m_Weights));
+
+
         glBindVertexArray(0);
     }
 
