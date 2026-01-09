@@ -44,24 +44,22 @@ public:
 
     // wysy³anie do shadera
     void Apply(Shader& shader) {
-        if (!isOn)
-            return;
 
         if (type == Directional)
         {
             shader.setVec3("dirLight.direction", direction);
-            shader.setVec3("dirLight.ambient", ambient);
-            shader.setVec3("dirLight.diffuse", diffuse);
-            shader.setVec3("dirLight.specular", specular);
+            shader.setVec3("dirLight.ambient", isOn ? ambient : glm::vec3(0.0f));
+            shader.setVec3("dirLight.diffuse", isOn ? diffuse : glm::vec3(0.0f));
+            shader.setVec3("dirLight.specular", isOn ? specular : glm::vec3(0.0f));
         }
         else if (type == Point)
         {
             std::string base = "pointLights[" + std::to_string(index) + "]";
 
             shader.setVec3(base + ".position", position);
-            shader.setVec3(base + ".ambient", ambient);
-            shader.setVec3(base + ".diffuse", diffuse);
-            shader.setVec3(base + ".specular", specular);
+            shader.setVec3(base + ".ambient", isOn ? ambient : glm::vec3(0.0f));
+            shader.setVec3(base + ".diffuse", isOn ? diffuse : glm::vec3(0.0f));
+            shader.setVec3(base + ".specular", isOn ? specular : glm::vec3(0.0f));
 
             shader.setFloat(base + ".constant", constant);
             shader.setFloat(base + ".linear", linear);
@@ -73,9 +71,9 @@ public:
 
             shader.setVec3(base + ".position", position);
             shader.setVec3(base + ".direction", direction);
-            shader.setVec3(base + ".ambient", ambient);
-            shader.setVec3(base + ".diffuse", diffuse);
-            shader.setVec3(base + ".specular", specular);
+            shader.setVec3(base + ".ambient", isOn ? ambient : glm::vec3(0.0f));
+            shader.setVec3(base + ".diffuse", isOn ? diffuse : glm::vec3(0.0f));
+            shader.setVec3(base + ".specular", isOn ? specular : glm::vec3(0.0f));
 
             shader.setFloat(base + ".constant", constant);
             shader.setFloat(base + ".linear", linear);

@@ -183,6 +183,13 @@ void renderGroup(glm::mat4 projection, glm::mat4 view, glm::mat4 systemModel)
 
             if (entities[0]->pLight != nullptr)
             {
+                entities[0]->transform.setLocalPosition(entities[0]->pLight->position);
+                glm::vec3 dir = glm::normalize(entities[0]->pLight->direction);
+
+                float yaw = atan2(dir.x, dir.z);
+                float pitch = asin(-dir.y);
+
+                entities[0]->transform.setLocalRotation(glm::degrees(glm::vec3(pitch, yaw, 0.0f)));
                 entities[0]->pLight->Apply(*shader);
             }
             
@@ -465,10 +472,10 @@ void createHouse()
         }
     }
     
-    emptyModel = std::make_unique<Model>("");
-    emptyModel1 = std::make_unique<Model>("");
-    emptyModel2 = std::make_unique<Model>("");
-    emptyModel3 = std::make_unique<Model>("");
+    emptyModel = std::make_unique<Model>();
+    emptyModel1 = std::make_unique<Model>("res/backpack/dach.glb", 0.25f);
+    emptyModel2 = std::make_unique<Model>("res/backpack/dach.glb");
+    emptyModel3 = std::make_unique<Model>("res/backpack/dach.glb");
 
     dircetLight = std::make_unique<Light>(Light::Directional);
     dircetLight->direction  = glm::vec3(-0.2f, -1.0f, -0.3f);
@@ -488,8 +495,8 @@ void createHouse()
 
     spotLight = std::make_unique<Light>(Light::Spot);
     spotLight->index = 0;
-    spotLight->position = camera.Position;
-    spotLight->direction = camera.Front;
+    spotLight->position = glm::vec3(-12.0f, 5.0f, 1.5f);
+    spotLight->direction = glm::vec3(-0.15f, -0.9f, -0.25f);
     spotLight->ambient = glm::vec3(0.0f);
     spotLight->diffuse = glm::vec3(1.0f);
     spotLight->specular = glm::vec3(1.0f);
@@ -578,11 +585,9 @@ void render()
 
 
     pointLight->position.x = radius * cos(speed * time);
-    pointLight->position.y = -1.0f; 
+    pointLight->position.y = 1.0f; 
     pointLight->position.z = radius * sin(speed * time);
 
-    spotLight->position = camera.Position;
-    spotLight->direction = camera.Front;
 
     // OpenGL Rendering code goes here
     glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
@@ -611,7 +616,7 @@ void render()
 
     // render the loaded model
     root->updateOrbit(deltaTime); 
-    //root->forceUpdateSelfAndChild();
+    root->updateSelfAndChild();
     glm::mat4 systemRotationX = glm::rotate(glm::mat4(1.0f), glm::radians(rotationX), glm::vec3(1, 0, 0));
     glm::mat4 systemRotationY = glm::rotate(glm::mat4(1.0f), glm::radians(rotationY), glm::vec3(0, 1, 0));
     glm::mat4 systemModel = systemRotationY * systemRotationX;
@@ -678,6 +683,62 @@ void imgui_begin()
 
 static Entity* selectedEntity = nullptr;
 
+void showLightEditor(Light& light)
+{
+    ImGui::Checkbox("Light Enabled", &light.isOn);
+
+    const char* lightTypes[] = { "Directional", "Point", "Spot" };
+    int type = static_cast<int>(light.type);
+    if (ImGui::Combo("Light Type", &type, lightTypes, IM_ARRAYSIZE(lightTypes)))
+    {
+        light.type = static_cast<Light::LightType>(type);
+    }
+
+    ImGui::Separator();
+    ImGui::Text("Colors");
+
+    ImGui::ColorEdit3("Ambient", &light.ambient.x);
+    ImGui::ColorEdit3("Diffuse", &light.diffuse.x);
+    ImGui::ColorEdit3("Specular", &light.specular.x);
+
+    ImGui::Separator();
+
+    if (light.type != Light::Directional)
+    {
+        ImGui::DragFloat3("Position", &light.position.x, 0.05f);
+    }
+
+    if (light.type == Light::Directional || light.type == Light::Spot)
+    {
+        ImGui::DragFloat3("Direction", &light.direction.x, 0.05f);
+    }
+
+    if (light.type == Light::Point || light.type == Light::Spot)
+    {
+        ImGui::Separator();
+        ImGui::Text("Attenuation");
+
+        ImGui::DragFloat("Constant", &light.constant, 0.01f, 0.0f, 2.0f);
+        ImGui::DragFloat("Linear", &light.linear, 0.001f, 0.0f, 1.0f);
+        ImGui::DragFloat("Quadratic", &light.quadratic, 0.001f, 0.0f, 1.0f);
+    }
+
+    if (light.type == Light::Spot)
+    {
+        ImGui::Separator();
+        ImGui::Text("Spotlight Angles");
+
+        float inner = glm::degrees(acos(light.cutOff));
+        float outer = glm::degrees(acos(light.outerCutOff));
+
+        if (ImGui::SliderFloat("Inner CutOff", &inner, 0.0f, 90.0f))
+            light.cutOff = glm::cos(glm::radians(inner));
+
+        if (ImGui::SliderFloat("Outer CutOff", &outer, inner, 90.0f))
+            light.outerCutOff = glm::cos(glm::radians(outer));
+    }
+}
+
 
 void showTransformEditor(Transform& transform)
 {
@@ -702,9 +763,6 @@ void showTransformEditor(Transform& transform)
         change = true;
         transform.setLocalScale(scale);
     }
-
-    if (transform.isDirty())
-        transform.computeModelMatrix();
 }
 
 void showEntityTree(Entity* entity)
@@ -797,6 +855,38 @@ void imgui_render()
                ImGui::Separator();
                ImGui::Text("Selected Entity: %s", selectedEntity->name.c_str());
                showTransformEditor(selectedEntity->transform);
+           }
+
+
+           ImGui::Separator();
+           ImGui::Text("Lighting");
+
+           if (ImGui::CollapsingHeader("Directional Light"))
+           {
+               ImGui::PushID("Directional");
+               showLightEditor(*dircetLight);
+               ImGui::PopID();
+           }
+
+           if (ImGui::CollapsingHeader("Point Lights"))
+           {
+               ImGui::PushID("pointLight");
+               showLightEditor(*pointLight);
+               ImGui::PopID();
+           }
+
+           if (ImGui::CollapsingHeader("Spot Light"))
+           {
+               ImGui::PushID("spotLight");
+               showLightEditor(*spotLight);
+               ImGui::PopID();
+           }
+
+           if (ImGui::CollapsingHeader("Spot Light2"))
+           {
+               ImGui::PushID("spotLight2");
+               showLightEditor(*spotLight2);
+               ImGui::PopID();
            }
        }
         

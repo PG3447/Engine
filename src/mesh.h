@@ -104,13 +104,6 @@ public:
     void Draw(Shader& shader, GLsizei instanceCount = 0)
     {
 
-        static uint64_t drawCalls = 0;
-        static uint64_t instancedDrawCalls = 0;
-
-        drawCalls++;
-
-        if (instanceCount > 0)
-            instancedDrawCalls++;
 
 
         // bind appropriate textures
@@ -180,13 +173,6 @@ public:
 
         // always good practice to set everything back to defaults once configured.
         glActiveTexture(GL_TEXTURE0);
-
-        spdlog::info(
-            "DrawCall #{}, instanced: {}, normal: {}",
-            drawCalls,
-            instancedDrawCalls,
-            drawCalls - instancedDrawCalls
-        );
     }
 
 private:
