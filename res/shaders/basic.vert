@@ -5,7 +5,10 @@ layout (location = 2) in vec2 aTexCoords;
 
 layout (location = 7) in mat4 instanceMatrix;
 
+out vec3 FragPos;
+out vec3 Normal;
 out vec2 TexCoords;
+
 
 uniform mat4 model;
 uniform mat4 view;
@@ -14,9 +17,11 @@ uniform bool useInstance;
 
 void main()
 {
-    TexCoords = aTexCoords;
-
     mat4 finalModel = useInstance ? instanceMatrix : model;
+
+    FragPos = vec3(finalModel *  vec4(aPos, 1.0));
+    Normal = mat3(transpose(inverse(finalModel))) * aNormal;
+    TexCoords = aTexCoords;
 
     gl_Position = projection * view * finalModel * vec4(aPos, 1.0);
 

@@ -68,7 +68,7 @@ constexpr int32_t GL_VERSION_MAJOR = 4;
 constexpr int32_t GL_VERSION_MINOR = 6;
 
 // camera
-Camera camera(glm::vec3(0.0f, 0.0f, 50.0f));
+Camera camera(glm::vec3(0.0f, 20.0f, 50.0f));
 float lastX = WINDOW_WIDTH / 2.0f;
 float lastY = WINDOW_HEIGHT / 2.0f;
 bool firstMouse = true;
@@ -91,7 +91,6 @@ float  rotationX = 0.0f;
 float  rotationY = 0.0f;
 
 ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-ImVec4 fractalColor = ImVec4(0.9f, 0.85f, 0.8f, 1.00f);
 bool   autoRotation = false;
 
 GLuint VBO;
@@ -102,11 +101,9 @@ std::unique_ptr<Shader> sphereShader;
 
 std::unique_ptr<Model> sphereVenusModel;
 
-std::unique_ptr<Model> sunModel;
-
 std::unique_ptr<Model> wallModel;
 std::unique_ptr<Model> roofModel;
-
+std::unique_ptr<Model> groundModel;
 
 
 std::unique_ptr<Entity> root;
@@ -169,6 +166,9 @@ void renderGroup(glm::mat4 projection, glm::mat4 view, glm::mat4 systemModel)
         Shader* shader = key.second;
 
         shader->use();
+
+        shader->setVec3("viewPos", camera.Position);
+
         shader->setMat4("projection", projection);
         shader->setMat4("view", view);
 
@@ -180,7 +180,16 @@ void renderGroup(glm::mat4 projection, glm::mat4 view, glm::mat4 systemModel)
         {
             shader->setBool("useInstance", false);
             shader->setMat4("model", systemModel * entities[0]->transform.getModelMatrix());
-            model->Draw(*shader);
+
+            if (entities[0]->pLight != nullptr)
+            {
+                entities[0]->pLight->Apply(*shader);
+            }
+            
+            if (model != nullptr)
+            {
+                model->Draw(*shader);
+            }
         }
         else
         {
@@ -237,8 +246,10 @@ void renderInstanced(Model* model, Shader* shader, std::vector<Entity*>& entitie
             glBindVertexArray(0);
         }
     }
-
-    model->Draw(*shader, (GLsizei)entities.size());
+    if (model != nullptr)
+    {
+        model->Draw(*shader, (GLsizei)entities.size());
+    }
 }
 
 
@@ -388,10 +399,10 @@ void compileShader()
 
     sphereVenusModel = Model::createSphere(sphereRings, sphereSectors, "res/backpack/venusSurface.jpg");
 
-    sunModel = std::make_unique<Model>("res/backpack/Sun.glb", 2.0f);
-
     wallModel = std::make_unique<Model>("res/backpack/sciany.glb");
     roofModel = std::make_unique<Model>("res/backpack/dach.glb");
+
+    groundModel = std::make_unique<Model>("res/backpack/podloze.glb", 100.0f);
 
     root = std::make_unique<Entity>();
     root->name = "root";
@@ -402,20 +413,33 @@ void compileShader()
 
 }
 
+std::unique_ptr<Light> dircetLight;
+std::unique_ptr<Light> pointLight;
+std::unique_ptr<Light> spotLight;
+std::unique_ptr<Light> spotLight2;
+
+std::unique_ptr<Model> emptyModel;
+std::unique_ptr<Model> emptyModel1;
+std::unique_ptr<Model> emptyModel2;
+std::unique_ptr<Model> emptyModel3;
+
 
 void createHouse()
 {
+    Entity* ground = root->addChild(groundModel.get(), ourShader.get());
+    ground->name = "podloze";
+
     Entity* houses = root->addChild();
     houses->name = "domki";
 
 
-    int GRID_X = 50;
-    int GRID_Z = 50;
+    int GRID_X = 100;
+    int GRID_Z = 100;
     float SPACING = 10.0f;
 
-    for (int x = 0; x < GRID_X; ++x)
+    for (int x = -GRID_X; x < GRID_X; ++x)
     {
-        for (int z = 0; z < GRID_Z; ++z)
+        for (int z = -GRID_Z; z < GRID_Z; ++z)
         {
             Entity* house = houses->addChild();
             house->name = "domek" + std::to_string(x) + std::to_string(z);
@@ -438,12 +462,71 @@ void createHouse()
             pos.z = 0.0f;
 
             roof->transform.setLocalPosition(pos);
-
-            // losowa rotacja / skala
-            // house->transform.setLocalRotation(glm::vec3(0.0f, rand() % 360, 0.0f));
-            // house->transform.setLocalScale(glm::vec3(0.8f));
         }
     }
+    
+    emptyModel = std::make_unique<Model>("");
+    emptyModel1 = std::make_unique<Model>("");
+    emptyModel2 = std::make_unique<Model>("");
+    emptyModel3 = std::make_unique<Model>("");
+
+    dircetLight = std::make_unique<Light>(Light::Directional);
+    dircetLight->direction  = glm::vec3(-0.2f, -1.0f, -0.3f);
+    dircetLight->ambient  = glm::vec3(0.05f);
+    dircetLight->diffuse = glm::vec3(0.4f);
+    dircetLight->specular = glm::vec3(0.5f);
+
+    pointLight = std::make_unique<Light>(Light::Point);
+    pointLight->index = 0;
+    pointLight->position = glm::vec3(-10.0f, 1.0f, -0.3f);
+    pointLight->ambient = glm::vec3(0.05f);
+    pointLight->diffuse = glm::vec3(0.8f);
+    pointLight->specular = glm::vec3(1.0f);
+    pointLight->constant = 1.0f;
+    pointLight->linear = 0.09f;
+    pointLight->quadratic = 0.032f;
+
+    spotLight = std::make_unique<Light>(Light::Spot);
+    spotLight->index = 0;
+    spotLight->position = camera.Position;
+    spotLight->direction = camera.Front;
+    spotLight->ambient = glm::vec3(0.0f);
+    spotLight->diffuse = glm::vec3(1.0f);
+    spotLight->specular = glm::vec3(1.0f);
+    spotLight->constant = 1.0f;
+    spotLight->linear = 0.09f;
+    spotLight->quadratic = 0.032f;
+    spotLight->cutOff = glm::cos(glm::radians(12.5f));
+    spotLight->outerCutOff = glm::cos(glm::radians(15.0f));
+
+
+    spotLight2 = std::make_unique<Light>(Light::Spot);
+    spotLight2->index = 1;
+    spotLight2->position = glm::vec3(-2.0f, 5.0f, 1.5f);
+    spotLight2->direction = glm::vec3(-0.15f, -0.9f, -0.25f);
+    spotLight2->ambient = glm::vec3(0.0f);
+    spotLight2->diffuse = glm::vec3(1.0f);
+    spotLight2->specular = glm::vec3(1.0f);
+    spotLight2->constant = 1.0f;
+    spotLight2->linear = 0.09f;
+    spotLight2->quadratic = 0.032f;
+    spotLight2->cutOff = glm::cos(glm::radians(25.0f));
+    spotLight2->outerCutOff = glm::cos(glm::radians(30.0f));
+
+
+    Entity* directonalLight = root->addChild(emptyModel.get(), ourShader.get(), dircetLight.get());
+    directonalLight->name = "directonalLight";
+
+
+    Entity* pointLightEnt = root->addChild(emptyModel1.get(), ourShader.get(), pointLight.get());
+    pointLightEnt->name = "pointLight";
+
+    Entity* spotLightEnt = root->addChild(emptyModel2.get(), ourShader.get(), spotLight.get());
+    spotLightEnt->name = "spotLight";
+
+    Entity* spotLight2Ent = root->addChild(emptyModel3.get(), ourShader.get(), spotLight2.get());
+    spotLight2Ent->name = "spotLight2";
+
     // Wstępne obliczenie pozycji orbit
     root->updateSelfAndChild();
 }
@@ -468,7 +551,7 @@ void input()
         if (mouseMove) {
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         }
-        //mouseMove = false;
+        mouseMove = false;
     }
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
@@ -489,6 +572,18 @@ void update()
 
 void render()
 {
+    float time = glfwGetTime();
+    float radius = 10.0f;         
+    float speed = 2.0f;        
+
+
+    pointLight->position.x = radius * cos(speed * time);
+    pointLight->position.y = -1.0f; 
+    pointLight->position.z = radius * sin(speed * time);
+
+    spotLight->position = camera.Position;
+    spotLight->direction = camera.Front;
+
     // OpenGL Rendering code goes here
     glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -499,6 +594,7 @@ void render()
 
     //activating program object
     ourShader->use();
+   
 
     int display_w, display_h;
     glfwGetFramebufferSize(window, &display_w, &display_h);
@@ -510,12 +606,12 @@ void render()
     }
     else
     {
-        view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -cameraDistance));
+        view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -20.0f, -cameraDistance));
     }
 
     // render the loaded model
     root->updateOrbit(deltaTime); 
-    root->updateSelfAndChild();
+    //root->forceUpdateSelfAndChild();
     glm::mat4 systemRotationX = glm::rotate(glm::mat4(1.0f), glm::radians(rotationX), glm::vec3(1, 0, 0));
     glm::mat4 systemRotationY = glm::rotate(glm::mat4(1.0f), glm::radians(rotationY), glm::vec3(0, 1, 0));
     glm::mat4 systemModel = systemRotationY * systemRotationX;
@@ -580,12 +676,52 @@ void imgui_begin()
     ImGui::NewFrame();
 }
 
+static Entity* selectedEntity = nullptr;
+
+
+void showTransformEditor(Transform& transform)
+{
+    glm::vec3 pos = transform.getLocalPosition();
+    glm::vec3 rot = transform.getLocalRotation();
+    glm::vec3 scale = transform.getLocalScale();
+
+    if (ImGui::DragFloat3("Position", &pos.x, 0.01f))
+    {
+        change = true;
+        transform.setLocalPosition(pos);
+    }
+
+    if (ImGui::DragFloat3("Rotation", &rot.x, 0.1f))
+    {
+        change = true;
+        transform.setLocalRotation(rot);
+    }
+
+    if (ImGui::DragFloat3("Scale", &scale.x, 0.01f, 0.01f))
+    {
+        change = true;
+        transform.setLocalScale(scale);
+    }
+
+    if (transform.isDirty())
+        transform.computeModelMatrix();
+}
+
 void showEntityTree(Entity* entity)
 {
-    // Używamy ImGui::TreeNode do wyświetlania hierarchii
-    if (ImGui::TreeNode((void*)entity, "%s", entity->name.c_str()))
+    if (entity == nullptr) return;
+
+    ImGuiTreeNodeFlags flags = (entity == selectedEntity) ? ImGuiTreeNodeFlags_Selected : 0;
+
+    bool nodeOpen = ImGui::TreeNodeEx((void*)entity, flags, "%s", entity->name.c_str());
+
+    if (ImGui::IsItemClicked())
     {
-        // Wyświetlamy każde dziecko rekurencyjnie
+        selectedEntity = entity;
+    }
+
+    if (nodeOpen)
+    {
         for (auto& child : entity->children)
         {
             showEntityTree(child.get());
@@ -593,6 +729,9 @@ void showEntityTree(Entity* entity)
         ImGui::TreePop();
     }
 }
+
+
+
 
 void imgui_render()
 {
@@ -616,19 +755,19 @@ void imgui_render()
                 glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // normalny render
         }
 
-        if (ImGui::SliderInt("Rings", &sphereRings, 3, 25))
-        {
-            regenerateSphere();
-        }
-        
-        // suwak do liczby sektorów
-        if (ImGui::SliderInt("Sectors", &sphereSectors, 3, 25))
-        {
-            regenerateSphere();
-        }
+        //if (ImGui::SliderInt("Rings", &sphereRings, 3, 25))
+        //{
+        //    regenerateSphere();
+        //}
         //
-        // suwak do promienia
-        ImGui::SliderFloat("Radius", &sphereRadius, 0.1f, 10.0f);
+        //// suwak do liczby sektorów
+        //if (ImGui::SliderInt("Sectors", &sphereSectors, 3, 25))
+        //{
+        //    regenerateSphere();
+        //}
+        ////
+        //// suwak do promienia
+        //ImGui::SliderFloat("Radius", &sphereRadius, 0.1f, 10.0f);
 
 
         ImGui::SliderFloat("rotation X", &rotationX, -480.0f, 480.0f);
@@ -641,7 +780,6 @@ void imgui_render()
         ImGui::Checkbox("Another Window", &show_another_window);
 
         ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
-        ImGui::ColorEdit3("fractal color", (float*)&fractalColor);
 
         if (ImGui::Button("Auto rotation"))
             autoRotation = !autoRotation;
@@ -650,10 +788,17 @@ void imgui_render()
 
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
         
-        if (root) // główny obiekt sceny
-        {
-            showEntityTree(root.get());
-        }
+       if (root) // główny obiekt sceny
+       {
+           showEntityTree(root.get());
+       
+           if (selectedEntity)
+           {
+               ImGui::Separator();
+               ImGui::Text("Selected Entity: %s", selectedEntity->name.c_str());
+               showTransformEditor(selectedEntity->transform);
+           }
+       }
         
         ImGui::End();
     }

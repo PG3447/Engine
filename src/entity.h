@@ -13,6 +13,7 @@
 
 #include <model.h>
 #include <shader.h>
+#include <light.h>
 
 class Transform
 {
@@ -143,9 +144,11 @@ public:
 
 	Model* pModel = nullptr;
 	Shader* pShader = nullptr;
+	Light* pLight = nullptr;
 
 	// constructor
-	Entity(Model* model = nullptr, Shader* shader = nullptr) : pModel{ model }, pShader{ shader }
+	Entity(Model* model = nullptr, Shader* shader = nullptr, Light* light = nullptr)
+		: pModel{ model }, pShader{ shader }, pLight { light }
 	{
 
 	}
