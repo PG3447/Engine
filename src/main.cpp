@@ -764,26 +764,49 @@ void showTransformEditor(Transform& transform)
         transform.setLocalScale(scale);
     }
 }
+static ImGuiTextFilter entityFilter;
+
+bool entityMatchesFilter(Entity* entity)
+{
+    if (entityFilter.PassFilter(entity->name.c_str()))
+        return true;
+
+    for (auto& child : entity->children)
+    {
+        if (entityMatchesFilter(child.get()))
+            return true;
+    }
+    return false;
+}
+
 
 void showEntityTree(Entity* entity)
 {
-    if (entity == nullptr) return;
+    if (!entity) return;
 
-    ImGuiTreeNodeFlags flags = (entity == selectedEntity) ? ImGuiTreeNodeFlags_Selected : 0;
+    if (!entityMatchesFilter(entity))
+        return;
 
-    bool nodeOpen = ImGui::TreeNodeEx((void*)entity, flags, "%s", entity->name.c_str());
+    ImGuiTreeNodeFlags flags =
+        ImGuiTreeNodeFlags_OpenOnArrow |
+        ImGuiTreeNodeFlags_OpenOnDoubleClick |
+        ((entity == selectedEntity) ? ImGuiTreeNodeFlags_Selected : 0);
+
+    bool nodeOpen = ImGui::TreeNodeEx(
+        (void*)entity,
+        flags,
+        "%s",
+        entity->name.c_str()
+    );
 
     if (ImGui::IsItemClicked())
-    {
         selectedEntity = entity;
-    }
 
     if (nodeOpen)
     {
         for (auto& child : entity->children)
-        {
             showEntityTree(child.get());
-        }
+
         ImGui::TreePop();
     }
 }
@@ -848,7 +871,13 @@ void imgui_render()
         
        if (root) // główny obiekt sceny
        {
+           ImGui::Separator();
+           ImGui::Text("Hierarchy");
+           entityFilter.Draw("Search", 200);
+           ImGui::Separator();
+
            showEntityTree(root.get());
+
        
            if (selectedEntity)
            {
