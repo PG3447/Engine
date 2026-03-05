@@ -21,6 +21,7 @@ Model::Model()
 }
 
 
+/*
 // constructor, expects a filepath to a 3D model.
 Model::Model(string const& path, float meshScale, bool gamma) : meshScale(meshScale), gammaCorrection(gamma)
 {
@@ -29,6 +30,7 @@ Model::Model(string const& path, float meshScale, bool gamma) : meshScale(meshSc
         loadModel(path);
     }
 }
+*/
 
 
 // draws the model, and thus all its meshes
@@ -39,7 +41,17 @@ void Model::Draw(Shader& shader, GLsizei instanceCount)
         meshes[i].Draw(shader, instanceCount);
     }
 }
+void Model::turnOnReflect(unsigned int cubemapTexture)
+{
+    for (unsigned int i = 0; i < meshes.size(); i++)
+    {
+        meshes[i].reflect = true;
+        meshes[i].cubemapTexture = cubemapTexture;
+    }
+}
 
+
+/*
 // loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
 void Model::loadModel(string const& path)
 {
@@ -79,7 +91,7 @@ void Model::processNode(aiNode* node, const aiScene* scene)
         processNode(node->mChildren[i], scene);
     }
 
-}
+}*/
 
 
 Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)

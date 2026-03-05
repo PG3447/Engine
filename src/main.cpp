@@ -25,7 +25,8 @@
 #include <camera.h>
 #include <model.h>
 #include <entity.h>
-#include <filesystem> 
+#include <prefab.h>
+#include <filesystem>
 
 
 
@@ -42,12 +43,14 @@ void compileShader();
 void loadTexture();
 
 void input();
+void controlKoparka();
 void update();
 void render();
 void renderInstanced(Model* model, Shader* shader, std::vector<Entity*>& entities);
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
+unsigned int loadCubemap(vector<std::string> faces);
 void regenerateSphere();
 void createHouse();
 
@@ -73,6 +76,7 @@ float lastX = WINDOW_WIDTH / 2.0f;
 float lastY = WINDOW_HEIGHT / 2.0f;
 bool firstMouse = true;
 bool mouseMove = false;
+glm::vec3 cameraOffset = glm::vec3(0.0f, 10.0f, -20.0f);
 
 // timing
 float deltaTime = 0.0f;	// time between current frame and last frame
@@ -93,21 +97,30 @@ float  rotationY = 0.0f;
 ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 bool   autoRotation = false;
 
+unsigned int cubemapTexture;
+unsigned int skyboxVAO;
+
 GLuint VBO;
 GLuint VAO;
 GLuint texture;
 std::unique_ptr<Shader> ourShader;
 std::unique_ptr<Shader> sphereShader;
+std::unique_ptr<Shader> skyboxShader;
+std::unique_ptr<Shader> reflectShader;
+std::unique_ptr<Shader> refractShader;
 
-std::unique_ptr<Model> sphereVenusModel;
+//std::unique_ptr<Model> sphereVenusModel;
+//
+std::unique_ptr<Prefab> wallModel;
+std::unique_ptr<Prefab> roofModel;
+std::unique_ptr<Prefab> groundModel;
 
-std::unique_ptr<Model> wallModel;
-std::unique_ptr<Model> roofModel;
-std::unique_ptr<Model> groundModel;
+std::unique_ptr<Prefab> koparkaModel;
 
 
 std::unique_ptr<Entity> root;
 Entity* venus;
+Entity* koparkaEntity;
 
 struct pair_hash {
     std::size_t operator()(const std::pair<Model*, Shader*>& p) const {
@@ -168,6 +181,7 @@ void renderGroup(glm::mat4 projection, glm::mat4 view, glm::mat4 systemModel)
         shader->use();
 
         shader->setVec3("viewPos", camera.Position);
+        shader->setVec3("cameraPos", camera.Position);
 
         shader->setMat4("projection", projection);
         shader->setMat4("view", view);
@@ -394,8 +408,90 @@ void compileShader()
 {
     glEnable(GL_DEPTH_TEST);
 
+
+    float skyboxVertices[] = {
+        // positions          
+        -1.0f,  1.0f, -1.0f,
+        -1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+
+        -1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
+
+         1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+
+        -1.0f, -1.0f,  1.0f,
+        -1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
+
+        -1.0f,  1.0f, -1.0f,
+         1.0f,  1.0f, -1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f, -1.0f,
+
+        -1.0f, -1.0f, -1.0f,
+        -1.0f, -1.0f,  1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+        -1.0f, -1.0f,  1.0f,
+         1.0f, -1.0f,  1.0f
+    };
+
+    // skybox VAO
+    unsigned int skyboxVBO;
+    glGenVertexArrays(1, &skyboxVAO);
+    glGenBuffers(1, &skyboxVBO);
+    glBindVertexArray(skyboxVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+
+
+    vector<std::string> faces
+    {
+        "res/textures/skybox/right.jpg",
+        "res/textures/skybox/left.jpg",
+        "res/textures/skybox/top.jpg",
+        "res/textures/skybox/bottom.jpg",
+        "res/textures/skybox/front.jpg",
+        "res/textures/skybox/back.jpg"
+    };
+
+    cubemapTexture = loadCubemap(faces);
+
+    skyboxShader = std::make_unique<Shader>("res/shaders/skybox.vert", "res/shaders/skybox.frag");
+
+    skyboxShader->use();
+    skyboxShader->setInt("skybox", 0);
+
+    reflectShader = std::make_unique<Shader>("res/shaders/reflect.vert", "res/shaders/reflect.frag");
+    reflectShader->use();
+    reflectShader->setInt("skybox", 0);
+
+    refractShader = std::make_unique<Shader>("res/shaders/reflect.vert", "res/shaders/refract.frag");
+    refractShader->use();
+    refractShader->setInt("skybox", 0);
+
     sphereShader = std::make_unique<Shader>("res/shaders/sphere.vert", "res/shaders/sphere.frag", "res/shaders/sphere.geom");
-    
+
     sphereShader->use();
 
     ourShader = std::make_unique<Shader>("res/shaders/basic.vert", "res/shaders/basic.frag");
@@ -403,13 +499,15 @@ void compileShader()
     ourShader->use();
     std::cout << "Current path: " << std::filesystem::current_path() << std::endl;
 
+    //sphereVenusModel = Model::createSphere(sphereRings, sphereSectors, "res/backpack/venusSurface.jpg");
 
-    sphereVenusModel = Model::createSphere(sphereRings, sphereSectors, "res/backpack/venusSurface.jpg");
+    wallModel = std::make_unique<Prefab>("res/backpack/sciany.glb", 1.0f, false);
+    roofModel = std::make_unique<Prefab>("res/backpack/dach.glb", 1.0f, false);
 
-    wallModel = std::make_unique<Model>("res/backpack/sciany.glb");
-    roofModel = std::make_unique<Model>("res/backpack/dach.glb");
+    groundModel = std::make_unique<Prefab>("res/backpack/podloze.glb", 100.0f, false);
 
-    groundModel = std::make_unique<Model>("res/backpack/podloze.glb", 100.0f);
+    koparkaModel = std::make_unique<Prefab>("res/backpack/koparka.glb", 1.0f, false);
+    
 
     root = std::make_unique<Entity>();
     root->name = "root";
@@ -426,20 +524,39 @@ std::unique_ptr<Light> spotLight;
 std::unique_ptr<Light> spotLight2;
 
 std::unique_ptr<Model> emptyModel;
-std::unique_ptr<Model> emptyModel1;
-std::unique_ptr<Model> emptyModel2;
-std::unique_ptr<Model> emptyModel3;
+std::unique_ptr<Prefab> emptyModel1;
+std::unique_ptr<Prefab> emptyModel2;
+std::unique_ptr<Prefab> emptyModel3;
 
 
 void createHouse()
 {
-    Entity* ground = root->addChild(groundModel.get(), ourShader.get());
+    Entity* ground = groundModel->getEntitiesCreate(ourShader.get());
     ground->name = "podloze";
+    root->addChild(ground);
+    
+    koparkaEntity = koparkaModel->getEntitiesCreate(ourShader.get());
+    koparkaEntity->name = "koparka";
+    koparkaEntity->transform.setLocalRotation(glm::vec3(0.0f, 180.0f, 0.0f));
+    root->addChild(koparkaEntity);
+
+    Entity* kabina = koparkaEntity->findChild("Kabina");
+    kabina->pShader = reflectShader.get();
+    kabina->pModel->turnOnReflect(cubemapTexture);
+    
+    Entity* ramieDlugie = koparkaEntity->findChild("ramieDlugie");
+    ramieDlugie->pShader = refractShader.get();
+    ramieDlugie->pModel->turnOnReflect(cubemapTexture);
+
+    Entity* ramieKrotkie = koparkaEntity->findChild("ramieKrotkie");
+    ramieKrotkie->pShader = refractShader.get();
+    ramieKrotkie->pModel->turnOnReflect(cubemapTexture);
+
 
     Entity* houses = root->addChild();
     houses->name = "domki";
 
-
+    
     int GRID_X = 100;
     int GRID_Z = 100;
     float SPACING = 10.0f;
@@ -452,10 +569,12 @@ void createHouse()
             house->name = "domek" + std::to_string(x) + std::to_string(z);
 
 
-            Entity* wall = house->addChild(wallModel.get(), ourShader.get());
+            Entity* wall = wallModel->getEntitiesCreate(ourShader.get());
             wall->name = "sciany";
-            Entity* roof = house->addChild(roofModel.get(), ourShader.get());
+            house->addChild(wall);
+            Entity* roof = roofModel->getEntitiesCreate(ourShader.get());
             roof->name = "dach";
+            house->addChild(roof);
 
             glm::vec3 pos;
             pos.x = x * SPACING;
@@ -473,16 +592,16 @@ void createHouse()
     }
     
     emptyModel = std::make_unique<Model>();
-    emptyModel1 = std::make_unique<Model>("res/backpack/dach.glb", 0.25f);
-    emptyModel2 = std::make_unique<Model>("res/backpack/dach.glb");
-    emptyModel3 = std::make_unique<Model>("res/backpack/dach.glb");
-
+    emptyModel1 = std::make_unique<Prefab>("res/backpack/dach.glb", 0.25f, false);
+    emptyModel2 = std::make_unique<Prefab>("res/backpack/dach.glb", 1.0f, false);
+    emptyModel3 = std::make_unique<Prefab>("res/backpack/dach.glb", 1.0f, false);
+    
     dircetLight = std::make_unique<Light>(Light::Directional);
-    dircetLight->direction  = glm::vec3(-0.2f, -1.0f, -0.3f);
-    dircetLight->ambient  = glm::vec3(0.05f);
-    dircetLight->diffuse = glm::vec3(0.4f);
-    dircetLight->specular = glm::vec3(0.5f);
-
+    dircetLight->direction = glm::vec3(-0.3f, -1.0f, -0.1f);
+    dircetLight->ambient  = glm::vec3(0.25f);
+    dircetLight->diffuse = glm::vec3(0.85f);
+    dircetLight->specular = glm::vec3(0.4f);
+    
     pointLight = std::make_unique<Light>(Light::Point);
     pointLight->index = 0;
     pointLight->position = glm::vec3(-10.0f, 1.0f, -0.3f);
@@ -520,20 +639,22 @@ void createHouse()
     spotLight2->cutOff = glm::cos(glm::radians(25.0f));
     spotLight2->outerCutOff = glm::cos(glm::radians(30.0f));
 
-
+    
     Entity* directonalLight = root->addChild(emptyModel.get(), ourShader.get(), dircetLight.get());
     directonalLight->name = "directonalLight";
 
-
-    Entity* pointLightEnt = root->addChild(emptyModel1.get(), ourShader.get(), pointLight.get());
+    Entity* pointLightEnt = emptyModel1->getEntitiesCreate(ourShader.get(), pointLight.get());
     pointLightEnt->name = "pointLight";
+    root->addChild(pointLightEnt);
 
-    Entity* spotLightEnt = root->addChild(emptyModel2.get(), ourShader.get(), spotLight.get());
+    Entity* spotLightEnt = emptyModel2->getEntitiesCreate(ourShader.get(), spotLight.get());
     spotLightEnt->name = "spotLight";
+    root->addChild(spotLightEnt);
 
-    Entity* spotLight2Ent = root->addChild(emptyModel3.get(), ourShader.get(), spotLight2.get());
+    Entity* spotLight2Ent = emptyModel3->getEntitiesCreate(ourShader.get(), spotLight2.get());
     spotLight2Ent->name = "spotLight2";
-
+    root->addChild(spotLight2Ent);
+    
     // Wstępne obliczenie pozycji orbit
     root->updateSelfAndChild();
 }
@@ -561,15 +682,162 @@ void input()
         mouseMove = false;
     }
 
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        camera.ProcessKeyboard(FORWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        camera.ProcessKeyboard(BACKWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        camera.ProcessKeyboard(LEFT, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        camera.ProcessKeyboard(RIGHT, deltaTime);
+    if (mouseMove) {
+        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+            camera.ProcessKeyboard(FORWARD, deltaTime);
+        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+            camera.ProcessKeyboard(BACKWARD, deltaTime);
+        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+            camera.ProcessKeyboard(LEFT, deltaTime);
+        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+            camera.ProcessKeyboard(RIGHT, deltaTime);
+    }
+
+    controlKoparka();
 }
+
+void controlKoparka()
+{
+    if (!koparkaEntity) return;
+
+    Entity* Kabina = koparkaEntity->findChild("Kabina");
+    Entity* Podwozie = koparkaEntity->findChild("Podwozie");
+
+    Entity* LewyPrzod = koparkaEntity->findChild("LewyPrzod");
+    Entity* LewyTyl = koparkaEntity->findChild("LewyTyl");
+    Entity* PrawyPrzod = koparkaEntity->findChild("PrawyPrzod");
+    Entity* PrawyTyl = koparkaEntity->findChild("PrawyTyl");
+
+    Entity* RamieDlugie = koparkaEntity->findChild("ramieDlugie");
+    Entity* RamieKrotkie = koparkaEntity->findChild("ramieKrotkie");
+    Entity* Lopata = koparkaEntity->findChild("Lopata");
+
+
+    Transform& transformRoot = koparkaEntity->transform;
+
+    float moveSpeed = 10.0f * deltaTime;
+    float rotSpeed = 90.0f * deltaTime;
+    float wheelRotSpeed = 180.0f * deltaTime;
+    float armSpeed = 60.0f * deltaTime;
+
+    glm::vec3 pos = transformRoot.getLocalPosition();
+    glm::vec3 rot = transformRoot.getLocalRotation();
+
+    bool movingForward = false;
+    bool movingBackward = false;
+
+    // jazda przód / tył (lokalny Z)
+    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+    {
+        pos -= transformRoot.getForward() * moveSpeed;
+        movingForward = true;
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+    {
+        pos += transformRoot.getForward() * moveSpeed;
+        movingBackward = true;
+    }
+    // skręt lewo / prawo
+    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
+        rot.y += rotSpeed;
+
+    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+        rot.y -= rotSpeed;
+
+
+    transformRoot.setLocalPosition(pos);
+    transformRoot.setLocalRotation(rot);
+
+    if (movingForward || movingBackward)
+    {
+        float dir = movingForward ? -1.0f : 1.0f;
+
+        auto rotateWheel = [&](Entity* wheel)
+            {
+                if (!wheel) return;
+                glm::vec3 wRot = wheel->transform.getLocalRotation();
+                wRot.x += dir * wheelRotSpeed;
+                wheel->transform.setLocalRotation(wRot);
+            };
+
+        rotateWheel(LewyPrzod);
+        rotateWheel(LewyTyl);
+        rotateWheel(PrawyPrzod);
+        rotateWheel(PrawyTyl);
+    }
+
+
+    glm::vec3 kabinaRot = Kabina->transform.getLocalRotation();
+
+    if (glfwGetKey(window, GLFW_KEY_U) == GLFW_PRESS)
+        kabinaRot.y += rotSpeed;
+
+    if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS)
+        kabinaRot.y -= rotSpeed;
+
+    Kabina->transform.setLocalRotation(kabinaRot);
+
+    rot = RamieDlugie->transform.getLocalRotation();
+
+    if (glfwGetKey(window, GLFW_KEY_I) == GLFW_PRESS)
+        rot.x += armSpeed;
+
+    if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS)
+        rot.x -= armSpeed;
+
+    rot.x = glm::clamp(rot.x, -45.0f, 60.0f);
+
+    RamieDlugie->transform.setLocalRotation(rot);
+
+    rot = RamieKrotkie->transform.getLocalRotation();
+
+    if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS)
+        rot.x += armSpeed;
+
+    if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS)
+        rot.x -= armSpeed;
+
+    rot.x = glm::clamp(rot.x, -70.0f, 70.0f);
+
+    RamieKrotkie->transform.setLocalRotation(rot);
+
+    rot = Lopata->transform.getLocalRotation();
+
+    if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS)
+        rot.x += armSpeed;
+
+    if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS)
+        rot.x -= armSpeed;
+
+    rot.x = glm::clamp(rot.x, -90.0f, 30.0f);
+
+    Lopata->transform.setLocalRotation(rot);
+}
+
+void updateFollowCamera()
+{
+    if (!koparkaEntity) return;
+
+    Transform& t = koparkaEntity->transform;
+
+    glm::vec3 koparkaPos = t.getGlobalPosition();
+    glm::vec3 back = -t.getForward();
+
+    glm::vec3 desiredPos =
+        koparkaPos +
+        back * cameraOffset.z +
+        glm::vec3(0.0f, cameraOffset.y, 0.0f);
+
+
+    camera.Position = glm::mix(camera.Position, desiredPos, 5.0f * deltaTime);
+
+    glm::vec3 lookTarget = koparkaPos + glm::vec3(0.0f, 5.0f, 0.0f);
+    camera.Front = glm::normalize(lookTarget - camera.Position);
+    camera.Right = glm::normalize(glm::cross(camera.Front, glm::vec3(0, 1, 0)));
+    camera.Up = glm::normalize(glm::cross(camera.Right, camera.Front));
+}
+
 
 void update()
 {
@@ -588,6 +856,10 @@ void render()
     pointLight->position.y = 1.0f; 
     pointLight->position.z = radius * sin(speed * time);
 
+    if (!mouseMove)
+    {
+        updateFollowCamera();
+    }
 
     // OpenGL Rendering code goes here
     glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
@@ -605,17 +877,10 @@ void render()
     glfwGetFramebufferSize(window, &display_w, &display_h);
     glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)display_w / (float)display_h, 0.1f, 10000.0f);
     glm::mat4 view = glm::mat4(1.0f);
-    if (mouseMove)
-    {
-        view = camera.GetViewMatrix();
-    }
-    else
-    {
-        view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -20.0f, -cameraDistance));
-    }
+    view = camera.GetViewMatrix();
 
-    // render the loaded model
-    root->updateOrbit(deltaTime); 
+
+    // render the loaded modeld
     root->updateSelfAndChild();
     glm::mat4 systemRotationX = glm::rotate(glm::mat4(1.0f), glm::radians(rotationX), glm::vec3(1, 0, 0));
     glm::mat4 systemRotationY = glm::rotate(glm::mat4(1.0f), glm::radians(rotationY), glm::vec3(0, 1, 0));
@@ -626,6 +891,21 @@ void render()
 
     //glDrawElements(GL_TRIANGLES, 12, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
+
+    // draw skybox as last
+    glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
+    skyboxShader->use();
+    view = glm::mat4(glm::mat3(camera.GetViewMatrix())); // remove translation from the view matrix
+    skyboxShader->setMat4("view", view);
+    skyboxShader->setMat4("projection", projection);
+    // skybox cube
+    glBindVertexArray(skyboxVAO);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glBindVertexArray(0);
+    glDepthFunc(GL_LESS); // set depth function back to default
+
 }
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
@@ -836,21 +1116,6 @@ void imgui_render()
                 glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // normalny render
         }
 
-        //if (ImGui::SliderInt("Rings", &sphereRings, 3, 25))
-        //{
-        //    regenerateSphere();
-        //}
-        //
-        //// suwak do liczby sektorów
-        //if (ImGui::SliderInt("Sectors", &sphereSectors, 3, 25))
-        //{
-        //    regenerateSphere();
-        //}
-        ////
-        //// suwak do promienia
-        //ImGui::SliderFloat("Radius", &sphereRadius, 0.1f, 10.0f);
-
-
         ImGui::SliderFloat("rotation X", &rotationX, -480.0f, 480.0f);
         ImGui::SliderFloat("rotation Y", &rotationY, -480.0f, 480.0f);
         ImGui::SliderFloat("Camera Distance", &cameraDistance, 5.0f, 1000.0f);
@@ -958,3 +1223,41 @@ void end_frame()
     glfwSwapBuffers(window);
 }
 
+// loads a cubemap texture from 6 individual texture faces
+// order:
+// +X (right)
+// -X (left)
+// +Y (top)
+// -Y (bottom)
+// +Z (front) 
+// -Z (back)
+// -------------------------------------------------------
+unsigned int loadCubemap(vector<std::string> faces)
+{
+    unsigned int textureID;
+    glGenTextures(1, &textureID);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+
+    int width, height, nrChannels;
+    for (unsigned int i = 0; i < faces.size(); i++)
+    {
+        unsigned char* data = stbi_load(faces[i].c_str(), &width, &height, &nrChannels, 0);
+        if (data)
+        {
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+            stbi_image_free(data);
+        }
+        else
+        {
+            std::cout << "Cubemap texture failed to load at path: " << faces[i] << std::endl;
+            stbi_image_free(data);
+        }
+    }
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    return textureID;
+}

@@ -12,6 +12,7 @@
 
 #include <mesh.h>
 #include <shader.h>
+#include <transform.h>
 
 #include <string>
 #include <fstream>
@@ -29,14 +30,17 @@ class Model
 public:
     // model data 
     vector<Texture> textures_loaded;	// stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
-    vector<Mesh>    meshes;
+    vector<Mesh> meshes;
+    Transform transform;
+    vector<Model> children;
+    string name;
     string directory;
     bool gammaCorrection;
     float meshScale;
     unsigned int instanceVBO = 0;
     
     Model();
-    Model(const std::string& path, float meshScale = 1.0f, bool gamma = false);
+    //Model(const std::string& path, float meshScale = 1.0f, bool gamma = false);
 
     void Draw(Shader& shader, GLsizei instanceCount = 0);
 
@@ -44,13 +48,16 @@ public:
 
     static std::unique_ptr<Model> createSphere(int rings = 10, int sectors = 10, const std::string& texturePath = "");
 
-private:
-
-    void loadModel(const std::string& path);
-
-    void processNode(aiNode* node, const aiScene* scene);
+    void turnOnReflect(unsigned int cubemapTexture);
 
     Mesh processMesh(aiMesh* mesh, const aiScene* scene);
+
+private:
+
+    //void loadModel(const std::string& path);
+
+    //void processNode(aiNode* node, const aiScene* scene);
+
 
     std::vector<Texture> loadMaterialTextures(aiMaterial* mat, aiTextureType type, std::string typeName, const aiScene* scene);
 };
