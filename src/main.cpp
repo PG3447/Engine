@@ -28,6 +28,7 @@
 #include <prefab.h>
 #include <filesystem>
 
+#include <HID.h>
 
 
 static void glfw_error_callback(int error, const char* description)
