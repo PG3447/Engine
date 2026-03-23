@@ -40,7 +40,6 @@ void init_imgui();
 
 
 void compileShader();
-void loadTexture();
 
 void input();
 void controlKoparka();
@@ -104,7 +103,7 @@ GLuint VBO;
 GLuint VAO;
 GLuint texture;
 std::unique_ptr<Shader> ourShader;
-std::unique_ptr<Shader> sphereShader;
+//std::unique_ptr<Shader> sphereShader;
 std::unique_ptr<Shader> skyboxShader;
 std::unique_ptr<Shader> reflectShader;
 std::unique_ptr<Shader> refractShader;
@@ -288,9 +287,8 @@ int main(int, char**)
 
     compileShader();
 
-    //loadTexture();
-    //createHouse();
-    //startGroupInstanced(root.get());
+    createHouse();
+    startGroupInstanced(root.get());
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
@@ -491,23 +489,11 @@ void compileShader()
     refractShader->use();
     refractShader->setInt("skybox", 0);
 
-    sphereShader = std::make_unique<Shader>("res/shaders/sphere.vert", "res/shaders/sphere.frag", "res/shaders/sphere.geom");
-
-    sphereShader->use();
-
+    //ladowanie bazowego shader-a
     ourShader = std::make_unique<Shader>("res/shaders/basic.vert", "res/shaders/basic.frag");
-
     ourShader->use();
-    std::cout << "Current path: " << std::filesystem::current_path() << std::endl;
 
-    //sphereVenusModel = Model::createSphere(sphereRings, sphereSectors, "res/backpack/venusSurface.jpg");
-
-    //wallModel = std::make_unique<Prefab>("res/backpack/sciany.glb", 1.0f, false);
-    //roofModel = std::make_unique<Prefab>("res/backpack/dach.glb", 1.0f, false);
-
-    //groundModel = std::make_unique<Prefab>("res/backpack/podloze.glb", 100.0f, false);
-
-    //koparkaModel = std::make_unique<Prefab>("res/backpack/koparka.glb", 1.0f, false);
+    groundModel = std::make_unique<Prefab>("res/backpack/podloze.glb", 100.0f, false);
     
 
     root = std::make_unique<Entity>();
@@ -520,9 +506,9 @@ void compileShader()
 }
 
 std::unique_ptr<Light> dircetLight;
-std::unique_ptr<Light> pointLight;
-std::unique_ptr<Light> spotLight;
-std::unique_ptr<Light> spotLight2;
+//std::unique_ptr<Light> pointLight;
+//std::unique_ptr<Light> spotLight;
+//std::unique_ptr<Light> spotLight2;
 
 std::unique_ptr<Model> emptyModel;
 std::unique_ptr<Prefab> emptyModel1;
@@ -536,249 +522,74 @@ void createHouse()
     ground->name = "podloze";
     root->addChild(ground);
     
-    koparkaEntity = koparkaModel->getEntitiesCreate(ourShader.get());
-    koparkaEntity->name = "koparka";
-    koparkaEntity->transform.setLocalRotation(glm::vec3(0.0f, 180.0f, 0.0f));
-    root->addChild(koparkaEntity);
-
-    Entity* kabina = koparkaEntity->findChild("Kabina");
-    kabina->pShader = reflectShader.get();
-    kabina->pModel->turnOnReflect(cubemapTexture);
-    
-    Entity* ramieDlugie = koparkaEntity->findChild("ramieDlugie");
-    ramieDlugie->pShader = refractShader.get();
-    ramieDlugie->pModel->turnOnReflect(cubemapTexture);
-
-    Entity* ramieKrotkie = koparkaEntity->findChild("ramieKrotkie");
-    ramieKrotkie->pShader = refractShader.get();
-    ramieKrotkie->pModel->turnOnReflect(cubemapTexture);
-
-
-    Entity* houses = root->addChild();
-    houses->name = "domki";
-
-    
-    int GRID_X = 100;
-    int GRID_Z = 100;
-    float SPACING = 10.0f;
-
-    for (int x = -GRID_X; x < GRID_X; ++x)
-    {
-        for (int z = -GRID_Z; z < GRID_Z; ++z)
-        {
-            Entity* house = houses->addChild();
-            house->name = "domek" + std::to_string(x) + std::to_string(z);
-
-
-            Entity* wall = wallModel->getEntitiesCreate(ourShader.get());
-            wall->name = "sciany";
-            house->addChild(wall);
-            Entity* roof = roofModel->getEntitiesCreate(ourShader.get());
-            roof->name = "dach";
-            house->addChild(roof);
-
-            glm::vec3 pos;
-            pos.x = x * SPACING;
-            pos.y = 1.0f;
-            pos.z = -z * SPACING;
-
-            house->transform.setLocalPosition(pos);
-
-            pos.x = 0.0f;
-            pos.y = 2.0f;
-            pos.z = 0.0f;
-
-            roof->transform.setLocalPosition(pos);
-        }
-    }
-    
     emptyModel = std::make_unique<Model>();
-    emptyModel1 = std::make_unique<Prefab>("res/backpack/dach.glb", 0.25f, false);
-    emptyModel2 = std::make_unique<Prefab>("res/backpack/dach.glb", 1.0f, false);
-    emptyModel3 = std::make_unique<Prefab>("res/backpack/dach.glb", 1.0f, false);
-    
+    //emptyModel1 = std::make_unique<Prefab>("res/backpack/podloze.glb", 0.25f, false);
+    //emptyModel2 = std::make_unique<Prefab>("res/backpack/podloze.glb", 1.0f, false);
+    //emptyModel3 = std::make_unique<Prefab>("res/backpack/podloze.glb", 1.0f, false);
+    //
     dircetLight = std::make_unique<Light>(Light::Directional);
     dircetLight->direction = glm::vec3(-0.3f, -1.0f, -0.1f);
     dircetLight->ambient  = glm::vec3(0.25f);
     dircetLight->diffuse = glm::vec3(0.85f);
     dircetLight->specular = glm::vec3(0.4f);
-    
-    pointLight = std::make_unique<Light>(Light::Point);
-    pointLight->index = 0;
-    pointLight->position = glm::vec3(-10.0f, 1.0f, -0.3f);
-    pointLight->ambient = glm::vec3(0.05f);
-    pointLight->diffuse = glm::vec3(0.8f);
-    pointLight->specular = glm::vec3(1.0f);
-    pointLight->constant = 1.0f;
-    pointLight->linear = 0.09f;
-    pointLight->quadratic = 0.032f;
+    //
+    //pointLight = std::make_unique<Light>(Light::Point);
+    //pointLight->index = 0;
+    //pointLight->position = glm::vec3(-10.0f, 1.0f, -0.3f);
+    //pointLight->ambient = glm::vec3(0.05f);
+    //pointLight->diffuse = glm::vec3(0.8f);
+    //pointLight->specular = glm::vec3(1.0f);
+    //pointLight->constant = 1.0f;
+    //pointLight->linear = 0.09f;
+    //pointLight->quadratic = 0.032f;
 
-    spotLight = std::make_unique<Light>(Light::Spot);
-    spotLight->index = 0;
-    spotLight->position = glm::vec3(-12.0f, 5.0f, 1.5f);
-    spotLight->direction = glm::vec3(-0.15f, -0.9f, -0.25f);
-    spotLight->ambient = glm::vec3(0.0f);
-    spotLight->diffuse = glm::vec3(1.0f);
-    spotLight->specular = glm::vec3(1.0f);
-    spotLight->constant = 1.0f;
-    spotLight->linear = 0.09f;
-    spotLight->quadratic = 0.032f;
-    spotLight->cutOff = glm::cos(glm::radians(12.5f));
-    spotLight->outerCutOff = glm::cos(glm::radians(15.0f));
+    //spotLight = std::make_unique<Light>(Light::Spot);
+    //spotLight->index = 0;
+    //spotLight->position = glm::vec3(-12.0f, 5.0f, 1.5f);
+    //spotLight->direction = glm::vec3(-0.15f, -0.9f, -0.25f);
+    //spotLight->ambient = glm::vec3(0.0f);
+    //spotLight->diffuse = glm::vec3(1.0f);
+    //spotLight->specular = glm::vec3(1.0f);
+    //spotLight->constant = 1.0f;
+    //spotLight->linear = 0.09f;
+    //spotLight->quadratic = 0.032f;
+    //spotLight->cutOff = glm::cos(glm::radians(12.5f));
+    //spotLight->outerCutOff = glm::cos(glm::radians(15.0f));
 
 
-    spotLight2 = std::make_unique<Light>(Light::Spot);
-    spotLight2->index = 1;
-    spotLight2->position = glm::vec3(-2.0f, 5.0f, 1.5f);
-    spotLight2->direction = glm::vec3(-0.15f, -0.9f, -0.25f);
-    spotLight2->ambient = glm::vec3(0.0f);
-    spotLight2->diffuse = glm::vec3(1.0f);
-    spotLight2->specular = glm::vec3(1.0f);
-    spotLight2->constant = 1.0f;
-    spotLight2->linear = 0.09f;
-    spotLight2->quadratic = 0.032f;
-    spotLight2->cutOff = glm::cos(glm::radians(25.0f));
-    spotLight2->outerCutOff = glm::cos(glm::radians(30.0f));
+    //spotLight2 = std::make_unique<Light>(Light::Spot);
+    //spotLight2->index = 1;
+    //spotLight2->position = glm::vec3(-2.0f, 5.0f, 1.5f);
+    //spotLight2->direction = glm::vec3(-0.15f, -0.9f, -0.25f);
+    //spotLight2->ambient = glm::vec3(0.0f);
+    //spotLight2->diffuse = glm::vec3(1.0f);
+    //spotLight2->specular = glm::vec3(1.0f);
+    //spotLight2->constant = 1.0f;
+    //spotLight2->linear = 0.09f;
+    //spotLight2->quadratic = 0.032f;
+    //spotLight2->cutOff = glm::cos(glm::radians(25.0f));
+    //spotLight2->outerCutOff = glm::cos(glm::radians(30.0f));
 
     
     Entity* directonalLight = root->addChild(emptyModel.get(), ourShader.get(), dircetLight.get());
     directonalLight->name = "directonalLight";
 
-    Entity* pointLightEnt = emptyModel1->getEntitiesCreate(ourShader.get(), pointLight.get());
-    pointLightEnt->name = "pointLight";
-    root->addChild(pointLightEnt);
+    //Entity* pointLightEnt = emptyModel1->getEntitiesCreate(ourShader.get(), pointLight.get());
+    //pointLightEnt->name = "pointLight";
+    //root->addChild(pointLightEnt);
 
-    Entity* spotLightEnt = emptyModel2->getEntitiesCreate(ourShader.get(), spotLight.get());
-    spotLightEnt->name = "spotLight";
-    root->addChild(spotLightEnt);
+    //Entity* spotLightEnt = emptyModel2->getEntitiesCreate(ourShader.get(), spotLight.get());
+    //spotLightEnt->name = "spotLight";
+    //root->addChild(spotLightEnt);
 
-    Entity* spotLight2Ent = emptyModel3->getEntitiesCreate(ourShader.get(), spotLight2.get());
-    spotLight2Ent->name = "spotLight2";
-    root->addChild(spotLight2Ent);
-    
+    //Entity* spotLight2Ent = emptyModel3->getEntitiesCreate(ourShader.get(), spotLight2.get());
+    //spotLight2Ent->name = "spotLight2";
+    //root->addChild(spotLight2Ent);
+    //
     // Wstępne obliczenie pozycji orbit
     root->updateSelfAndChild();
 }
 
-/*
-void controlKoparka()
-{
-    if (!koparkaEntity) return;
-
-    Entity* Kabina = koparkaEntity->findChild("Kabina");
-    Entity* Podwozie = koparkaEntity->findChild("Podwozie");
-
-    Entity* LewyPrzod = koparkaEntity->findChild("LewyPrzod");
-    Entity* LewyTyl = koparkaEntity->findChild("LewyTyl");
-    Entity* PrawyPrzod = koparkaEntity->findChild("PrawyPrzod");
-    Entity* PrawyTyl = koparkaEntity->findChild("PrawyTyl");
-
-    Entity* RamieDlugie = koparkaEntity->findChild("ramieDlugie");
-    Entity* RamieKrotkie = koparkaEntity->findChild("ramieKrotkie");
-    Entity* Lopata = koparkaEntity->findChild("Lopata");
-
-
-    Transform& transformRoot = koparkaEntity->transform;
-
-    float moveSpeed = 10.0f * deltaTime;
-    float rotSpeed = 90.0f * deltaTime;
-    float wheelRotSpeed = 180.0f * deltaTime;
-    float armSpeed = 60.0f * deltaTime;
-
-    glm::vec3 pos = transformRoot.getLocalPosition();
-    glm::vec3 rot = transformRoot.getLocalRotation();
-
-    bool movingForward = false;
-    bool movingBackward = false;
-
-    // jazda przód / tył (lokalny Z)
-    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
-    {
-        pos -= transformRoot.getForward() * moveSpeed;
-        movingForward = true;
-    }
-
-    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
-    {
-        pos += transformRoot.getForward() * moveSpeed;
-        movingBackward = true;
-    }
-    // skręt lewo / prawo
-    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
-        rot.y += rotSpeed;
-
-    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
-        rot.y -= rotSpeed;
-
-
-    transformRoot.setLocalPosition(pos);
-    transformRoot.setLocalRotation(rot);
-
-    if (movingForward || movingBackward)
-    {
-        float dir = movingForward ? -1.0f : 1.0f;
-
-        auto rotateWheel = [&](Entity* wheel)
-            {
-                if (!wheel) return;
-                glm::vec3 wRot = wheel->transform.getLocalRotation();
-                wRot.x += dir * wheelRotSpeed;
-                wheel->transform.setLocalRotation(wRot);
-            };
-
-        rotateWheel(LewyPrzod);
-        rotateWheel(LewyTyl);
-        rotateWheel(PrawyPrzod);
-        rotateWheel(PrawyTyl);
-    }
-
-
-    glm::vec3 kabinaRot = Kabina->transform.getLocalRotation();
-
-    if (glfwGetKey(window, GLFW_KEY_U) == GLFW_PRESS)
-        kabinaRot.y += rotSpeed;
-
-    if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS)
-        kabinaRot.y -= rotSpeed;
-
-    Kabina->transform.setLocalRotation(kabinaRot);
-
-    rot = RamieDlugie->transform.getLocalRotation();
-
-    if (glfwGetKey(window, GLFW_KEY_I) == GLFW_PRESS)
-        rot.x += armSpeed;
-
-    if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS)
-        rot.x -= armSpeed;
-
-    rot.x = glm::clamp(rot.x, -45.0f, 60.0f);
-
-    RamieDlugie->transform.setLocalRotation(rot);
-
-    rot = RamieKrotkie->transform.getLocalRotation();
-
-    if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS)
-        rot.x += armSpeed;
-
-    if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS)
-        rot.x -= armSpeed;
-
-    rot.x = glm::clamp(rot.x, -70.0f, 70.0f);
-
-    RamieKrotkie->transform.setLocalRotation(rot);
-
-    rot = Lopata->transform.getLocalRotation();
-
-    if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS)
-        rot.x += armSpeed;
-
-    if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS)
-        rot.x -= armSpeed;
-
-    rot.x = glm::clamp(rot.x, -90.0f, 30.0f);
-
-    Lopata->transform.setLocalRotation(rot);
-}
 
 void updateFollowCamera()
 {
@@ -802,13 +613,12 @@ void updateFollowCamera()
     camera.Right = glm::normalize(glm::cross(camera.Front, glm::vec3(0, 1, 0)));
     camera.Up = glm::normalize(glm::cross(camera.Right, camera.Front));
 }
-*/
+
 
 void input()
 {
 //OLD INPUT STARTS HERE
 
-    /*
     // I/O ops go here
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
     {
@@ -841,7 +651,6 @@ void input()
             camera.ProcessKeyboard(RIGHT, deltaTime);
     }
 
-    controlKoparka();*/
 //OLD INPUT ENDS HERE
 }
 
@@ -855,15 +664,15 @@ void update()
 void render()
 {
 //OLD RENDER FUNCION STARTS HERE
-    /*
-    float time = glfwGetTime();
-    float radius = 10.0f;         
-    float speed = 2.0f;        
+    
+    //float time = glfwGetTime();
+    //float radius = 10.0f;         
+    //float speed = 2.0f;        
 
 
-    pointLight->position.x = radius * cos(speed * time);
-    pointLight->position.y = 1.0f; 
-    pointLight->position.z = radius * sin(speed * time);
+    //pointLight->position.x = radius * cos(speed * time);
+    //pointLight->position.y = 1.0f; 
+    //pointLight->position.z = radius * sin(speed * time);
 
     if (!mouseMove)
     {
@@ -971,6 +780,7 @@ void imgui_begin()
     ImGui::NewFrame();
 }
 
+//Wszystko ponizej to imgui
 static Entity* selectedEntity = nullptr;
 
 void showLightEditor(Light& light)
@@ -1117,7 +927,7 @@ void imgui_render()
     {
         ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
 
-        /*
+        
         if (ImGui::Button(wireframeMode ? "Switch to Fill Mode" : "Switch to Wireframe"))
         {
             wireframeMode = !wireframeMode;
@@ -1173,28 +983,28 @@ void imgui_render()
                ImGui::PopID();
            }
 
-           if (ImGui::CollapsingHeader("Point Lights"))
-           {
-               ImGui::PushID("pointLight");
-               showLightEditor(*pointLight);
-               ImGui::PopID();
-           }
+           //if (ImGui::CollapsingHeader("Point Lights"))
+           //{
+           //    ImGui::PushID("pointLight");
+           //    showLightEditor(*pointLight);
+           //    ImGui::PopID();
+           //}
 
-           if (ImGui::CollapsingHeader("Spot Light"))
-           {
-               ImGui::PushID("spotLight");
-               showLightEditor(*spotLight);
-               ImGui::PopID();
-           }
+           //if (ImGui::CollapsingHeader("Spot Light"))
+           //{
+           //    ImGui::PushID("spotLight");
+           //    showLightEditor(*spotLight);
+           //    ImGui::PopID();
+           //}
 
-           if (ImGui::CollapsingHeader("Spot Light2"))
-           {
-               ImGui::PushID("spotLight2");
-               showLightEditor(*spotLight2);
-               ImGui::PopID();
-           }
+           //if (ImGui::CollapsingHeader("Spot Light2"))
+           //{
+           //    ImGui::PushID("spotLight2");
+           //    showLightEditor(*spotLight2);
+           //    ImGui::PopID();
+           //}
        }
-       */
+       
         
         ImGui::End();
     }
