@@ -286,10 +286,11 @@ int main(int, char**)
     init_imgui();
     spdlog::info("Initialized ImGui.");
 
-    //loadTexture();
     compileShader();
-    createHouse();
-    startGroupInstanced(root.get());
+
+    //loadTexture();
+    //createHouse();
+    //startGroupInstanced(root.get());
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
@@ -501,12 +502,12 @@ void compileShader()
 
     //sphereVenusModel = Model::createSphere(sphereRings, sphereSectors, "res/backpack/venusSurface.jpg");
 
-    wallModel = std::make_unique<Prefab>("res/backpack/sciany.glb", 1.0f, false);
-    roofModel = std::make_unique<Prefab>("res/backpack/dach.glb", 1.0f, false);
+    //wallModel = std::make_unique<Prefab>("res/backpack/sciany.glb", 1.0f, false);
+    //roofModel = std::make_unique<Prefab>("res/backpack/dach.glb", 1.0f, false);
 
-    groundModel = std::make_unique<Prefab>("res/backpack/podloze.glb", 100.0f, false);
+    //groundModel = std::make_unique<Prefab>("res/backpack/podloze.glb", 100.0f, false);
 
-    koparkaModel = std::make_unique<Prefab>("res/backpack/koparka.glb", 1.0f, false);
+    //koparkaModel = std::make_unique<Prefab>("res/backpack/koparka.glb", 1.0f, false);
     
 
     root = std::make_unique<Entity>();
@@ -659,43 +660,7 @@ void createHouse()
     root->updateSelfAndChild();
 }
 
-void input()
-{
-    // I/O ops go here
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-    {
-        glfwSetWindowShouldClose(window, true);
-    }
-
-    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_2) == GLFW_PRESS) {
-        if (!mouseMove) {
-            firstMouse = true;
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        }
-        mouseMove = true;
-    }
-
-    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_2) == GLFW_RELEASE) {
-        if (mouseMove) {
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        }
-        mouseMove = false;
-    }
-
-    if (mouseMove) {
-        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-            camera.ProcessKeyboard(FORWARD, deltaTime);
-        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-            camera.ProcessKeyboard(BACKWARD, deltaTime);
-        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-            camera.ProcessKeyboard(LEFT, deltaTime);
-        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-            camera.ProcessKeyboard(RIGHT, deltaTime);
-    }
-
-    controlKoparka();
-}
-
+/*
 void controlKoparka()
 {
     if (!koparkaEntity) return;
@@ -837,6 +802,48 @@ void updateFollowCamera()
     camera.Right = glm::normalize(glm::cross(camera.Front, glm::vec3(0, 1, 0)));
     camera.Up = glm::normalize(glm::cross(camera.Right, camera.Front));
 }
+*/
+
+void input()
+{
+//OLD INPUT STARTS HERE
+
+    /*
+    // I/O ops go here
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+    {
+        glfwSetWindowShouldClose(window, true);
+    }
+
+    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_2) == GLFW_PRESS) {
+        if (!mouseMove) {
+            firstMouse = true;
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        }
+        mouseMove = true;
+    }
+
+    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_2) == GLFW_RELEASE) {
+        if (mouseMove) {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        }
+        mouseMove = false;
+    }
+
+    if (mouseMove) {
+        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+            camera.ProcessKeyboard(FORWARD, deltaTime);
+        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+            camera.ProcessKeyboard(BACKWARD, deltaTime);
+        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+            camera.ProcessKeyboard(LEFT, deltaTime);
+        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+            camera.ProcessKeyboard(RIGHT, deltaTime);
+    }
+
+    controlKoparka();*/
+//OLD INPUT ENDS HERE
+}
 
 
 void update()
@@ -847,6 +854,8 @@ void update()
 
 void render()
 {
+//OLD RENDER FUNCION STARTS HERE
+    /*
     float time = glfwGetTime();
     float radius = 10.0f;         
     float speed = 2.0f;        
@@ -904,7 +913,8 @@ void render()
     glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
     glDrawArrays(GL_TRIANGLES, 0, 36);
     glBindVertexArray(0);
-    glDepthFunc(GL_LESS); // set depth function back to default
+    glDepthFunc(GL_LESS); // set depth function back to default*/
+//OLD RENDER FUNCTION ENDS HERE
 
 }
 
@@ -1103,10 +1113,11 @@ void imgui_render()
         //ImGui::ShowDemoWindow(&show_demo_window);
 
     // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
+
     {
         ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
 
-
+        /*
         if (ImGui::Button(wireframeMode ? "Switch to Fill Mode" : "Switch to Wireframe"))
         {
             wireframeMode = !wireframeMode;
@@ -1183,6 +1194,7 @@ void imgui_render()
                ImGui::PopID();
            }
        }
+       */
         
         ImGui::End();
     }
