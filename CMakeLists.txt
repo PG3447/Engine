@@ -10,7 +10,11 @@ IF (WIN32)
   message(NOTICE "\n")
 ENDIF()
 
-add_compile_options(-Wno-error=unknown-pragmas)
+if (MSVC)
+    # MSVC nie potrzebuje tej flagi (albo użyj odpowiednika)
+else()
+    add_compile_options(-Wno-error=unknown-pragmas)
+endif()
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
