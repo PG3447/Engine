@@ -20,13 +20,16 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-
 #include <shader.h>
 #include <camera.h>
 #include <model.h>
 #include <entity.h>
 #include <prefab.h>
 #include <filesystem>
+
+#include <fmod.h>
+#include <fmod.hpp>
+#include <fmod_studio.h>
 
 #include <HID.h>
 #include <freetype/freetype.h>

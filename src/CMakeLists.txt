@@ -1,3 +1,5 @@
+
+
 # Add source files
 file(GLOB_RECURSE SOURCE_FILES 
 	 *.c
@@ -29,6 +31,8 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
 												  ${stb_image_SOURCE_DIR}
 												  ${imgui_SOURCE_DIR})
 
+
+
 target_link_libraries(${PROJECT_NAME} ${OPENGL_LIBRARIES})
 target_link_libraries(${PROJECT_NAME} glad)
 target_link_libraries(${PROJECT_NAME} stb_image)
@@ -39,12 +43,48 @@ target_link_libraries(${PROJECT_NAME} spdlog)
 target_link_libraries(${PROJECT_NAME} glm::glm)
 target_link_libraries(${PROJECT_NAME} yaml-cpp)
 target_link_libraries(${PROJECT_NAME} freetype)
+target_link_libraries(${PROJECT_NAME} fmodstudio fmod)
+					 	
+
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD 
 				   COMMAND ${CMAKE_COMMAND} -E create_symlink 
 				   ${CMAKE_SOURCE_DIR}/res 
 				   ${CMAKE_CURRENT_BINARY_DIR}/res)
 
+
+message(STATUS "FMOD_INCLUDE_DIR = ${FMOD_INCLUDE_DIR}")
+message(STATUS "FMOD_LIB_DIR = ${FMOD_LIB_DIR}")
+
+
+if(WIN32)
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different 
+        "${FMOD_LIB_DIR}/fmod.dll"
+        "${CMAKE_CURRENT_BINARY_DIR}/fmod.dll"
+    )
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${FMOD_LIB_DIR}/fmodL.dll"
+        "${CMAKE_CURRENT_BINARY_DIR}/fmodL.dll"
+    )
+endif()
+
+if(WIN32)
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different 
+        "${FMOD_DIR}/api/studio/lib/${ARCH_DIR}/fmodstudio.dll"
+        "${CMAKE_CURRENT_BINARY_DIR}/fmodstudio.dll"
+    )
+
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different 
+        "${FMOD_DIR}/api/studio/lib/${ARCH_DIR}/fmodstudioL.dll"
+        "${CMAKE_CURRENT_BINARY_DIR}/fmodstudioL.dll"
+    )
+endif()
+
 if(MSVC)
     target_compile_definitions(${PROJECT_NAME} PUBLIC NOMINMAX)
 endif()
+

@@ -46,15 +46,70 @@ add_library(imgui STATIC ${imgui_SOURCE_DIR}/imgui.cpp
 					     ${imgui_SOURCE_DIR}/imgui_widgets.cpp)
 
 #FMOD
-#set(FMOD_DIR ${CMAKE_CURRENT_LIST_DIR}/fmod)
-#find_library(FMOD_LIBRARY NAMES fmod fmod_vc PATHS ${FMOD_DIR}/lib)
-#add_library(fmod SHARED IMPORTED)
-#set_target_properties(fmod PROPERTIES
-#		IMPORTED_IMPLIB             ${FMOD_DIR}/lib/fmod_vc.lib
-#		IMPORTED_LOCATION           ${FMOD_DIR}/lib/fmod.dll
-#		INTERFACE_INCLUDE_DIRECTORIES ${FMOD_DIR}/include
-#)
-						 
+set(FMOD_DIR ${CMAKE_CURRENT_LIST_DIR}/fmod CACHE INTERNAL "")
+set(FMOD_INCLUDE_DIR
+    "${FMOD_DIR}/api/core/inc"
+    "${FMOD_DIR}/api/studio/inc"
+    CACHE INTERNAL ""
+)
+
+# --- Detect architecture ---
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    set(ARCH_DIR "x64" CACHE INTERNAL "")
+else()
+    set(ARCH_DIR "x86" CACHE INTERNAL "")
+endif()
+
+# (opcjonalnie arm64 override)
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64")
+    set(ARCH_DIR "arm64" CACHE INTERNAL "")
+endif()
+
+# --- Library path ---
+set(FMOD_LIB_DIR "${FMOD_DIR}/api/core/lib/${ARCH_DIR}" CACHE INTERNAL "")
+
+
+# --- Stwórz importowaną bibliotekę ---
+add_library(fmod SHARED IMPORTED GLOBAL)
+
+set_target_properties(fmod PROPERTIES
+    # Ścieżka do DLL (runtime)
+    IMPORTED_LOCATION_DEBUG "${FMOD_LIB_DIR}/fmodL.dll"
+    IMPORTED_LOCATION_RELEASE "${FMOD_LIB_DIR}/fmod.dll"
+
+    # Ścieżka do import library (linker)
+    IMPORTED_IMPLIB_DEBUG "${FMOD_LIB_DIR}/fmodL_vc.lib"
+    IMPORTED_IMPLIB_RELEASE "${FMOD_LIB_DIR}/fmod_vc.lib"
+
+	IMPORTED_LOCATION_RELWITHDEBINFO "${FMOD_LIB_DIR}/fmod.dll"
+    IMPORTED_IMPLIB_RELWITHDEBINFO "${FMOD_LIB_DIR}/fmod_vc.lib"
+
+    IMPORTED_LOCATION_MINSIZEREL "${FMOD_LIB_DIR}/fmod.dll"
+    IMPORTED_IMPLIB_MINSIZEREL "${FMOD_LIB_DIR}/fmod_vc.lib"
+
+    INTERFACE_INCLUDE_DIRECTORIES "${FMOD_INCLUDE_DIR}"
+)
+
+add_library(fmodstudio SHARED IMPORTED GLOBAL)
+
+set_target_properties(fmodstudio PROPERTIES
+    # DLL
+    IMPORTED_LOCATION_DEBUG "${FMOD_DIR}/api/studio/lib/${ARCH_DIR}/fmodstudioL.dll"
+    IMPORTED_LOCATION_RELEASE "${FMOD_DIR}/api/studio/lib/${ARCH_DIR}/fmodstudio.dll"
+
+    IMPORTED_LOCATION_RELWITHDEBINFO "${FMOD_DIR}/api/studio/lib/${ARCH_DIR}/fmodstudio.dll"
+    IMPORTED_LOCATION_MINSIZEREL "${FMOD_DIR}/api/studio/lib/${ARCH_DIR}/fmodstudio.dll"
+
+    # LIB
+    IMPORTED_IMPLIB_DEBUG "${FMOD_DIR}/api/studio/lib/${ARCH_DIR}/fmodstudioL_vc.lib"
+    IMPORTED_IMPLIB_RELEASE "${FMOD_DIR}/api/studio/lib/${ARCH_DIR}/fmodstudio_vc.lib"
+
+    IMPORTED_IMPLIB_RELWITHDEBINFO "${FMOD_DIR}/api/studio/lib/${ARCH_DIR}/fmodstudio_vc.lib"
+    IMPORTED_IMPLIB_MINSIZEREL "${FMOD_DIR}/api/studio/lib/${ARCH_DIR}/fmodstudio_vc.lib"
+
+    INTERFACE_INCLUDE_DIRECTORIES "${FMOD_INCLUDE_DIR}"
+)
+
 set_target_properties(glad
                       stb_image 
                       assimp 
@@ -62,8 +117,10 @@ set_target_properties(glad
                       glm 
                       imgui 
                       spdlog
-		              yaml-cpp
-		              freetype PROPERTIES FOLDER "thirdparty")
+					  yaml-cpp
+					  freetype
+					  fmod
+                      fmodstudio PROPERTIES FOLDER "thirdparty")
 
 if (TARGET zlibstatic)
     set_target_properties(zlibstatic PROPERTIES FOLDER "thirdparty")
