@@ -106,6 +106,7 @@ unsigned int skyboxVAO;
 GLuint VBO;
 GLuint VAO;
 GLuint texture;
+std::unique_ptr<Prefab> sunModel;
 std::unique_ptr<Shader> ourShader;
 //std::unique_ptr<Shader> sphereShader;
 std::unique_ptr<Shader> skyboxShader;
@@ -503,6 +504,8 @@ void compileShader()
     root = std::make_unique<Entity>();
     root->name = "root";
 
+    sunModel = std::make_unique<Prefab>("res/backpack/sun.glb", 1.0f, false);
+
 
 
     spdlog::info("Success");
@@ -591,6 +594,13 @@ void createHouse()
     //root->addChild(spotLight2Ent);
     //
     // Wstępne obliczenie pozycji orbit
+
+    Entity* sun = sunModel->getEntitiesCreate(ourShader.get());
+    sun->name = "sun";
+    sun->transform.setLocalPosition(glm::vec3(0.0f, 10.0f, 0.0f));
+    sun->transform.setLocalScale(glm::vec3(1.0f));
+    root->addChild(sun);
+    
     root->updateSelfAndChild();
 }
 
