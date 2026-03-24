@@ -43,18 +43,13 @@ target_link_libraries(${PROJECT_NAME} spdlog)
 target_link_libraries(${PROJECT_NAME} glm::glm)
 target_link_libraries(${PROJECT_NAME} yaml-cpp)
 target_link_libraries(${PROJECT_NAME} freetype)
-target_link_libraries(${PROJECT_NAME} fmodstudio fmod)
-					 	
+target_link_libraries(${PROJECT_NAME} fmod)
 
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD 
 				   COMMAND ${CMAKE_COMMAND} -E create_symlink 
 				   ${CMAKE_SOURCE_DIR}/res 
 				   ${CMAKE_CURRENT_BINARY_DIR}/res)
-
-
-message(STATUS "FMOD_INCLUDE_DIR = ${FMOD_INCLUDE_DIR}")
-message(STATUS "FMOD_LIB_DIR = ${FMOD_LIB_DIR}")
 
 
 if(WIN32)
@@ -67,20 +62,6 @@ if(WIN32)
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${FMOD_LIB_DIR}/fmodL.dll"
         "${CMAKE_CURRENT_BINARY_DIR}/fmodL.dll"
-    )
-endif()
-
-if(WIN32)
-    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different 
-        "${FMOD_DIR}/api/studio/lib/${ARCH_DIR}/fmodstudio.dll"
-        "${CMAKE_CURRENT_BINARY_DIR}/fmodstudio.dll"
-    )
-
-    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different 
-        "${FMOD_DIR}/api/studio/lib/${ARCH_DIR}/fmodstudioL.dll"
-        "${CMAKE_CURRENT_BINARY_DIR}/fmodstudioL.dll"
     )
 endif()
 

@@ -47,11 +47,7 @@ add_library(imgui STATIC ${imgui_SOURCE_DIR}/imgui.cpp
 
 #FMOD
 set(FMOD_DIR ${CMAKE_CURRENT_LIST_DIR}/fmod CACHE INTERNAL "")
-set(FMOD_INCLUDE_DIR
-    "${FMOD_DIR}/api/core/inc"
-    "${FMOD_DIR}/api/studio/inc"
-    CACHE INTERNAL ""
-)
+set(FMOD_INCLUDE_DIR "${FMOD_DIR}/api/core/inc" CACHE INTERNAL "")
 
 # --- Detect architecture ---
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -90,25 +86,6 @@ set_target_properties(fmod PROPERTIES
     INTERFACE_INCLUDE_DIRECTORIES "${FMOD_INCLUDE_DIR}"
 )
 
-add_library(fmodstudio SHARED IMPORTED GLOBAL)
-
-set_target_properties(fmodstudio PROPERTIES
-    # DLL
-    IMPORTED_LOCATION_DEBUG "${FMOD_DIR}/api/studio/lib/${ARCH_DIR}/fmodstudioL.dll"
-    IMPORTED_LOCATION_RELEASE "${FMOD_DIR}/api/studio/lib/${ARCH_DIR}/fmodstudio.dll"
-
-    IMPORTED_LOCATION_RELWITHDEBINFO "${FMOD_DIR}/api/studio/lib/${ARCH_DIR}/fmodstudio.dll"
-    IMPORTED_LOCATION_MINSIZEREL "${FMOD_DIR}/api/studio/lib/${ARCH_DIR}/fmodstudio.dll"
-
-    # LIB
-    IMPORTED_IMPLIB_DEBUG "${FMOD_DIR}/api/studio/lib/${ARCH_DIR}/fmodstudioL_vc.lib"
-    IMPORTED_IMPLIB_RELEASE "${FMOD_DIR}/api/studio/lib/${ARCH_DIR}/fmodstudio_vc.lib"
-
-    IMPORTED_IMPLIB_RELWITHDEBINFO "${FMOD_DIR}/api/studio/lib/${ARCH_DIR}/fmodstudio_vc.lib"
-    IMPORTED_IMPLIB_MINSIZEREL "${FMOD_DIR}/api/studio/lib/${ARCH_DIR}/fmodstudio_vc.lib"
-
-    INTERFACE_INCLUDE_DIRECTORIES "${FMOD_INCLUDE_DIR}"
-)
 
 set_target_properties(glad
                       stb_image 
@@ -119,8 +96,7 @@ set_target_properties(glad
                       spdlog
 					  yaml-cpp
 					  freetype
-					  fmod
-                      fmodstudio PROPERTIES FOLDER "thirdparty")
+					  fmod PROPERTIES FOLDER "thirdparty")
 
 if (TARGET zlibstatic)
     set_target_properties(zlibstatic PROPERTIES FOLDER "thirdparty")

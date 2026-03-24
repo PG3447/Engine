@@ -29,7 +29,6 @@
 
 #include <fmod.h>
 #include <fmod.hpp>
-#include <fmod_studio.h>
 
 #include <HID.h>
 #include <freetype/freetype.h>
