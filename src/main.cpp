@@ -126,6 +126,10 @@ std::unique_ptr<Entity> root;
 Entity* venus;
 Entity* koparkaEntity;
 
+unsigned int triangleVAO = 0;
+unsigned int triangleVBO = 0;
+std::unique_ptr<Shader> triangleShader;
+
 struct pair_hash {
     std::size_t operator()(const std::pair<Model*, Shader*>& p) const {
         return std::hash<Model*>()(p.first) ^ (std::hash<Shader*>()(p.second) << 1);
@@ -507,6 +511,31 @@ void compileShader()
     sunModel = std::make_unique<Prefab>("res/backpack/sun.glb", 1.0f, false);
 
 
+    float triangleVertices[] = {
+        0.0f,  0.5f, 0.0f,
+       -0.5f, -0.5f, 0.0f,
+        0.5f, -0.5f, 0.0f
+   };
+
+    glGenVertexArrays(1, &triangleVAO);
+    glGenBuffers(1, &triangleVBO);
+
+    glBindVertexArray(triangleVAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, triangleVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(triangleVertices), triangleVertices, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glBindVertexArray(0);
+
+    // shader
+    triangleShader = std::make_unique<Shader>(
+        "res/shaders/triangle.vert",
+        "res/shaders/triangle.frag"
+    );
+
 
     spdlog::info("Success");
 
@@ -738,6 +767,11 @@ void render()
 //    glBindVertexArray(0);
 ///    glDepthFunc(GL_LESS); // set depth function back to default*/
 //OLD RENDER FUNCTION ENDS HERE
+
+    triangleShader->use();
+    glBindVertexArray(triangleVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 3);
+    glBindVertexArray(0);
 
 }
 
