@@ -483,16 +483,16 @@ void compileShader()
 
     skyboxShader = std::make_unique<Shader>("res/shaders/skybox.vert", "res/shaders/skybox.frag");
 
-    skyboxShader->use();
-    skyboxShader->setInt("skybox", 0);
+//    skyboxShader->use();
+//    skyboxShader->setInt("skybox", 0);
 
-    reflectShader = std::make_unique<Shader>("res/shaders/reflect.vert", "res/shaders/reflect.frag");
-    reflectShader->use();
-    reflectShader->setInt("skybox", 0);
+//    reflectShader = std::make_unique<Shader>("res/shaders/reflect.vert", "res/shaders/reflect.frag");
+//    reflectShader->use();
+//    reflectShader->setInt("skybox", 0);
 
-    refractShader = std::make_unique<Shader>("res/shaders/reflect.vert", "res/shaders/refract.frag");
-    refractShader->use();
-    refractShader->setInt("skybox", 0);
+//    refractShader = std::make_unique<Shader>("res/shaders/reflect.vert", "res/shaders/refract.frag");
+//    refractShader->use();
+//    refractShader->setInt("skybox", 0);
 
     //ladowanie bazowego shader-a
     ourShader = std::make_unique<Shader>("res/shaders/basic.vert", "res/shaders/basic.frag");
@@ -726,17 +726,17 @@ void render()
 
     // draw skybox as last
     glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
-    skyboxShader->use();
+//    skyboxShader->use();
     view = glm::mat4(glm::mat3(camera.GetViewMatrix())); // remove translation from the view matrix
-    skyboxShader->setMat4("view", view);
-    skyboxShader->setMat4("projection", projection);
+//    skyboxShader->setMat4("view", view);
+//    skyboxShader->setMat4("projection", projection);
     // skybox cube
-    glBindVertexArray(skyboxVAO);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-    glBindVertexArray(0);
-    glDepthFunc(GL_LESS); // set depth function back to default*/
+//    glBindVertexArray(skyboxVAO);
+//    glActiveTexture(GL_TEXTURE0);
+//    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+//    glDrawArrays(GL_TRIANGLES, 0, 36);
+//    glBindVertexArray(0);
+///    glDepthFunc(GL_LESS); // set depth function back to default*/
 //OLD RENDER FUNCTION ENDS HERE
 
 }
