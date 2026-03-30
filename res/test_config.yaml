@@ -1,0 +1,9 @@
+Window:
+  Width: 1280
+  Height: 720
+  Title: "Test yamla losowe rzeczy tu powpisywane"
+  Fullscreen: false
+
+Player:
+  Name: "Minikont"
+  Speed: 15.5

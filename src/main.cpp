@@ -34,6 +34,8 @@
 #include <freetype/freetype.h>
 #include <yaml-cpp/binary.h>
 
+#include "yaml_config.h"
+
 static void glfw_error_callback(int error, const char* description)
 {
     fprintf(stderr, "Glfw Error %d: %s\n", error, description);
@@ -236,24 +238,22 @@ void renderInstanced(Model* model, Shader* shader, std::vector<Entity*>& entitie
 {
     if (start || change) {
         size_t numEntities = entities.size();
-        glm::mat4* modelMatrices = new glm::mat4[numEntities];
 
-        for (size_t i = 0; i < numEntities; ++i)
-        {
+        std::vector<glm::mat4> modelMatrices(numEntities);
+        for (size_t i = 0; i < numEntities; ++i) {
             modelMatrices[i] = entities[i]->transform.getModelMatrix();
         }
-
 
         if (model->instanceVBO == 0)
             glGenBuffers(1, &model->instanceVBO);
         glBindBuffer(GL_ARRAY_BUFFER, model->instanceVBO);
-        glBufferData(GL_ARRAY_BUFFER, numEntities * sizeof(glm::mat4), modelMatrices, GL_DYNAMIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, numEntities * sizeof(glm::mat4), modelMatrices.data(), GL_DYNAMIC_DRAW);
     }
 
     if (start) {
         for (unsigned int i = 0; i < model->meshes.size(); i++)
         {
-            unsigned int VAO = model->meshes[i].VAO;
+            unsigned int VAO = model->meshes[i].renderData->VAO;
             glBindVertexArray(VAO);
 
             // matrix
@@ -332,6 +332,12 @@ int main(int, char**)
     ImGui::DestroyContext();
 
     glfwDestroyWindow(window);
+
+    groundModel.reset();
+    sunModel.reset();
+
+    ResourceManager::Clear();
+
     glfwTerminate();
 
     return 0;
@@ -502,14 +508,11 @@ void compileShader()
     ourShader = std::make_unique<Shader>("res/shaders/basic.vert", "res/shaders/basic.frag");
     ourShader->use();
 
-    groundModel = std::make_unique<Prefab>("res/backpack/podloze.glb", 100.0f, false);
+    groundModel = std::make_unique<Prefab>("res/backpack/podloze.glb");
+    sunModel = std::make_unique<Prefab>("res/backpack/sun.glb");
     
-
     root = std::make_unique<Entity>();
     root->name = "root";
-
-    sunModel = std::make_unique<Prefab>("res/backpack/sun.glb", 1.0f, false);
-
 
     float triangleVertices[] = {
         0.0f,  0.5f, 0.0f,
@@ -556,6 +559,7 @@ void createHouse()
 {
     Entity* ground = groundModel->getEntitiesCreate(ourShader.get());
     ground->name = "podloze";
+    ground->transform.setLocalScale(glm::vec3(100.0f));
     root->addChild(ground);
     
     emptyModel = std::make_unique<Model>();

@@ -13,13 +13,22 @@
 
 #include <iostream>
 
+#include "resource_manager.h"
 
-Model::Model()
-    : meshScale(1.0f),
-    gammaCorrection(false)
+Model::Model() : gammaCorrection(false)
 {
 }
 
+Model::~Model() {
+    if (instanceVBO != 0) {
+        glDeleteBuffers(1, &instanceVBO);
+    }
+}
+
+Model::Model(string const& path, bool gamma) : gammaCorrection(gamma)
+{
+    loadModel(path);
+}
 
 /*
 // constructor, expects a filepath to a 3D model.
@@ -50,49 +59,62 @@ void Model::turnOnReflect(unsigned int cubemapTexture)
     }
 }
 
-
-/*
-// loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
 void Model::loadModel(string const& path)
 {
-    // read file via ASSIMP
     Assimp::Importer importer;
-    const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
-    // check for errors
-    if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
+    const aiScene* scene = importer.ReadFile(path,
+        aiProcess_Triangulate |
+        aiProcess_GenSmoothNormals |
+        aiProcess_FlipUVs |
+        aiProcess_CalcTangentSpace |
+        aiProcess_JoinIdenticalVertices |
+        aiProcess_OptimizeMeshes
+    ); 
+    if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
     {
-        cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << endl;
+        spdlog::error("ERROR::ASSIMP:: {}", importer.GetErrorString());
         return;
     }
 
-    std::cout << "Scene loaded successfully, root node has " << scene->mRootNode->mNumChildren << " children\n";
-
-    // retrieve the directory path of the filepath
     directory = path.substr(0, path.find_last_of('/'));
+    name = path;
 
-    // process ASSIMP's root node recursively
-    processNode(scene->mRootNode, scene);
+    // Pobieramy drzewo z korzenia
+    Model rootNode = processNode(scene->mRootNode, scene);
+    this->meshes = std::move(rootNode.meshes);
+    this->children = std::move(rootNode.children);
+    this->transform = rootNode.transform;
 }
 
-// processes a node in a recursive fashion. Processes each individual mesh located at the node and repeats this process on its children nodes (if any).
-void Model::processNode(aiNode* node, const aiScene* scene)
+Model Model::processNode(aiNode* node, const aiScene* scene)
 {
-    // process each mesh located at the current node
+    Model model;
+    aiVector3D scale, pos;
+    aiQuaternion rot;
+    node->mTransformation.Decompose(scale, rot, pos);
+
+    model.name = node->mName.C_Str();
+    model.directory = this->directory;
+
+    model.transform.setLocalPosition({ pos.x, pos.y, pos.z });
+    model.transform.setLocalRotation({ glm::degrees(rot.x), glm::degrees(rot.y), glm::degrees(rot.z) });
+    model.transform.setLocalScale({ scale.x, scale.y, scale.z });
+
+    model.meshes.reserve(node->mNumMeshes);
     for (unsigned int i = 0; i < node->mNumMeshes; i++)
     {
-        // the node object only contains indices to index the actual objects in the scene. 
-        // the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
         aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-        meshes.push_back(processMesh(mesh, scene));
+        model.meshes.push_back(processMesh(mesh, scene));
     }
-    // after we've processed all of the meshes (if any) we then recursively process each of the children nodes
+
+    model.children.reserve(node->mNumChildren);
     for (unsigned int i = 0; i < node->mNumChildren; i++)
     {
-        processNode(node->mChildren[i], scene);
+        model.children.push_back(processNode(node->mChildren[i], scene));
     }
 
-}*/
-
+    return model;
+}
 
 Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 {
@@ -111,7 +133,6 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
         vector.y = mesh->mVertices[i].y;
         vector.z = mesh->mVertices[i].z;
         vertex.Position = vector;
-        vertex.Position *= meshScale; // scale model
         // normals
         if (mesh->HasNormals())
         {
@@ -185,43 +206,30 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType type, string typeName, const aiScene* scene)
 {
     vector<Texture> textures;
+    textures.reserve(mat->GetTextureCount(type));
     for (unsigned int i = 0; i < mat->GetTextureCount(type); i++)
     {
         aiString str;
         mat->GetTexture(type, i, &str);
-        // check if texture was loaded before and if so, continue to next iteration: skip loading a new texture
-        bool skip = false;
-        for (unsigned int j = 0; j < textures_loaded.size(); j++)
+
+        Texture texture;
+
+        if (str.C_Str()[0] == '*' && scene) // embedded texture
         {
-            if (std::strcmp(textures_loaded[j].path.data(), str.C_Str()) == 0)
-            {
-                textures.push_back(textures_loaded[j]);
-                skip = true; // a texture with the same filepath has already been loaded, continue to next one. (optimization)
-                break;
-            }
+            int texIndex = atoi(str.C_Str() + 1);
+            aiTexture* aiTex = scene->mTextures[texIndex];
+            // U¿ywamy Resource Managera!
+            texture.id = ResourceManager::LoadTexture(str.C_Str(), "", aiTex);
         }
-        if (!skip)
-        {   // if texture hasn't been loaded already, load it
-            Texture texture;
-
-            if (str.C_Str()[0] == '*' && scene) // embedded texture
-            {
-                int texIndex = atoi(str.C_Str() + 1);
-                aiTexture* aiTex = scene->mTextures[texIndex];
-
-                texture.id = TextureFromFile(nullptr, "", aiTex);
-            }
-            else // normalna tekstura z pliku
-            {
-                texture.id = TextureFromFile(str.C_Str(), this->directory);
-            }
-
-            //texture.id = TextureFromFile(str.C_Str(), this->directory);
-            texture.type = typeName;
-            texture.path = str.C_Str();
-            textures.push_back(texture);
-            textures_loaded.push_back(texture);  // store it as texture loaded for entire model, to ensure we won't unnecessary load duplicate textures.
+        else // normalna tekstura z pliku
+        {
+            // U¿ywamy Resource Managera!
+            texture.id = ResourceManager::LoadTexture(str.C_Str(), this->directory);
         }
+
+        texture.type = typeName;
+        texture.path = str.C_Str();
+        textures.push_back(texture);
     }
     return textures;
 }
@@ -230,7 +238,7 @@ vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType type,
 std::unique_ptr<Model> Model::createOrbit(float radius, int segments, float tiltDegrees, float scale, vector<Texture>* textures)
 {
     auto orbit = std::make_unique<Model>();
-    orbit->meshScale = scale;
+    orbit->transform.setLocalScale(glm::vec3(scale));
 
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
@@ -292,7 +300,7 @@ std::unique_ptr<Model> Model::createSphere(int rings, int sectors, const std::st
         }
 
         Texture tex;
-        tex.id = TextureFromFile(filename.c_str(), directory);
+        tex.id = ResourceManager::LoadTexture(filename, directory);
         tex.type = "texture_diffuse";
         tex.path = texturePath;
         mesh.textures.push_back(tex);
@@ -300,72 +308,4 @@ std::unique_ptr<Model> Model::createSphere(int rings, int sectors, const std::st
     model->meshes.push_back(mesh);
 
     return model;
-}
-
-
-unsigned int TextureFromFile(const char* path, const string& directory, aiTexture* aiTex, bool gamma)
-{
-    //string filename = string(path);
-    //filename = directory + '/' + filename;
-
-    unsigned int textureID;
-    glGenTextures(1, &textureID);
-
-    int width, height, nrComponents;
-    unsigned char* data = nullptr;
-    //unsigned char* data = stbi_load(filename.c_str(), &width, &height, &nrComponents, 0);
-
-    if (aiTex) // embedded texture
-    {
-        if (aiTex->mHeight == 0) // compressed (PNG/JPG)
-        {
-            data = stbi_load_from_memory((stbi_uc*)aiTex->pcData, aiTex->mWidth, &width, &height, &nrComponents, 0);
-        }
-        else // raw RGBA
-        {
-            width = aiTex->mWidth;
-            height = aiTex->mHeight;
-            nrComponents = 4;
-            data = new unsigned char[width * height * 4];
-            memcpy(data, aiTex->pcData, width * height * 4);
-        }
-    }
-    else // normalna tekstura z pliku
-    {
-        string filename = string(path);
-        filename = directory + '/' + filename;
-        data = stbi_load(filename.c_str(), &width, &height, &nrComponents, 0);
-    }
-
-
-    if (data)
-    {
-        GLenum format;
-        if (nrComponents == 1)
-            format = GL_RED;
-        else if (nrComponents == 3)
-            format = GL_RGB;
-        else if (nrComponents == 4)
-            format = GL_RGBA;
-
-        glBindTexture(GL_TEXTURE_2D, textureID);
-        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        if (aiTex && aiTex->mHeight != 0) // jeœli alokowaliœmy dane rêcznie dla raw RGBA
-            delete[] data;
-        else
-            stbi_image_free(data);
-    }
-    else
-    {
-        std::cout << "Texture failed to load at path: " << path << std::endl;
-        if (data) stbi_image_free(data);
-    }
-
-    return textureID;
 }
