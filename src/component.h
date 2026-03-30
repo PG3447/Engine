@@ -174,7 +174,7 @@ public:
     void OnEntityUpdated(Entity* e) override {
 
         auto* t = e->GetComponent<Transform>();
-        auto* rb = e->GetComponent<Rigidbody>();
+        auto* rb = e->GetComponent<Rigidbody>(); //Przerobic na getComponents
 
         if (t && rb) {
             // unikamy duplikatów po Transform*
