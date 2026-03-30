@@ -21,7 +21,7 @@ private:
     ECS* ecs;
     Entity* parent = null;
     //std::vector<std::unique_ptr<Component>> components;
-    std::unordered_map<std::type_index, Component*> componentMap;
+    std::unordered_map<std::type_index, std::vector<Component*>> componentMap; //Typ komponentu i vektor tego typu komponentu
 
 
 public:
@@ -67,7 +67,9 @@ public:
     template<typename T>
     T* GetComponent() {
         auto it = componentMap.find(typeid(T));
-        return it != componentMap.end() ? static_cast<T*>(it->second) : nullptr;
+        if (it != componentMap.end() && !it->second.empty())
+            return static_cast<T*>(it->second[0]); // pierwszy komponent danego typu
+        return nullptr;
     }
 
     template<typename T>
@@ -96,10 +98,10 @@ public:
         }
     }
 
-
     ~Entity() {
-        for (auto& [type, comp] : componentMap) {
-            delete comp;
+        for (auto& [type, comps] : componentMap) {
+            for (Component* c : comps)
+                delete c;
         }
         componentMap.clear();
     }
