@@ -74,12 +74,29 @@ constexpr int32_t GL_VERSION_MAJOR = 4;
 constexpr int32_t GL_VERSION_MINOR = 6;
 
 // camera
+/*
 Camera camera(glm::vec3(0.0f, 20.0f, 50.0f));
+*/
+
+Camera camera(
+    glm::vec3(0.0f, 20.0f, 50.0f),
+    glm::vec3(0.0f,  1.0f,  0.0f),
+    YAW, PITCH,
+    Viewport{0.0f, 0.0f, 0.5f, 1.0f}
+);
+
+Camera cameraRight(
+    glm::vec3(0.0f, 20.0f, 50.0f),
+    glm::vec3(0.0f,  1.0f,  0.0f),
+    YAW, PITCH,
+    Viewport{0.5f, 0.0f, 0.5f, 1.0f}
+);
 float lastX = WINDOW_WIDTH / 2.0f;
 float lastY = WINDOW_HEIGHT / 2.0f;
 bool firstMouse = true;
 bool mouseMove = false;
 glm::vec3 cameraOffset = glm::vec3(0.0f, 10.0f, -20.0f);
+
 
 // timing
 float deltaTime = 0.0f;	// time between current frame and last frame
@@ -610,7 +627,7 @@ void updateFollowCamera()
         glm::vec3(0.0f, cameraOffset.y, 0.0f);
 
 
-    camera.Position = glm::mix(camera.Position, desiredPos, 5.0f * deltaTime);
+    cameraRight.Position = glm::mix(camera.Position, desiredPos, 5.0f * deltaTime);
 
     glm::vec3 lookTarget = koparkaPos + glm::vec3(0.0f, 5.0f, 0.0f);
     camera.Front = glm::normalize(lookTarget - camera.Position);
@@ -678,10 +695,11 @@ void render()
     //pointLight->position.y = 1.0f; 
     //pointLight->position.z = radius * sin(speed * time);
 
-    if (!mouseMove)
+    /*if (!mouseMove)
     {
         updateFollowCamera();
-    }
+    }*/
+    updateFollowCamera();
 
     // OpenGL Rendering code goes here
     glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
