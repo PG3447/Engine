@@ -7,9 +7,6 @@ void GameObject::NotifyChanged() {
 }
 
 GameObject::~GameObject() {
-    for (auto& [type, comps] : componentMap) {
-        for (Component* c : comps)
-            delete c;
-    }
+    // Tylko wyczyœæ mapê wskaŸników — nie usuwamy fizycznie komponentów
     componentMap.clear();
 }

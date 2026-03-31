@@ -36,6 +36,7 @@
 
 
 #include <core/scene.h>
+#include "core/gameobject.h" 
 #include <systems/physics_system.h>
 
 

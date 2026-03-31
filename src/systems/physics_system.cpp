@@ -1,5 +1,7 @@
 #include "physics_system.h"
+#include "transform.h"
 #include <spdlog/spdlog.h>
+#include "core/gameobject.h" 
 
 
 PhysicsSystem::PhysicsSystem(ECS& ecs) {

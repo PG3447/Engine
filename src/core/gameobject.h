@@ -7,9 +7,12 @@
 #include <algorithm>
 #include <utility>
 #include "component.h"
-
+#include "ecs.h"
 
 class ECS;
+
+template<typename T>
+struct ComponentStorage;
 
 class GameObject {
 
@@ -25,10 +28,23 @@ public:
 
     template<typename T, typename... Args>
     T* AddComponent(Args&&... args) {
-        T* comp = new T(std::forward<Args>(args)...);
-        componentMap[typeid(T)].push_back(comp);
+        auto typeIdx = std::type_index(typeid(T));
+
+        // jeœli jeszcze nie ma storage dla T, stwórz
+        if (!ecs->componentStores.count(typeIdx))
+            ecs->componentStores[typeIdx] = std::make_unique<ComponentStorage<T>>();
+
+        auto* storage = static_cast<ComponentStorage<T>*>(ecs->componentStores[typeIdx].get());
+
+        // dodaj komponent w wektorze
+        storage->components.emplace_back(std::forward<Args>(args)...);
+
+        // wskaŸnik do komponentu i dodaj go do GameObject
+        T* compPtr = &storage->components.back();
+        componentMap[typeIdx].push_back(compPtr);
+
         NotifyChanged();
-        return GetComponent<T>();
+        return compPtr;
     }
 
     template<typename T>
@@ -57,12 +73,11 @@ public:
             auto& vec = it->second;
             auto vecIt = std::find(vec.begin(), vec.end(), component);
             if (vecIt != vec.end()) {
-                delete* vecIt;
                 vec.erase(vecIt);
                 NotifyChanged();
             }
             if (vec.empty()) componentMap.erase(it);
-        }
+        } 
     }
 
     void NotifyChanged();

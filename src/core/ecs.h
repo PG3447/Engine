@@ -3,9 +3,26 @@
 
 #include <memory>
 #include <vector>
-#include "gameobject.h"
+#include <unordered_map>
+#include <typeindex>
+#include <vector>
+#include <algorithm>
+#include <utility>
+#include "component.h"
 #include "system.h"
 #include "query.h"
+
+
+struct ComponentStorageBase {
+    virtual ~ComponentStorageBase() = default;
+};
+
+template<typename T>
+struct ComponentStorage : ComponentStorageBase {
+    std::vector<T> components; // wszystkie komponenty typu T w jednym wektorze
+};
+
+class GameObject;
 
 class ECS {
 private:
@@ -13,7 +30,11 @@ private:
     std::vector<std::unique_ptr<System>> systems;
     std::vector<std::unique_ptr<QueryBase>> queries;
 
+    
+
 public:
+    std::unordered_map<std::type_index, std::unique_ptr<ComponentStorageBase>> componentStores;
+
     template<typename... Components>
     Query<Components...>* CreateQuery() {
         auto* q = new Query<Components...>();
@@ -46,6 +67,9 @@ public:
     void Update();
 
     GameObject* CreateGameObject();
+
+
+    ~ECS();
 };
 
 #endif
