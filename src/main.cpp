@@ -27,6 +27,8 @@
 #include <prefab.h>
 #include <filesystem>
 
+#include <HID.h>
+
 #include <fmod.h>
 #include <fmod.hpp>
 
@@ -310,12 +312,26 @@ int main(int, char**)
 
     createHouse();
     startGroupInstanced(root.get());
+
+
+    HID::get().init(window);
+
+    HID::get().name_action("move_right", GLFW_KEY_D);
+    HID::get().name_action("move_right", GLFW_KEY_RIGHT);
+
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
         float currentFrame = static_cast<float>(glfwGetTime());
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
+
+        HID::get().update();
+
+        if (HID::get().is_action_just_released("move_right")) {
+            spdlog::info("wecooking");
+        }
+
 
         // Process I/O operations here
         input();

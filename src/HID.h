@@ -20,7 +20,7 @@ private:
 
     std::unordered_map<std::string, std::vector<int>> action_name_map;
 
-    std::unordered_map<int, KeyState> m_keys;
+    std::unordered_map<int, KeyState> input_keys;
 
     double mouse_x = 0;
     double mouse_y = 0;
@@ -31,15 +31,15 @@ private:
 public:
     static HID& get();
 
-    void init(GLFWwindow* window); //?
+    void init(GLFWwindow* window);
 
     void update();
 
     void name_action(const std::string action_name, int glfw_key);
 
-    bool is_action_pressed(const std::string& action_name, int glfw_key);
-    bool is_action_just_pressed(const std::string& action_name, int glfw_key);
-    bool is_action_just_released(const std::string& action_name, int glfw_key);
+    bool is_action_pressed(const std::string& action_name);
+    bool is_action_just_pressed(const std::string& action_name);
+    bool is_action_just_released(const std::string& action_name);
 
     double get_mouse_x() const {return mouse_x;};
     double get_mouse_y() const {return mouse_y;};
