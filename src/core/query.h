@@ -4,7 +4,6 @@
 #include <vector>
 #include <tuple>
 #include <algorithm>
-#include "gameobject.h"
 
 class QueryBase {
 public:

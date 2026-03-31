@@ -5,10 +5,10 @@
 #include <typeindex>
 #include <vector>
 #include <algorithm>
-
+#include <utility>
+#include "component.h"
 
 class ECS;
-
 
 class GameObject {
 
@@ -18,14 +18,15 @@ private:
 
     std::unordered_map<std::type_index, std::vector<Component*>> componentMap; //Typ komponentu i vektor tego typu komponentu
 
-
 public:
+
+    GameObject(ECS* ecs_ptr) : ecs(ecs_ptr) {}
 
     template<typename T, typename... Args>
     T* AddComponent(Args&&... args) {
         T* comp = new T(std::forward<Args>(args)...);
         componentMap[typeid(T)].push_back(comp);
-        ecs->NotifyEntityChanged(this);
+        NotifyChanged();
         return comp;
     }
 
@@ -57,11 +58,13 @@ public:
             if (vecIt != vec.end()) {
                 delete* vecIt;
                 vec.erase(vecIt);
-                ecs->NotifyEntityChanged(this);
+                NotifyChanged();
             }
             if (vec.empty()) componentMap.erase(it);
         }
     }
+
+    void NotifyChanged();
 
     ~GameObject();
 

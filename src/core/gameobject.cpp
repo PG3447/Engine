@@ -1,19 +1,9 @@
-#include "GameObject.h"
+#include "gameobject.h"
+#include "ecs.h"
 
-void GameObject::RemoveComponent(Component* component) {
-    if (!component) return;
 
-    for (auto it = componentMap.begin(); it != componentMap.end(); ++it) {
-        auto& vec = it->second;
-        auto vecIt = std::find(vec.begin(), vec.end(), component);
-        if (vecIt != vec.end()) {
-            delete* vecIt;
-            vec.erase(vecIt);
-            if (ecs) ecs->NotifyEntityChanged(this);
-            if (vec.empty()) componentMap.erase(it);
-            return;
-        }
-    }
+void GameObject::NotifyChanged() {
+    ecs->NotifyGameObjectChanged(this);
 }
 
 GameObject::~GameObject() {

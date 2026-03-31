@@ -3,14 +3,13 @@
 
 #include <vector>
 #include "ecs.h"
-#include "gameobject.h"
 
 class Scene {
 private:
     ECS& ecs;
 
 public:
-    Scene(ECS& ecsRef) : ecs(ecsRef) {}
+    Scene(ECS& ecsRef);
 
     // opcjonalnie ustawiaj¹c rodzica
     GameObject* CreateGameObject(GameObject* parent = nullptr);
@@ -32,7 +31,7 @@ public:
 
     void Update(float deltaTime);
 
-    std::vector<Entity*> GetEntities();
+    //std::vector<GameObject*> GetGameObjects();
 
     ECS& GetECS() { return ecs; }
 };

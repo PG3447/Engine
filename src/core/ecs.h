@@ -5,13 +5,11 @@
 #include <vector>
 #include "gameobject.h"
 #include "system.h"
-#include "component.h"
 #include "query.h"
-
 
 class ECS {
 private:
-    std::vector<std::unique_ptr<GameObject>> gameObjects;
+    std::vector<std::unique_ptr<GameObject>> gameobjects;
     std::vector<std::unique_ptr<System>> systems;
     std::vector<std::unique_ptr<QueryBase>> queries;
 
@@ -19,7 +17,7 @@ public:
     template<typename... Components>
     Query<Components...>* CreateQuery() {
         auto* q = new Query<Components...>();
-        for (auto& e : gameObjects)
+        for (auto& e : gameobjects)
             q->OnGameObjectUpdated(e.get());
         queries.emplace_back(q);
         return q;
@@ -29,7 +27,7 @@ public:
     T* AddSystem(Args&&... args) {
         T* sys = new T(std::forward<Args>(args)...);
         systems.emplace_back(sys);
-        for (auto& e : gameObjects)
+        for (auto& e : gameobjects)
             sys->OnGameObjectUpdated(e.get());
         return sys;
     }

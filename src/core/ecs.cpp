@@ -17,7 +17,7 @@ void ECS::Update() {
 
 GameObject* ECS::CreateGameObject() {
     GameObject* e = new GameObject(this);
-    gameObjects.emplace_back(e);
+    gameobjects.emplace_back(e);
     NotifyGameObjectChanged(e);
     return e;
 }

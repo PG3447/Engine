@@ -10,7 +10,7 @@ public:
 
     virtual void Update(ECS& ecs) = 0;
 
-    virtual void OnEntityUpdated(GameObject* e) = 0;
+    virtual void OnGameObjectUpdated(GameObject* e) = 0;
 
 };
 
