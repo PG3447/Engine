@@ -318,6 +318,8 @@ int main(int, char**)
 
     HID::get().name_action("move_right", GLFW_KEY_D);
     HID::get().name_action("move_right", GLFW_KEY_RIGHT);
+    HID::get().name_action_mouse("move_right", GLFW_MOUSE_BUTTON_LEFT);
+    HID::get().name_action_gamepad("move_right", GLFW_GAMEPAD_BUTTON_SQUARE, 0);
 
     // Main loop
     while (!glfwWindowShouldClose(window))
