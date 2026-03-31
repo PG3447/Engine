@@ -1,4 +1,5 @@
 #include "physics_system.h"
+#include <spdlog/spdlog.h>
 
 
 PhysicsSystem::PhysicsSystem(ECS& ecs) {
@@ -10,18 +11,21 @@ void PhysicsSystem::OnGameObjectUpdated(GameObject* e) {
 }
 
 void PhysicsSystem::Update(ECS&) {
-    auto& transforms = std::get<0>(query->componentsVectors);
-    auto& rigidbodies = std::get<1>(query->componentsVectors);
 
+    spdlog::info("PhysicsSystem dziala update");
 
     for (size_t i = 0; i < query->gameobjects.size(); i++) {
+        auto& transforms = std::get<0>(query->componentsVectors);
+        auto& rigidbodies = std::get<1>(query->componentsVectors);
+
+
         float ay = -9.8f; // grawitacja
 
         rigidbodies[i]->vy += ay; // aktualizacja prêdkoœci
         transforms[i]->position.y += rigidbodies[i]->vy; // aktualizacja pozycji
 
         transforms[i]->isDirty = true;
-
+        spdlog::info("PhysicsSystem dziala2");
         //if (transforms[i]->isDirty) {
         //    Transform::computeModelMatrix(*transforms[i]);
         //}

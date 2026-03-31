@@ -8,6 +8,7 @@
 #include <utility>
 #include "component.h"
 
+
 class ECS;
 
 class GameObject {
@@ -27,7 +28,7 @@ public:
         T* comp = new T(std::forward<Args>(args)...);
         componentMap[typeid(T)].push_back(comp);
         NotifyChanged();
-        return comp;
+        return GetComponent<T>();
     }
 
     template<typename T>

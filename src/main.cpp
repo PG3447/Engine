@@ -34,6 +34,11 @@
 #include <freetype/freetype.h>
 #include <yaml-cpp/binary.h>
 
+
+#include <core/scene.h>
+#include <systems/physics_system.h>
+
+
 static void glfw_error_callback(int error, const char* description)
 {
     fprintf(stderr, "Glfw Error %d: %s\n", error, description);
@@ -294,6 +299,40 @@ int main(int, char**)
     init_imgui();
     spdlog::info("Initialized ImGui.");
 
+    ECS ecs;
+    Scene scene(ecs);
+
+    PhysicsSystem* physics = ecs.AddSystem<PhysicsSystem>(ecs);
+    spdlog::info("PhysicsSystem dodany do ECS");
+
+
+    // Tworzymy GameObject
+    GameObject* obj = scene.CreateGameObject();
+
+    // Dodajemy TransformComponent
+    TransformComponent* transform = obj->AddComponent<TransformComponent>();
+    RigidbodyComponent* rigidbody = obj->AddComponent<RigidbodyComponent>();
+    transform->position = glm::vec3(1.0f, 2.0f, 3.0f);
+
+    // Logowanie pozycji
+    spdlog::info("GameObject position: x={}, y={}, z={}",
+        transform->position.x,
+        transform->position.y,
+        transform->position.z);
+
+    // Tworzymy drugi obiekt z komponentem od razu
+    GameObject* obj2 = scene.CreateEntityWithComponents<TransformComponent>();
+    TransformComponent* t2 = obj2->GetComponent<TransformComponent>();
+    t2->position = glm::vec3(10.0f, 20.0f, 30.0f);
+
+    spdlog::info("Second GameObject position: x={}, y={}, z={}",
+        t2->position.x,
+        t2->position.y,
+        t2->position.z);
+
+    ecs.Update();
+
+    spdlog::info("Scena git.");
     compileShader();
 
     createHouse();
@@ -304,6 +343,12 @@ int main(int, char**)
         float currentFrame = static_cast<float>(glfwGetTime());
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
+
+        spdlog::info("GameObject position: x={}, y={}, z={}",
+            transform->position.x,
+            transform->position.y,
+            transform->position.z);
+        ecs.Update();
 
         // Process I/O operations here
         input();
