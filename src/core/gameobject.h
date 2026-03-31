@@ -7,12 +7,8 @@
 #include <algorithm>
 #include <utility>
 #include "component.h"
-#include "ecs.h"
 
 class ECS;
-
-template<typename T>
-struct ComponentStorage;
 
 class GameObject {
 
@@ -27,64 +23,23 @@ public:
     GameObject(ECS* ecs_ptr) : ecs(ecs_ptr) {}
 
     template<typename T, typename... Args>
-    T* AddComponent(Args&&... args) {
-        auto typeIdx = std::type_index(typeid(T));
-
-        // jeœli jeszcze nie ma storage dla T, stwórz
-        if (!ecs->componentStores.count(typeIdx))
-            ecs->componentStores[typeIdx] = std::make_unique<ComponentStorage<T>>();
-
-        auto* storage = static_cast<ComponentStorage<T>*>(ecs->componentStores[typeIdx].get());
-
-        // dodaj komponent w wektorze
-        storage->components.emplace_back(std::forward<Args>(args)...);
-
-        // wskaŸnik do komponentu i dodaj go do GameObject
-        T* compPtr = &storage->components.back();
-        componentMap[typeIdx].push_back(compPtr);
-
-        NotifyChanged();
-        return compPtr;
-    }
+    T* AddComponent(Args&&... args);
 
     template<typename T>
-    T* GetComponent() {
-        auto it = componentMap.find(typeid(T));
-        if (it != componentMap.end() && !it->second.empty())
-            return static_cast<T*>(it->second[0]); // pierwszy komponent danego typu
-        return nullptr;
-    }
+    T* GetComponent();
 
     template<typename T>
-    std::vector<T*> GetComponents() {
-        std::vector<T*> result;
-        auto it = componentMap.find(typeid(T));
-        if (it != componentMap.end()) {
-            for (Component* c : it->second)
-                result.push_back(static_cast<T*>(c));
-        }
-        return result;
-    }
+    std::vector<T*> GetComponents();
 
     template<typename T>
-    void RemoveComponent(T* component) {
-        auto it = componentMap.find(typeid(T));
-        if (it != componentMap.end()) {
-            auto& vec = it->second;
-            auto vecIt = std::find(vec.begin(), vec.end(), component);
-            if (vecIt != vec.end()) {
-                vec.erase(vecIt);
-                NotifyChanged();
-            }
-            if (vec.empty()) componentMap.erase(it);
-        } 
-    }
+    void RemoveComponent(T* component);
 
     void NotifyChanged();
 
     ~GameObject();
 
 };
+
 
 #endif
 

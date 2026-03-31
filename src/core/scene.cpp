@@ -1,5 +1,4 @@
 #include "scene.h"
-#include "gameobject.h"
 
 Scene::Scene(ECS& ecsRef) : ecs(ecsRef) {}
 

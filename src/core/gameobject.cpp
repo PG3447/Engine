@@ -1,7 +1,6 @@
 #include "gameobject.h"
 #include "ecs.h"
 
-
 void GameObject::NotifyChanged() {
     ecs->NotifyGameObjectChanged(this);
 }

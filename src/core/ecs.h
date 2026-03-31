@@ -8,7 +8,7 @@
 #include <vector>
 #include <algorithm>
 #include <utility>
-#include "component.h"
+#include "gameobject.h"
 #include "system.h"
 #include "query.h"
 
@@ -21,8 +21,6 @@ template<typename T>
 struct ComponentStorage : ComponentStorageBase {
     std::vector<T> components; // wszystkie komponenty typu T w jednym wektorze
 };
-
-class GameObject;
 
 class ECS {
 private:
@@ -71,6 +69,10 @@ public:
 
     ~ECS();
 };
+
+
+#include "GameObject.tpp"
+
 
 #endif
 

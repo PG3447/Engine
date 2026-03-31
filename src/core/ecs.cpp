@@ -1,5 +1,4 @@
 #include "ecs.h"
-#include "gameobject.h" 
 
 void ECS::NotifyGameObjectChanged(GameObject* e) {
     for (auto& q : queries)

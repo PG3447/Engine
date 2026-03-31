@@ -8,7 +8,8 @@ file(GLOB_RECURSE SOURCE_FILES
 # Add header files
 file(GLOB_RECURSE HEADER_FILES 
 	 *.h
-	 *.hpp)
+	 *.hpp
+	 *.tpp)
 	 
 # Search for the assets files
 file(GLOB_RECURSE ASSETS_FILES 
