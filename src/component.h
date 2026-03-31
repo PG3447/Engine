@@ -1,6 +1,7 @@
+#include <iostream>
 #include <vector>
 #include <unordered_map>
-
+#include "transform.h"
 
 struct Component {
     virtual ~Component() {}
@@ -11,8 +12,11 @@ struct Rigidbody : Component {
     float vx = 0, vy = 0;
 };
 
-struct Transform : Component {
-    float x = 0, y = 0;
+struct MonoBehaviour : Component {
+    virtual ~MonoBehaviour() {}
+
+    virtual void Start() {}
+    virtual void Update(float deltaTime) {}
 };
 
 class Entity {
@@ -25,37 +29,7 @@ private:
 
 
 public:
-    /*
-    template<typename T, typename... Args>
-    T* AddComponent(Args&&... args) {
-        static_assert(std::is_base_of<Component, T>::value, "Must inherit Component");
-
-        T* comp = new T(std::forward<Args>(args)...);
-        components.emplace_back(comp);
-        return comp;
-    }*/
-
-    /*
-    template<typename T, typename... Args>
-    T* AddComponent(Args&&... args) {
-        T* comp = new T(std::forward<Args>(args)...);
-        components.emplace_back(comp);
-
-        ecs->NotifyEntityChanged(this);
-
-        return comp;
-    }
-
-    template<typename T>
-    T* GetComponent() {
-        for (auto& c : components) {
-            if (auto casted = dynamic_cast<T*>(c.get()))
-                return casted;
-        }
-        return nullptr;
-    }
-    */
-
+  
     template<typename T, typename... Args>
     T* AddComponent(Args&&... args) {
         T* comp = new T(std::forward<Args>(args)...);
@@ -105,15 +79,97 @@ public:
         }
         componentMap.clear();
     }
+
+    /*
+  template<typename T, typename... Args>
+  T* AddComponent(Args&&... args) {
+      static_assert(std::is_base_of<Component, T>::value, "Must inherit Component");
+
+      T* comp = new T(std::forward<Args>(args)...);
+      components.emplace_back(comp);
+      return comp;
+  }*/
+
+  /*
+  template<typename T, typename... Args>
+  T* AddComponent(Args&&... args) {
+      T* comp = new T(std::forward<Args>(args)...);
+      components.emplace_back(comp);
+
+      ecs->NotifyEntityChanged(this);
+
+      return comp;
+  }
+
+  template<typename T>
+  T* GetComponent() {
+      for (auto& c : components) {
+          if (auto casted = dynamic_cast<T*>(c.get()))
+              return casted;
+      }
+      return nullptr;
+  }
+  */
+
 };
 
 
 
+struct TransformComponent : Component {
+    glm::vec3 position{ 0.0f, 0.0f, 0.0f };
+    glm::vec3 rotation{ 0.0f, 0.0f, 0.0f };
+    glm::vec3 scale{ 1.0f, 1.0f, 1.0f };
+
+    glm::mat4 modelMatrix{ 1.0f };
+    bool isDirty = true;
+};
+
+
+class QueryBase {
+public:
+    virtual ~QueryBase() {}
+    virtual void OnEntityUpdated(Entity* e) = 0;
+};
+
+template<typename... Components>
+class Query : public QueryBase {
+public:
+    // Struktura SoA – oddzielne wektory komponentów i encji
+    std::vector<Entity*> entities;
+    std::tuple<std::vector<Components*>...> componentsVectors;
+
+    void OnEntityUpdated(Entity* e) override {
+        // Sprawdzenie, czy encja ma wszystkie wymagane komponenty
+        if ((e->GetComponent<Components>() && ...)) {
+            // unikamy duplikatów
+            auto it = std::find(entities.begin(), entities.end(), e);
+            if (it == entities.end()) {
+                entities.push_back(e);
+                (std::get<std::vector<Components*>>(componentsVectors).push_back(e->GetComponent<Components>()), ...);
+            }
+        }
+        else {
+            // jeśli encja nie pasuje, usuń ją (swap-and-pop)
+            for (size_t i = 0; i < entities.size(); ++i) {
+                if (entities[i] == e) {
+                    entities[i] = entities.back();
+                    entities.pop_back();
+                    ((std::get<std::vector<Components*>>(componentsVectors)[i] =
+                        std::get<std::vector<Components*>>(componentsVectors).back(),
+                        std::get<std::vector<Components*>>(componentsVectors).pop_back()), ...);
+                    break;
+                }
+            }
+        }
+    }
+};
+
+
 class System {
-/*
-protected:
-    std::vector<Entity*> registeredEntities;
-    */
+    /*
+    protected:
+        std::vector<Entity*> registeredEntities;
+        */
 
 public:
     virtual ~System() {}
@@ -134,6 +190,259 @@ public:
         }
     }*/
 
+};
+
+class MovementSystem : public System {
+private:
+    Query<TransformComponent, Rigidbody>* query;
+
+public:
+    MovementSystem(ECS& ecs) {
+        query = ecs.CreateQuery<TransformComponent, Rigidbody>();
+    }
+
+    void OnEntityUpdated(Entity* e) override {
+        query->OnEntityUpdated(e); // forward do query
+    }
+
+    void Update(ECS&) override {
+        auto& transforms = std::get<0>(query->componentsVectors);
+        auto& rigidbodies = std::get<1>(query->componentsVectors);
+
+        for (size_t i = 0; i < query->entities.size(); ++i) {
+            transforms[i]->position.x += rigidbodies[i]->vx;
+            transforms[i]->position.y += rigidbodies[i]->vy;
+
+            // jeśli potrzebujemy, odświeżamy macierz modelu
+            if (transforms[i]->isDirty) {
+                Transform::computeModelMatrix(*transforms[i]);
+            }
+        }
+};
+
+class ECS {
+private:
+    std::vector<std::unique_ptr<Entity>> entities;
+    std::vector<std::unique_ptr<System>> systems;
+    std::vector<std::unique_ptr<QueryBase>> queries;
+
+public:
+    template<typename... Components>
+    Query<Components...>* CreateQuery() {
+        auto* q = new Query<Components...>();
+        for (auto& e : entities)
+            q->OnEntityUpdated(e.get());
+        queries.emplace_back(q);
+        return q;
+    }
+
+    void NotifyEntityChanged(Entity* e) {
+        for (auto& q : queries)
+            q->OnEntityUpdated(e);
+
+        for (auto& sys : systems)
+            sys->OnEntityUpdated(e);
+    }
+
+    void Update() {
+        for (auto& sys : systems)
+            sys->Update(*this);
+    }
+
+    /*
+    template<typename T, typename... Args>
+    T* AddSystemSingleton() {
+        // sprawdzamy, czy system już istnieje
+        for (auto& s : systems) {
+            if (dynamic_cast<T*>(s.get())) return static_cast<T*>(s.get());
+        }
+
+        // tworzymy nowy
+        T* sys = new T(std::forward<Args>(args)...);
+        systems.emplace_back(sys);
+        return sys;
+    }*/
+
+    template<typename T, typename... Args>
+    T* AddSystem(Args&&... args) {
+        T* sys = new T(std::forward<Args>(args)...);
+        systems.emplace_back(sys);
+        for (auto& e : entities)
+            sys->OnEntityUpdated(e.get());
+        return sys;
+    }
+
+    template<typename T>
+    T* GetSystem() {
+        for (auto& sys : systems) {
+            if (auto casted = dynamic_cast<T*>(sys.get()))
+                return casted;
+        }
+        return nullptr;
+    }
+
+    Entity* CreateEntity() {
+        Entity* e = new Entity(this);
+        entities.emplace_back(e);
+        NotifyEntityChanged(e);
+        return e;
+    }
+};
+
+class Scene {
+private:
+    ECS& ecs;  // scena korzysta z ECS, ale go nie posiada
+
+public:
+    Scene(ECS& ecsRef) : ecs(ecsRef) {}
+
+    // Tworzy nową encję, opcjonalnie ustawiając rodzica
+    Entity* CreateEntity(Entity* parent = nullptr) {
+        Entity* e = ecs.CreateEntity();
+
+        // Ustawienie relacji w hierarchii (jeśli encja ma Transform)
+        auto* t = e->GetComponent<Transform>();
+        if (!t) t = e->AddComponent<Transform>();
+
+        if (parent) {
+            auto* pt = parent->GetComponent<Transform>();
+            if (pt) t->parent = pt; // ustawienie rodzica w Transform
+        }
+
+        return e;
+    }
+
+    // Tworzy encję i od razu dodaje komponenty
+    template<typename... Components>
+    Entity* CreateEntityWithComponents(Entity* parent = nullptr) {
+        Entity* e = CreateEntity(parent);
+        (e->AddComponent<Components>(), ...);
+        ecs.NotifyEntityChanged(e);
+        return e;
+    }
+
+    // Tworzenie query w ECS
+    template<typename... Components>
+    Query<Components...>* CreateQuery() {
+        return ecs.CreateQuery<Components...>();
+    }
+
+    void Update(float deltaTime) {
+        ecs.Update();
+    }
+
+    std::vector<Entity*> GetEntities() {
+        return ecs.GetEntities();
+    }
+
+    ECS& GetECS() { return ecs; }
+};
+
+
+int main() {
+    ECS ecs;             // Jeden centralny ECS dla całej gry
+    Scene scene(ecs);    // Scena korzysta z ECS
+
+    // Dodanie systemów globalnie
+    ecs.AddSystem<MovementSystem>();
+    ecs.AddSystem<PhysicsSystem>();
+    ecs.AddSystem<ScriptSystem>();
+
+    // Tworzenie encji przez scenę
+    Entity* player = scene.CreateEntityWithComponents<Transform, Rigidbody>();
+    Entity* enemy = scene.CreateEntityWithComponents<Transform, Rigidbody>();
+
+    // Główna pętla
+    while (true) {
+        float deltaTime = 1.0f / 60.0f;
+
+        ecs.Update(deltaTime);  // Forward update do ECS i systemów
+    }
+
+    return 0;
+}
+
+
+/*
+struct Transform : Component {
+    glm::vec3 localPosition{ 0.0f, 0.0f, 0.0f };
+    glm::vec3 localRotation{ 0.0f, 0.0f, 0.0f }; // w stopniach
+    glm::vec3 localScale{ 1.0f, 1.0f, 1.0f };
+
+    glm::mat4 modelMatrix{ 1.0f };
+    bool isDirty{ true };
+}
+
+class TransformSystem : public System {
+private:
+    Query<Transform>* query; // wszystkie encje z Transform
+public:
+    TransformSystem(ECS& ecs) {
+        query = ecs.CreateQuery<Transform>();
+    }
+
+    void OnEntityUpdated(Entity* e) override {
+        query->OnEntityUpdated(e);
+    }
+
+    //void Update(ECS&) override {
+    //    auto& transforms = std::get<0>(query->componentsVectors);
+
+    //    for (size_t i = 0; i < query->entities.size(); ++i) {
+    //        Transform* t = transforms[i];
+
+    //        if (t->parent) {
+    //            Transform* pt = t->parent->GetComponent<Transform>();
+    //            t->modelMatrix = pt->modelMatrix *
+    //                glm::translate(glm::mat4(1.0f), t->localPosition) *
+    //                glm::yawPitchRoll(
+    //                    glm::radians(t->localRotation.y),
+    //                    glm::radians(t->localRotation.x),
+    //                    glm::radians(t->localRotation.z)) *
+    //                glm::scale(glm::mat4(1.0f), t->localScale);
+    //        }
+    //        else {
+    //            t->modelMatrix = glm::translate(glm::mat4(1.0f), t->localPosition) *
+    //                glm::yawPitchRoll(
+    //                    glm::radians(t->localRotation.y),
+    //                    glm::radians(t->localRotation.x),
+    //                    glm::radians(t->localRotation.z)) *
+    //                glm::scale(glm::mat4(1.0f), t->localScale);
+    //        }
+
+    //        t->isDirty = false;
+    //    }
+    //}
+};
+*/
+
+class ScriptSystem : public System {
+private:
+    std::vector<MonoBehaviour*> scripts;
+    bool started = false;
+
+public:
+    void OnEntityUpdated(Entity* e) override {
+        auto comps = e->GetComponents<MonoBehaviour>();
+
+        for (auto* c : comps) {
+            auto it = std::find(scripts.begin(), scripts.end(), c);
+            if (it == scripts.end()) {
+                scripts.push_back(c);
+            }
+        }
+    }
+
+    void Update(ECS& ecs) override {
+        if (!started) {
+            for (auto* s : scripts)
+                s->Start();
+            started = true;
+        }
+
+        for (auto* s : scripts)
+            s->Update(1.0f); // możesz dać deltaTime
+    }
 };
 
 
@@ -206,6 +515,9 @@ public:
         }
     }
 };
+
+
+
 
 class ECS {
 private:
