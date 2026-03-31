@@ -143,6 +143,20 @@ bool HID::is_action_just_released(const std::string &action_name) {
     return false;
 }
 
+float HID::get_gamepad_axis(int glfw_axis, int gamepad_id) const {
+    if (!glfwJoystickIsGamepad(GLFW_JOYSTICK_1 + gamepad_id)) return 0.0f;
+
+    GLFWgamepadstate state;
+    if (!glfwGetGamepadState(GLFW_JOYSTICK_1 + gamepad_id, &state)) return 0.0f;
+
+    float value = state.axes[glfw_axis];
+
+    const float deadzone = 0.2f;
+    if (value > -deadzone && value < deadzone) return 0.0f;
+
+    return value;
+}
+
 void HID::scroll_callback(GLFWwindow *, double, double yoffset) {
     HID::get().scroll_y += yoffset;
 }

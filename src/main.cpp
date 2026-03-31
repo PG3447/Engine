@@ -334,6 +334,14 @@ int main(int, char**)
             spdlog::info("wecooking");
         }
 
+        float lx = HID::get().get_gamepad_axis(GLFW_GAMEPAD_AXIS_LEFT_X,  0);
+        float ly = HID::get().get_gamepad_axis(GLFW_GAMEPAD_AXIS_LEFT_Y,  0);
+
+        float rx = HID::get().get_gamepad_axis(GLFW_GAMEPAD_AXIS_RIGHT_X, 0);
+        float ry = HID::get().get_gamepad_axis(GLFW_GAMEPAD_AXIS_RIGHT_Y, 0);
+
+        //spdlog::info("L [{:.2f}, {:.2f}]  R [{:.2f}, {:.2f}]", lx, ly, rx, ry);
+        //tu sie testuje joysticki pozdrawiam
 
         // Process I/O operations here
         input();
