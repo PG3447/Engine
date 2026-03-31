@@ -4,23 +4,23 @@
 
 template<typename T, typename... Args>
 T* GameObject::AddComponent(Args&&... args) {
-     auto typeIdx = std::type_index(typeid(T));
-    
-     // jeœli jeszcze nie ma storage dla T, stwórz
-     if (!ecs->componentStores.count(typeIdx))
-         ecs->componentStores[typeIdx] = std::make_unique<ComponentStorage<T>>();
-    
-     auto* storage = static_cast<ComponentStorage<T>*>(ecs->componentStores[typeIdx].get());
-    
-     // dodaj komponent w wektorze
-     storage->components.emplace_back(std::forward<Args>(args)...);
-    
-     // wskaŸnik do komponentu i dodaj go do GameObject
-     T* compPtr = &storage->components.back();
-     componentMap[typeIdx].push_back(compPtr);
-    
-     NotifyChanged();
-     return compPtr;
+    auto typeIdx = std::type_index(typeid(T));
+
+    if (!ecs->componentStores.count(typeIdx))
+        ecs->componentStores[typeIdx] = std::make_unique<ComponentStorage<T>>();
+
+    auto* storage = static_cast<ComponentStorage<T>*>(ecs->componentStores[typeIdx].get());
+
+    // dodaj komponent w storage
+    storage->components.emplace_back(std::forward<Args>(args)...);
+
+    T* compPtr = &storage->components.back();
+
+    // przypisz tylko jeœli jest unikalny dla tego GameObject
+    componentMap[typeIdx].push_back(compPtr);
+
+    ecs->NotifyGameObjectChanged(this);
+    return GetComponent<T>();
 }
 
 template<typename T>
