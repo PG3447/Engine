@@ -320,6 +320,7 @@ int main(int, char**)
     HID::get().name_action("move_right", GLFW_KEY_RIGHT);
     HID::get().name_action_mouse("move_right", GLFW_MOUSE_BUTTON_LEFT);
     HID::get().name_action_gamepad("move_right", GLFW_GAMEPAD_BUTTON_SQUARE, 0);
+    HID::get().name_action_gamepad("move_right_1", GLFW_GAMEPAD_BUTTON_SQUARE, 1);
 
     // Main loop
     while (!glfwWindowShouldClose(window))
@@ -330,8 +331,12 @@ int main(int, char**)
 
         HID::get().update();
 
-        if (HID::get().is_action_just_released("move_right")) {
+        if (HID::get().is_action_pressed("move_right")) {
             spdlog::info("wecooking");
+        }
+
+        if (HID::get().is_action_pressed("move_right_1")) {
+            spdlog::info("wecooking2");
         }
 
         float lx = HID::get().get_gamepad_axis(GLFW_GAMEPAD_AXIS_LEFT_X,  0);

@@ -66,12 +66,12 @@ void HID::update() {
 
 bool HID::is_action_pressed(const std::string &action_name) {
     auto it = action_name_map.find(action_name);
-    if (it == action_name_map.end()) {
-        return false;
-    }
-    for (int key : it->second) {
-        auto key_state = input_keys.find(key);
-        if (key_state != input_keys.end() && key_state->second.current) return true;
+    if (it != action_name_map.end())
+    {
+        for (int key : it->second) {
+            auto key_state = input_keys.find(key);
+            if (key_state != input_keys.end() && key_state->second.current) return true;
+        }
     }
     auto mit = action_name_mouse_map.find(action_name);
     if (mit != action_name_mouse_map.end()) {
@@ -91,13 +91,15 @@ bool HID::is_action_pressed(const std::string &action_name) {
 }
 
 
-bool HID::is_action_just_pressed(const std::string &action_name) {
+bool HID::is_action_just_pressed(const std::string &action_name)
+{
     auto it = action_name_map.find(action_name);
-    if (it == action_name_map.end()) return false;
-    for (int key : it->second) {
-        auto key_state = input_keys.find(key);
-        if (key_state != input_keys.end() && key_state->second.current && !key_state->second.previous)
-            return true;
+    if (it != action_name_map.end()){
+        for (int key : it->second) {
+            auto key_state = input_keys.find(key);
+            if (key_state != input_keys.end() && key_state->second.current && !key_state->second.previous)
+                return true;
+        }
     }
     auto mit = action_name_mouse_map.find(action_name);
     if (mit != action_name_mouse_map.end()) {
@@ -120,11 +122,13 @@ bool HID::is_action_just_pressed(const std::string &action_name) {
 
 bool HID::is_action_just_released(const std::string &action_name) {
     auto it = action_name_map.find(action_name);
-    if (it == action_name_map.end()) return false;
-    for (int key : it->second) {
-        auto key_state = input_keys.find(key);
-        if (key_state != input_keys.end() && !key_state->second.current && key_state->second.previous)
-            return true;
+    if (it != action_name_map.end())
+    {
+        for (int key : it->second) {
+            auto key_state = input_keys.find(key);
+            if (key_state != input_keys.end() && !key_state->second.current && key_state->second.previous)
+                return true;
+        }
     }
     auto mit = action_name_mouse_map.find(action_name);
     if (mit != action_name_mouse_map.end()) {
