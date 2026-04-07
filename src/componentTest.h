@@ -1,3 +1,277 @@
+#include <iostream>
+#include <vector>
+#include <unordered_map>
+#include <typeindex>
+#include <memory>
+
+// ================= Components =================
+struct Component { virtual ~Component() = default; };
+
+struct TransformComponent : Component {
+    float x = 0, y = 0;
+};
+
+struct RigidbodyComponent : Component {
+    float vx = 0, vy = 0;
+};
+
+// ================= Forward =================
+class GameObject;
+class Scene;
+class ECS;
+
+// ================= Component Storage =================
+template<typename T>
+class ComponentStorage {
+public:
+    std::unordered_map<int, T> components; // ID obiektu -> komponent
+
+    void Add(int id, const T& comp) {
+        components[id] = comp;
+    }
+
+    void Remove(int id) {
+        components.erase(id);
+    }
+
+    T* Get(int id) {
+        auto it = components.find(id);
+        if (it != components.end()) return &it->second;
+        return nullptr;
+    }
+};
+
+// ================= ECS =================
+class ECS {
+private:
+    std::unordered_map<std::type_index, std::unique_ptr<ComponentStorageBase>> storageBase;
+
+public:
+    template<typename T>
+    ComponentStorage<T>& GetOrCreateStorage() {
+        std::type_index idx(typeid(T));
+        if (storageBase.find(idx) == storageBase.end()) {
+            storageBase[idx] = std::make_unique<ComponentStorage<T>>();
+        }
+        return *static_cast<ComponentStorage<T>*>(storageBase[idx].get());
+    }
+
+    template<typename T>
+    void AddComponent(int objectID, const T& comp) {
+        GetOrCreateStorage<T>().Add(objectID, comp);
+    }
+
+    template<typename T>
+    void RemoveComponent(int objectID) {
+        GetOrCreateStorage<T>().Remove(objectID);
+    }
+
+    template<typename T>
+    T* GetComponent(int objectID) {
+        return GetOrCreateStorage<T>().Get(objectID);
+    }
+};
+
+// ================= GameObject =================
+class GameObject {
+public:
+    int id;
+    GameObject* parent = nullptr;
+    std::vector<GameObject*> children;
+
+    GameObject(int id_, GameObject* parent_ = nullptr) : id(id_), parent(parent_) {
+        if (parent) parent->children.push_back(this);
+    }
+};
+
+// ================= Scene =================
+class Scene {
+private:
+    int nextID = 0;
+public:
+    std::vector<std::unique_ptr<GameObject>> objects;
+
+    GameObject* CreateObject(GameObject* parent = nullptr) {
+        auto obj = std::make_unique<GameObject>(nextID++, parent);
+        GameObject* ptr = obj.get();
+        objects.push_back(std::move(obj));
+        return ptr;
+    }
+};
+
+// ================= Example =================
+int main() {
+    Scene scene;
+    ECS ecs;
+
+    GameObject* root = scene.CreateObject();
+    GameObject* child = scene.CreateObject(root);
+
+    ecs.AddComponent(root->id, TransformComponent{ 10, 20 });
+    ecs.AddComponent(root->id, TransformComponent{ 30, 40 });
+    ecs.AddComponent(root->id, RigidbodyComponent{ 1, 2 });
+
+    // Pobieranie komponentów
+    TransformComponent* t1 = ecs.GetComponent<TransformComponent>(root->id);
+    if (t1) std::cout << "Transform: x=" << t1->x << ", y=" << t1->y << "\n";
+
+    RigidbodyComponent* rb = ecs.GetComponent<RigidbodyComponent>(root->id);
+    if (rb) std::cout << "Rigidbody: vx=" << rb->vx << ", vy=" << rb->vy << "\n";
+
+    return 0;
+}
+
+
+/*#include <iostream>
+#include <vector>
+#include <unordered_map>
+#include <typeindex>
+#include <memory>
+
+// ================= Components =================
+struct Component { virtual ~Component() = default; };
+
+struct TransformComponent : Component {
+    float x = 0, y = 0;
+};
+
+struct RigidbodyComponent : Component {
+    float vx = 0, vy = 0;
+};
+
+// ================= Forward =================
+class GameObject;
+class ECS;
+
+// ================= Component Storage =================
+template<typename T>
+struct ComponentStorage {
+    std::vector<T> components;
+
+    // Dodaj komponent
+    T* Add(const T& comp) {
+        components.push_back(comp);
+        return &components.back();
+    }
+
+    // Usuń komponent swap-pop
+    void Remove(size_t index) {
+        if (index >= components.size()) return;
+        std::swap(components[index], components.back());
+        components.pop_back();
+    }
+
+    size_t Size() const { return components.size(); }
+};
+
+// ================= ECS =================
+struct ComponentStorageBase { virtual ~ComponentStorageBase() = default; };
+
+class ECS {
+private:
+    std::unordered_map<std::type_index, std::unique_ptr<ComponentStorageBase>> componentStores;
+    std::vector<std::unique_ptr<GameObject>> gameobjects;
+
+public:
+    GameObject* CreateGameObject(GameObject* parent = nullptr);
+
+    template<typename T>
+    ComponentStorage<T>* GetOrCreateStorage() {
+        std::type_index typeIdx(typeid(T));
+        auto it = componentStores.find(typeIdx);
+        if (it != componentStores.end())
+            return static_cast<ComponentStorage<T>*>(it->second.get());
+
+        auto storage = std::make_unique<ComponentStorage<T>>();
+        ComponentStorage<T>* ptr = storage.get();
+        componentStores[typeIdx] = std::move(storage);
+        return ptr;
+    }
+
+    template<typename T>
+    T* AddComponent(GameObject* obj, const T& comp);
+
+    template<typename T>
+    void RemoveComponent(GameObject* obj, size_t index);
+};
+
+// ================= GameObject =================
+class GameObject {
+public:
+    GameObject* parent = nullptr;
+    std::vector<GameObject*> children;
+
+    // Indeksy komponentów w storage
+    std::unordered_map<std::type_index, std::vector<size_t>> componentIndices;
+
+    GameObject(GameObject* parentPtr = nullptr) : parent(parentPtr) {
+        if (parent) parent->children.push_back(this);
+    }
+
+    template<typename T>
+    std::vector<T*> GetComponents(ECS& ecs) {
+        std::vector<T*> result;
+        auto it = componentIndices.find(typeid(T));
+        if (it == componentIndices.end()) return result;
+
+        auto* storage = ecs.GetOrCreateStorage<T>();
+        for (size_t idx : it->second)
+            result.push_back(&storage->components[idx]);
+        return result;
+    }
+};
+
+// ================= Implementacja ECS =================
+GameObject* ECS::CreateGameObject(GameObject* parent) {
+    auto obj = std::make_unique<GameObject>(parent);
+    GameObject* ptr = obj.get();
+    gameobjects.push_back(std::move(obj));
+    return ptr;
+}
+
+template<typename T>
+T* ECS::AddComponent(GameObject* obj, const T& comp) {
+    auto* storage = GetOrCreateStorage<T>();
+    T* c = storage->Add(comp);
+    obj->componentIndices[typeid(T)].push_back(storage->components.size() - 1);
+    return c;
+}
+
+template<typename T>
+void ECS::RemoveComponent(GameObject* obj, size_t index) {
+    auto* storage = GetOrCreateStorage<T>();
+    if (index >= storage->Size()) return;
+
+    storage->Remove(index);
+
+    auto& vec = obj->componentIndices[typeid(T)];
+    vec.erase(std::remove(vec.begin(), vec.end(), index), vec.end());
+
+    // Aktualizacja indeksów po swap-pop
+    for (auto& pair : obj->componentIndices) {
+        for (auto& i : pair.second)
+            if (i > index) i--;
+    }
+}
+
+// ================= Example =================
+int main() {
+    ECS ecs;
+
+    GameObject* root = ecs.CreateGameObject();
+    GameObject* child = ecs.CreateGameObject(root);
+
+    ecs.AddComponent<TransformComponent>(root, { 10, 20 });
+    ecs.AddComponent<TransformComponent>(root, { 30, 40 });
+    ecs.AddComponent<RigidbodyComponent>(root, { 1, 2 });
+
+    auto transforms = root->GetComponents<TransformComponent>(ecs);
+    for (auto* t : transforms)
+        std::cout << "Root Transform: x=" << t->x << ", y=" << t->y << "\n";
+
+    return 0;
+}
+
 //#include <iostream>
 //#include <vector>
 //#include <unordered_map>
