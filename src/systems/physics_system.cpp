@@ -18,8 +18,6 @@ void PhysicsSystem::Update(ECS&) {
     spdlog::info("PhysicsSystem dziala update");
 
     for (size_t i = 0; i < query->gameobjects.size(); i++) {
-
-
         float ay = -9.8f; // grawitacja
 
         rigidbodies[i]->vy += ay; // aktualizacja prêdkoœci
