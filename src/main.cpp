@@ -306,7 +306,7 @@ int main(int, char**)
     PhysicsSystem* physics = ecs.AddSystem<PhysicsSystem>(ecs);
     spdlog::info("PhysicsSystem dodany do ECS");
 
-
+ 
     // Tworzymy GameObject
     GameObject* obj = scene.CreateGameObject();
 

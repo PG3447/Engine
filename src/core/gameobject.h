@@ -33,17 +33,14 @@ public:
     T* AddComponent(Args&&... args) {
         static_assert(std::is_base_of<Component, T>::value, "T must inherit Component");
 
-        // alokacja komponentu
         T* comp = GetPool<T>().Allocate();
-        // wywo≥anie konstruktora w miejscu
-        new (comp) T(std::forward<Args>(args)...);
-        // zapis wskaünika w mapie
+        *comp = T(std::forward<Args>(args)...);
         componentMap[std::type_index(typeid(T))].push_back(comp);
-        
+
         componentMask |= T::ComponentBit;
         NotifyChanged();
 
-        return comp;
+        return GetComponent<T>();
     }
 
     template<typename T>
