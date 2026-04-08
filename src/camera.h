@@ -25,7 +25,7 @@ struct Viewport {
     float width, height; //size (normalized)
 
     void apply(int windowdWidth, int windowdHeight) const {
-        glViewport(static_cast<GLint>(x * windowdHeight),
+        glViewport(static_cast<GLint>(x * windowdWidth),
             static_cast<GLint>(y * windowdHeight),
             static_cast<GLsizei>(width * windowdWidth),
             static_cast<GLsizei>(height * windowdHeight));
@@ -81,7 +81,7 @@ public:
         return getViewMatrix();
     }
 
-    glm::mat4 GetProjectionMatrix(float nearClip = 0.1f, float farClip = 1000.0f) const {
+    glm::mat4 getProjectionMatrix(float nearClip = 0.1f, float farClip = 1000.0f) const {
         return glm::perspective(
             glm::radians(Zoom),
             viewport.aspectRatio(),

@@ -88,9 +88,9 @@ Camera camera(
 );
 
 Camera cameraRight(
-    glm::vec3(0.0f, 20.0f, 50.0f),
+    glm::vec3(50.0f, 30.0f, 0.0f),
     glm::vec3(0.0f,  1.0f,  0.0f),
-    YAW, PITCH,
+    0.0f, -20.0f,
     Viewport{0.5f, 0.0f, 0.5f, 1.0f}
 );
 float lastX = WINDOW_WIDTH / 2.0f;
@@ -193,7 +193,7 @@ void AddEntityToGroupInstanced(Entity* entity)
 bool start = true;
 bool change = false;
 
-void renderGroup(glm::mat4 projection, glm::mat4 view, glm::mat4 systemModel)
+void renderGroup(glm::mat4 projection, glm::mat4 view, glm::mat4 systemModel, const glm::vec3& viewPos)
 {
     for (auto& [key, entities] : instancedGroups)
     {
@@ -202,8 +202,8 @@ void renderGroup(glm::mat4 projection, glm::mat4 view, glm::mat4 systemModel)
 
         shader->use();
 
-        shader->setVec3("viewPos", camera.Position);
-        shader->setVec3("cameraPos", camera.Position);
+        shader->setVec3("viewPos", viewPos);
+        shader->setVec3("cameraPos", viewPos);
 
         shader->setMat4("projection", projection);
         shader->setMat4("view", view);
@@ -397,6 +397,7 @@ bool init()
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // 3.0+ only
 
     // Create window with graphics context
+    glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_FALSE);
     window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Dear ImGui GLFW+OpenGL4 example", NULL, NULL);
     if (window == NULL)
     {
@@ -658,12 +659,12 @@ void updateFollowCamera()
         glm::vec3(0.0f, cameraOffset.y, 0.0f);
 
 
-    cameraRight.Position = glm::mix(camera.Position, desiredPos, 5.0f * deltaTime);
+    cameraRight.Position = glm::mix(cameraRight.Position, desiredPos, 5.0f * deltaTime);
 
     glm::vec3 lookTarget = koparkaPos + glm::vec3(0.0f, 5.0f, 0.0f);
-    camera.Front = glm::normalize(lookTarget - camera.Position);
-    camera.Right = glm::normalize(glm::cross(camera.Front, glm::vec3(0, 1, 0)));
-    camera.Up = glm::normalize(glm::cross(camera.Right, camera.Front));
+    cameraRight.Front = glm::normalize(lookTarget - cameraRight.Position);
+    cameraRight.Right = glm::normalize(glm::cross(cameraRight.Front, glm::vec3(0, 1, 0)));
+    cameraRight.Up = glm::normalize(glm::cross(cameraRight.Right, cameraRight.Front));
 }
 
 
@@ -739,16 +740,13 @@ void render()
     //bind texture
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture);
-
-    //activating program object
-    ourShader->use();
    
 
     int display_w, display_h;
     glfwGetFramebufferSize(window, &display_w, &display_h);
-    glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)display_w / (float)display_h, 0.1f, 10000.0f);
+    /*glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)display_w / (float)display_h, 0.1f, 10000.0f);
     glm::mat4 view = glm::mat4(1.0f);
-    view = camera.GetViewMatrix();
+    view = camera.GetViewMatrix();*/
 
 
     // render the loaded modeld
@@ -756,27 +754,35 @@ void render()
     glm::mat4 systemRotationX = glm::rotate(glm::mat4(1.0f), glm::radians(rotationX), glm::vec3(1, 0, 0));
     glm::mat4 systemRotationY = glm::rotate(glm::mat4(1.0f), glm::radians(rotationY), glm::vec3(0, 1, 0));
     glm::mat4 systemModel = systemRotationY * systemRotationX;
-    renderGroup(projection, view, systemModel);
+    for (Camera * cam : { &camera, &cameraRight}) {
+        glm::mat4 view = cam->beginRender(display_w, display_h);
+        glm::mat4 projection = cam->getProjectionMatrix(0.1f, 10000.0f);
+
+        //activating program object
+        ourShader->use();
+        renderGroup(projection, view, systemModel, cam->Position);
+
+
+        // draw skybox as last
+        glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
+        skyboxShader->use();
+        view = glm::mat4(glm::mat3(cam->GetViewMatrix())); // remove translation from the view matrix
+        skyboxShader->setMat4("view", view);
+        skyboxShader->setMat4("projection", projection);
+        // skybox cube
+        glBindVertexArray(skyboxVAO);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        glBindVertexArray(0);
+        glDepthFunc(GL_LESS); // set depth function back to default*/
+        //OLD RENDER FUNCTION ENDS HERE
+    }
     //ourEntity->drawSelfAndChild(*ourShader, projection, view, sphereRadius, sphereRings, sphereSectors, systemModel);
 
 
     //glDrawElements(GL_TRIANGLES, 12, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
-
-    // draw skybox as last
-    glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
-    skyboxShader->use();
-    view = glm::mat4(glm::mat3(camera.GetViewMatrix())); // remove translation from the view matrix
-    skyboxShader->setMat4("view", view);
-    skyboxShader->setMat4("projection", projection);
-    // skybox cube
-    glBindVertexArray(skyboxVAO);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-    glBindVertexArray(0);
-    glDepthFunc(GL_LESS); // set depth function back to default*/
-//OLD RENDER FUNCTION ENDS HERE
 
 }
 
