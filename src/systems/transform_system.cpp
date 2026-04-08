@@ -1,15 +1,17 @@
 #include "transform_system.h"
 
-void TransformSystem::updateTransforms(GameObject* obj) {
+void TransformSystem::updateSelfAndChild(GameObject* obj) {
     auto* tComp = obj->GetComponent<TransformComponent>();
     if (!tComp) return;
 
-    if (tComp->isDirty) {
+    if (tComp->isDirty)
+    {
         forceUpdateSelfAndChild(obj);
     }
-    else {
+    else
+    {
         for (auto* child : obj->children) {
-            updateTransforms(child);
+            updateSelfAndChild(child);
         }
     }
 }
@@ -31,5 +33,34 @@ void TransformSystem::forceUpdateSelfAndChild(GameObject* obj) {
 
     for (auto* child : obj->children) {
         forceUpdateSelfAndChild(child);
+    }
+}
+
+
+
+void updateSelfAndChild()
+{
+    if (transform.isDirty()) {
+        forceUpdateSelfAndChild();
+        return;
+    }
+
+    for (auto&& child : children)
+    {
+        child->updateSelfAndChild();
+    }
+}
+
+//Force update of transform even if local space don't change
+void forceUpdateSelfAndChild()
+{
+    if (parent)
+        transform.computeModelMatrix(parent->transform.getModelMatrix());
+    else
+        transform.computeModelMatrix();
+
+    for (auto&& child : children)
+    {
+        child->forceUpdateSelfAndChild();
     }
 }

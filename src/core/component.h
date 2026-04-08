@@ -2,7 +2,8 @@
 #define COMPONENT_H
 
 #include <glm/glm.hpp>
-
+#include <model.h>
+#include <shader.h>
 
 struct Component {
     virtual ~Component() {}
@@ -20,8 +21,17 @@ struct TransformComponent : Component {
     bool isDirty = true;
 };
 
-struct RigidbodyComponent : Component {
+
+struct RenderComponent : Component {
     static constexpr uint64_t ComponentBit = 1ull << 1;
+
+    Model* model = nullptr;
+    Shader* shader = nullptr;
+};
+
+
+struct RigidbodyComponent : Component {
+    static constexpr uint64_t ComponentBit = 1ull << 2;
 
     float mass = 0;
     float vx = 0, vy = 0;

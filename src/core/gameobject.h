@@ -1,4 +1,4 @@
-#ifndef GAMEOBJECT_H
+﻿#ifndef GAMEOBJECT_H
 #define GAMEOBJECT_H
 
 #include <unordered_map>
@@ -21,13 +21,19 @@ private:
 
     ECS* ecs;
     GameObject* parent = nullptr;
+    std::vector<GameObject*> children;
 
     //std::unordered_map<std::type_index, std::vector<Component*>> componentMap; //Typ komponentu i vektor tego typu komponentu
     std::unordered_map<std::type_index, std::vector<Component*>> componentMap;
 
 public:
 
-    GameObject(ECS* ecs_ptr) : ecs(ecs_ptr), id(nextId++) {}
+    GameObject(ECS* ecs_ptr, GameObject* parent_ptr = nullptr)
+        : ecs(ecs_ptr), id(nextId++)
+    {
+        if (parent_ptr)
+            parent_ptr->AddChild(this);
+    }
 
     template<typename T, typename... Args>
     T* AddComponent(Args&&... args) {
@@ -86,6 +92,65 @@ public:
         }
     }
 
+    void AddChild(GameObject* child) {
+        if (!child || child == this) return;
+
+        // jeśli miał parenta → usuń z niego
+        if (child->parent) {
+            child->parent->RemoveChild(child);
+        }
+
+        child->parent = this;
+        children.push_back(child);
+
+        child->NotifyChanged();
+    }
+
+    void RemoveChild(GameObject* child) {
+        if (!child) return;
+
+        auto it = std::find(children.begin(), children.end(), child);
+        if (it != children.end()) {
+            (*it)->parent = nullptr;
+
+            // swap & pop (wydajne)
+            *it = children.back();
+            children.pop_back();
+
+            child->NotifyChanged();
+        }
+    }
+
+    void SetParent(GameObject* newParent) {
+        if (parent == newParent) return;
+
+        // usuń z obecnego parenta
+        if (parent) {
+            parent->RemoveChild(this);
+        }
+
+        parent = newParent;
+
+        if (newParent) {
+            newParent->children.push_back(this);
+        }
+
+        NotifyChanged();
+    }
+
+    bool HasChildren() const {
+        return !children.empty();
+    }
+
+    GameObject* FindChild(GameObject* target) {
+        auto it = std::find(children.begin(), children.end(), target);
+        return (it != children.end()) ? *it : nullptr;
+    }
+
+
+    GameObject* GetParent() const { return parent; }
+
+    const std::vector<GameObject*>& GetChildren() const { return children; }
 
     //template<typename T, typename... Args>
     //T* AddComponent(Args&&... args);

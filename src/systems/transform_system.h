@@ -8,10 +8,8 @@ class TransformSystem : public System {
 private:
     Transform helper;
 
-    void updateTransforms(GameObject* obj);
+    void updateSelfAndChild(GameObject* obj);
     void forceUpdateSelfAndChild(GameObject* obj);
-
-    glm::mat4 computeModelMatrix(const TransformComponent& t, const glm::mat4& parentMatrix = glm::mat4(1.0f));
 public:
 
     void Update(ECS& ecs);
