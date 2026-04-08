@@ -42,20 +42,18 @@ public:
             }
         }
         else if (currentIndex != size_t(-1)) {
-            // Swap-and-pop w SoA
             size_t last = gameobjects.size() - 1;
             GameObject* lastObj = gameobjects[last];
 
             gameobjects[currentIndex] = lastObj;
             gameobjects.pop_back();
 
-            size_t i = 0;
-            (..., (
-                std::swap(std::get<std::vector<Components*>>(componentsVectors)[i][currentIndex],
-                    std::get<std::vector<Components*>>(componentsVectors)[i].back()),
-                std::get<std::vector<Components*>>(componentsVectors)[i].pop_back(),
-                ++i
-                ));
+            auto eraseAt = [currentIndex](auto& vec) {
+                vec[currentIndex] = vec.back();
+                vec.pop_back();
+                };
+
+            std::apply([&](auto&... vecs) { (eraseAt(vecs), ...); }, componentsVectors);
 
             indexMap[lastObj->id] = currentIndex;
             indexMap.erase(e->id);

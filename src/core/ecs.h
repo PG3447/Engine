@@ -13,25 +13,14 @@
 #include "query.h"
 
 
-struct ComponentStorageBase {
-    virtual ~ComponentStorageBase() = default;
-};
-
-template<typename T>
-struct ComponentStorage : ComponentStorageBase {
-    std::vector<T> components; // wszystkie komponenty typu T w jednym wektorze
-};
-
 class ECS {
 private:
     std::vector<std::unique_ptr<GameObject>> gameobjects;
     std::vector<std::unique_ptr<System>> systems;
     std::vector<std::unique_ptr<QueryBase>> queries;
 
-    
 
 public:
-    std::unordered_map<std::type_index, std::unique_ptr<ComponentStorageBase>> componentStores;
 
     template<typename... Components>
     Query<Components...>* CreateQuery() {
@@ -71,11 +60,25 @@ public:
 };
 
 
-#include "GameObject.tpp"
+//#include "GameObject.tpp"
 
 
 #endif
 
+
+//std::unordered_map<std::type_index, std::unique_ptr<ComponentStorageBase>> componentStores;
+
+
+/*
+struct ComponentStorageBase {
+    virtual ~ComponentStorageBase() = default;
+};
+
+template<typename T>
+struct ComponentStorage : ComponentStorageBase {
+    std::vector<T> components; // wszystkie komponenty typu T w jednym wektorze
+};
+*/
 
 /*
 template<typename T, typename... Args>

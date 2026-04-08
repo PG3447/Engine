@@ -325,7 +325,7 @@ int main(int, char**)
     GameObject* obj2 = scene.CreateEntityWithComponents<TransformComponent>();
     TransformComponent* t2 = obj2->GetComponent<TransformComponent>();
     t2->position = glm::vec3(10.0f, 20.0f, 30.0f);
-
+    
     spdlog::info("Second GameObject position: x={}, y={}, z={}",
         t2->position.x,
         t2->position.y,

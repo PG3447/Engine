@@ -7,54 +7,18 @@
 #include <algorithm>
 #include <utility>
 #include "component.h"
+#include "component_pool.h"
 
 class ECS;
-
-
-template<typename T>
-class ComponentPool {
-private:
-    std::vector<T> pool;
-    std::vector<size_t> freeIndices;
-
-public:
-    T* Allocate() {
-        if (!freeIndices.empty()) {
-            size_t idx = freeIndices.back();
-            freeIndices.pop_back();
-            return &pool[idx];
-        }
-        pool.emplace_back();
-        return &pool.back();
-    }
-
-    void Free(T* comp) {
-        size_t index = comp - pool.data();
-        if (index < pool.size()) {
-            *comp = T(); // reset
-            freeIndices.push_back(index);
-        }
-    }
-
-    void Clear() {
-        pool.clear();
-        freeIndices.clear();
-    }
-
-    size_t Size() const { return pool.size(); }
-};
-
-
-template<typename T>
-static ComponentPool<T>& GetPool() {
-    static ComponentPool<T> pool;
-    return pool;
-}
 
 class GameObject {
 public:
     size_t id;
+    uint64_t componentMask = 0;
+
 private:
+    static size_t nextId;
+
     ECS* ecs;
     GameObject* parent = nullptr;
 
@@ -63,7 +27,7 @@ private:
 
 public:
 
-    GameObject(ECS* ecs_ptr) : ecs(ecs_ptr) {}
+    GameObject(ECS* ecs_ptr) : ecs(ecs_ptr), id(nextId++) {}
 
     template<typename T, typename... Args>
     T* AddComponent(Args&&... args) {
@@ -75,6 +39,10 @@ public:
         new (comp) T(std::forward<Args>(args)...);
         // zapis wskaünika w mapie
         componentMap[std::type_index(typeid(T))].push_back(comp);
+        
+        componentMask |= T::ComponentBit;
+        NotifyChanged();
+
         return comp;
     }
 
@@ -111,7 +79,11 @@ public:
                 vec[i] = vec.back();
                 vec.pop_back();
                 GetPool<T>().Free(comp);
-                if (vec.empty()) componentMap.erase(it);
+                if (vec.empty()) {
+                    componentMap.erase(it);
+                    componentMask &= ~T::ComponentBit;
+                }
+                NotifyChanged();
                 return;
             }
         }
@@ -121,14 +93,14 @@ public:
     //template<typename T, typename... Args>
     //T* AddComponent(Args&&... args);
 
-    template<typename T>
-    T* GetComponent();
-
-    template<typename T>
-    std::vector<T*> GetComponents();
-
-    template<typename T>
-    void RemoveComponent(T* component);
+    //template<typename T>
+    //T* GetComponent();
+    //
+    //template<typename T>
+    //std::vector<T*> GetComponents();
+    //
+    //template<typename T>
+    //void RemoveComponent(T* component);
 
     void NotifyChanged();
 
