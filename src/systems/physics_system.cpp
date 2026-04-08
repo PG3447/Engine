@@ -12,12 +12,12 @@ void PhysicsSystem::OnGameObjectUpdated(GameObject* e) {
 }
 
 void PhysicsSystem::Update(ECS&) {
+    auto& transforms = std::get<0>(query->componentsVectors);
+    auto& rigidbodies = std::get<1>(query->componentsVectors);
 
     spdlog::info("PhysicsSystem dziala update");
 
     for (size_t i = 0; i < query->gameobjects.size(); i++) {
-        auto& transforms = std::get<0>(query->componentsVectors);
-        auto& rigidbodies = std::get<1>(query->componentsVectors);
 
 
         float ay = -9.8f; // grawitacja
