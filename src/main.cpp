@@ -304,10 +304,10 @@ int main(int, char**)
     ECS ecs;
     Scene scene(ecs);
 
-    ecs.AddSystem<Trans>
-
-    PhysicsSystem* physics = ecs.AddSystem<PhysicsSystem>(ecs);
+    ecs.AddSystem<TransformSystem>(ecs);
+    ecs.AddSystem<PhysicsSystem>(ecs);
     spdlog::info("PhysicsSystem dodany do ECS");
+
 
  
     // Tworzymy GameObject
@@ -334,7 +334,7 @@ int main(int, char**)
         t2->position.y,
         t2->position.z);
 
-    ecs.Update();
+    scene.Update(16);
 
     spdlog::info("Scena git.");
     compileShader();
@@ -352,7 +352,7 @@ int main(int, char**)
             transform->position.x,
             transform->position.y,
             transform->position.z);
-        ecs.Update();
+        scene.Update(16);
 
         // Process I/O operations here
         input();

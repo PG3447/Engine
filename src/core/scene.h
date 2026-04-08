@@ -1,8 +1,11 @@
-#ifndef SCENE_H
+﻿#ifndef SCENE_H
 #define SCENE_H
 
 #include <vector>
 #include "ecs.h"
+#include "../systems/physics_system.h"
+#include "../systems/transform_system.h"
+#include "../systems/render_system.h"
 
 class Scene {
 private:
@@ -19,7 +22,7 @@ public:
     
     GameObject* CreateGameObject(GameObject* parent = nullptr);
 
-    // Tworzy encj� i od razu dodaje komponenty
+    // Tworzy encję i od razu dodaje komponenty
     template<typename... Components>
     GameObject* CreateEntityWithComponents(GameObject* parent = nullptr) {
         GameObject* e = CreateGameObject(parent);
@@ -35,6 +38,8 @@ public:
     }
 
     void Update(float deltaTime);
+
+
 
     //std::vector<GameObject*> GetGameObjects();
 

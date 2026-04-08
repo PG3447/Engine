@@ -51,8 +51,6 @@ public:
 
     void NotifyGameObjectChanged(GameObject* e);
 
-    void Update();
-
     GameObject* CreateGameObject();
 
     std::vector<GameObject*> GetAllGameObjects() {

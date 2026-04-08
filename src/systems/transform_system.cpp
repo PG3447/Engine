@@ -10,7 +10,7 @@ void TransformSystem::updateSelfAndChild(GameObject* obj) {
     }
     else
     {
-        for (auto* child : obj->children) {
+        for (auto* child : obj->GetChildren()) {
             updateSelfAndChild(child);
         }
     }
@@ -20,8 +20,8 @@ void TransformSystem::forceUpdateSelfAndChild(GameObject* obj) {
     auto* tComp = obj->GetComponent<TransformComponent>();
     if (!tComp) return;
 
-    if (obj->parent) {
-        auto* parentT = obj->parent->GetComponent<TransformComponent>();
+    if (obj->GetParent()) {
+        auto* parentT = obj->GetParent()->GetComponent<TransformComponent>();
         if (parentT)
             helper.computeModelMatrix(parentT->modelMatrix, *tComp);
         else
@@ -31,7 +31,7 @@ void TransformSystem::forceUpdateSelfAndChild(GameObject* obj) {
         helper.computeModelMatrix(*tComp);
     }
 
-    for (auto* child : obj->children) {
+    for (auto* child : obj->GetChildren()) {
         forceUpdateSelfAndChild(child);
     }
 }

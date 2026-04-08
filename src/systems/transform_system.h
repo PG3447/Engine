@@ -8,10 +8,11 @@ class TransformSystem : public System {
 private:
     Transform helper;
 
-    void updateSelfAndChild(GameObject* obj);
+    
     void forceUpdateSelfAndChild(GameObject* obj);
 public:
 
+    void updateSelfAndChild(GameObject* obj);
     void Update(ECS& ecs);
 };
 
