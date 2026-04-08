@@ -398,7 +398,7 @@ bool init()
 
     // Create window with graphics context
     glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_FALSE);
-    window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Dear ImGui GLFW+OpenGL4 example", NULL, NULL);
+    window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "MimiCry Experiments", NULL, NULL);
     if (window == NULL)
     {
         spdlog::error("Failed to create GLFW Window!");
