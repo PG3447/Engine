@@ -38,6 +38,7 @@
 #include <core/scene.h>
 #include "core/gameobject.h" 
 #include <systems/physics_system.h>
+#include <systems/transform_system.h>
 
 
 static void glfw_error_callback(int error, const char* description)
@@ -302,6 +303,8 @@ int main(int, char**)
 
     ECS ecs;
     Scene scene(ecs);
+
+    ecs.AddSystem<Trans>
 
     PhysicsSystem* physics = ecs.AddSystem<PhysicsSystem>(ecs);
     spdlog::info("PhysicsSystem dodany do ECS");

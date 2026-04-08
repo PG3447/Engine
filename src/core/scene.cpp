@@ -1,6 +1,6 @@
 #include "scene.h"
 
-Scene::Scene(ECS& ecsRef) : ecs(ecsRef) {}
+//Scene::Scene(ECS& ecsRef) : ecs(ecsRef) {}
 
 GameObject* Scene::CreateGameObject(GameObject* parent) {
     GameObject* e = ecs.CreateGameObject();

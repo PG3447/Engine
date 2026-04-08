@@ -7,7 +7,7 @@
 
 class Transform
 {
-	
+	/*
 protected:
 	//Local space information
 	glm::vec3 m_pos = { 0.0f, 0.0f, 0.0f };
@@ -35,7 +35,7 @@ protected:
 		return glm::translate(glm::mat4(1.0f), m_pos) * rotationMatrix * glm::scale(glm::mat4(1.0f), m_scale);
 	}
 public:
-	/*
+	*/
 protected:
 	glm::mat4 getLocalModelMatrix(const TransformComponent& comp)
 	{
@@ -142,8 +142,8 @@ public:
 	bool isDirty(const TransformComponent& comp) const
 	{
 		return comp.isDirty;
-	} */
-	
+	} 
+	/*
 	void computeModelMatrix()
 	{
 		m_modelMatrix = getLocalModelMatrix();
@@ -228,6 +228,6 @@ public:
 	bool isDirty() const
 	{
 		return m_isDirty;
-	}
+	}*/
 };
 #endif

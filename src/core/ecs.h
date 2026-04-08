@@ -55,6 +55,14 @@ public:
 
     GameObject* CreateGameObject();
 
+    std::vector<GameObject*> GetAllGameObjects() {
+        std::vector<GameObject*> result;
+        result.reserve(gameobjects.size());
+        for (auto& obj : gameobjects) {
+            result.push_back(obj.get());
+        }
+        return result;
+    }
 
     ~ECS();
 };

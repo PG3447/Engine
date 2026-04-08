@@ -7,11 +7,16 @@
 class Scene {
 private:
     ECS& ecs;
+    std::unique_ptr<GameObject> root;
 
 public:
-    Scene(ECS& ecsRef);
+    Scene(ECS& ecsRef) : ecs(ecsRef)
+    {
+        root = std::make_unique<GameObject>(&ecs);
+    }
 
-    // opcjonalnie ustawiaj¹c rodzica
+    GameObject* GetRoot() { return root.get(); }
+    
     GameObject* CreateGameObject(GameObject* parent = nullptr);
 
     // Tworzy encjê i od razu dodaje komponenty
