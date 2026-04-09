@@ -37,5 +37,19 @@ struct RigidbodyComponent : Component {
     float vx = 0, vy = 0;
 };
 
+struct CameraComponent : Component {
+    static constexpr uint64_t ComponentBit = 1ull << 3;
+
+    float fov = 45.0f;
+    float aspectRatio = 16.0f / 9.0f;
+    float nearPlane = 0.1f;
+    float farPlane = 100.0f;
+
+    glm::mat4 view{ 1.0f };
+    glm::mat4 projection{ 1.0f };
+
+    bool isActive = true;
+};
+
 
 #endif

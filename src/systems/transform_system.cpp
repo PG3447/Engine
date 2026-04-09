@@ -37,6 +37,15 @@ void TransformSystem::forceUpdateSelfAndChild(GameObject* obj) {
 }
 
 /*
+
+
+            // Przelicz modelMatrix jeœli jest dirty
+            if (t->isDirty) {
+                Transform::computeModelMatrix(*t); // helper statyczny lub instancja
+            }
+
+
+
 void updateSelfAndChild()
 {
     if (transform.isDirty()) {

@@ -6,7 +6,7 @@
 
 class RenderSystem : public System {
 private:
-	Query<TransformComponent, RenderComponent>* query;
+	Query<TransformComponent, RenderComponent, CameraComponent>* query;
 
 public:
     RenderSystem(ECS& ecs);
@@ -14,28 +14,72 @@ public:
     void Update(ECS& ecs) override {
         auto& transforms = std::get<0>(query->componentsVectors);
         auto& renderers = std::get<1>(query->componentsVectors);
+        auto& camera = std::get<2>(query->componentsVectors);
 
         for (size_t i = 0; i < query->gameobjects.size(); i++) {
-            TransformComponent* t = transforms[i];
-            RenderComponent* r = renderers[i];
+            CameraComponent* c = camera[i];
+            if (c->isActive) {
+                TransformComponent* t = transforms[i];
+                RenderComponent* r = renderers[i];
 
-            // Przelicz modelMatrix jeœli jest dirty
-            if (t->isDirty) {
-                Transform::computeModelMatrix(*t); // helper statyczny lub instancja
+                Shader* shaderToUse =  r->shader;// (r->shader) ? r->shader : &r->defaultShader;
+                shaderToUse->use();
+                shaderToUse->setMat4("projection", c->projection);
+                shaderToUse->setMat4("view", c->view);
+                shaderToUse->setMat4("model", t->modelMatrix);
+
+                if (r->model)
+                    r->model->Draw(*shaderToUse);
             }
-
-            Shader* shaderToUse = (r->shader) ? r->shader : &r->defaultShader;
-            shaderToUse->use();
-            shaderToUse->setMat4("projection", r->projection);
-            shaderToUse->setMat4("view", r->view);
-            shaderToUse->setMat4("model", t->modelMatrix);
-
-            if (r->model)
-                r->model->Draw(*shaderToUse);
         }
     }
 
+    void RenderGroups() {
+        auto& transforms = std::get<0>(query->componentsVectors);
+        auto& renderers = std::get<1>(query->componentsVectors);
 
+        for (auto& [key, indices] : instancedGroups) {
+            Model* model = key.first;
+            Shader* shader = key.second;
+
+            shader->use();
+            shader->setMat4("projection", projection);
+            shader->setMat4("view", view);
+
+            if (indices.size() == 1) {
+                size_t i = indices[0];
+
+                shader->setBool("useInstance", false);
+                shader->setMat4("model", transforms[i]->modelMatrix);
+
+                model->Draw(*shader);
+            }
+            else {
+                shader->setBool("useInstance", true);
+                RenderInstanced(model, shader, indices);
+            }
+        }
+    }
+
+    void RenderInstanced(Model* model, Shader* shader, std::vector<size_t>& indices)
+    {
+        auto& transforms = std::get<0>(query->componentsVectors);
+
+        size_t count = indices.size();
+        std::vector<glm::mat4> matrices(count);
+
+        for (size_t i = 0; i < count; i++) {
+            matrices[i] = transforms[indices[i]]->modelMatrix;
+        }
+
+        if (model->instanceVBO == 0)
+            glGenBuffers(1, &model->instanceVBO);
+
+        glBindBuffer(GL_ARRAY_BUFFER, model->instanceVBO);
+        glBufferData(GL_ARRAY_BUFFER, count * sizeof(glm::mat4), matrices.data(), GL_DYNAMIC_DRAW);
+
+        model->Draw(*shader, (GLsizei)count);
+    }
 
     void render()
     {
