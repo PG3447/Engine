@@ -36,8 +36,7 @@ void TransformSystem::forceUpdateSelfAndChild(GameObject* obj) {
     }
 }
 
-
-
+/*
 void updateSelfAndChild()
 {
     if (transform.isDirty()) {
@@ -63,4 +62,4 @@ void forceUpdateSelfAndChild()
     {
         child->forceUpdateSelfAndChild();
     }
-}
+}*/

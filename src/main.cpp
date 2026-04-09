@@ -36,6 +36,7 @@
 
 
 #include <core/scene.h>
+#include <core/scene_manager.h>
 #include "core/gameobject.h" 
 #include <systems/physics_system.h>
 #include <systems/transform_system.h>
@@ -302,7 +303,12 @@ int main(int, char**)
     spdlog::info("Initialized ImGui.");
 
     ECS ecs;
-    Scene scene(ecs);
+    SceneManager sceneManager;
+    
+    sceneManager.CreateScene("Scena 1", ecs);
+
+    Scene* scena1 = sceneManager.GetActiveScene();
+
 
     ecs.AddSystem<TransformSystem>(ecs);
     ecs.AddSystem<PhysicsSystem>(ecs);
@@ -311,7 +317,7 @@ int main(int, char**)
 
  
     // Tworzymy GameObject
-    GameObject* obj = scene.CreateGameObject();
+    GameObject* obj = scena1->CreateGameObject();
 
     // Dodajemy TransformComponent
     TransformComponent* transform = obj->AddComponent<TransformComponent>();
@@ -325,7 +331,7 @@ int main(int, char**)
         transform->position.z);
 
     // Tworzymy drugi obiekt z komponentem od razu
-    GameObject* obj2 = scene.CreateEntityWithComponents<TransformComponent>();
+    GameObject* obj2 = scena1->CreateEntityWithComponents<TransformComponent>();
     TransformComponent* t2 = obj2->GetComponent<TransformComponent>();
     t2->position = glm::vec3(10.0f, 20.0f, 30.0f);
     
@@ -334,7 +340,7 @@ int main(int, char**)
         t2->position.y,
         t2->position.z);
 
-    scene.Update(16);
+    sceneManager.Update(16);
 
     spdlog::info("Scena git.");
     compileShader();
@@ -352,7 +358,7 @@ int main(int, char**)
             transform->position.x,
             transform->position.y,
             transform->position.z);
-        scene.Update(16);
+        sceneManager.Update(16);
 
         // Process I/O operations here
         input();
