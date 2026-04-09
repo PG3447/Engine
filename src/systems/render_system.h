@@ -1,4 +1,4 @@
-#ifndef RENDER_SYSTEM_H
+﻿#ifndef RENDER_SYSTEM_H
 #define RENDER_SYSTEM_H
 
 #include "core/ecs.h"
@@ -6,33 +6,77 @@
 
 class RenderSystem : public System {
 private:
+    struct pair_hash {
+        std::size_t operator()(const std::pair<Model*, Shader*>& p) const {
+            return std::hash<Model*>()(p.first) ^ (std::hash<Shader*>()(p.second) << 1);
+        }
+    };
+
 	Query<TransformComponent, RenderComponent, CameraComponent>* query;
+    std::unordered_map<std::pair<Model*, Shader*>, std::vector<size_t>, pair_hash> instancedGroups;
+
+    bool groupsDirty = true;
+
+    glm::mat4 projection;
+    glm::mat4 view;
 
 public:
-    RenderSystem(ECS& ecs);
+    RenderSystem(ECS& ecs)
+    {
+        query = ecs.CreateQuery<TransformComponent, RenderComponent, CameraComponent>();
+    }
+
+    void OnGameObjectUpdated(GameObject* e) override {
+        query->OnGameObjectUpdated(e); // forward do query
+
+        groupsDirty = true;
+    }
+
+    void MarkDirty() {
+        groupsDirty = true;
+    }
 
     void Update(ECS& ecs) override {
-        auto& transforms = std::get<0>(query->componentsVectors);
-        auto& renderers = std::get<1>(query->componentsVectors);
-        auto& camera = std::get<2>(query->componentsVectors);
+        UpdateCamera();
+        BuildGroups();
+        RenderGroups();
+    }
 
-        for (size_t i = 0; i < query->gameobjects.size(); i++) {
-            CameraComponent* c = camera[i];
-            if (c->isActive) {
-                TransformComponent* t = transforms[i];
-                RenderComponent* r = renderers[i];
 
-                Shader* shaderToUse =  r->shader;// (r->shader) ? r->shader : &r->defaultShader;
-                shaderToUse->use();
-                shaderToUse->setMat4("projection", c->projection);
-                shaderToUse->setMat4("view", c->view);
-                shaderToUse->setMat4("model", t->modelMatrix);
+    void UpdateCamera() {
+        auto& cameras = std::get<2>(query->componentsVectors);
 
-                if (r->model)
-                    r->model->Draw(*shaderToUse);
+        for (size_t i = 0; i < cameras.size(); i++) {
+            if (cameras[i]->isActive) {
+                projection = cameras[i]->projection;
+                view = cameras[i]->view;
+                return;
             }
         }
     }
+
+    void BuildGroups() {
+        if (!groupsDirty) return;
+
+        auto& renderers = std::get<1>(query->componentsVectors);
+
+        instancedGroups.clear();
+
+        for (size_t i = 0; i < query->gameobjects.size(); i++) {
+            RenderComponent* r = renderers[i];
+
+            if (!r || !r->model)
+                continue;
+
+            Shader* shader = r->shader;
+
+            std::pair<Model*, Shader*> key = { r->model, shader };
+            instancedGroups[key].push_back(i);
+        }
+
+        groupsDirty = false;
+    }
+
 
     void RenderGroups() {
         auto& transforms = std::get<0>(query->componentsVectors);
@@ -79,6 +123,58 @@ public:
         glBufferData(GL_ARRAY_BUFFER, count * sizeof(glm::mat4), matrices.data(), GL_DYNAMIC_DRAW);
 
         model->Draw(*shader, (GLsizei)count);
+    }
+
+
+
+
+    void renderInstanced(Model* model, Shader* shader, std::vector<Entity*>& entities)
+    {
+        if (start || change) {
+            size_t numEntities = entities.size();
+            glm::mat4* modelMatrices = new glm::mat4[numEntities];
+
+            for (size_t i = 0; i < numEntities; ++i)
+            {
+                modelMatrices[i] = entities[i]->transform.getModelMatrix();
+            }
+
+
+            if (model->instanceVBO == 0)
+                glGenBuffers(1, &model->instanceVBO);
+            glBindBuffer(GL_ARRAY_BUFFER, model->instanceVBO);
+            glBufferData(GL_ARRAY_BUFFER, numEntities * sizeof(glm::mat4), modelMatrices, GL_DYNAMIC_DRAW);
+        }
+
+        if (start) {
+            for (unsigned int i = 0; i < model->meshes.size(); i++)
+            {
+                unsigned int VAO = model->meshes[i].VAO;
+                glBindVertexArray(VAO);
+
+                // matrix
+                GLsizei vec4Size = sizeof(glm::vec4);
+                glEnableVertexAttribArray(7);
+                glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)0);
+                glEnableVertexAttribArray(8);
+                glVertexAttribPointer(8, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(vec4Size));
+                glEnableVertexAttribArray(9);
+                glVertexAttribPointer(9, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(2 * vec4Size));
+                glEnableVertexAttribArray(10);
+                glVertexAttribPointer(10, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(3 * vec4Size));
+
+                glVertexAttribDivisor(7, 1);
+                glVertexAttribDivisor(8, 1);
+                glVertexAttribDivisor(9, 1);
+                glVertexAttribDivisor(10, 1);
+
+                glBindVertexArray(0);
+            }
+        }
+        if (model != nullptr)
+        {
+            model->Draw(*shader, (GLsizei)entities.size());
+        }
     }
 
     void render()
@@ -153,14 +249,7 @@ public:
     }
 
 
-    struct pair_hash {
-        std::size_t operator()(const std::pair<Model*, Shader*>& p) const {
-            return std::hash<Model*>()(p.first) ^ (std::hash<Shader*>()(p.second) << 1);
-        }
-    };
-
-
-    std::unordered_map<std::pair<Model*, Shader*>, std::vector<Entity*>, pair_hash> instancedGroups;
+    //std::unordered_map<std::pair<Model*, Shader*>, std::vector<Entity*>, pair_hash> instancedGroups;
 
     void startGroupInstanced(Entity* root)
     {
@@ -309,6 +398,31 @@ public:
 
 #endif
 
+/*
+
+    void Update(ECS& ecs) override {
+        auto& transforms = std::get<0>(query->componentsVectors);
+        auto& renderers = std::get<1>(query->componentsVectors);
+        auto& camera = std::get<2>(query->componentsVectors);
+
+        for (size_t i = 0; i < query->gameobjects.size(); i++) {
+            CameraComponent* c = camera[i];
+            if (c->isActive) {
+                TransformComponent* t = transforms[i];
+                RenderComponent* r = renderers[i];
+
+                Shader* shaderToUse =  r->shader;// (r->shader) ? r->shader : &r->defaultShader;
+                shaderToUse->use();
+                shaderToUse->setMat4("projection", c->projection);
+                shaderToUse->setMat4("view", c->view);
+                shaderToUse->setMat4("model", t->modelMatrix);
+
+                if (r->model)
+                    r->model->Draw(*shaderToUse);
+            }
+        }
+    }
+*/
 
 /*
 
