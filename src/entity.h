@@ -99,60 +99,60 @@ public:
 	}
 
 	//Update transform if it was changed
-	void updateSelfAndChild()
-	{
-		if (transform.isDirty()) {
-			forceUpdateSelfAndChild();
-			return;
-		}
+	//void updateSelfAndChild()
+	//{
+	//	if (transform.isDirty()) {
+	//		forceUpdateSelfAndChild();
+	//		return;
+	//	}
 
-		for (auto&& child : children)
-		{
-			child->updateSelfAndChild();
-		}
-	}
+	//	for (auto&& child : children)
+	//	{
+	//		child->updateSelfAndChild();
+	//	}
+	//}
 
-	//Force update of transform even if local space don't change
-	void forceUpdateSelfAndChild()
-	{
-		if (parent)
-			transform.computeModelMatrix(parent->transform.getModelMatrix());
-		else
-			transform.computeModelMatrix();
+	////Force update of transform even if local space don't change
+	//void forceUpdateSelfAndChild()
+	//{
+	//	if (parent)
+	//		transform.computeModelMatrix(parent->transform.getModelMatrix());
+	//	else
+	//		transform.computeModelMatrix();
 
-		for (auto&& child : children)
-		{
-			child->forceUpdateSelfAndChild();
-		}
-	}
+	//	for (auto&& child : children)
+	//	{
+	//		child->forceUpdateSelfAndChild();
+	//	}
+	//}
 
 
-	void drawSelfAndChild(Shader& ourShader, glm::mat4 projection, glm::mat4 view, float radius, int rings, int sectors, glm::mat4 systemModel)
-	{
-		Shader* shaderToUse = (pShader) ? pShader : &ourShader;
-		shaderToUse->use();
+	//void drawSelfAndChild(Shader& ourShader, glm::mat4 projection, glm::mat4 view, float radius, int rings, int sectors, glm::mat4 systemModel)
+	//{
+	//	Shader* shaderToUse = (pShader) ? pShader : &ourShader;
+	//	shaderToUse->use();
 
-		shaderToUse->setMat4("projection", projection);
-		shaderToUse->setMat4("view", view);
-		shaderToUse->setMat4("model", systemModel * transform.getModelMatrix());
-		
-		if (pShader) {
-			// ustawiamy parametry sfery
-			shaderToUse->setFloat("radius", radius);
-			shaderToUse->setInt("rings", rings);
-			shaderToUse->setInt("sectors", sectors);
-		}
-		if (pModel)
-		{
-			pModel->Draw(*shaderToUse);
-		}
-		
+	//	shaderToUse->setMat4("projection", projection);
+	//	shaderToUse->setMat4("view", view);
+	//	shaderToUse->setMat4("model", systemModel * transform.getModelMatrix());
+	//	
+	//	if (pShader) {
+	//		// ustawiamy parametry sfery
+	//		shaderToUse->setFloat("radius", radius);
+	//		shaderToUse->setInt("rings", rings);
+	//		shaderToUse->setInt("sectors", sectors);
+	//	}
+	//	if (pModel)
+	//	{
+	//		pModel->Draw(*shaderToUse);
+	//	}
+	//	
 
-		for (auto&& child : children)
-		{
-			child->drawSelfAndChild(ourShader, projection, view, radius, rings, sectors, systemModel);
-		}
-	}
+	//	for (auto&& child : children)
+	//	{
+	//		child->drawSelfAndChild(ourShader, projection, view, radius, rings, sectors, systemModel);
+	//	}
+	//}
 };
 #endif
 

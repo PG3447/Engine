@@ -57,14 +57,14 @@ void compileShader();
 void input();
 void controlKoparka();
 void update();
-void render();
+//void render();
 void renderInstanced(Model* model, Shader* shader, std::vector<Entity*>& entities);
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 unsigned int loadCubemap(vector<std::string> faces);
 void regenerateSphere();
-void createHouse();
+//void createHouse();
 
 void imgui_begin();
 void imgui_render();
@@ -139,154 +139,155 @@ unsigned int triangleVAO = 0;
 unsigned int triangleVBO = 0;
 std::unique_ptr<Shader> triangleShader;
 
-struct pair_hash {
-    std::size_t operator()(const std::pair<Model*, Shader*>& p) const {
-        return std::hash<Model*>()(p.first) ^ (std::hash<Shader*>()(p.second) << 1);
-    }
-};
-
-
-std::unordered_map<std::pair<Model*, Shader*>, std::vector<Entity*>, pair_hash> instancedGroups;
-
-void startGroupInstanced(Entity* root)
-{
-    instancedGroups.clear();
-       std::vector<Entity*> stackEntity;
-    stackEntity.push_back(root);
-
-    while (!stackEntity.empty())
-    {
-        Entity* entity = stackEntity.back();
-        stackEntity.pop_back();
-
-        if (entity->pModel)
-        {
-            std::pair<Model*, Shader*> key = { entity->pModel, entity->pShader };
-            instancedGroups[key].push_back(entity);
-        }
-
-        for (auto& child : entity->children)
-        {
-            stackEntity.push_back(child.get());
-        }
-    }
-;
-}
-
-void AddEntityToGroupInstanced(Entity* entity)
-{
-    if (!entity->pModel)
-        return;
-    
-    std::pair<Model*, Shader*> key = { entity->pModel, entity->pShader };
-    std::vector<Entity*>& group = instancedGroups[key];
-    
-    group.push_back(entity);
-
- }
-
-bool start = true;
-bool change = false;
-
-void renderGroup(glm::mat4 projection, glm::mat4 view, glm::mat4 systemModel)
-{
-    for (auto& [key, entities] : instancedGroups)
-    {
-        Model* model = key.first;
-        Shader* shader = key.second;
-
-        shader->use();
-
-        shader->setVec3("viewPos", camera.Position);
-        shader->setVec3("cameraPos", camera.Position);
-
-        shader->setMat4("projection", projection);
-        shader->setMat4("view", view);
-
-        if (entities.size() == 0)
-        {
-            continue;
-        }
-        else if (entities.size() == 1)
-        {
-            shader->setBool("useInstance", false);
-            shader->setMat4("model", systemModel * entities[0]->transform.getModelMatrix());
-
-            if (entities[0]->pLight != nullptr)
-            {
-                entities[0]->transform.setLocalPosition(entities[0]->pLight->position);
-                glm::vec3 dir = glm::normalize(entities[0]->pLight->direction);
-
-                float yaw = atan2(dir.x, dir.z);
-                float pitch = asin(-dir.y);
-
-                entities[0]->transform.setLocalRotation(glm::degrees(glm::vec3(pitch, yaw, 0.0f)));
-                entities[0]->pLight->Apply(*shader);
-            }
-            
-            if (model != nullptr)
-            {
-                model->Draw(*shader);
-            }
-        }
-        else
-        {
-            shader->setBool("useInstance", true);
-            renderInstanced(model, shader, entities);
-            
-        }
-    }
-    start = false;
-    change = false;
-}
-
-
-void renderInstanced(Model* model, Shader* shader, std::vector<Entity*>& entities)
-{
-    if (start || change) {
-        size_t numEntities = entities.size();
-
-        std::vector<glm::mat4> modelMatrices(numEntities);
-        for (size_t i = 0; i < numEntities; ++i) {
-            modelMatrices[i] = entities[i]->transform.getModelMatrix();
-        }
-
-        if (model->instanceVBO == 0)
-            glGenBuffers(1, &model->instanceVBO);
-        glBindBuffer(GL_ARRAY_BUFFER, model->instanceVBO);
-        glBufferData(GL_ARRAY_BUFFER, numEntities * sizeof(glm::mat4), modelMatrices.data(), GL_DYNAMIC_DRAW);
-    }
-
-    if (start) {
-        for (unsigned int i = 0; i < model->meshes.size(); i++)
-        {
-            unsigned int VAO = model->meshes[i].renderData->VAO;
-            glBindVertexArray(VAO);
-
-            // matrix
-            GLsizei vec4Size = sizeof(glm::vec4);
-            glEnableVertexAttribArray(7);
-            glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)0);
-            glEnableVertexAttribArray(8);
-            glVertexAttribPointer(8, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(vec4Size));
-            glEnableVertexAttribArray(9);
-            glVertexAttribPointer(9, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(2 * vec4Size));
-            glEnableVertexAttribArray(10);
-            glVertexAttribPointer(10, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(3 * vec4Size));
-
-            glVertexAttribDivisor(7, 1);
-            glVertexAttribDivisor(8, 1);
-            glVertexAttribDivisor(9, 1);
-            glVertexAttribDivisor(10, 1);
-
-            glBindVertexArray(0);
-        }
-    }
-    if (model != nullptr)
-    {
-        model->Draw(*shader, (GLsizei)entities.size());
-    }
-}
+//
+//struct pair_hash {
+//    std::size_t operator()(const std::pair<Model*, Shader*>& p) const {
+//        return std::hash<Model*>()(p.first) ^ (std::hash<Shader*>()(p.second) << 1);
+//    }
+//};
+//
+//
+//std::unordered_map<std::pair<Model*, Shader*>, std::vector<Entity*>, pair_hash> instancedGroups;
+//
+//void startGroupInstanced(Entity* root)
+//{
+//    instancedGroups.clear();
+//       std::vector<Entity*> stackEntity;
+//    stackEntity.push_back(root);
+//
+//    while (!stackEntity.empty())
+//    {
+//        Entity* entity = stackEntity.back();
+//        stackEntity.pop_back();
+//
+//        if (entity->pModel)
+//        {
+//            std::pair<Model*, Shader*> key = { entity->pModel, entity->pShader };
+//            instancedGroups[key].push_back(entity);
+//        }
+//
+//        for (auto& child : entity->children)
+//        {
+//            stackEntity.push_back(child.get());
+//        }
+//    }
+//;
+//}
+//
+//void AddEntityToGroupInstanced(Entity* entity)
+//{
+//    if (!entity->pModel)
+//        return;
+//    
+//    std::pair<Model*, Shader*> key = { entity->pModel, entity->pShader };
+//    std::vector<Entity*>& group = instancedGroups[key];
+//    
+//    group.push_back(entity);
+//
+// }
+//
+//bool start = true;
+//bool change = false;
+//
+//void renderGroup(glm::mat4 projection, glm::mat4 view, glm::mat4 systemModel)
+//{
+//    for (auto& [key, entities] : instancedGroups)
+//    {
+//        Model* model = key.first;
+//        Shader* shader = key.second;
+//
+//        shader->use();
+//
+//        shader->setVec3("viewPos", camera.Position);
+//        shader->setVec3("cameraPos", camera.Position);
+//
+//        shader->setMat4("projection", projection);
+//        shader->setMat4("view", view);
+//
+//        if (entities.size() == 0)
+//        {
+//            continue;
+//        }
+//        else if (entities.size() == 1)
+//        {
+//            shader->setBool("useInstance", false);
+//            shader->setMat4("model", systemModel * entities[0]->transform.getModelMatrix());
+//
+//            if (entities[0]->pLight != nullptr)
+//            {
+//                entities[0]->transform.setLocalPosition(entities[0]->pLight->position);
+//                glm::vec3 dir = glm::normalize(entities[0]->pLight->direction);
+//
+//                float yaw = atan2(dir.x, dir.z);
+//                float pitch = asin(-dir.y);
+//
+//                entities[0]->transform.setLocalRotation(glm::degrees(glm::vec3(pitch, yaw, 0.0f)));
+//                entities[0]->pLight->Apply(*shader);
+//            }
+//            
+//            if (model != nullptr)
+//            {
+//                model->Draw(*shader);
+//            }
+//        }
+//        else
+//        {
+//            shader->setBool("useInstance", true);
+//            renderInstanced(model, shader, entities);
+//            
+//        }
+//    }
+//    start = false;
+//    change = false;
+//}
+//
+//
+//void renderInstanced(Model* model, Shader* shader, std::vector<Entity*>& entities)
+//{
+//    if (start || change) {
+//        size_t numEntities = entities.size();
+//
+//        std::vector<glm::mat4> modelMatrices(numEntities);
+//        for (size_t i = 0; i < numEntities; ++i) {
+//            modelMatrices[i] = entities[i]->transform.getModelMatrix();
+//        }
+//
+//        if (model->instanceVBO == 0)
+//            glGenBuffers(1, &model->instanceVBO);
+//        glBindBuffer(GL_ARRAY_BUFFER, model->instanceVBO);
+//        glBufferData(GL_ARRAY_BUFFER, numEntities * sizeof(glm::mat4), modelMatrices.data(), GL_DYNAMIC_DRAW);
+//    }
+//
+//    if (start) {
+//        for (unsigned int i = 0; i < model->meshes.size(); i++)
+//        {
+//            unsigned int VAO = model->meshes[i].renderData->VAO;
+//            glBindVertexArray(VAO);
+//
+//            // matrix
+//            GLsizei vec4Size = sizeof(glm::vec4);
+//            glEnableVertexAttribArray(7);
+//            glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)0);
+//            glEnableVertexAttribArray(8);
+//            glVertexAttribPointer(8, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(vec4Size));
+//            glEnableVertexAttribArray(9);
+//            glVertexAttribPointer(9, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(2 * vec4Size));
+//            glEnableVertexAttribArray(10);
+//            glVertexAttribPointer(10, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(3 * vec4Size));
+//
+//            glVertexAttribDivisor(7, 1);
+//            glVertexAttribDivisor(8, 1);
+//            glVertexAttribDivisor(9, 1);
+//            glVertexAttribDivisor(10, 1);
+//
+//            glBindVertexArray(0);
+//        }
+//    }
+//    if (model != nullptr)
+//    {
+//        model->Draw(*shader, (GLsizei)entities.size());
+//    }
+//}
 
 
 int main(int, char**)
@@ -311,6 +312,7 @@ int main(int, char**)
 
     ecs.AddSystem<TransformSystem>(ecs);
     ecs.AddSystem<PhysicsSystem>(ecs);
+    ecs.AddSystem<RenderSystem>(ecs, window);
     spdlog::info("PhysicsSystem dodany do ECS");
 
 
@@ -344,8 +346,8 @@ int main(int, char**)
     spdlog::info("Scena git.");
     compileShader();
 
-    createHouse();
-    startGroupInstanced(root.get());
+    //createHouse();
+    //startGroupInstanced(root.get());
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
@@ -366,7 +368,7 @@ int main(int, char**)
         update();
 
         // OpenGL rendering code here
-        render();
+        //render();
 
         // Draw ImGui
         imgui_begin();
@@ -477,75 +479,75 @@ void compileShader()
     glEnable(GL_DEPTH_TEST);
 
 
-    float skyboxVertices[] = {
-        // positions          
-        -1.0f,  1.0f, -1.0f,
-        -1.0f, -1.0f, -1.0f,
-         1.0f, -1.0f, -1.0f,
-         1.0f, -1.0f, -1.0f,
-         1.0f,  1.0f, -1.0f,
-        -1.0f,  1.0f, -1.0f,
+    //float skyboxVertices[] = {
+    //    // positions          
+    //    -1.0f,  1.0f, -1.0f,
+    //    -1.0f, -1.0f, -1.0f,
+    //     1.0f, -1.0f, -1.0f,
+    //     1.0f, -1.0f, -1.0f,
+    //     1.0f,  1.0f, -1.0f,
+    //    -1.0f,  1.0f, -1.0f,
 
-        -1.0f, -1.0f,  1.0f,
-        -1.0f, -1.0f, -1.0f,
-        -1.0f,  1.0f, -1.0f,
-        -1.0f,  1.0f, -1.0f,
-        -1.0f,  1.0f,  1.0f,
-        -1.0f, -1.0f,  1.0f,
+    //    -1.0f, -1.0f,  1.0f,
+    //    -1.0f, -1.0f, -1.0f,
+    //    -1.0f,  1.0f, -1.0f,
+    //    -1.0f,  1.0f, -1.0f,
+    //    -1.0f,  1.0f,  1.0f,
+    //    -1.0f, -1.0f,  1.0f,
 
-         1.0f, -1.0f, -1.0f,
-         1.0f, -1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f, -1.0f,
-         1.0f, -1.0f, -1.0f,
+    //     1.0f, -1.0f, -1.0f,
+    //     1.0f, -1.0f,  1.0f,
+    //     1.0f,  1.0f,  1.0f,
+    //     1.0f,  1.0f,  1.0f,
+    //     1.0f,  1.0f, -1.0f,
+    //     1.0f, -1.0f, -1.0f,
 
-        -1.0f, -1.0f,  1.0f,
-        -1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f, -1.0f,  1.0f,
-        -1.0f, -1.0f,  1.0f,
+    //    -1.0f, -1.0f,  1.0f,
+    //    -1.0f,  1.0f,  1.0f,
+    //     1.0f,  1.0f,  1.0f,
+    //     1.0f,  1.0f,  1.0f,
+    //     1.0f, -1.0f,  1.0f,
+    //    -1.0f, -1.0f,  1.0f,
 
-        -1.0f,  1.0f, -1.0f,
-         1.0f,  1.0f, -1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-        -1.0f,  1.0f,  1.0f,
-        -1.0f,  1.0f, -1.0f,
+    //    -1.0f,  1.0f, -1.0f,
+    //     1.0f,  1.0f, -1.0f,
+    //     1.0f,  1.0f,  1.0f,
+    //     1.0f,  1.0f,  1.0f,
+    //    -1.0f,  1.0f,  1.0f,
+    //    -1.0f,  1.0f, -1.0f,
 
-        -1.0f, -1.0f, -1.0f,
-        -1.0f, -1.0f,  1.0f,
-         1.0f, -1.0f, -1.0f,
-         1.0f, -1.0f, -1.0f,
-        -1.0f, -1.0f,  1.0f,
-         1.0f, -1.0f,  1.0f
-    };
+    //    -1.0f, -1.0f, -1.0f,
+    //    -1.0f, -1.0f,  1.0f,
+    //     1.0f, -1.0f, -1.0f,
+    //     1.0f, -1.0f, -1.0f,
+    //    -1.0f, -1.0f,  1.0f,
+    //     1.0f, -1.0f,  1.0f
+    //};
 
-    // skybox VAO
-    unsigned int skyboxVBO;
-    glGenVertexArrays(1, &skyboxVAO);
-    glGenBuffers(1, &skyboxVBO);
-    glBindVertexArray(skyboxVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    //// skybox VAO
+    //unsigned int skyboxVBO;
+    //glGenVertexArrays(1, &skyboxVAO);
+    //glGenBuffers(1, &skyboxVBO);
+    //glBindVertexArray(skyboxVAO);
+    //glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+    //glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
+    //glEnableVertexAttribArray(0);
+    //glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 
 
-    vector<std::string> faces
-    {
-        "res/textures/skybox/right.jpg",
-        "res/textures/skybox/left.jpg",
-        "res/textures/skybox/top.jpg",
-        "res/textures/skybox/bottom.jpg",
-        "res/textures/skybox/front.jpg",
-        "res/textures/skybox/back.jpg"
-    };
+    //vector<std::string> faces
+    //{
+    //    "res/textures/skybox/right.jpg",
+    //    "res/textures/skybox/left.jpg",
+    //    "res/textures/skybox/top.jpg",
+    //    "res/textures/skybox/bottom.jpg",
+    //    "res/textures/skybox/front.jpg",
+    //    "res/textures/skybox/back.jpg"
+    //};
 
-    cubemapTexture = loadCubemap(faces);
+    //cubemapTexture = loadCubemap(faces);
 
-    skyboxShader = std::make_unique<Shader>("res/shaders/skybox.vert", "res/shaders/skybox.frag");
+    //skyboxShader = std::make_unique<Shader>("res/shaders/skybox.vert", "res/shaders/skybox.frag");
 
 //    skyboxShader->use();
 //    skyboxShader->setInt("skybox", 0);
@@ -568,152 +570,152 @@ void compileShader()
     root = std::make_unique<Entity>();
     root->name = "root";
 
-    float triangleVertices[] = {
-        0.0f,  0.5f, 0.0f,
-       -0.5f, -0.5f, 0.0f,
-        0.5f, -0.5f, 0.0f
-   };
+   // float triangleVertices[] = {
+   //     0.0f,  0.5f, 0.0f,
+   //    -0.5f, -0.5f, 0.0f,
+   //     0.5f, -0.5f, 0.0f
+   //};
 
-    glGenVertexArrays(1, &triangleVAO);
-    glGenBuffers(1, &triangleVBO);
+   // glGenVertexArrays(1, &triangleVAO);
+   // glGenBuffers(1, &triangleVBO);
 
-    glBindVertexArray(triangleVAO);
+   // glBindVertexArray(triangleVAO);
 
-    glBindBuffer(GL_ARRAY_BUFFER, triangleVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(triangleVertices), triangleVertices, GL_STATIC_DRAW);
+   // glBindBuffer(GL_ARRAY_BUFFER, triangleVBO);
+   // glBufferData(GL_ARRAY_BUFFER, sizeof(triangleVertices), triangleVertices, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
+   // glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+   // glEnableVertexAttribArray(0);
 
-    glBindVertexArray(0);
+   // glBindVertexArray(0);
 
-    // shader
-    triangleShader = std::make_unique<Shader>(
-        "res/shaders/triangle.vert",
-        "res/shaders/triangle.frag"
-    );
+   // // shader
+   // triangleShader = std::make_unique<Shader>(
+   //     "res/shaders/triangle.vert",
+   //     "res/shaders/triangle.frag"
+   // );
 
 
     spdlog::info("Success");
 
 }
-
-std::unique_ptr<Light> dircetLight;
-//std::unique_ptr<Light> pointLight;
-//std::unique_ptr<Light> spotLight;
-//std::unique_ptr<Light> spotLight2;
-
-std::unique_ptr<Model> emptyModel;
-std::unique_ptr<Prefab> emptyModel1;
-std::unique_ptr<Prefab> emptyModel2;
-std::unique_ptr<Prefab> emptyModel3;
-
-
-void createHouse()
-{
-    Entity* ground = groundModel->getEntitiesCreate(ourShader.get());
-    ground->name = "podloze";
-    ground->transform.setLocalScale(glm::vec3(100.0f));
-    root->addChild(ground);
-    
-    emptyModel = std::make_unique<Model>();
-    //emptyModel1 = std::make_unique<Prefab>("res/backpack/podloze.glb", 0.25f, false);
-    //emptyModel2 = std::make_unique<Prefab>("res/backpack/podloze.glb", 1.0f, false);
-    //emptyModel3 = std::make_unique<Prefab>("res/backpack/podloze.glb", 1.0f, false);
-    //
-    dircetLight = std::make_unique<Light>(Light::Directional);
-    dircetLight->direction = glm::vec3(-0.3f, -1.0f, -0.1f);
-    dircetLight->ambient  = glm::vec3(0.25f);
-    dircetLight->diffuse = glm::vec3(0.85f);
-    dircetLight->specular = glm::vec3(0.4f);
-    //
-    //pointLight = std::make_unique<Light>(Light::Point);
-    //pointLight->index = 0;
-    //pointLight->position = glm::vec3(-10.0f, 1.0f, -0.3f);
-    //pointLight->ambient = glm::vec3(0.05f);
-    //pointLight->diffuse = glm::vec3(0.8f);
-    //pointLight->specular = glm::vec3(1.0f);
-    //pointLight->constant = 1.0f;
-    //pointLight->linear = 0.09f;
-    //pointLight->quadratic = 0.032f;
-
-    //spotLight = std::make_unique<Light>(Light::Spot);
-    //spotLight->index = 0;
-    //spotLight->position = glm::vec3(-12.0f, 5.0f, 1.5f);
-    //spotLight->direction = glm::vec3(-0.15f, -0.9f, -0.25f);
-    //spotLight->ambient = glm::vec3(0.0f);
-    //spotLight->diffuse = glm::vec3(1.0f);
-    //spotLight->specular = glm::vec3(1.0f);
-    //spotLight->constant = 1.0f;
-    //spotLight->linear = 0.09f;
-    //spotLight->quadratic = 0.032f;
-    //spotLight->cutOff = glm::cos(glm::radians(12.5f));
-    //spotLight->outerCutOff = glm::cos(glm::radians(15.0f));
-
-
-    //spotLight2 = std::make_unique<Light>(Light::Spot);
-    //spotLight2->index = 1;
-    //spotLight2->position = glm::vec3(-2.0f, 5.0f, 1.5f);
-    //spotLight2->direction = glm::vec3(-0.15f, -0.9f, -0.25f);
-    //spotLight2->ambient = glm::vec3(0.0f);
-    //spotLight2->diffuse = glm::vec3(1.0f);
-    //spotLight2->specular = glm::vec3(1.0f);
-    //spotLight2->constant = 1.0f;
-    //spotLight2->linear = 0.09f;
-    //spotLight2->quadratic = 0.032f;
-    //spotLight2->cutOff = glm::cos(glm::radians(25.0f));
-    //spotLight2->outerCutOff = glm::cos(glm::radians(30.0f));
-
-    
-    Entity* directonalLight = root->addChild(emptyModel.get(), ourShader.get(), dircetLight.get());
-    directonalLight->name = "directonalLight";
-
-    //Entity* pointLightEnt = emptyModel1->getEntitiesCreate(ourShader.get(), pointLight.get());
-    //pointLightEnt->name = "pointLight";
-    //root->addChild(pointLightEnt);
-
-    //Entity* spotLightEnt = emptyModel2->getEntitiesCreate(ourShader.get(), spotLight.get());
-    //spotLightEnt->name = "spotLight";
-    //root->addChild(spotLightEnt);
-
-    //Entity* spotLight2Ent = emptyModel3->getEntitiesCreate(ourShader.get(), spotLight2.get());
-    //spotLight2Ent->name = "spotLight2";
-    //root->addChild(spotLight2Ent);
-    //
-    // Wstępne obliczenie pozycji orbit
-
-    Entity* sun = sunModel->getEntitiesCreate(ourShader.get());
-    sun->name = "sun";
-    sun->transform.setLocalPosition(glm::vec3(0.0f, 10.0f, 0.0f));
-    sun->transform.setLocalScale(glm::vec3(1.0f));
-    root->addChild(sun);
-    
-    root->updateSelfAndChild();
-}
-
-
-void updateFollowCamera()
-{
-    if (!koparkaEntity) return;
-
-    Transform& t = koparkaEntity->transform;
-
-    glm::vec3 koparkaPos = t.getGlobalPosition();
-    glm::vec3 back = -t.getForward();
-
-    glm::vec3 desiredPos =
-        koparkaPos +
-        back * cameraOffset.z +
-        glm::vec3(0.0f, cameraOffset.y, 0.0f);
+//
+//std::unique_ptr<Light> dircetLight;
+////std::unique_ptr<Light> pointLight;
+////std::unique_ptr<Light> spotLight;
+////std::unique_ptr<Light> spotLight2;
+//
+//std::unique_ptr<Model> emptyModel;
+//std::unique_ptr<Prefab> emptyModel1;
+//std::unique_ptr<Prefab> emptyModel2;
+//std::unique_ptr<Prefab> emptyModel3;
+//
+//
+//void createHouse()
+//{
+//    Entity* ground = groundModel->getEntitiesCreate(ourShader.get());
+//    ground->name = "podloze";
+//    ground->transform.setLocalScale(glm::vec3(100.0f));
+//    root->addChild(ground);
+//    
+//    emptyModel = std::make_unique<Model>();
+//    //emptyModel1 = std::make_unique<Prefab>("res/backpack/podloze.glb", 0.25f, false);
+//    //emptyModel2 = std::make_unique<Prefab>("res/backpack/podloze.glb", 1.0f, false);
+//    //emptyModel3 = std::make_unique<Prefab>("res/backpack/podloze.glb", 1.0f, false);
+//    //
+//    dircetLight = std::make_unique<Light>(Light::Directional);
+//    dircetLight->direction = glm::vec3(-0.3f, -1.0f, -0.1f);
+//    dircetLight->ambient  = glm::vec3(0.25f);
+//    dircetLight->diffuse = glm::vec3(0.85f);
+//    dircetLight->specular = glm::vec3(0.4f);
+//    //
+//    //pointLight = std::make_unique<Light>(Light::Point);
+//    //pointLight->index = 0;
+//    //pointLight->position = glm::vec3(-10.0f, 1.0f, -0.3f);
+//    //pointLight->ambient = glm::vec3(0.05f);
+//    //pointLight->diffuse = glm::vec3(0.8f);
+//    //pointLight->specular = glm::vec3(1.0f);
+//    //pointLight->constant = 1.0f;
+//    //pointLight->linear = 0.09f;
+//    //pointLight->quadratic = 0.032f;
+//
+//    //spotLight = std::make_unique<Light>(Light::Spot);
+//    //spotLight->index = 0;
+//    //spotLight->position = glm::vec3(-12.0f, 5.0f, 1.5f);
+//    //spotLight->direction = glm::vec3(-0.15f, -0.9f, -0.25f);
+//    //spotLight->ambient = glm::vec3(0.0f);
+//    //spotLight->diffuse = glm::vec3(1.0f);
+//    //spotLight->specular = glm::vec3(1.0f);
+//    //spotLight->constant = 1.0f;
+//    //spotLight->linear = 0.09f;
+//    //spotLight->quadratic = 0.032f;
+//    //spotLight->cutOff = glm::cos(glm::radians(12.5f));
+//    //spotLight->outerCutOff = glm::cos(glm::radians(15.0f));
+//
+//
+//    //spotLight2 = std::make_unique<Light>(Light::Spot);
+//    //spotLight2->index = 1;
+//    //spotLight2->position = glm::vec3(-2.0f, 5.0f, 1.5f);
+//    //spotLight2->direction = glm::vec3(-0.15f, -0.9f, -0.25f);
+//    //spotLight2->ambient = glm::vec3(0.0f);
+//    //spotLight2->diffuse = glm::vec3(1.0f);
+//    //spotLight2->specular = glm::vec3(1.0f);
+//    //spotLight2->constant = 1.0f;
+//    //spotLight2->linear = 0.09f;
+//    //spotLight2->quadratic = 0.032f;
+//    //spotLight2->cutOff = glm::cos(glm::radians(25.0f));
+//    //spotLight2->outerCutOff = glm::cos(glm::radians(30.0f));
+//
+//    
+//    Entity* directonalLight = root->addChild(emptyModel.get(), ourShader.get(), dircetLight.get());
+//    directonalLight->name = "directonalLight";
+//
+//    //Entity* pointLightEnt = emptyModel1->getEntitiesCreate(ourShader.get(), pointLight.get());
+//    //pointLightEnt->name = "pointLight";
+//    //root->addChild(pointLightEnt);
+//
+//    //Entity* spotLightEnt = emptyModel2->getEntitiesCreate(ourShader.get(), spotLight.get());
+//    //spotLightEnt->name = "spotLight";
+//    //root->addChild(spotLightEnt);
+//
+//    //Entity* spotLight2Ent = emptyModel3->getEntitiesCreate(ourShader.get(), spotLight2.get());
+//    //spotLight2Ent->name = "spotLight2";
+//    //root->addChild(spotLight2Ent);
+//    //
+//    // Wstępne obliczenie pozycji orbit
+//
+//    Entity* sun = sunModel->getEntitiesCreate(ourShader.get());
+//    sun->name = "sun";
+//    sun->transform.setLocalPosition(glm::vec3(0.0f, 10.0f, 0.0f));
+//    sun->transform.setLocalScale(glm::vec3(1.0f));
+//    root->addChild(sun);
+//    
+//    root->updateSelfAndChild();
+//}
 
 
-    camera.Position = glm::mix(camera.Position, desiredPos, 5.0f * deltaTime);
-
-    glm::vec3 lookTarget = koparkaPos + glm::vec3(0.0f, 5.0f, 0.0f);
-    camera.Front = glm::normalize(lookTarget - camera.Position);
-    camera.Right = glm::normalize(glm::cross(camera.Front, glm::vec3(0, 1, 0)));
-    camera.Up = glm::normalize(glm::cross(camera.Right, camera.Front));
-}
+//void updateFollowCamera()
+//{
+//    if (!koparkaEntity) return;
+//
+//    Transform& t = koparkaEntity->transform;
+//
+//    glm::vec3 koparkaPos = t.getGlobalPosition();
+//    glm::vec3 back = -t.getForward();
+//
+//    glm::vec3 desiredPos =
+//        koparkaPos +
+//        back * cameraOffset.z +
+//        glm::vec3(0.0f, cameraOffset.y, 0.0f);
+//
+//
+//    camera.Position = glm::mix(camera.Position, desiredPos, 5.0f * deltaTime);
+//
+//    glm::vec3 lookTarget = koparkaPos + glm::vec3(0.0f, 5.0f, 0.0f);
+//    camera.Front = glm::normalize(lookTarget - camera.Position);
+//    camera.Right = glm::normalize(glm::cross(camera.Front, glm::vec3(0, 1, 0)));
+//    camera.Up = glm::normalize(glm::cross(camera.Right, camera.Front));
+//}
 
 
 void input()
@@ -761,77 +763,77 @@ void update()
     // Update game objects' state here
 }
 
-
-void render()
-{
-//OLD RENDER FUNCION STARTS HERE
-    
-    //float time = glfwGetTime();
-    //float radius = 10.0f;         
-    //float speed = 2.0f;        
-
-
-    //pointLight->position.x = radius * cos(speed * time);
-    //pointLight->position.y = 1.0f; 
-    //pointLight->position.z = radius * sin(speed * time);
-
-    if (!mouseMove)
-    {
-        updateFollowCamera();
-    }
-
-    // OpenGL Rendering code goes here
-    glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    //bind texture
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture);
-
-    //activating program object
-    ourShader->use();
-   
-
-    int display_w, display_h;
-    glfwGetFramebufferSize(window, &display_w, &display_h);
-    glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)display_w / (float)display_h, 0.1f, 10000.0f);
-    glm::mat4 view = glm::mat4(1.0f);
-    view = camera.GetViewMatrix();
-
-
-    // render the loaded modeld
-    root->updateSelfAndChild();
-    glm::mat4 systemRotationX = glm::rotate(glm::mat4(1.0f), glm::radians(rotationX), glm::vec3(1, 0, 0));
-    glm::mat4 systemRotationY = glm::rotate(glm::mat4(1.0f), glm::radians(rotationY), glm::vec3(0, 1, 0));
-    glm::mat4 systemModel = systemRotationY * systemRotationX;
-    renderGroup(projection, view, systemModel);
-    //ourEntity->drawSelfAndChild(*ourShader, projection, view, sphereRadius, sphereRings, sphereSectors, systemModel);
-
-
-    //glDrawElements(GL_TRIANGLES, 12, GL_UNSIGNED_INT, 0);
-    glBindVertexArray(0);
-
-    // draw skybox as last
-    glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
-//    skyboxShader->use();
-    view = glm::mat4(glm::mat3(camera.GetViewMatrix())); // remove translation from the view matrix
-//    skyboxShader->setMat4("view", view);
-//    skyboxShader->setMat4("projection", projection);
-    // skybox cube
-//    glBindVertexArray(skyboxVAO);
+//
+//void render()
+//{
+////OLD RENDER FUNCION STARTS HERE
+//    
+//    //float time = glfwGetTime();
+//    //float radius = 10.0f;         
+//    //float speed = 2.0f;        
+//
+//
+//    //pointLight->position.x = radius * cos(speed * time);
+//    //pointLight->position.y = 1.0f; 
+//    //pointLight->position.z = radius * sin(speed * time);
+//
+//    if (!mouseMove)
+//    {
+//        updateFollowCamera();
+//    }
+//
+//    // OpenGL Rendering code goes here
+//    glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
+//    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+//
+//    //bind texture
 //    glActiveTexture(GL_TEXTURE0);
-//    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
-//    glDrawArrays(GL_TRIANGLES, 0, 36);
+//    glBindTexture(GL_TEXTURE_2D, texture);
+//
+//    //activating program object
+//    ourShader->use();
+//   
+//
+//    int display_w, display_h;
+//    glfwGetFramebufferSize(window, &display_w, &display_h);
+//    glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)display_w / (float)display_h, 0.1f, 10000.0f);
+//    glm::mat4 view = glm::mat4(1.0f);
+//    view = camera.GetViewMatrix();
+//
+//
+//    // render the loaded modeld
+//    root->updateSelfAndChild();
+//    glm::mat4 systemRotationX = glm::rotate(glm::mat4(1.0f), glm::radians(rotationX), glm::vec3(1, 0, 0));
+//    glm::mat4 systemRotationY = glm::rotate(glm::mat4(1.0f), glm::radians(rotationY), glm::vec3(0, 1, 0));
+//    glm::mat4 systemModel = systemRotationY * systemRotationX;
+//    renderGroup(projection, view, systemModel);
+//    //ourEntity->drawSelfAndChild(*ourShader, projection, view, sphereRadius, sphereRings, sphereSectors, systemModel);
+//
+//
+//    //glDrawElements(GL_TRIANGLES, 12, GL_UNSIGNED_INT, 0);
 //    glBindVertexArray(0);
-///    glDepthFunc(GL_LESS); // set depth function back to default*/
-//OLD RENDER FUNCTION ENDS HERE
-
-    triangleShader->use();
-    glBindVertexArray(triangleVAO);
-    glDrawArrays(GL_TRIANGLES, 0, 3);
-    glBindVertexArray(0);
-
-}
+//
+//    // draw skybox as last
+//    glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
+////    skyboxShader->use();
+//    view = glm::mat4(glm::mat3(camera.GetViewMatrix())); // remove translation from the view matrix
+////    skyboxShader->setMat4("view", view);
+////    skyboxShader->setMat4("projection", projection);
+//    // skybox cube
+////    glBindVertexArray(skyboxVAO);
+////    glActiveTexture(GL_TEXTURE0);
+////    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+////    glDrawArrays(GL_TRIANGLES, 0, 36);
+////    glBindVertexArray(0);
+/////    glDepthFunc(GL_LESS); // set depth function back to default*/
+////OLD RENDER FUNCTION ENDS HERE
+//
+//    triangleShader->use();
+//    glBindVertexArray(triangleVAO);
+//    glDrawArrays(GL_TRIANGLES, 0, 3);
+//    glBindVertexArray(0);
+//
+//}
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
@@ -863,21 +865,21 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
     if (mouseMove)
         camera.ProcessMouseMovement(xoffset, yoffset);
 }
-
-// glfw: whenever the mouse scroll wheel scrolls, this callback is called
-// ----------------------------------------------------------------------
+//
+//// glfw: whenever the mouse scroll wheel scrolls, this callback is called
+//// ----------------------------------------------------------------------
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
     camera.ProcessMouseScroll(static_cast<float>(yoffset));
 }
-
-void regenerateSphere()
-{
-    if (!venus || !venus->pModel) return;
-    Mesh& sphereMesh = venus->pModel->meshes[0];
-    sphereMesh.updateSphereMesh(sphereRings, sphereSectors);
-}
-
+//
+//void regenerateSphere()
+//{
+//    if (!venus || !venus->pModel) return;
+//    Mesh& sphereMesh = venus->pModel->meshes[0];
+//    sphereMesh.updateSphereMesh(sphereRings, sphereSectors);
+//}
+//
 void imgui_begin()
 {
     // Start the Dear ImGui frame
@@ -885,246 +887,282 @@ void imgui_begin()
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 }
-
-//Wszystko ponizej to imgui
-static Entity* selectedEntity = nullptr;
-
-void showLightEditor(Light& light)
-{
-    ImGui::Checkbox("Light Enabled", &light.isOn);
-
-    const char* lightTypes[] = { "Directional", "Point", "Spot" };
-    int type = static_cast<int>(light.type);
-    if (ImGui::Combo("Light Type", &type, lightTypes, IM_ARRAYSIZE(lightTypes)))
-    {
-        light.type = static_cast<Light::LightType>(type);
-    }
-
-    ImGui::Separator();
-    ImGui::Text("Colors");
-
-    ImGui::ColorEdit3("Ambient", &light.ambient.x);
-    ImGui::ColorEdit3("Diffuse", &light.diffuse.x);
-    ImGui::ColorEdit3("Specular", &light.specular.x);
-
-    ImGui::Separator();
-
-    if (light.type != Light::Directional)
-    {
-        ImGui::DragFloat3("Position", &light.position.x, 0.05f);
-    }
-
-    if (light.type == Light::Directional || light.type == Light::Spot)
-    {
-        ImGui::DragFloat3("Direction", &light.direction.x, 0.05f);
-    }
-
-    if (light.type == Light::Point || light.type == Light::Spot)
-    {
-        ImGui::Separator();
-        ImGui::Text("Attenuation");
-
-        ImGui::DragFloat("Constant", &light.constant, 0.01f, 0.0f, 2.0f);
-        ImGui::DragFloat("Linear", &light.linear, 0.001f, 0.0f, 1.0f);
-        ImGui::DragFloat("Quadratic", &light.quadratic, 0.001f, 0.0f, 1.0f);
-    }
-
-    if (light.type == Light::Spot)
-    {
-        ImGui::Separator();
-        ImGui::Text("Spotlight Angles");
-
-        float inner = glm::degrees(acos(light.cutOff));
-        float outer = glm::degrees(acos(light.outerCutOff));
-
-        if (ImGui::SliderFloat("Inner CutOff", &inner, 0.0f, 90.0f))
-            light.cutOff = glm::cos(glm::radians(inner));
-
-        if (ImGui::SliderFloat("Outer CutOff", &outer, inner, 90.0f))
-            light.outerCutOff = glm::cos(glm::radians(outer));
-    }
-}
-
-
-void showTransformEditor(Transform& transform)
-{
-    glm::vec3 pos = transform.getLocalPosition();
-    glm::vec3 rot = transform.getLocalRotation();
-    glm::vec3 scale = transform.getLocalScale();
-
-    if (ImGui::DragFloat3("Position", &pos.x, 0.01f))
-    {
-        change = true;
-        transform.setLocalPosition(pos);
-    }
-
-    if (ImGui::DragFloat3("Rotation", &rot.x, 0.1f))
-    {
-        change = true;
-        transform.setLocalRotation(rot);
-    }
-
-    if (ImGui::DragFloat3("Scale", &scale.x, 0.01f, 0.01f))
-    {
-        change = true;
-        transform.setLocalScale(scale);
-    }
-}
-static ImGuiTextFilter entityFilter;
-
-bool entityMatchesFilter(Entity* entity)
-{
-    if (entityFilter.PassFilter(entity->name.c_str()))
-        return true;
-
-    for (auto& child : entity->children)
-    {
-        if (entityMatchesFilter(child.get()))
-            return true;
-    }
-    return false;
-}
-
-
-void showEntityTree(Entity* entity)
-{
-    if (!entity) return;
-
-    if (!entityMatchesFilter(entity))
-        return;
-
-    ImGuiTreeNodeFlags flags =
-        ImGuiTreeNodeFlags_OpenOnArrow |
-        ImGuiTreeNodeFlags_OpenOnDoubleClick |
-        ((entity == selectedEntity) ? ImGuiTreeNodeFlags_Selected : 0);
-
-    bool nodeOpen = ImGui::TreeNodeEx(
-        (void*)entity,
-        flags,
-        "%s",
-        entity->name.c_str()
-    );
-
-    if (ImGui::IsItemClicked())
-        selectedEntity = entity;
-
-    if (nodeOpen)
-    {
-        for (auto& child : entity->children)
-            showEntityTree(child.get());
-
-        ImGui::TreePop();
-    }
-}
-
-
-
+//
+////Wszystko ponizej to imgui
+//static Entity* selectedEntity = nullptr;
+//
+//void showLightEditor(Light& light)
+//{
+//    ImGui::Checkbox("Light Enabled", &light.isOn);
+//
+//    const char* lightTypes[] = { "Directional", "Point", "Spot" };
+//    int type = static_cast<int>(light.type);
+//    if (ImGui::Combo("Light Type", &type, lightTypes, IM_ARRAYSIZE(lightTypes)))
+//    {
+//        light.type = static_cast<Light::LightType>(type);
+//    }
+//
+//    ImGui::Separator();
+//    ImGui::Text("Colors");
+//
+//    ImGui::ColorEdit3("Ambient", &light.ambient.x);
+//    ImGui::ColorEdit3("Diffuse", &light.diffuse.x);
+//    ImGui::ColorEdit3("Specular", &light.specular.x);
+//
+//    ImGui::Separator();
+//
+//    if (light.type != Light::Directional)
+//    {
+//        ImGui::DragFloat3("Position", &light.position.x, 0.05f);
+//    }
+//
+//    if (light.type == Light::Directional || light.type == Light::Spot)
+//    {
+//        ImGui::DragFloat3("Direction", &light.direction.x, 0.05f);
+//    }
+//
+//    if (light.type == Light::Point || light.type == Light::Spot)
+//    {
+//        ImGui::Separator();
+//        ImGui::Text("Attenuation");
+//
+//        ImGui::DragFloat("Constant", &light.constant, 0.01f, 0.0f, 2.0f);
+//        ImGui::DragFloat("Linear", &light.linear, 0.001f, 0.0f, 1.0f);
+//        ImGui::DragFloat("Quadratic", &light.quadratic, 0.001f, 0.0f, 1.0f);
+//    }
+//
+//    if (light.type == Light::Spot)
+//    {
+//        ImGui::Separator();
+//        ImGui::Text("Spotlight Angles");
+//
+//        float inner = glm::degrees(acos(light.cutOff));
+//        float outer = glm::degrees(acos(light.outerCutOff));
+//
+//        if (ImGui::SliderFloat("Inner CutOff", &inner, 0.0f, 90.0f))
+//            light.cutOff = glm::cos(glm::radians(inner));
+//
+//        if (ImGui::SliderFloat("Outer CutOff", &outer, inner, 90.0f))
+//            light.outerCutOff = glm::cos(glm::radians(outer));
+//    }
+//}
+//
+//
+//void showTransformEditor(Transform& transform)
+//{
+//    glm::vec3 pos = transform.getLocalPosition();
+//    glm::vec3 rot = transform.getLocalRotation();
+//    glm::vec3 scale = transform.getLocalScale();
+//
+//    if (ImGui::DragFloat3("Position", &pos.x, 0.01f))
+//    {
+//        change = true;
+//        transform.setLocalPosition(pos);
+//    }
+//
+//    if (ImGui::DragFloat3("Rotation", &rot.x, 0.1f))
+//    {
+//        change = true;
+//        transform.setLocalRotation(rot);
+//    }
+//
+//    if (ImGui::DragFloat3("Scale", &scale.x, 0.01f, 0.01f))
+//    {
+//        change = true;
+//        transform.setLocalScale(scale);
+//    }
+//}
+//static ImGuiTextFilter entityFilter;
+//
+//bool entityMatchesFilter(Entity* entity)
+//{
+//    if (entityFilter.PassFilter(entity->name.c_str()))
+//        return true;
+//
+//    for (auto& child : entity->children)
+//    {
+//        if (entityMatchesFilter(child.get()))
+//            return true;
+//    }
+//    return false;
+//}
+//
+//
+//void showEntityTree(Entity* entity)
+//{
+//    if (!entity) return;
+//
+//    if (!entityMatchesFilter(entity))
+//        return;
+//
+//    ImGuiTreeNodeFlags flags =
+//        ImGuiTreeNodeFlags_OpenOnArrow |
+//        ImGuiTreeNodeFlags_OpenOnDoubleClick |
+//        ((entity == selectedEntity) ? ImGuiTreeNodeFlags_Selected : 0);
+//
+//    bool nodeOpen = ImGui::TreeNodeEx(
+//        (void*)entity,
+//        flags,
+//        "%s",
+//        entity->name.c_str()
+//    );
+//
+//    if (ImGui::IsItemClicked())
+//        selectedEntity = entity;
+//
+//    if (nodeOpen)
+//    {
+//        for (auto& child : entity->children)
+//            showEntityTree(child.get());
+//
+//        ImGui::TreePop();
+//    }
+//}
+//
 
 void imgui_render()
 {
-    /// Add new ImGui controls here
-    // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
     if (show_demo_window)
-
-        //ImGui::ShowDemoWindow(&show_demo_window);
-
-    // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
-
     {
-        ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
-
-        
-        if (ImGui::Button(wireframeMode ? "Switch to Fill Mode" : "Switch to Wireframe"))
-        {
-            wireframeMode = !wireframeMode;
-            if (wireframeMode)
-                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // włącz wireframe
-            else
-                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // normalny render
-        }
-
-        ImGui::SliderFloat("rotation X", &rotationX, -480.0f, 480.0f);
-        ImGui::SliderFloat("rotation Y", &rotationY, -480.0f, 480.0f);
-        ImGui::SliderFloat("Camera Distance", &cameraDistance, 5.0f, 1000.0f);
-
-
-        ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-        ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
-        ImGui::Checkbox("Another Window", &show_another_window);
-
-        ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
-
-        if (ImGui::Button("Auto rotation"))
-            autoRotation = !autoRotation;
-        ImGui::SameLine();
-        ImGui::Text(" = %s", autoRotation ? "true" : "false");
-
-        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-        
-       if (root) // główny obiekt sceny
-       {
-           ImGui::Separator();
-           ImGui::Text("Hierarchy");
-           entityFilter.Draw("Search", 200);
-           ImGui::Separator();
-
-           showEntityTree(root.get());
-
-       
-           if (selectedEntity)
-           {
-               ImGui::Separator();
-               ImGui::Text("Selected Entity: %s", selectedEntity->name.c_str());
-               showTransformEditor(selectedEntity->transform);
-           }
-
-
-           ImGui::Separator();
-           ImGui::Text("Lighting");
-
-           if (ImGui::CollapsingHeader("Directional Light"))
-           {
-               ImGui::PushID("Directional");
-               showLightEditor(*dircetLight);
-               ImGui::PopID();
-           }
-
-           //if (ImGui::CollapsingHeader("Point Lights"))
-           //{
-           //    ImGui::PushID("pointLight");
-           //    showLightEditor(*pointLight);
-           //    ImGui::PopID();
-           //}
-
-           //if (ImGui::CollapsingHeader("Spot Light"))
-           //{
-           //    ImGui::PushID("spotLight");
-           //    showLightEditor(*spotLight);
-           //    ImGui::PopID();
-           //}
-
-           //if (ImGui::CollapsingHeader("Spot Light2"))
-           //{
-           //    ImGui::PushID("spotLight2");
-           //    showLightEditor(*spotLight2);
-           //    ImGui::PopID();
-           //}
-       }
-       
-        
-        ImGui::End();
+        //ImGui::ShowDemoWindow(&show_demo_window);
     }
 
-    // 3. Show another simple window.
+    ImGui::Begin("Hello, world!");
+
+    if (ImGui::Button(wireframeMode ? "Switch to Fill Mode" : "Switch to Wireframe"))
+    {
+        wireframeMode = !wireframeMode;
+        glPolygonMode(GL_FRONT_AND_BACK,
+            wireframeMode ? GL_LINE : GL_FILL);
+    }
+
+    ImGui::SliderFloat("rotation X", &rotationX, -480.0f, 480.0f);
+    ImGui::SliderFloat("rotation Y", &rotationY, -480.0f, 480.0f);
+    ImGui::SliderFloat("Camera Distance", &cameraDistance, 5.0f, 1000.0f);
+
+    ImGui::Text("This is some useful text.");
+    ImGui::Checkbox("Demo Window", &show_demo_window);
+    ImGui::Checkbox("Another Window", &show_another_window);
+
+    ImGui::ColorEdit3("clear color", (float*)&clear_color);
+
+    ImGui::End(); // 🔥 MUSI BYĆ
+
     if (show_another_window)
     {
-        ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
+        ImGui::Begin("Another Window", &show_another_window);
         ImGui::Text("Hello from another window!");
         if (ImGui::Button("Close Me"))
             show_another_window = false;
         ImGui::End();
     }
 }
+//
+//void imgui_render()
+//{
+//    /// Add new ImGui controls here
+//    // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
+//    if (show_demo_window)
+//
+//        //ImGui::ShowDemoWindow(&show_demo_window);
+//
+//    // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
+//
+//    {
+//        ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
+//
+//
+//        if (ImGui::Button(wireframeMode ? "Switch to Fill Mode" : "Switch to Wireframe"))
+//        {
+//            wireframeMode = !wireframeMode;
+//            if (wireframeMode)
+//                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // włącz wireframe
+//            else
+//                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // normalny render
+//        }
+//
+//        ImGui::SliderFloat("rotation X", &rotationX, -480.0f, 480.0f);
+//        ImGui::SliderFloat("rotation Y", &rotationY, -480.0f, 480.0f);
+//        ImGui::SliderFloat("Camera Distance", &cameraDistance, 5.0f, 1000.0f);
+//
+//
+//        ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
+//        ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
+//        ImGui::Checkbox("Another Window", &show_another_window);
+//
+//        ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
+//    }
+//    //    if (ImGui::Button("Auto rotation"))
+//    //        autoRotation = !autoRotation;
+//    //    ImGui::SameLine();
+//    //    ImGui::Text(" = %s", autoRotation ? "true" : "false");
+//
+//    //    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+//    //    
+//    //   if (root) // główny obiekt sceny
+//    //   {
+//    //       ImGui::Separator();
+//    //       ImGui::Text("Hierarchy");
+//    //       entityFilter.Draw("Search", 200);
+//    //       ImGui::Separator();
+//
+//    //       showEntityTree(root.get());
+//
+//    //   
+//    //       if (selectedEntity)
+//    //       {
+//    //           ImGui::Separator();
+//    //           ImGui::Text("Selected Entity: %s", selectedEntity->name.c_str());
+//    //           showTransformEditor(selectedEntity->transform);
+//    //       }
+//
+//
+//    //       ImGui::Separator();
+//    //       ImGui::Text("Lighting");
+//
+//    //       if (ImGui::CollapsingHeader("Directional Light"))
+//    //       {
+//    //           ImGui::PushID("Directional");
+//    //           showLightEditor(*dircetLight);
+//    //           ImGui::PopID();
+//    //       }
+//
+//    //       //if (ImGui::CollapsingHeader("Point Lights"))
+//    //       //{
+//    //       //    ImGui::PushID("pointLight");
+//    //       //    showLightEditor(*pointLight);
+//    //       //    ImGui::PopID();
+//    //       //}
+//
+//    //       //if (ImGui::CollapsingHeader("Spot Light"))
+//    //       //{
+//    //       //    ImGui::PushID("spotLight");
+//    //       //    showLightEditor(*spotLight);
+//    //       //    ImGui::PopID();
+//    //       //}
+//
+//    //       //if (ImGui::CollapsingHeader("Spot Light2"))
+//    //       //{
+//    //       //    ImGui::PushID("spotLight2");
+//    //       //    showLightEditor(*spotLight2);
+//    //       //    ImGui::PopID();
+//    //       //}
+//    //   }
+//    //   
+//    //    
+//    //    ImGui::End();
+//    //}
+//
+//    // 3. Show another simple window.
+//    if (show_another_window)
+//    {
+//        ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
+//        ImGui::Text("Hello from another window!");
+//        if (ImGui::Button("Close Me"))
+//            show_another_window = false;
+//        ImGui::End();
+//    }
+//}
 
 void imgui_end()
 {
@@ -1151,6 +1189,7 @@ void end_frame()
     glfwSwapBuffers(window);
 }
 
+/*
 // loads a cubemap texture from 6 individual texture faces
 // order:
 // +X (right)
@@ -1189,3 +1228,5 @@ unsigned int loadCubemap(vector<std::string> faces)
 
     return textureID;
 }
+
+*/

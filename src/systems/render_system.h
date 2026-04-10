@@ -2,9 +2,12 @@
 #define RENDER_SYSTEM_H
 
 #include "core/ecs.h"
+
+#include <model.h>
 #include <imgui.h>
 #include <GLFW/glfw3.h>
 #include "skybox_renderer.h"
+
 
 
 class RenderSystem : public System {
@@ -30,7 +33,7 @@ private:
     glm::mat4 view;
 
 public:
-    RenderSystem(ECS& ecs, GLFWwindow* win) : window(win)
+    RenderSystem(ECS& ecs, GLFWwindow* win) : window(win) 
     {
         query = ecs.CreateQuery<TransformComponent, RenderComponent, CameraComponent>();
 
@@ -77,9 +80,10 @@ public:
         for (size_t i = 0; i < cameras.size(); i++) {
             if (cameras[i]->isActive) {
 
+                float fov = cameras[i]->camera.Zoom;
                 float aspect = (float)display_w / (float)display_h;
 
-                projection = glm::perspective(glm::radians(cameras[i]->camera.Zoom), aspect, cameras[i]->nearPlane, cameras[i]->farPlane);
+                projection = glm::perspective(glm::radians(fov), aspect, cameras[i]->nearPlane, cameras[i]->farPlane);
                 view = cameras[i]->camera.GetViewMatrix();
 
                 return;

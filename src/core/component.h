@@ -2,9 +2,10 @@
 #define COMPONENT_H
 
 #include <glm/glm.hpp>
-#include <model.h>
-#include <shader.h>
-#include <camera.h>
+#include "camera.h"
+
+class Model;
+class Shader;
 
 struct Component {
     virtual ~Component() {}

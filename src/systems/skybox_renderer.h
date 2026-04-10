@@ -8,7 +8,7 @@
 #include <memory>
 
 #include "shader.h"
-#include <stb_image.h>
+
 
 class SkyboxRenderer {
 private:
@@ -117,7 +117,15 @@ public:
         glDepthFunc(GL_LESS);
     }
 
-
+    // loads a cubemap texture from 6 individual texture faces
+    // order:
+    // +X (right)
+    // -X (left)
+    // +Y (top)
+    // -Y (bottom)
+    // +Z (front) 
+    // -Z (back)
+    // -------------------------------------------------------
     unsigned int loadCubemap(std::vector<std::string> faces)
     {
         unsigned int textureID;

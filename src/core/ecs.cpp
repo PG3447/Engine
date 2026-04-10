@@ -9,12 +9,6 @@ void ECS::NotifyGameObjectChanged(GameObject* e) {
 }
 
 
-void ECS::Update() {
-    for (auto& sys : systems)
-        sys->Update(*this);
-}
-
-
 GameObject* ECS::CreateGameObject() {
     GameObject* e = new GameObject(this);
     gameobjects.emplace_back(e);

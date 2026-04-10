@@ -2,18 +2,21 @@
 #define TRANSFORM_SYSTEM_H
 
 #include "core/ecs.h"
-#include "transform.h"
+#include "utils/transform_helper.h"
 
 class TransformSystem : public System {
 private:
-    Transform helper;
 
     
     void forceUpdateSelfAndChild(GameObject* obj);
 public:
+    TransformSystem(ECS& ecs) {};
+
+    void OnGameObjectUpdated(GameObject* e) override {};
 
     void updateSelfAndChild(GameObject* obj);
-    void Update(ECS& ecs);
+    void Update(ECS& ecs) override {};
+
 };
 
 #endif

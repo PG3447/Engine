@@ -244,79 +244,79 @@ vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType type,
     }
     return textures;
 }
-
-
-std::unique_ptr<Model> Model::createOrbit(float radius, int segments, float tiltDegrees, float scale, vector<Texture>* textures)
-{
-    auto orbit = std::make_unique<Model>();
-    orbit->transform.setLocalScale(glm::vec3(scale));
-
-    std::vector<Vertex> vertices;
-    std::vector<unsigned int> indices;
-
-    float tilt = glm::radians(tiltDegrees);
-
-    for (int i = 0; i <= segments; ++i)
-    {
-        float angle = (float)i / segments * 2.0f * 3.14159265f;
-
-        float x = radius * cos(angle);
-        float y = 0.0f;
-        float z = radius * sin(angle);
-
-        glm::vec3 p(
-            x,
-            y * cos(tilt) - z * sin(tilt),
-            y * sin(tilt) + z * cos(tilt)
-        );
-
-        Vertex v{};
-        v.Position = p;
-        v.Normal = glm::vec3(0, 1, 0);
-        v.TexCoords = glm::vec2((float)i / segments, 0.0f);
-
-        vertices.push_back(v);
-        indices.push_back(i);
-    }
-    vector<Texture> finalTextures;
-
-    if (textures != nullptr)
-        finalTextures = *textures;
-
-    Mesh orbitMesh(vertices, indices, finalTextures);
-    orbitMesh.meshType = Mesh::MESH_LINES;
-
-    orbit->meshes.push_back(std::move(orbitMesh));
-    return orbit;
-}
-
-std::unique_ptr<Model> Model::createSphere(int rings, int sectors, const std::string& texturePath)
-{
-    auto model = std::make_unique<Model>();
-
-    std::vector<float> ringIDs;
-    for (int r = 0; r < rings; ++r)
-        ringIDs.push_back((float)r);
-    Mesh mesh(ringIDs);
-    mesh.meshType = Mesh::MESH_POINTS;
-    if (!texturePath.empty())
-    {
-        size_t pos = texturePath.find_last_of("/\\");
-        std::string directory = "";
-        std::string filename = texturePath;
-        if (pos != std::string::npos)
-        {
-            directory = texturePath.substr(0, pos);
-            filename = texturePath.substr(pos + 1);
-        }
-
-        Texture tex;
-        tex.id = ResourceManager::LoadTexture(filename, directory);
-        tex.type = "texture_diffuse";
-        tex.path = texturePath;
-        mesh.textures.push_back(tex);
-    }
-    model->meshes.push_back(mesh);
-
-    return model;
-}
+//
+//
+//std::unique_ptr<Model> Model::createOrbit(float radius, int segments, float tiltDegrees, float scale, vector<Texture>* textures)
+//{
+//    auto orbit = std::make_unique<Model>();
+//    orbit->transform.setLocalScale(glm::vec3(scale));
+//
+//    std::vector<Vertex> vertices;
+//    std::vector<unsigned int> indices;
+//
+//    float tilt = glm::radians(tiltDegrees);
+//
+//    for (int i = 0; i <= segments; ++i)
+//    {
+//        float angle = (float)i / segments * 2.0f * 3.14159265f;
+//
+//        float x = radius * cos(angle);
+//        float y = 0.0f;
+//        float z = radius * sin(angle);
+//
+//        glm::vec3 p(
+//            x,
+//            y * cos(tilt) - z * sin(tilt),
+//            y * sin(tilt) + z * cos(tilt)
+//        );
+//
+//        Vertex v{};
+//        v.Position = p;
+//        v.Normal = glm::vec3(0, 1, 0);
+//        v.TexCoords = glm::vec2((float)i / segments, 0.0f);
+//
+//        vertices.push_back(v);
+//        indices.push_back(i);
+//    }
+//    vector<Texture> finalTextures;
+//
+//    if (textures != nullptr)
+//        finalTextures = *textures;
+//
+//    Mesh orbitMesh(vertices, indices, finalTextures);
+//    orbitMesh.meshType = Mesh::MESH_LINES;
+//
+//    orbit->meshes.push_back(std::move(orbitMesh));
+//    return orbit;
+//}
+//
+//std::unique_ptr<Model> Model::createSphere(int rings, int sectors, const std::string& texturePath)
+//{
+//    auto model = std::make_unique<Model>();
+//
+//    std::vector<float> ringIDs;
+//    for (int r = 0; r < rings; ++r)
+//        ringIDs.push_back((float)r);
+//    Mesh mesh(ringIDs);
+//    mesh.meshType = Mesh::MESH_POINTS;
+//    if (!texturePath.empty())
+//    {
+//        size_t pos = texturePath.find_last_of("/\\");
+//        std::string directory = "";
+//        std::string filename = texturePath;
+//        if (pos != std::string::npos)
+//        {
+//            directory = texturePath.substr(0, pos);
+//            filename = texturePath.substr(pos + 1);
+//        }
+//
+//        Texture tex;
+//        tex.id = ResourceManager::LoadTexture(filename, directory);
+//        tex.type = "texture_diffuse";
+//        tex.path = texturePath;
+//        mesh.textures.push_back(tex);
+//    }
+//    model->meshes.push_back(mesh);
+//
+//    return model;
+//}
