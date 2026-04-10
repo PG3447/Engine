@@ -2,6 +2,8 @@
 #define RENDER_SYSTEM_H
 
 #include "core/ecs.h"
+#include <imgui.h>
+#include <GLFW/glfw3.h>
 
 
 class RenderSystem : public System {
@@ -17,11 +19,15 @@ private:
 
     bool groupsDirty = true;
 
+    GLFWwindow* window = nullptr;
+    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+    GLuint texture;
+
     glm::mat4 projection;
     glm::mat4 view;
 
 public:
-    RenderSystem(ECS& ecs)
+    RenderSystem(ECS& ecs, GLFWwindow* win) : window(win)
     {
         query = ecs.CreateQuery<TransformComponent, RenderComponent, CameraComponent>();
     }
@@ -37,23 +43,45 @@ public:
     }
 
     void Update(ECS& ecs) override {
+
+        // OpenGL Rendering code goes here
+        glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        //bind texture
+        //glActiveTexture(GL_TEXTURE0);
+        //glBindTexture(GL_TEXTURE_2D, texture);
+
+
         UpdateCamera();
         BuildGroups();
         RenderGroups();
+
+        glBindVertexArray(0);
+
+        RenderSkybox();
     }
 
 
     void UpdateCamera() {
         auto& cameras = std::get<2>(query->componentsVectors);
 
+        int display_w, display_h;
+        glfwGetFramebufferSize(window, &display_w, &display_h);
+
         for (size_t i = 0; i < cameras.size(); i++) {
             if (cameras[i]->isActive) {
-                projection = cameras[i]->projection;
-                view = cameras[i]->view;
+
+                float aspect = (float)display_w / (float)display_h;
+
+                projection = glm::perspective(glm::radians(cameras[i]->camera.Zoom), aspect, cameras[i]->nearPlane, cameras[i]->farPlane);
+                view = cameras[i]->camera.GetViewMatrix();
+
                 return;
             }
         }
     }
+
 
     void BuildGroups() {
         if (!groupsDirty) return;
@@ -115,10 +143,12 @@ public:
         for (size_t i = 0; i < count; i++) {
             matrices[i] = transforms[indices[i]]->modelMatrix;
         }
-
+        
         if (model->instanceVBO == 0)
             glGenBuffers(1, &model->instanceVBO);
 
+        model->PrepareInstancing();
+        
         glBindBuffer(GL_ARRAY_BUFFER, model->instanceVBO);
         glBufferData(GL_ARRAY_BUFFER, count * sizeof(glm::mat4), matrices.data(), GL_DYNAMIC_DRAW);
 
@@ -126,68 +156,50 @@ public:
     }
 
 
-
-
-    void renderInstanced(Model* model, Shader* shader, std::vector<Entity*>& entities)
+    void RenderSkybox()
     {
-        if (start || change) {
-            size_t numEntities = entities.size();
-            glm::mat4* modelMatrices = new glm::mat4[numEntities];
+        glDepthFunc(GL_LEQUAL);
 
-            for (size_t i = 0; i < numEntities; ++i)
-            {
-                modelMatrices[i] = entities[i]->transform.getModelMatrix();
-            }
-
-
-            if (model->instanceVBO == 0)
-                glGenBuffers(1, &model->instanceVBO);
-            glBindBuffer(GL_ARRAY_BUFFER, model->instanceVBO);
-            glBufferData(GL_ARRAY_BUFFER, numEntities * sizeof(glm::mat4), modelMatrices, GL_DYNAMIC_DRAW);
-        }
-
-        if (start) {
-            for (unsigned int i = 0; i < model->meshes.size(); i++)
-            {
-                unsigned int VAO = model->meshes[i].VAO;
-                glBindVertexArray(VAO);
-
-                // matrix
-                GLsizei vec4Size = sizeof(glm::vec4);
-                glEnableVertexAttribArray(7);
-                glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)0);
-                glEnableVertexAttribArray(8);
-                glVertexAttribPointer(8, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(vec4Size));
-                glEnableVertexAttribArray(9);
-                glVertexAttribPointer(9, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(2 * vec4Size));
-                glEnableVertexAttribArray(10);
-                glVertexAttribPointer(10, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(3 * vec4Size));
-
-                glVertexAttribDivisor(7, 1);
-                glVertexAttribDivisor(8, 1);
-                glVertexAttribDivisor(9, 1);
-                glVertexAttribDivisor(10, 1);
-
-                glBindVertexArray(0);
-            }
-        }
-        if (model != nullptr)
-        {
-            model->Draw(*shader, (GLsizei)entities.size());
-        }
+        //glm::mat4 skyboxView = glm::mat4(glm::mat3(view));
+        //
+        //skyboxShader->use();
+        //skyboxShader->setMat4("view", skyboxView);
+        //skyboxShader->setMat4("projection", projection);
+        //
+        //glBindVertexArray(skyboxVAO);
+        //glActiveTexture(GL_TEXTURE0);
+        //glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+        //
+        //glDrawArrays(GL_TRIANGLES, 0, 36);
+        //
+        //glBindVertexArray(0);
+        //glDepthFunc(GL_LESS);
     }
+
+
+
+
+
+   
+
+
+};
+
+#endif
+
+/*
 
     void render()
     {
         //OLD RENDER FUNCION STARTS HERE
 
             //float time = glfwGetTime();
-            //float radius = 10.0f;         
-            //float speed = 2.0f;        
+            //float radius = 10.0f;
+            //float speed = 2.0f;
 
 
             //pointLight->position.x = radius * cos(speed * time);
-            //pointLight->position.y = 1.0f; 
+            //pointLight->position.y = 1.0f;
             //pointLight->position.z = radius * sin(speed * time);
 
         if (!mouseMove)
@@ -240,16 +252,18 @@ public:
         //    glBindVertexArray(0);
         ///    glDepthFunc(GL_LESS); // set depth function back to default*/
         //OLD RENDER FUNCTION ENDS HERE
-
-        triangleShader->use();
-        glBindVertexArray(triangleVAO);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-        glBindVertexArray(0);
+/*
+triangleShader->use();
+glBindVertexArray(triangleVAO);
+glDrawArrays(GL_TRIANGLES, 0, 3);
+glBindVertexArray(0);
 
     }
 
 
-    //std::unordered_map<std::pair<Model*, Shader*>, std::vector<Entity*>, pair_hash> instancedGroups;
+
+
+ //std::unordered_map<std::pair<Model*, Shader*>, std::vector<Entity*>, pair_hash> instancedGroups;
 
     void startGroupInstanced(Entity* root)
     {
@@ -394,9 +408,7 @@ public:
     }
 
 
-};
-
-#endif
+*/
 
 /*
 

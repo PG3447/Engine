@@ -39,11 +39,14 @@ public:
     string name;
     string directory;
     bool gammaCorrection;
+    bool instancingPrepared = false;
     unsigned int instanceVBO = 0;
     
     Model();
     ~Model();
     Model(const std::string& path, bool gamma = false);
+
+    void PrepareInstancing();
 
     void Draw(Shader& shader, GLsizei instanceCount = 0);
 

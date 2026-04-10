@@ -71,6 +71,7 @@ public:
 
     GLuint cubemapTexture = 0;
     bool reflect = false;
+    bool instancingEnabled = false;
     unsigned int numPoints = 0;
     unsigned int instanceVBO = 0;
 
@@ -121,6 +122,7 @@ public:
     // render the mesh
     void Draw(Shader& shader, GLsizei instanceCount = 0)
     {
+
         // bind appropriate textures
         unsigned int diffuseNr = 1;
         unsigned int specularNr = 1;
@@ -196,6 +198,35 @@ public:
         glActiveTexture(GL_TEXTURE0);
     }
 
+
+    void EnableInstancing()
+    {
+        if (instancingEnabled)
+            return;
+
+        glBindVertexArray(renderData->VAO);
+
+        // matrix
+        GLsizei vec4Size = sizeof(glm::vec4);
+        glEnableVertexAttribArray(7);
+        glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)0);
+        glEnableVertexAttribArray(8);
+        glVertexAttribPointer(8, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(vec4Size));
+        glEnableVertexAttribArray(9);
+        glVertexAttribPointer(9, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(2 * vec4Size));
+        glEnableVertexAttribArray(10);
+        glVertexAttribPointer(10, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(3 * vec4Size));
+
+        glVertexAttribDivisor(7, 1);
+        glVertexAttribDivisor(8, 1);
+        glVertexAttribDivisor(9, 1);
+        glVertexAttribDivisor(10, 1);
+
+        glBindVertexArray(0);
+
+        instancingEnabled = true;
+    }
+
 private:
 
     // initializes all the buffer objects/arrays
@@ -230,5 +261,6 @@ private:
 
         glBindVertexArray(0);
     }
+
 };
 #endif

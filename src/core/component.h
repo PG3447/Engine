@@ -1,9 +1,10 @@
-#ifndef COMPONENT_H
+﻿#ifndef COMPONENT_H
 #define COMPONENT_H
 
 #include <glm/glm.hpp>
 #include <model.h>
 #include <shader.h>
+#include <camera.h>
 
 struct Component {
     virtual ~Component() {}
@@ -37,6 +38,7 @@ struct RigidbodyComponent : Component {
     float vx = 0, vy = 0;
 };
 
+/*
 struct CameraComponent : Component {
     static constexpr uint64_t ComponentBit = 1ull << 3;
 
@@ -47,6 +49,18 @@ struct CameraComponent : Component {
 
     glm::mat4 view{ 1.0f };
     glm::mat4 projection{ 1.0f };
+
+    bool isActive = true;
+};
+*/
+
+struct CameraComponent : Component {
+    static constexpr uint64_t ComponentBit = 1ull << 3;
+
+    Camera camera;
+
+    float nearPlane = 0.1f;
+    float farPlane = 10000.0f;
 
     bool isActive = true;
 };

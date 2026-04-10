@@ -41,6 +41,17 @@ Model::Model(string const& path, float meshScale, bool gamma) : meshScale(meshSc
 }
 */
 
+void Model::PrepareInstancing()
+{
+    if (instancingPrepared)
+        return;
+
+    for (auto& mesh : meshes)
+        mesh.EnableInstancing();
+
+    instancingPrepared = true;
+}
+
 
 // draws the model, and thus all its meshes
 void Model::Draw(Shader& shader, GLsizei instanceCount)
