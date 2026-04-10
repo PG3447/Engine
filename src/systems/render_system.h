@@ -4,6 +4,7 @@
 #include "core/ecs.h"
 #include <imgui.h>
 #include <GLFW/glfw3.h>
+#include "skybox_renderer.h"
 
 
 class RenderSystem : public System {
@@ -23,6 +24,8 @@ private:
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
     GLuint texture;
 
+    SkyboxRenderer skybox;
+
     glm::mat4 projection;
     glm::mat4 view;
 
@@ -30,6 +33,8 @@ public:
     RenderSystem(ECS& ecs, GLFWwindow* win) : window(win)
     {
         query = ecs.CreateQuery<TransformComponent, RenderComponent, CameraComponent>();
+
+        skybox.Init();
     }
 
     void OnGameObjectUpdated(GameObject* e) override {
@@ -59,7 +64,7 @@ public:
 
         glBindVertexArray(0);
 
-        RenderSkybox();
+        skybox.Render(view, projection);
     }
 
 
@@ -158,7 +163,7 @@ public:
 
     void RenderSkybox()
     {
-        glDepthFunc(GL_LEQUAL);
+        //glDepthFunc(GL_LEQUAL);
 
         //glm::mat4 skyboxView = glm::mat4(glm::mat3(view));
         //
@@ -175,13 +180,6 @@ public:
         //glBindVertexArray(0);
         //glDepthFunc(GL_LESS);
     }
-
-
-
-
-
-   
-
 
 };
 
