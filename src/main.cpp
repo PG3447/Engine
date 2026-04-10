@@ -334,6 +334,7 @@ int main(int, char**)
     // Tworzymy drugi obiekt z komponentem od razu
     GameObject* obj2 = scena1->CreateEntityWithComponents<TransformComponent>();
     TransformComponent* t2 = obj2->GetComponent<TransformComponent>();
+    CameraComponent* c1 = obj2->AddComponent<CameraComponent>();
     t2->position = glm::vec3(10.0f, 20.0f, 30.0f);
     
     spdlog::info("Second GameObject position: x={}, y={}, z={}",
@@ -476,7 +477,7 @@ void init_imgui()
 
 void compileShader()
 {
-    glEnable(GL_DEPTH_TEST);
+    //glEnable(GL_DEPTH_TEST);
 
 
     //float skyboxVertices[] = {

@@ -18,7 +18,9 @@ private:
         }
     };
 
-	Query<TransformComponent, RenderComponent, CameraComponent>* query;
+    Query<TransformComponent, RenderComponent>* renderQuery;
+    Query<CameraComponent>* cameraQuery;
+
     std::unordered_map<std::pair<Model*, Shader*>, std::vector<size_t>, pair_hash> instancedGroups;
 
     bool groupsDirty = true;
@@ -35,13 +37,20 @@ private:
 public:
     RenderSystem(ECS& ecs, GLFWwindow* win) : window(win) 
     {
-        query = ecs.CreateQuery<TransformComponent, RenderComponent, CameraComponent>();
+        renderQuery = ecs.CreateQuery<TransformComponent, RenderComponent>();
+        cameraQuery = ecs.CreateQuery<CameraComponent>();
+        
+        Init();
+    }
 
+    void Init() {
+        glEnable(GL_DEPTH_TEST);
         skybox.Init();
     }
 
     void OnGameObjectUpdated(GameObject* e) override {
-        query->OnGameObjectUpdated(e); // forward do query
+        renderQuery->OnGameObjectUpdated(e); // forward do query
+        cameraQuery->OnGameObjectUpdated(e); // forward do query
 
         groupsDirty = true;
     }
@@ -72,14 +81,14 @@ public:
 
 
     void UpdateCamera() {
-        auto& cameras = std::get<2>(query->componentsVectors);
+        auto& cameras = std::get<0>(cameraQuery->componentsVectors);
 
         int display_w, display_h;
         glfwGetFramebufferSize(window, &display_w, &display_h);
 
         for (size_t i = 0; i < cameras.size(); i++) {
             if (cameras[i]->isActive) {
-
+                
                 float fov = cameras[i]->camera.Zoom;
                 float aspect = (float)display_w / (float)display_h;
 
@@ -95,11 +104,11 @@ public:
     void BuildGroups() {
         if (!groupsDirty) return;
 
-        auto& renderers = std::get<1>(query->componentsVectors);
+        auto& renderers = std::get<1>(renderQuery->componentsVectors);
 
         instancedGroups.clear();
 
-        for (size_t i = 0; i < query->gameobjects.size(); i++) {
+        for (size_t i = 0; i < renderQuery->gameobjects.size(); i++) {
             RenderComponent* r = renderers[i];
 
             if (!r || !r->model)
@@ -116,8 +125,8 @@ public:
 
 
     void RenderGroups() {
-        auto& transforms = std::get<0>(query->componentsVectors);
-        auto& renderers = std::get<1>(query->componentsVectors);
+        auto& transforms = std::get<0>(renderQuery->componentsVectors);
+        auto& renderers = std::get<1>(renderQuery->componentsVectors);
 
         for (auto& [key, indices] : instancedGroups) {
             Model* model = key.first;
@@ -144,7 +153,7 @@ public:
 
     void RenderInstanced(Model* model, Shader* shader, std::vector<size_t>& indices)
     {
-        auto& transforms = std::get<0>(query->componentsVectors);
+        auto& transforms = std::get<0>(renderQuery->componentsVectors);
 
         size_t count = indices.size();
         std::vector<glm::mat4> matrices(count);
@@ -165,25 +174,25 @@ public:
     }
 
 
-    void RenderSkybox()
-    {
-        //glDepthFunc(GL_LEQUAL);
+    //void RenderSkybox()
+    //{
+    //    //glDepthFunc(GL_LEQUAL);
 
-        //glm::mat4 skyboxView = glm::mat4(glm::mat3(view));
-        //
-        //skyboxShader->use();
-        //skyboxShader->setMat4("view", skyboxView);
-        //skyboxShader->setMat4("projection", projection);
-        //
-        //glBindVertexArray(skyboxVAO);
-        //glActiveTexture(GL_TEXTURE0);
-        //glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
-        //
-        //glDrawArrays(GL_TRIANGLES, 0, 36);
-        //
-        //glBindVertexArray(0);
-        //glDepthFunc(GL_LESS);
-    }
+    //    //glm::mat4 skyboxView = glm::mat4(glm::mat3(view));
+    //    //
+    //    //skyboxShader->use();
+    //    //skyboxShader->setMat4("view", skyboxView);
+    //    //skyboxShader->setMat4("projection", projection);
+    //    //
+    //    //glBindVertexArray(skyboxVAO);
+    //    //glActiveTexture(GL_TEXTURE0);
+    //    //glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+    //    //
+    //    //glDrawArrays(GL_TRIANGLES, 0, 36);
+    //    //
+    //    //glBindVertexArray(0);
+    //    //glDepthFunc(GL_LESS);
+    //}
 
 };
 
