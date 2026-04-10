@@ -10,9 +10,23 @@
 
 #include <string>
 #include <vector>
+#include <memory>
+
 using namespace std;
 
 #define MAX_BONE_INFLUENCE 4
+
+struct RenderData {
+    unsigned int VAO = 0;
+    unsigned int VBO = 0;
+    unsigned int EBO = 0;
+
+    ~RenderData() {
+        if (VAO != 0) glDeleteVertexArrays(1, &VAO);
+        if (VBO != 0) glDeleteBuffers(1, &VBO);
+        if (EBO != 0) glDeleteBuffers(1, &EBO);
+    }
+};
 
 struct Vertex {
     // position
@@ -32,7 +46,7 @@ struct Vertex {
 };
 
 struct Texture {
-    unsigned int id;
+    std::shared_ptr<unsigned int> id;
     string type;
     string path;
 };
@@ -51,37 +65,41 @@ public:
     vector<Vertex>       vertices;
     vector<unsigned int> indices;
     vector<Texture>      textures;
-    unsigned int VAO;
+    vector<float>        ringIDs;
+
+    std::shared_ptr<RenderData> renderData;
+
     GLuint cubemapTexture = 0;
     bool reflect = false;
+    unsigned int numPoints = 0;
+    unsigned int instanceVBO = 0;
 
-
-
-    // constructor
+    // constructor 1
     Mesh(vector<Vertex> vertices, vector<unsigned int> indices, vector<Texture> textures)
     {
-        this->vertices = vertices;
-        this->indices = indices;
-        this->textures = textures;
+        this->vertices = std::move(vertices);
+        this->indices = std::move(indices);
+        this->textures = std::move(textures);
 
-        // now that we have all the required data, set the vertex buffers and its attribute pointers.
+        this->renderData = std::make_shared<RenderData>();
         setupMesh();
     }
 
-    unsigned int numPoints;
+    // constructor 2 (Points)
     Mesh(const std::vector<float>& ringIDs)
     {
         this->meshType = MESH_POINTS;
-        numPoints = (unsigned int)ringIDs.size();
+        this->numPoints = (unsigned int)ringIDs.size();
 
-        glGenVertexArrays(1, &VAO);
-        glGenBuffers(1, &VBO);
+        this->renderData = std::make_shared<RenderData>();
 
-        glBindVertexArray(VAO);
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glGenVertexArrays(1, &renderData->VAO);
+        glGenBuffers(1, &renderData->VBO);
+
+        glBindVertexArray(renderData->VAO);
+        glBindBuffer(GL_ARRAY_BUFFER, renderData->VBO);
         glBufferData(GL_ARRAY_BUFFER, numPoints * sizeof(float), ringIDs.data(), GL_STATIC_DRAW);
 
-        // Wysy³amy tylko 1 float per vertex (ringID)
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 1, GL_FLOAT, GL_FALSE, sizeof(float), (void*)0);
 
@@ -94,13 +112,11 @@ public:
         for (int r = 0; r < rings; ++r)
             ringIDs.push_back((float)r);
 
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBindBuffer(GL_ARRAY_BUFFER, renderData->VBO);
         glBufferData(GL_ARRAY_BUFFER, ringIDs.size() * sizeof(float), ringIDs.data(), GL_STATIC_DRAW);
         numPoints = (unsigned int)ringIDs.size();
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
-
-
 
     // render the mesh
     void Draw(Shader& shader, GLsizei instanceCount = 0)
@@ -117,13 +133,12 @@ public:
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
             glUniform1i(glGetUniformLocation(shader.shaderProgramID, "skybox"), 0);
-        } 
+        }
         else
         {
             for (unsigned int i = 0; i < textures.size(); i++)
             {
-                glActiveTexture(GL_TEXTURE0 + i); // active proper texture unit before binding
-                // retrieve texture number (the N in diffuse_textureN)
+                glActiveTexture(GL_TEXTURE0 + i);
                 string number;
                 string name = textures[i].type;
                 string uniformName;
@@ -136,30 +151,27 @@ public:
                 else if (name == "texture_specular")
                 {
                     uniformName = "material.specular";
-                    number = std::to_string(specularNr++); // transfer unsigned int to string
+                    number = std::to_string(specularNr++);
                 }
                 else if (name == "texture_normal")
                 {
                     uniformName = "material.normal";
-                    number = std::to_string(normalNr++); // transfer unsigned int to string
+                    number = std::to_string(normalNr++);
                 }
                 else if (name == "texture_height")
                 {
                     uniformName = "material.height";
-                    number = std::to_string(heightNr++); // transfer unsigned int to string
+                    number = std::to_string(heightNr++);
                 }
-                // now set the sampler to the correct texture unit
+
                 glUniform1i(glGetUniformLocation(shader.shaderProgramID, (uniformName + number).c_str()), i);
-                // and finally bind the texture
-                glBindTexture(GL_TEXTURE_2D, textures[i].id);
+                glBindTexture(GL_TEXTURE_2D, *(textures[i].id));
             }
         }
 
-
         glUniform1f(glGetUniformLocation(shader.shaderProgramID, "material.shininess"), 32.0f);
 
-        // draw mesh
-        glBindVertexArray(VAO);
+        glBindVertexArray(renderData->VAO);
 
         if (instanceCount == 0)
         {
@@ -181,61 +193,42 @@ public:
         }
         glBindVertexArray(0);
 
-        // always good practice to set everything back to defaults once configured.
         glActiveTexture(GL_TEXTURE0);
     }
 
 private:
-    // render data 
-    unsigned int VBO, EBO;
 
     // initializes all the buffer objects/arrays
     void setupMesh()
     {
-        // create buffers/arrays
-        glGenVertexArrays(1, &VAO);
-        glGenBuffers(1, &VBO);
-        glGenBuffers(1, &EBO);
+        glGenVertexArrays(1, &renderData->VAO);
+        glGenBuffers(1, &renderData->VBO);
+        glGenBuffers(1, &renderData->EBO);
 
-        glBindVertexArray(VAO);
-        // load data into vertex buffers
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        // A great thing about structs is that their memory layout is sequential for all its items.
-        // The effect is that we can simply pass a pointer to the struct and it translates perfectly to a glm::vec3/2 array which
-        // again translates to 3/2 floats which translates to a byte array.
+        glBindVertexArray(renderData->VAO);
+        glBindBuffer(GL_ARRAY_BUFFER, renderData->VBO);
+
         glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), &vertices[0], GL_STATIC_DRAW);
 
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, renderData->EBO);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
 
-        // set the vertex attribute pointers
-        // vertex Positions
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
-        // vertex normals
         glEnableVertexAttribArray(1);
         glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Normal));
-        // vertex texture coords
         glEnableVertexAttribArray(2);
         glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, TexCoords));
-        // vertex tangent
         glEnableVertexAttribArray(3);
         glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Tangent));
-        // vertex bitangent
         glEnableVertexAttribArray(4);
         glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Bitangent));
-        // ids
         glEnableVertexAttribArray(5);
         glVertexAttribIPointer(5, 4, GL_INT, sizeof(Vertex), (void*)offsetof(Vertex, m_BoneIDs));
-
-        // weights
         glEnableVertexAttribArray(6);
         glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, m_Weights));
 
-
         glBindVertexArray(0);
     }
-
-   
 };
 #endif

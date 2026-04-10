@@ -23,24 +23,27 @@
 
 using namespace std;
 
-unsigned int TextureFromFile(const char* path, const string& directory, aiTexture* aiTex = nullptr, bool gamma = false);
-
 class Model
 {
 public:
+    Model(const Model&) = delete;
+    Model& operator=(const Model&) = delete;
+
+    Model(Model&&) = default;
+    Model& operator=(Model&&) = default;
+
     // model data 
-    vector<Texture> textures_loaded;	// stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
     vector<Mesh> meshes;
     Transform transform;
     vector<Model> children;
     string name;
     string directory;
     bool gammaCorrection;
-    float meshScale;
     unsigned int instanceVBO = 0;
     
     Model();
-    //Model(const std::string& path, float meshScale = 1.0f, bool gamma = false);
+    ~Model();
+    Model(const std::string& path, bool gamma = false);
 
     void Draw(Shader& shader, GLsizei instanceCount = 0);
 
@@ -53,11 +56,8 @@ public:
     Mesh processMesh(aiMesh* mesh, const aiScene* scene);
 
 private:
-
-    //void loadModel(const std::string& path);
-
-    //void processNode(aiNode* node, const aiScene* scene);
-
+    void loadModel(const std::string& path);
+    Model processNode(aiNode* node, const aiScene* scene);
 
     std::vector<Texture> loadMaterialTextures(aiMaterial* mat, aiTextureType type, std::string typeName, const aiScene* scene);
 };
