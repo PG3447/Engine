@@ -5,12 +5,10 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include "core/ecs.h"
 
-class HID {
+class HID : public System{
 private:
-    HID() = default;
-    ~HID() = default;
-
     struct KeyState {
         bool current = false;
         bool previous = false;
@@ -39,11 +37,14 @@ private:
     static void scroll_callback(GLFWwindow*, double, double yoffset);
 
 public:
-    static HID& get();
+    HID(ECS& ecs, GLFWwindow* win) : window(win)
+    {
+        init(win);
+    }
+
+    void Update(ECS &ecs) override;
 
     void init(GLFWwindow* window);
-
-    void update();
 
     void name_action(const std::string action_name, int glfw_key);
     void name_action_mouse(const std::string action_name, int glfw_key);
@@ -62,6 +63,8 @@ public:
     double get_scroll() const {return scroll_y;};
 
     bool is_gamepad_connected(int gamepad_id = 0) const;
+
+    void OnGameObjectUpdated(GameObject *e) override;//unused
 };
 
 

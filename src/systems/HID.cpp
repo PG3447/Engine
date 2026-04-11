@@ -2,17 +2,13 @@
 #include <spdlog/spdlog.h>
 
 
-HID & HID::get() {
-    static HID instance;
-    return instance;
-}
-
 void HID::init(GLFWwindow *_window) {
     window = _window;
     if (!window) {
         spdlog::error("Window is null.");
         return;
     }
+    glfwSetWindowUserPointer(window, this);
     glfwSetScrollCallback(window, HID::scroll_callback);
 }
 
@@ -30,7 +26,7 @@ void HID::name_action_gamepad(const std::string action_name, int glfw_key, int g
     action_name_gamepad_map[action_name].push_back({glfw_key, gamepad_id});
 }
 
-void HID::update() {
+void HID::Update(ECS& ecs) {
     //to czy obecnie klawisz jest klikniety i czy wlasnie nie byl puszczony
     for (auto& [key, state] : input_keys) {
         state.previous = state.current;
@@ -161,8 +157,13 @@ float HID::get_gamepad_axis(int glfw_axis, int gamepad_id) const {
     return value;
 }
 
-void HID::scroll_callback(GLFWwindow *, double, double yoffset) {
-    HID::get().scroll_y += yoffset;
+void HID::OnGameObjectUpdated(GameObject *e) {
+    //kill c++ creators
+}
+
+void HID::scroll_callback(GLFWwindow *window, double, double yoffset) {
+    auto* hid = static_cast<HID*>(glfwGetWindowUserPointer(window));
+    hid->scroll_y += yoffset;
 }
 
 

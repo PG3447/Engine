@@ -30,7 +30,7 @@
 #include <fmod.h>
 #include <fmod.hpp>
 
-#include <HID.h>
+#include <systems/HID.h>
 #include <freetype/freetype.h>
 #include <yaml-cpp/binary.h>
 #include "yaml_config.h"
@@ -313,9 +313,8 @@ int main(int, char**)
     ecs.AddSystem<TransformSystem>(ecs);
     ecs.AddSystem<PhysicsSystem>(ecs);
     ecs.AddSystem<RenderSystem>(ecs, window);
-    spdlog::info("PhysicsSystem dodany do ECS");
-
-
+    ecs.AddSystem<HID>(ecs, window);
+    //spdlog::info("PhysicsSystem dodany do ECS");
  
     // Tworzymy GameObject
     GameObject* obj = scena1->CreateGameObject();
@@ -356,10 +355,10 @@ int main(int, char**)
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
-        spdlog::info("GameObject position: x={}, y={}, z={}",
-            transform->position.x,
-            transform->position.y,
-            transform->position.z);
+        //spdlog::info("GameObject position: x={}, y={}, z={}",
+        //    transform->position.x,
+        //    transform->position.y,
+        //    transform->position.z);
         sceneManager.Update(16);
 
         // Process I/O operations here

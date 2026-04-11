@@ -15,16 +15,16 @@ void PhysicsSystem::Update(ECS&) {
     auto& transforms = std::get<0>(query->componentsVectors);
     auto& rigidbodies = std::get<1>(query->componentsVectors);
 
-    spdlog::info("PhysicsSystem dziala update");
+    //spdlog::info("PhysicsSystem dziala update");
 
     for (size_t i = 0; i < query->gameobjects.size(); i++) {
         float ay = -9.8f; // grawitacja
 
-        rigidbodies[i]->vy += ay; // aktualizacja prêdkoœci
+        rigidbodies[i]->vy += ay; // aktualizacja prï¿½dkoï¿½ci
         transforms[i]->position.y += rigidbodies[i]->vy; // aktualizacja pozycji
 
         transforms[i]->isDirty = true;
-        spdlog::info("PhysicsSystem dziala2");
+        //spdlog::info("PhysicsSystem dziala2");
         //if (transforms[i]->isDirty) {
         //    Transform::computeModelMatrix(*transforms[i]);
         //}
