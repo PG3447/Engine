@@ -14,12 +14,27 @@ enum Camera_Movement {
 };
 
 // Default camera values
-const float YAW = -90.0f;
-const float PITCH = 0.0f;
-const float SPEED = 100.5f;
-const float SENSITIVITY = 0.1f;
-const float ZOOM = 45.0f;
+constexpr float YAW = -90.0f;
+constexpr float PITCH = 0.0f;
+constexpr float SPEED = 100.5f;
+constexpr float SENSITIVITY = 0.1f;
+constexpr float ZOOM = 45.0f;
 
+struct Viewport {
+    float x, y; //bottom left corner (normalized)
+    float width, height; //size (normalized)
+
+    void apply(int windowdWidth, int windowdHeight) const {
+        glViewport(static_cast<GLint>(x * windowdWidth),
+            static_cast<GLint>(y * windowdHeight),
+            static_cast<GLsizei>(width * windowdWidth),
+            static_cast<GLsizei>(height * windowdHeight));
+    }
+
+    float aspectRatio() const {
+        return static_cast<float>(width) / static_cast<float>(height);
+    }
+};
 
 // An abstract camera class that processes input and calculates the corresponding Euler Angles, Vectors and Matrices for use in OpenGL
 class Camera
@@ -39,8 +54,20 @@ public:
     float MouseSensitivity;
     float Zoom;
 
+    //each camera as a viewport
+    Viewport viewport;
+
     // constructor with vectors
-    Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), float yaw = YAW, float pitch = PITCH) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVITY), Zoom(ZOOM)
+    Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f),
+        glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f),
+        float yaw = YAW,
+        float pitch = PITCH,
+        Viewport vp = {0.0f, 0.0f, 1.0f, 1.0f} )
+    : Front(glm::vec3(0.0f, 0.0f, -1.0f)),
+    MovementSpeed(SPEED),
+    MouseSensitivity(SENSITIVITY),
+    Zoom(ZOOM),
+    viewport(vp)
     {
         Position = position;
         WorldUp = up;
@@ -48,6 +75,40 @@ public:
         Pitch = pitch;
         updateCameraVectors();
     }
+
+    glm::mat4 beginRender(int windowWidth, int windowHeight) const {
+        viewport.apply(windowWidth, windowHeight);
+        return getViewMatrix();
+    }
+
+    glm::mat4 getProjectionMatrix(float nearClip = 0.1f, float farClip = 1000.0f) const {
+        return glm::perspective(
+            glm::radians(Zoom),
+            viewport.aspectRatio(),
+            nearClip,
+            farClip);
+    }
+
+    glm::mat4 getViewMatrix() const {
+        return glm::lookAt(Position, Position + Front, Up);
+    }
+
+    void ProcessKeyboard(Camera_Movement direction, float deltaTime) {
+        float velocity = MovementSpeed * deltaTime;
+        if (direction == FORWARD) {
+            Position += Front * velocity;
+        }
+        if (direction == BACKWARD) {
+            Position -= Front * velocity;
+        }
+        if (direction == LEFT) {
+            Position -= Right * velocity;
+        }
+        if (direction == RIGHT) {
+            Position += Right * velocity;
+        }
+    }
+
     // constructor with scalar values
     Camera(float posX, float posY, float posZ, float upX, float upY, float upZ, float yaw, float pitch) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVITY), Zoom(ZOOM)
     {
@@ -65,7 +126,7 @@ public:
     }
 
     // processes input received from any keyboard-like input system. Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)
-    void ProcessKeyboard(Camera_Movement direction, float deltaTime)
+    /*void ProcessKeyboard(Camera_Movement direction, float deltaTime)
     {
         float velocity = MovementSpeed * deltaTime;
         if (direction == FORWARD)
@@ -76,7 +137,7 @@ public:
             Position -= Right * velocity;
         if (direction == RIGHT)
             Position += Right * velocity;
-    }
+    }*/
 
     // processes input received from a mouse input system. Expects the offset value in both the x and y direction.
     void ProcessMouseMovement(float xoffset, float yoffset, GLboolean constrainPitch = true)
@@ -103,7 +164,7 @@ public:
     // processes input received from a mouse scroll-wheel event. Only requires input on the vertical wheel-axis
     void ProcessMouseScroll(float yoffset)
     {
-        Zoom -= (float)yoffset;
+        Zoom -= yoffset;
         if (Zoom < 1.0f)
             Zoom = 1.0f;
         if (Zoom > 45.0f)
