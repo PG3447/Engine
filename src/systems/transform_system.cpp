@@ -1,4 +1,5 @@
-#include "transform_system.h"
+﻿#include "transform_system.h"
+#include <spdlog/spdlog.h>
 
 void TransformSystem::updateSelfAndChild(GameObject* obj) {
     auto* tComp = obj->GetComponent<TransformComponent>();
@@ -7,31 +8,42 @@ void TransformSystem::updateSelfAndChild(GameObject* obj) {
     if (tComp->isDirty)
     {
         forceUpdateSelfAndChild(obj);
+        return;
     }
-    else
-    {
-        for (auto* child : obj->GetChildren()) {
-            updateSelfAndChild(child);
-        }
+
+    for (auto* child : obj->GetChildren()) {
+        updateSelfAndChild(child);
     }
+    
 }
 
-void TransformSystem::forceUpdateSelfAndChild(GameObject* obj) {
+
+void TransformSystem::forceUpdateSelfAndChild(GameObject* obj)
+{
     auto* tComp = obj->GetComponent<TransformComponent>();
     if (!tComp) return;
 
-    if (obj->GetParent()) {
+    if (obj->GetParent())
+    {
         auto* parentT = obj->GetParent()->GetComponent<TransformComponent>();
+
         if (parentT)
             TransformHelper::computeModelMatrix(parentT->modelMatrix, *tComp);
         else
             TransformHelper::computeModelMatrix(*tComp);
     }
-    else {
+    else
+    {
         TransformHelper::computeModelMatrix(*tComp);
     }
 
-    for (auto* child : obj->GetChildren()) {
+    spdlog::info("skala");
+    spdlog::info(tComp->scale.x);
+    spdlog::info(tComp->position.z);
+    spdlog::info("transform dziala update");
+
+    for (auto* child : obj->GetChildren())
+    {
         forceUpdateSelfAndChild(child);
     }
 }
@@ -39,7 +51,7 @@ void TransformSystem::forceUpdateSelfAndChild(GameObject* obj) {
 /*
 
 
-            // Przelicz modelMatrix je�li jest dirty
+            // Przelicz modelMatrix jeśli jest dirty
             if (t->isDirty) {
                 Transform::computeModelMatrix(*t); // helper statyczny lub instancja
             }

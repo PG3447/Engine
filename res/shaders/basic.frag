@@ -65,20 +65,22 @@ vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir);
 
 void main()
 {
-    // properties
-    vec3 norm = normalize(Normal);
-    vec3 viewDir = normalize(viewPos - FragPos);
-    
-    // phase 1: directional lighting
-    vec3 result = CalcDirLight(dirLight, norm, viewDir);
-//    // phase 2: point lights
-//    for(int i = 0; i < NR_POINT_LIGHTS; i++)
-//        result += CalcPointLight(pointLights[i], norm, FragPos, viewDir);    
-//    // phase 3: spot light
-//    for(int i = 0; i < NR_SPOT_LIGHTS; i++)
-//        result += CalcSpotLight(spotLights[i], norm, FragPos, viewDir);    
-    
-    FragColor = vec4(result, 1.0);
+
+    FragColor = vec4(texture(material.diffuse1, TexCoords).rgb, 1.0);
+   // // properties
+   // vec3 norm = normalize(Normal);
+   // vec3 viewDir = normalize(viewPos - FragPos);
+   // 
+   // // phase 1: directional lighting
+   // vec3 result = CalcDirLight(dirLight, norm, viewDir);
+// //   // phase 2: point lights
+// //   for(int i = 0; i < NR_POINT_LIGHTS; i++)
+// //       result += CalcPointLight(pointLights[i], norm, FragPos, viewDir);    
+// //   // phase 3: spot light
+// //   for(int i = 0; i < NR_SPOT_LIGHTS; i++)
+// //       result += CalcSpotLight(spotLights[i], norm, FragPos, viewDir);    
+   // 
+   // FragColor = vec4(result, 1.0);
 }
 
 vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir)

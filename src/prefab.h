@@ -1,12 +1,12 @@
-#ifndef PREFAB_H
+﻿#ifndef PREFAB_H
 #define PREFAB_H
 
 #include <entity.h>
-#include <model.h>
 #include <shader.h>
 #include <string>
 #include <memory>
 #include "resource_manager.h"
+#include "core/scene.h"
 
 using namespace std;
 
@@ -22,30 +22,82 @@ public:
         }
     }
 
-    Entity* getEntitiesCreate(Shader* shader, Light* light = nullptr)
+
+    //Entity* getEntitiesCreate(Shader* shader, Light* light = nullptr)
+    //{
+    //    if (!rootModel) return nullptr;
+    //    return createEntityRecursive(rootModel.get(), nullptr, shader, light);
+    //}
+
+    GameObject* Instantiate(Scene& scene, GameObject* parent = nullptr, Shader* shader = nullptr)
     {
         if (!rootModel) return nullptr;
-        return createEntityRecursive(rootModel.get(), nullptr, shader, light);
+         
+        return CreateRecursive(&scene, rootModel.get(), parent, shader);
     }
 
-    Entity* createEntityRecursive(Model* model, Entity* parent, Shader* shader, Light* light)
+private:
+
+    //Entity* createEntityRecursive(Model* model, Entity* parent, Shader* shader, Light* light)
+    //{
+    //    if (!model) return nullptr;
+
+    //    Entity* entity = new Entity();
+    //    entity->transform = model->transform;
+    //    entity->pModel = model;
+    //    entity->pShader = shader;
+    //    entity->pLight = light;
+    //    entity->name = model->name;
+
+    //    if (parent)
+    //        parent->addChild(entity);
+
+    //    for (auto& childModel : model->children)
+    //        createEntityRecursive(&childModel, entity, shader, light);
+
+    //    return entity;
+    //}
+
+
+    GameObject* CreateRecursive(Scene* scene, Model* model, GameObject* parent, Shader* shader)
     {
         if (!model) return nullptr;
 
-        Entity* entity = new Entity();
-        entity->transform = model->transform;
-        entity->pModel = model;
-        entity->pShader = shader;
-        entity->pLight = light;
-        entity->name = model->name;
+        GameObject* go = scene->CreateGameObject(parent);
 
-        if (parent)
-            parent->addChild(entity);
+        // Transform
+        auto* transform = go->AddComponent<TransformComponent>();
+        transform->position = model->transform.getLocalPosition();
+        transform->rotation = model->transform.getLocalRotation();
+        transform->scale = model->transform.getLocalScale();
+        transform->modelMatrix = model->transform.getModelMatrix();
+        transform->isDirty = true;
 
-        for (auto& childModel : model->children)
-            createEntityRecursive(&childModel, entity, shader, light);
+        spdlog::info("dodanie modelu");
+        // Render
+        auto* render = go->AddComponent<RenderComponent>();
+        render->model = model;
+        render->shader = shader;
 
-        return entity;
+        // (opcjonalnie światło jeśli model ma)
+        //if (model->hasLight) {
+        //    auto* light = go->AddComponent<LightComponent>();
+        //    light->data = model->lightData;
+        //}
+
+        // nazwa (jeśli masz pole)
+        // go->name = model->name;
+
+        // ===== DZIECI =====
+        for (auto& child : model->children) {
+            CreateRecursive(scene, &child, go, shader);
+        }
+
+        return go;
     }
 };
 #endif
+
+
+
+

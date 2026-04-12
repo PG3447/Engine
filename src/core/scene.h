@@ -16,6 +16,7 @@ public:
     Scene(ECS& ecsRef) : ecs(ecsRef)
     {
         root = std::make_unique<GameObject>(&ecs);
+        root->AddComponent<TransformComponent>();
     }
 
     GameObject* GetRoot() { return root.get(); }
@@ -40,7 +41,7 @@ public:
     void Update(float deltaTime);
 
 
-
+    void DebugHierarchy(GameObject* obj, int depth = 0);
     //std::vector<GameObject*> GetGameObjects();
 
     ECS& GetECS() { return ecs; }

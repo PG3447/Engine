@@ -315,14 +315,28 @@ int main(int, char**)
     ecs.AddSystem<RenderSystem>(ecs, window);
     spdlog::info("PhysicsSystem dodany do ECS");
 
+    ourShader = std::make_unique<Shader>("res/shaders/basic.vert", "res/shaders/basic.frag");
+    ourShader->use();
 
+    groundModel = std::make_unique<Prefab>("res/backpack/podloze.glb");
+
+    GameObject* obb = groundModel->Instantiate(*scena1, nullptr, ourShader.get());
+
+    spdlog::info("Dirty ?");
+    spdlog::info(obb->GetComponent<TransformComponent>()->isDirty);
+
+    obb->GetComponent<TransformComponent>()->scale.x = 1000;
+    obb->GetComponent<TransformComponent>()->scale.y = 1000;
+    obb->GetComponent<TransformComponent>()->scale.z = 1000;
+
+    spdlog::info(obb->GetComponent<TransformComponent>()->scale.x);
  
     // Tworzymy GameObject
-    GameObject* obj = scena1->CreateGameObject();
+    GameObject* obj = scena1->CreateGameObject(nullptr);
 
     // Dodajemy TransformComponent
-    TransformComponent* transform = obj->AddComponent<TransformComponent>();
-    RigidbodyComponent* rigidbody = obj->AddComponent<RigidbodyComponent>();
+    TransformComponent* transform = obj->GetComponent<TransformComponent>();
+    //RigidbodyComponent* rigidbody = obj->AddComponent<RigidbodyComponent>();
     transform->position = glm::vec3(1.0f, 2.0f, 3.0f);
 
     // Logowanie pozycji
@@ -332,9 +346,16 @@ int main(int, char**)
         transform->position.z);
 
     // Tworzymy drugi obiekt z komponentem od razu
-    GameObject* obj2 = scena1->CreateEntityWithComponents<TransformComponent>();
+    GameObject* obj2 = scena1->CreateGameObject(nullptr);
     TransformComponent* t2 = obj2->GetComponent<TransformComponent>();
-    CameraComponent* c1 = obj2->AddComponent<CameraComponent>();
+    CameraComponent* cam = obj2->AddComponent<CameraComponent>();
+
+
+    cam->camera.Position = glm::vec3(0, 50, 15);
+    cam->camera.Yaw = -90.0f;
+    cam->camera.Pitch = -10.0f;
+    cam->camera.updateCameraVectors();
+
     t2->position = glm::vec3(10.0f, 20.0f, 30.0f);
     
     spdlog::info("Second GameObject position: x={}, y={}, z={}",
@@ -345,7 +366,7 @@ int main(int, char**)
     sceneManager.Update(16);
 
     spdlog::info("Scena git.");
-    compileShader();
+    //compileShader();
 
     //createHouse();
     //startGroupInstanced(root.get());
@@ -562,10 +583,7 @@ void compileShader()
 //    refractShader->setInt("skybox", 0);
 
     //ladowanie bazowego shader-a
-    ourShader = std::make_unique<Shader>("res/shaders/basic.vert", "res/shaders/basic.frag");
-    ourShader->use();
-
-    groundModel = std::make_unique<Prefab>("res/backpack/podloze.glb");
+ 
     sunModel = std::make_unique<Prefab>("res/backpack/sun.glb");
     
     root = std::make_unique<Entity>();
