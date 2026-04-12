@@ -6,6 +6,7 @@
 #include "../systems/physics_system.h"
 #include "../systems/transform_system.h"
 #include "../systems/render_system.h"
+#include "../systems/HID.h"
 
 class Scene {
 private:
