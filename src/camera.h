@@ -93,7 +93,7 @@ public:
         return glm::lookAt(Position, Position + Front, Up);
     }
 
-    void ProcessKeyboard(Camera_Movement direction, float deltaTime) {
+    /*void ProcessKeyboard(Camera_Movement direction, float deltaTime) {
         float velocity = MovementSpeed * deltaTime;
         if (direction == FORWARD) {
             Position += Front * velocity;
@@ -107,7 +107,7 @@ public:
         if (direction == RIGHT) {
             Position += Right * velocity;
         }
-    }
+    }*/
 
     // constructor with scalar values
     Camera(float posX, float posY, float posZ, float upX, float upY, float upZ, float yaw, float pitch) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVITY), Zoom(ZOOM)

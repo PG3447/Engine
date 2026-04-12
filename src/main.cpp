@@ -64,7 +64,14 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 unsigned int loadCubemap(vector<std::string> faces);
 void regenerateSphere();
+
 //void createHouse();
+void processCameraInput(Camera& cam,
+                       const std::string& up,
+                       const std::string& down,
+                       const std::string& left,
+                       const std::string& right);
+
 
 void imgui_begin();
 void imgui_render();
@@ -373,6 +380,19 @@ int main(int, char**)
 
     //createHouse();
     //startGroupInstanced(root.get());
+
+    HID::get().name_action("move_right", GLFW_KEY_D);
+    HID::get().name_action("move_left", GLFW_KEY_A);
+    HID::get().name_action("move_up", GLFW_KEY_W);
+    HID::get().name_action("move_down", GLFW_KEY_S);
+    HID::get().name_action("move_right1", GLFW_KEY_RIGHT);
+    HID::get().name_action("move_left1", GLFW_KEY_LEFT);
+    HID::get().name_action("move_up1", GLFW_KEY_UP);
+    HID::get().name_action("move_down1", GLFW_KEY_DOWN);
+    HID::get().name_action_mouse("move_right", GLFW_MOUSE_BUTTON_LEFT);
+    HID::get().name_action_gamepad("move_right", GLFW_GAMEPAD_BUTTON_SQUARE, 0);
+    HID::get().name_action_gamepad("move_right_1", GLFW_GAMEPAD_BUTTON_SQUARE, 1);
+
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
@@ -764,18 +784,25 @@ void input()
         }
         mouseMove = false;
     }
-
-    if (mouseMove) {
-        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-            camera.ProcessKeyboard(FORWARD, deltaTime);
-        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+    processCameraInput(camera, "move_up", "move_down", "move_left", "move_right");
+    processCameraInput(cameraRight, "move_up1", "move_down1", "move_left1", "move_right1");
+    /*float velocity = camera.MovementSpeed * deltaTime;
+        if (HID::get().is_action_pressed("move_up"))
+            camera.Position += camera.Front * velocity;
+        if (HID::get().is_action_pressed("move_down"))
             camera.ProcessKeyboard(BACKWARD, deltaTime);
-        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        if (HID::get().is_action_pressed("move_left"))
             camera.ProcessKeyboard(LEFT, deltaTime);
-        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        if (HID::get().is_action_pressed("move_right"))
             camera.ProcessKeyboard(RIGHT, deltaTime);
-    }
-
+        if (HID::get().is_action_pressed("move_right1"))
+            cameraRight.ProcessKeyboard(RIGHT, deltaTime);
+        if (HID::get().is_action_pressed("move_left1"))
+            cameraRight.ProcessKeyboard(LEFT, deltaTime);
+        if (HID::get().is_action_pressed("move_up1"))
+            cameraRight.ProcessKeyboard(FORWARD, deltaTime);
+        if (HID::get().is_action_pressed("move_down1"))
+            cameraRight.ProcessKeyboard(BACKWARD, deltaTime);*/
 //OLD INPUT ENDS HERE
 }
 
@@ -1251,4 +1278,26 @@ unsigned int loadCubemap(vector<std::string> faces)
     return textureID;
 }
 
+
 */
+
+void processCameraInput(Camera& cam,
+                       const std::string& up,
+                       const std::string& down,
+                       const std::string& left,
+                       const std::string& right)
+{
+    auto& hid = HID::get();
+    glm::vec3 dir(0.0f);
+
+    if (hid.is_action_pressed(up))    dir += cam.Front;
+    if (hid.is_action_pressed(down))  dir -= cam.Front;
+    if (hid.is_action_pressed(right)) dir += cam.Right;
+    if (hid.is_action_pressed(left))  dir -= cam.Right;
+
+    if (glm::length(dir) > 0.0f)
+        dir = glm::normalize(dir);
+
+    cam.Position += dir * cam.MovementSpeed * deltaTime;
+}
+
