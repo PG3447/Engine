@@ -326,7 +326,7 @@ int main(int, char**)
 
     ECS ecs;
     SceneManager sceneManager;
-    
+
     sceneManager.CreateScene("Scena 1", ecs);
 
     Scene* scena1 = sceneManager.GetActiveScene();
@@ -350,10 +350,9 @@ int main(int, char**)
 
     GameObject* obj = scena1->CreateGameObject(nullptr);
     CameraComponent* camCompLeft = obj->AddComponent<CameraComponent>();
-    
+
     GameObject* obj2 = scena1->CreateGameObject(nullptr);
     CameraComponent* camCompRight = obj2->AddComponent<CameraComponent>();
-
 
     camCompLeft->camera = Camera(
         glm::vec3(0.0f, 20.0f, 50.0f),
@@ -383,6 +382,44 @@ int main(int, char**)
     sprite_1->size = glm::vec2(128.0f, 128.0f);
     sprite_1->frameDuration = 0.15f;
 
+    GameObject* obj_Sprite_2 = scena1->CreateGameObject(nullptr);
+    SpriteComponent* sprite_2 = obj_Sprite_2->AddComponent<SpriteComponent>();
+
+    sprite_2->isAnimating = true;
+    sprite_2->loop = true;
+    sprite_2->sprites.push_back(
+        ResourceManager::LoadTexture("Face_1.png", "res/textures/PGK_placeholders")
+    );
+    sprite_2->sprites.push_back(
+        ResourceManager::LoadTexture("Face_2.png", "res/textures/PGK_placeholders")
+    );
+    sprite_2->sprites.push_back(
+        ResourceManager::LoadTexture("Face_3.png", "res/textures/PGK_placeholders")
+    );
+    sprite_2->screenPosition = glm::vec2(0.0f, 128.0f);
+    sprite_2->size = glm::vec2(128.0f, 128.0f);
+    sprite_2->frameDuration = 0.5f;
+
+    GameObject* obj_Sprite_3 = scena1->CreateGameObject(nullptr);
+    SpriteComponent* sprite_3 = obj_Sprite_3->AddComponent<SpriteComponent>();
+    sprite_3->scrollEnabled = true;
+    sprite_3->scrollSpeed = glm::vec2(0.3f, 0.0f);
+    sprite_3->screenPosition = glm::vec2(0.0f, 0.0f);
+    sprite_3->size = glm::vec2(2080.0f, 1260.0f);
+    sprite_3->sprites.push_back(
+        ResourceManager::LoadTexture("background_pgk.png", "res/textures/PGK_placeholders")
+    );
+
+
+    GameObject* obj_Sprite_4 = scena1->CreateGameObject(nullptr);
+    SpriteComponent* sprite_4 = obj_Sprite_4->AddComponent<SpriteComponent>();
+    sprite_4->textEnabled = true;
+    sprite_4->screenPosition = glm::vec2(0.0f, 256.0f);
+
+    sprite_1->layer = 1;
+    sprite_2->layer = 1;
+    sprite_3->layer = 0;
+    sprite_4->layer = 1;
 
     //CameraComponent* cam = obj2->AddComponent<CameraComponent>();
     //cam->camera.Position = glm::vec3(0, 50, 15);
@@ -398,18 +435,7 @@ int main(int, char**)
     //createHouse();
     //startGroupInstanced(root.get());
 
-    //HID::get().name_action("move_right", GLFW_KEY_D);
-    //HID::get().name_action("move_left", GLFW_KEY_A);
-    //HID::get().name_action("move_up", GLFW_KEY_W);
-    //HID::get().name_action("move_down", GLFW_KEY_S);
-    //HID::get().name_action("move_right1", GLFW_KEY_RIGHT);
-    //HID::get().name_action("move_left1", GLFW_KEY_LEFT);
-    //HID::get().name_action("move_up1", GLFW_KEY_UP);
-    //HID::get().name_action("move_down1", GLFW_KEY_DOWN);
-    //HID::get().name_action_mouse("move_right", GLFW_MOUSE_BUTTON_LEFT);
-    //HID::get().name_action_gamepad("move_right", GLFW_GAMEPAD_BUTTON_SQUARE, 0);
-    //HID::get().name_action_gamepad("move_right_1", GLFW_GAMEPAD_BUTTON_SQUARE, 1);
-
+    int test_score = 0;
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
@@ -421,6 +447,8 @@ int main(int, char**)
         //    transform->position.x,
         //    transform->position.y,
         //    transform->position.z);
+        test_score++;
+        sprite_4->text = "score: " + std::to_string(test_score);
         sceneManager.Update(16);
 
         // Process I/O operations here
