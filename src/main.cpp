@@ -66,11 +66,11 @@ unsigned int loadCubemap(vector<std::string> faces);
 void regenerateSphere();
 
 //void createHouse();
-void processCameraInput(Camera& cam,
-                       const std::string& up,
-                       const std::string& down,
-                       const std::string& left,
-                       const std::string& right);
+void processCameraInput(ECS& ecs, Camera& cam,
+    const std::string& up,
+    const std::string& down,
+    const std::string& left,
+    const std::string& right);
 
 
 void imgui_begin();
@@ -312,6 +312,35 @@ std::unique_ptr<Shader> triangleShader;
 //}
 
 
+void processCameraInput(ECS& ecs,Camera& cam,
+                       const std::string& up,
+                       const std::string& down,
+                       const std::string& left,
+                       const std::string& right)
+{
+    const auto& hid = ecs.GetSystem<HID>();
+    glm::vec3 dir(0.0f);
+
+    if (hid->is_action_pressed(up))    dir += cam.Front;
+    if (hid->is_action_pressed(left))  dir -= cam.Right;
+    if (hid->is_action_pressed(right)) dir += cam.Right;
+    if (hid->is_action_pressed(down))  dir -= cam.Front;
+
+    if (glm::length(dir) > 0.0f)
+        dir = glm::normalize(dir);
+
+    cam.Position += dir * cam.MovementSpeed * deltaTime;
+}
+
+void processCameraMouse(ECS& ecs, Camera& cam)
+{
+    const auto& hid = ecs.GetSystem<HID>();
+    cam.ProcessMouseMovement(
+        (float)hid->get_mouse_dx(),
+        (float)-hid->get_mouse_dy()
+    );
+}
+
 int main(int, char**)
 {
     if (!init())
@@ -385,17 +414,17 @@ int main(int, char**)
     //createHouse();
     //startGroupInstanced(root.get());
 
-    //HID::get().name_action("move_right", GLFW_KEY_D);
-    //HID::get().name_action("move_left", GLFW_KEY_A);
-    //HID::get().name_action("move_up", GLFW_KEY_W);
-    //HID::get().name_action("move_down", GLFW_KEY_S);
-    //HID::get().name_action("move_right1", GLFW_KEY_RIGHT);
-    //HID::get().name_action("move_left1", GLFW_KEY_LEFT);
-    //HID::get().name_action("move_up1", GLFW_KEY_UP);
-    //HID::get().name_action("move_down1", GLFW_KEY_DOWN);
-    //HID::get().name_action_mouse("move_right", GLFW_MOUSE_BUTTON_LEFT);
-    //HID::get().name_action_gamepad("move_right", GLFW_GAMEPAD_BUTTON_SQUARE, 0);
-    //HID::get().name_action_gamepad("move_right_1", GLFW_GAMEPAD_BUTTON_SQUARE, 1);
+    ecs.GetSystem<HID>()->name_action("move_right", GLFW_KEY_D);
+    ecs.GetSystem<HID>()->name_action("move_left", GLFW_KEY_A);
+    ecs.GetSystem<HID>()->name_action("move_up", GLFW_KEY_W);
+    ecs.GetSystem<HID>()->name_action("move_down", GLFW_KEY_S);
+    ecs.GetSystem<HID>()->name_action("move_right1", GLFW_KEY_RIGHT);
+    ecs.GetSystem<HID>()->name_action("move_left1", GLFW_KEY_LEFT);
+    ecs.GetSystem<HID>()->name_action("move_up1", GLFW_KEY_UP);
+    ecs.GetSystem<HID>()->name_action("move_down1", GLFW_KEY_DOWN);
+    ecs.GetSystem<HID>()->name_action_mouse("move_right", GLFW_MOUSE_BUTTON_LEFT);
+    ecs.GetSystem<HID>()->name_action_gamepad("move_right", GLFW_GAMEPAD_BUTTON_SQUARE, 0);
+    ecs.GetSystem<HID>()->name_action_gamepad("move_right_1", GLFW_GAMEPAD_BUTTON_SQUARE, 1);
 
     // Main loop
     while (!glfwWindowShouldClose(window))
@@ -404,6 +433,8 @@ int main(int, char**)
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
+        processCameraInput(ecs , camCompLeft->camera, "move_up", "move_down", "move_left", "move_right");
+        processCameraMouse(ecs, camCompLeft->camera);
         //spdlog::info("GameObject position: x={}, y={}, z={}",
         //    transform->position.x,
         //    transform->position.y,
@@ -1285,24 +1316,5 @@ unsigned int loadCubemap(vector<std::string> faces)
 
 */
 
-//
-//void processCameraInput(Camera& cam,
-//                       const std::string& up,
-//                       const std::string& down,
-//                       const std::string& left,
-//                       const std::string& right)
-//{
-//    auto& hid = HID::get();
-//    glm::vec3 dir(0.0f);
-//
-//    if (hid.is_action_pressed(up))    dir += cam.Front;
-//    if (hid.is_action_pressed(down))  dir -= cam.Front;
-//    if (hid.is_action_pressed(right)) dir += cam.Right;
-//    if (hid.is_action_pressed(left))  dir -= cam.Right;
-//
-//    if (glm::length(dir) > 0.0f)
-//        dir = glm::normalize(dir);
-//
-//    cam.Position += dir * cam.MovementSpeed * deltaTime;
-//}
+
 
