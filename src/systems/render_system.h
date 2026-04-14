@@ -69,44 +69,75 @@ public:
         //glActiveTexture(GL_TEXTURE0);
         //glBindTexture(GL_TEXTURE_2D, texture);
 
-
-        UpdateCamera();
         BuildGroups();
-        RenderGroups();
 
-        glBindVertexArray(0);
+        RenderAllCameras();
 
-        skybox.Render(view, projection);
+        //BuildGroups();
+        //UpdateCamera();
+        //RenderGroups();
+
+        //glBindVertexArray(0);
+
+        //skybox.Render(view, projection);
     }
 
 
-    void UpdateCamera() {
+    //void UpdateCamera() {
+    //    auto& cameras = std::get<0>(cameraQuery->componentsVectors);
+
+    //    int display_w, display_h;
+    //    glfwGetFramebufferSize(window, &display_w, &display_h);
+
+    //    for (size_t i = 0; i < cameras.size(); i++) {
+    //        if (cameras[i]->isActive) {
+    //            
+    //            view = cameras[i]->camera.beginRender(display_w, display_h);
+
+    //            projection = cameras[i]->camera.getProjectionMatrix(
+    //                cameras[i]->nearPlane,
+    //                cameras[i]->farPlane
+    //            );
+
+    //            //float fov = cameras[i]->camera.Zoom;
+    //            //float aspect = (float)display_w / (float)display_h;
+    //            //
+    //            //projection = glm::perspective(glm::radians(fov), aspect, cameras[i]->nearPlane, cameras[i]->farPlane);
+    //            //view = cameras[i]->camera.GetViewMatrix();
+
+    //            return;
+    //        }
+    //    }
+    //}
+
+    void RenderAllCameras() {
         auto& cameras = std::get<0>(cameraQuery->componentsVectors);
 
         int display_w, display_h;
         glfwGetFramebufferSize(window, &display_w, &display_h);
 
         for (size_t i = 0; i < cameras.size(); i++) {
-            if (cameras[i]->isActive) {
-                
-                view = cameras[i]->camera.beginRender(display_w, display_h);
+            if (!cameras[i]->isActive)
+                continue;
 
-                projection = cameras[i]->camera.getProjectionMatrix(
-                    cameras[i]->nearPlane,
-                    cameras[i]->farPlane
-                );
-
-                //float fov = cameras[i]->camera.Zoom;
-                //float aspect = (float)display_w / (float)display_h;
-                //
-                //projection = glm::perspective(glm::radians(fov), aspect, cameras[i]->nearPlane, cameras[i]->farPlane);
-                //view = cameras[i]->camera.GetViewMatrix();
-
-                return;
-            }
+            RenderCamera(*cameras[i], display_w, display_h);
         }
     }
 
+    void RenderCamera(CameraComponent& cam, int width, int height) {
+        
+        view = cam.camera.beginRender(width, height);
+        projection = cam.camera.getProjectionMatrix(
+            cam.nearPlane,
+            cam.farPlane
+        );
+
+        RenderGroups();
+
+        glBindVertexArray(0);
+        
+        skybox.Render(view, projection);
+    }
 
     void BuildGroups() {
         if (!groupsDirty) return;
