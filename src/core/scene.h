@@ -7,6 +7,7 @@
 #include "../systems/transform_system.h"
 #include "../systems/render_system.h"
 #include "../systems/HID.h"
+#include "../systems/SpriteSystem.h"
 
 class Scene {
 private:

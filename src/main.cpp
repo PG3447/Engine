@@ -40,7 +40,7 @@
 #include "core/gameobject.h" 
 #include <systems/physics_system.h>
 #include <systems/transform_system.h>
-
+#include <systems/SpriteSystem.h>
 
 
 static void glfw_error_callback(int error, const char* description)
@@ -336,6 +336,7 @@ int main(int, char**)
     ecs.AddSystem<PhysicsSystem>(ecs);
     ecs.AddSystem<RenderSystem>(ecs, window);
     ecs.AddSystem<HID>(ecs, window);
+    ecs.AddSystem<SpriteSystem>(ecs, window);
 
     ourShader = std::make_unique<Shader>("res/shaders/basic.vert", "res/shaders/basic.frag");
     ourShader->use();
@@ -352,6 +353,7 @@ int main(int, char**)
     
     GameObject* obj2 = scena1->CreateGameObject(nullptr);
     CameraComponent* camCompRight = obj2->AddComponent<CameraComponent>();
+
 
     camCompLeft->camera = Camera(
         glm::vec3(0.0f, 20.0f, 50.0f),
@@ -370,6 +372,17 @@ int main(int, char**)
     );
 
     camCompRight->isActive = true;
+
+    GameObject* obj_Sprite_1 = scena1->CreateGameObject(nullptr);
+    SpriteComponent* sprite_1 = obj_Sprite_1->AddComponent<SpriteComponent>();
+
+    sprite_1->sprites.push_back(
+        ResourceManager::LoadTexture("sigma.png", "res/textures/PGK_placeholders")
+    );
+    sprite_1->screenPosition = glm::vec2(0.0f, 0.0f);
+    sprite_1->size = glm::vec2(128.0f, 128.0f);
+    sprite_1->frameDuration = 0.15f;
+
 
     //CameraComponent* cam = obj2->AddComponent<CameraComponent>();
     //cam->camera.Position = glm::vec3(0, 50, 15);
@@ -1089,6 +1102,7 @@ void imgui_render()
             wireframeMode ? GL_LINE : GL_FILL);
     }
 
+    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
     ImGui::SliderFloat("rotation X", &rotationX, -480.0f, 480.0f);
     ImGui::SliderFloat("rotation Y", &rotationY, -480.0f, 480.0f);
     ImGui::SliderFloat("Camera Distance", &cameraDistance, 5.0f, 1000.0f);
