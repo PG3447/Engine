@@ -89,6 +89,21 @@ const     char* glsl_version = "#version 460";
 constexpr int32_t GL_VERSION_MAJOR = 4;
 constexpr int32_t GL_VERSION_MINOR = 6;
 
+
+Camera camera(
+    glm::vec3(0.0f, 20.0f, 50.0f),
+    glm::vec3(0.0f, 1.0f, 0.0f),
+    YAW, PITCH,
+    Viewport{ 0.0f, 0.0f, 0.5f, 1.0f }
+);
+
+Camera cameraRight(
+    glm::vec3(50.0f, 30.0f, 0.0f),
+    glm::vec3(0.0f, 1.0f, 0.0f),
+    0.0f, -20.0f,
+    Viewport{ 0.5f, 0.0f, 0.5f, 1.0f }
+);
+
 // camera
 Camera camera(glm::vec3(0.0f, 20.0f, 50.0f));
 float lastX = WINDOW_WIDTH / 2.0f;
