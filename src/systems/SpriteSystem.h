@@ -14,6 +14,9 @@
 #include FT_FREETYPE_H
 #include <map>
 #include <string>
+#include <shader.h>
+#include <freetype/freetype.h>
+
 
 class SpriteSystem : public System {
 public:

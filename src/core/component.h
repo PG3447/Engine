@@ -3,6 +3,7 @@
 
 #include <glm/glm.hpp>
 #include <memory>
+#include <string>
 #include "camera.h"
 
 class Model;
