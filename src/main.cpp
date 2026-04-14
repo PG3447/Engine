@@ -89,7 +89,7 @@ const     char* glsl_version = "#version 460";
 constexpr int32_t GL_VERSION_MAJOR = 4;
 constexpr int32_t GL_VERSION_MINOR = 6;
 
-
+/*
 Camera camera(
     glm::vec3(0.0f, 20.0f, 50.0f),
     glm::vec3(0.0f, 1.0f, 0.0f),
@@ -102,7 +102,7 @@ Camera cameraRight(
     glm::vec3(0.0f, 1.0f, 0.0f),
     0.0f, -20.0f,
     Viewport{ 0.5f, 0.0f, 0.5f, 1.0f }
-);
+);*/
 
 // camera
 Camera camera(glm::vec3(0.0f, 20.0f, 50.0f));
@@ -335,58 +335,47 @@ int main(int, char**)
     ecs.AddSystem<TransformSystem>(ecs);
     ecs.AddSystem<PhysicsSystem>(ecs);
     ecs.AddSystem<RenderSystem>(ecs, window);
-    spdlog::info("PhysicsSystem dodany do ECS");
+    ecs.AddSystem<HID>(ecs, window);
 
     ourShader = std::make_unique<Shader>("res/shaders/basic.vert", "res/shaders/basic.frag");
     ourShader->use();
 
     groundModel = std::make_unique<Prefab>("res/backpack/podloze.glb");
-
     GameObject* obb = groundModel->Instantiate(*scena1, nullptr, ourShader.get());
-
-    spdlog::info("Dirty ?");
-    spdlog::info(obb->GetComponent<TransformComponent>()->isDirty);
 
     obb->GetComponent<TransformComponent>()->scale.x = 1000;
     obb->GetComponent<TransformComponent>()->scale.y = 1000;
     obb->GetComponent<TransformComponent>()->scale.z = 1000;
 
-    spdlog::info(obb->GetComponent<TransformComponent>()->scale.x);
-    ecs.AddSystem<HID>(ecs, window);
-    //spdlog::info("PhysicsSystem dodany do ECS");
-
- 
-    // Tworzymy GameObject
     GameObject* obj = scena1->CreateGameObject(nullptr);
-
-    // Dodajemy TransformComponent
-    TransformComponent* transform = obj->GetComponent<TransformComponent>();
-    //RigidbodyComponent* rigidbody = obj->AddComponent<RigidbodyComponent>();
-    transform->position = glm::vec3(1.0f, 2.0f, 3.0f);
-
-    // Logowanie pozycji
-    spdlog::info("GameObject position: x={}, y={}, z={}",
-        transform->position.x,
-        transform->position.y,
-        transform->position.z);
-
-    // Tworzymy drugi obiekt z komponentem od razu
-    GameObject* obj2 = scena1->CreateGameObject(nullptr);
-    TransformComponent* t2 = obj2->GetComponent<TransformComponent>();
-    CameraComponent* cam = obj2->AddComponent<CameraComponent>();
-
-
-    cam->camera.Position = glm::vec3(0, 50, 15);
-    cam->camera.Yaw = -90.0f;
-    cam->camera.Pitch = -10.0f;
-    cam->camera.updateCameraVectors();
-
-    t2->position = glm::vec3(10.0f, 20.0f, 30.0f);
+    CameraComponent* camCompLeft = obj->AddComponent<CameraComponent>();
     
-    spdlog::info("Second GameObject position: x={}, y={}, z={}",
-        t2->position.x,
-        t2->position.y,
-        t2->position.z);
+    GameObject* obj2 = scena1->CreateGameObject(nullptr);
+    CameraComponent* camCompRight = obj2->AddComponent<CameraComponent>();
+
+    camCompLeft->camera = Camera(
+        glm::vec3(0.0f, 20.0f, 50.0f),
+        glm::vec3(0.0f, 1.0f, 0.0f),
+        YAW, PITCH,
+        Viewport{ 0.0f, 0.0f, 0.5f, 1.0f }
+    );
+
+    camCompLeft->isActive = true;
+
+    camCompRight->camera = Camera(
+        glm::vec3(50.0f, 30.0f, 0.0f),
+        glm::vec3(0.0f, 1.0f, 0.0f),
+        0.0f, -20.0f,
+        Viewport{ 0.5f, 0.0f, 0.5f, 1.0f }
+    );
+
+    camCompRight->isActive = true;
+
+    //CameraComponent* cam = obj2->AddComponent<CameraComponent>();
+    //cam->camera.Position = glm::vec3(0, 50, 15);
+    //cam->camera.Yaw = -90.0f;
+    //cam->camera.Pitch = -10.0f;
+    //cam->camera.updateCameraVectors();
 
     sceneManager.Update(16);
 
@@ -396,17 +385,17 @@ int main(int, char**)
     //createHouse();
     //startGroupInstanced(root.get());
 
-    HID::get().name_action("move_right", GLFW_KEY_D);
-    HID::get().name_action("move_left", GLFW_KEY_A);
-    HID::get().name_action("move_up", GLFW_KEY_W);
-    HID::get().name_action("move_down", GLFW_KEY_S);
-    HID::get().name_action("move_right1", GLFW_KEY_RIGHT);
-    HID::get().name_action("move_left1", GLFW_KEY_LEFT);
-    HID::get().name_action("move_up1", GLFW_KEY_UP);
-    HID::get().name_action("move_down1", GLFW_KEY_DOWN);
-    HID::get().name_action_mouse("move_right", GLFW_MOUSE_BUTTON_LEFT);
-    HID::get().name_action_gamepad("move_right", GLFW_GAMEPAD_BUTTON_SQUARE, 0);
-    HID::get().name_action_gamepad("move_right_1", GLFW_GAMEPAD_BUTTON_SQUARE, 1);
+    //HID::get().name_action("move_right", GLFW_KEY_D);
+    //HID::get().name_action("move_left", GLFW_KEY_A);
+    //HID::get().name_action("move_up", GLFW_KEY_W);
+    //HID::get().name_action("move_down", GLFW_KEY_S);
+    //HID::get().name_action("move_right1", GLFW_KEY_RIGHT);
+    //HID::get().name_action("move_left1", GLFW_KEY_LEFT);
+    //HID::get().name_action("move_up1", GLFW_KEY_UP);
+    //HID::get().name_action("move_down1", GLFW_KEY_DOWN);
+    //HID::get().name_action_mouse("move_right", GLFW_MOUSE_BUTTON_LEFT);
+    //HID::get().name_action_gamepad("move_right", GLFW_GAMEPAD_BUTTON_SQUARE, 0);
+    //HID::get().name_action_gamepad("move_right_1", GLFW_GAMEPAD_BUTTON_SQUARE, 1);
 
     // Main loop
     while (!glfwWindowShouldClose(window))
@@ -799,8 +788,8 @@ void input()
         }
         mouseMove = false;
     }
-    processCameraInput(camera, "move_up", "move_down", "move_left", "move_right");
-    processCameraInput(cameraRight, "move_up1", "move_down1", "move_left1", "move_right1");
+    //processCameraInput(camera, "move_up", "move_down", "move_left", "move_right");
+    //processCameraInput(cameraRight, "move_up1", "move_down1", "move_left1", "move_right1");
     /*float velocity = camera.MovementSpeed * deltaTime;
         if (HID::get().is_action_pressed("move_up"))
             camera.Position += camera.Front * velocity;
@@ -1296,23 +1285,24 @@ unsigned int loadCubemap(vector<std::string> faces)
 
 */
 
-void processCameraInput(Camera& cam,
-                       const std::string& up,
-                       const std::string& down,
-                       const std::string& left,
-                       const std::string& right)
-{
-    auto& hid = HID::get();
-    glm::vec3 dir(0.0f);
-
-    if (hid.is_action_pressed(up))    dir += cam.Front;
-    if (hid.is_action_pressed(down))  dir -= cam.Front;
-    if (hid.is_action_pressed(right)) dir += cam.Right;
-    if (hid.is_action_pressed(left))  dir -= cam.Right;
-
-    if (glm::length(dir) > 0.0f)
-        dir = glm::normalize(dir);
-
-    cam.Position += dir * cam.MovementSpeed * deltaTime;
-}
+//
+//void processCameraInput(Camera& cam,
+//                       const std::string& up,
+//                       const std::string& down,
+//                       const std::string& left,
+//                       const std::string& right)
+//{
+//    auto& hid = HID::get();
+//    glm::vec3 dir(0.0f);
+//
+//    if (hid.is_action_pressed(up))    dir += cam.Front;
+//    if (hid.is_action_pressed(down))  dir -= cam.Front;
+//    if (hid.is_action_pressed(right)) dir += cam.Right;
+//    if (hid.is_action_pressed(left))  dir -= cam.Right;
+//
+//    if (glm::length(dir) > 0.0f)
+//        dir = glm::normalize(dir);
+//
+//    cam.Position += dir * cam.MovementSpeed * deltaTime;
+//}
 

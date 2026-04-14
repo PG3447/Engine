@@ -89,11 +89,18 @@ public:
         for (size_t i = 0; i < cameras.size(); i++) {
             if (cameras[i]->isActive) {
                 
-                float fov = cameras[i]->camera.Zoom;
-                float aspect = (float)display_w / (float)display_h;
+                view = cameras[i]->camera.beginRender(display_w, display_h);
 
-                projection = glm::perspective(glm::radians(fov), aspect, cameras[i]->nearPlane, cameras[i]->farPlane);
-                view = cameras[i]->camera.GetViewMatrix();
+                projection = cameras[i]->camera.getProjectionMatrix(
+                    cameras[i]->nearPlane,
+                    cameras[i]->farPlane
+                );
+
+                //float fov = cameras[i]->camera.Zoom;
+                //float aspect = (float)display_w / (float)display_h;
+                //
+                //projection = glm::perspective(glm::radians(fov), aspect, cameras[i]->nearPlane, cameras[i]->farPlane);
+                //view = cameras[i]->camera.GetViewMatrix();
 
                 return;
             }
@@ -200,6 +207,35 @@ public:
 
 
 /*
+for (Camera* cam : { &camera, &cameraRight }) {
+    glm::mat4 view = cam->beginRender(display_w, display_h);
+    glm::mat4 projection = cam->getProjectionMatrix(0.1f, 10000.0f);
+
+    //activating program object
+    ourShader->use();
+    renderGroup(projection, view, systemModel, cam->Position);
+
+
+    // draw skybox as last
+    glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
+    skyboxShader->use();
+    view = glm::mat4(glm::mat3(cam->GetViewMatrix())); // remove translation from the view matrix
+    skyboxShader->setMat4("view", view);
+    skyboxShader->setMat4("projection", projection);
+    // skybox cube
+    glBindVertexArray(skyboxVAO);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glBindVertexArray(0);
+    glDepthFunc(GL_LESS); // set depth function back to default
+    //OLD RENDER FUNCTION ENDS HERE
+}
+*/
+
+/*
+* 
+
 
 struct pair_hash {
     std::size_t operator()(const std::pair<Model*, Shader*>& p) const {
