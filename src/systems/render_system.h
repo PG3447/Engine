@@ -198,6 +198,162 @@ public:
 
 #endif
 
+
+/*
+
+struct pair_hash {
+    std::size_t operator()(const std::pair<Model*, Shader*>& p) const {
+        return std::hash<Model*>()(p.first) ^ (std::hash<Shader*>()(p.second) << 1);
+    }
+};
+
+
+std::unordered_map<std::pair<Model*, Shader*>, std::vector<Entity*>, pair_hash> instancedGroups;
+
+void startGroupInstanced(Entity* root)
+{
+    instancedGroups.clear();
+    std::vector<Entity*> stackEntity;
+    stackEntity.push_back(root);
+
+    while (!stackEntity.empty())
+    {
+        Entity* entity = stackEntity.back();
+        stackEntity.pop_back();
+
+        if (entity->pModel)
+        {
+            std::pair<Model*, Shader*> key = { entity->pModel, entity->pShader };
+            instancedGroups[key].push_back(entity);
+        }
+
+        for (auto& child : entity->children)
+        {
+            stackEntity.push_back(child.get());
+        }
+    }
+    ;
+}
+
+void AddEntityToGroupInstanced(Entity* entity)
+{
+    if (!entity->pModel)
+        return;
+
+    std::pair<Model*, Shader*> key = { entity->pModel, entity->pShader };
+    std::vector<Entity*>& group = instancedGroups[key];
+
+    group.push_back(entity);
+
+}
+
+bool start = true;
+bool change = false;
+
+void renderGroup(glm::mat4 projection, glm::mat4 view, glm::mat4 systemModel, const glm::vec3& viewPos)
+{
+    for (auto& [key, entities] : instancedGroups)
+    {
+        Model* model = key.first;
+        Shader* shader = key.second;
+
+        shader->use();
+
+        shader->setVec3("viewPos", viewPos);
+        shader->setVec3("cameraPos", viewPos);
+
+        shader->setMat4("projection", projection);
+        shader->setMat4("view", view);
+
+        if (entities.size() == 0)
+        {
+            continue;
+        }
+        else if (entities.size() == 1)
+        {
+            shader->setBool("useInstance", false);
+            shader->setMat4("model", systemModel * entities[0]->transform.getModelMatrix());
+
+            if (entities[0]->pLight != nullptr)
+            {
+                entities[0]->transform.setLocalPosition(entities[0]->pLight->position);
+                glm::vec3 dir = glm::normalize(entities[0]->pLight->direction);
+
+                float yaw = atan2(dir.x, dir.z);
+                float pitch = asin(-dir.y);
+
+                entities[0]->transform.setLocalRotation(glm::degrees(glm::vec3(pitch, yaw, 0.0f)));
+                entities[0]->pLight->Apply(*shader);
+            }
+
+            if (model != nullptr)
+            {
+                model->Draw(*shader);
+            }
+        }
+        else
+        {
+            shader->setBool("useInstance", true);
+            renderInstanced(model, shader, entities);
+
+        }
+    }
+    start = false;
+    change = false;
+}
+
+
+void renderInstanced(Model* model, Shader* shader, std::vector<Entity*>& entities)
+{
+    if (start || change) {
+        size_t numEntities = entities.size();
+        glm::mat4* modelMatrices = new glm::mat4[numEntities];
+
+        for (size_t i = 0; i < numEntities; ++i)
+        {
+            modelMatrices[i] = entities[i]->transform.getModelMatrix();
+        }
+
+
+        if (model->instanceVBO == 0)
+            glGenBuffers(1, &model->instanceVBO);
+        glBindBuffer(GL_ARRAY_BUFFER, model->instanceVBO);
+        glBufferData(GL_ARRAY_BUFFER, numEntities * sizeof(glm::mat4), modelMatrices, GL_DYNAMIC_DRAW);
+    }
+
+    if (start) {
+        for (unsigned int i = 0; i < model->meshes.size(); i++)
+        {
+            unsigned int VAO = model->meshes[i].VAO;
+            glBindVertexArray(VAO);
+
+            // matrix
+            GLsizei vec4Size = sizeof(glm::vec4);
+            glEnableVertexAttribArray(7);
+            glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)0);
+            glEnableVertexAttribArray(8);
+            glVertexAttribPointer(8, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(vec4Size));
+            glEnableVertexAttribArray(9);
+            glVertexAttribPointer(9, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(2 * vec4Size));
+            glEnableVertexAttribArray(10);
+            glVertexAttribPointer(10, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(3 * vec4Size));
+
+            glVertexAttribDivisor(7, 1);
+            glVertexAttribDivisor(8, 1);
+            glVertexAttribDivisor(9, 1);
+            glVertexAttribDivisor(10, 1);
+
+            glBindVertexArray(0);
+        }
+    }
+    if (model != nullptr)
+    {
+        model->Draw(*shader, (GLsizei)entities.size());
+    }
+}
+
+*/
+
 /*
 
     void render()
