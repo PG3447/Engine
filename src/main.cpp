@@ -426,6 +426,7 @@ int main(int, char**)
     ecs.GetSystem<HID>()->name_action_gamepad("move_right", GLFW_GAMEPAD_BUTTON_SQUARE, 0);
     ecs.GetSystem<HID>()->name_action_gamepad("move_right_1", GLFW_GAMEPAD_BUTTON_SQUARE, 1);
 
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
