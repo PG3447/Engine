@@ -429,17 +429,6 @@ int main(int, char**)
     sprite_2->size = glm::vec2(128.0f, 128.0f);
     sprite_2->frameDuration = 0.5f;
 
-    GameObject* obj_Sprite_3 = scena1->CreateGameObject(nullptr);
-    SpriteComponent* sprite_3 = obj_Sprite_3->AddComponent<SpriteComponent>();
-    sprite_3->scrollEnabled = true;
-    sprite_3->scrollSpeed = glm::vec2(0.3f, 0.0f);
-    sprite_3->screenPosition = glm::vec2(0.0f, 0.0f);
-    sprite_3->size = glm::vec2(2080.0f, 1260.0f);
-    sprite_3->sprites.push_back(
-        ResourceManager::LoadTexture("background_pgk.png", "res/textures/PGK_placeholders")
-    );
-
-
     GameObject* obj_Sprite_4 = scena1->CreateGameObject(nullptr);
     SpriteComponent* sprite_4 = obj_Sprite_4->AddComponent<SpriteComponent>();
     sprite_4->textEnabled = true;
@@ -447,7 +436,6 @@ int main(int, char**)
 
     sprite_1->layer = 1;
     sprite_2->layer = 1;
-    sprite_3->layer = 0;
     sprite_4->layer = 1;
 
     //CameraComponent* cam = obj2->AddComponent<CameraComponent>();
@@ -474,6 +462,8 @@ int main(int, char**)
     ecs.GetSystem<HID>()->name_action_mouse("move_right", GLFW_MOUSE_BUTTON_LEFT);
     ecs.GetSystem<HID>()->name_action_gamepad("move_right", GLFW_GAMEPAD_BUTTON_SQUARE, 0);
     ecs.GetSystem<HID>()->name_action_gamepad("move_right_1", GLFW_GAMEPAD_BUTTON_SQUARE, 1);
+
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     int test_score = 0;
     // Main loop
