@@ -2,6 +2,8 @@
 #define COMPONENT_H
 
 #include <glm/glm.hpp>
+#include <memory>
+#include <string>
 #include "camera.h"
 
 class Model;
@@ -64,6 +66,42 @@ struct CameraComponent : Component {
     float farPlane = 10000.0f;
 
     bool isActive = true;
+};
+
+struct SpriteComponent : Component {
+    static constexpr uint64_t ComponentBit = 1ull << 4;
+
+    std::vector<std::shared_ptr<unsigned int>> sprites;
+    int currentSprite = 0;
+
+    float frameDuration = 0.1f;
+    float elapsedTime = 0.0f;
+    bool isAnimating = false;
+    bool loop = false;
+
+    glm::vec2 screenPosition{ 0.0f, 0.0f };
+    glm::vec2 size{ 64.0f, 64.0f };
+    float opacity = 1.0f;
+    bool isVisible = true;
+    int layer = 0;
+
+    bool scrollEnabled = false;
+    glm::vec2 scrollSpeed = { 0.0f, 0.0f };
+    glm::vec2 scrollOffset = { 0.0f, 0.0f };
+
+    bool textEnabled = false;
+    std::string text = "";
+    std::string fontPath = "res/textures/fonts/arial.ttf";
+    float fontSize = 32.0f;
+    glm::vec3 textColor = { 0.0f, 0.0f, 0.0f };
+    glm::vec2 textOffset = { 0.0f, 0.0f };
+
+    unsigned int currentTextureID() const {
+        if (sprites.empty() || !sprites[currentSprite]) return 0;
+        return *sprites[currentSprite];
+    }
+
+    int totalFrames() const { return (int)sprites.size(); }
 };
 
 

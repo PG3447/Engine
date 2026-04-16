@@ -40,7 +40,7 @@
 #include "core/gameobject.h" 
 #include <systems/physics_system.h>
 #include <systems/transform_system.h>
-
+#include <systems/SpriteSystem.h>
 
 
 static void glfw_error_callback(int error, const char* description)
@@ -355,7 +355,7 @@ int main(int, char**)
 
     ECS ecs;
     SceneManager sceneManager;
-    
+
     sceneManager.CreateScene("Scena 1", ecs);
 
     Scene* scena1 = sceneManager.GetActiveScene();
@@ -365,6 +365,7 @@ int main(int, char**)
     ecs.AddSystem<PhysicsSystem>(ecs);
     ecs.AddSystem<RenderSystem>(ecs, window);
     ecs.AddSystem<HID>(ecs, window);
+    ecs.AddSystem<SpriteSystem>(ecs, window);
 
     ourShader = std::make_unique<Shader>("res/shaders/basic.vert", "res/shaders/basic.frag");
     ourShader->use();
@@ -378,7 +379,7 @@ int main(int, char**)
 
     GameObject* obj = scena1->CreateGameObject(nullptr);
     CameraComponent* camCompLeft = obj->AddComponent<CameraComponent>();
-    
+
     GameObject* obj2 = scena1->CreateGameObject(nullptr);
     CameraComponent* camCompRight = obj2->AddComponent<CameraComponent>();
 
@@ -400,6 +401,55 @@ int main(int, char**)
 
     camCompRight->isActive = true;
 
+    GameObject* obj_Sprite_1 = scena1->CreateGameObject(nullptr);
+    SpriteComponent* sprite_1 = obj_Sprite_1->AddComponent<SpriteComponent>();
+
+    sprite_1->sprites.push_back(
+        ResourceManager::LoadTexture("sigma.png", "res/textures/PGK_placeholders")
+    );
+    sprite_1->screenPosition = glm::vec2(0.0f, 0.0f);
+    sprite_1->size = glm::vec2(128.0f, 128.0f);
+    sprite_1->frameDuration = 0.15f;
+
+    GameObject* obj_Sprite_2 = scena1->CreateGameObject(nullptr);
+    SpriteComponent* sprite_2 = obj_Sprite_2->AddComponent<SpriteComponent>();
+
+    sprite_2->isAnimating = true;
+    sprite_2->loop = true;
+    sprite_2->sprites.push_back(
+        ResourceManager::LoadTexture("Face_1.png", "res/textures/PGK_placeholders")
+    );
+    sprite_2->sprites.push_back(
+        ResourceManager::LoadTexture("Face_2.png", "res/textures/PGK_placeholders")
+    );
+    sprite_2->sprites.push_back(
+        ResourceManager::LoadTexture("Face_3.png", "res/textures/PGK_placeholders")
+    );
+    sprite_2->screenPosition = glm::vec2(0.0f, 128.0f);
+    sprite_2->size = glm::vec2(128.0f, 128.0f);
+    sprite_2->frameDuration = 0.5f;
+
+    GameObject* obj_Sprite_3 = scena1->CreateGameObject(nullptr);
+    SpriteComponent* sprite_3 = obj_Sprite_3->AddComponent<SpriteComponent>();
+    sprite_3->scrollEnabled = true;
+    sprite_3->scrollSpeed = glm::vec2(0.3f, 0.0f);
+    sprite_3->screenPosition = glm::vec2(0.0f, 0.0f);
+    sprite_3->size = glm::vec2(2080.0f, 1260.0f);
+    sprite_3->sprites.push_back(
+        ResourceManager::LoadTexture("background_pgk.png", "res/textures/PGK_placeholders")
+    );
+
+
+    GameObject* obj_Sprite_4 = scena1->CreateGameObject(nullptr);
+    SpriteComponent* sprite_4 = obj_Sprite_4->AddComponent<SpriteComponent>();
+    sprite_4->textEnabled = true;
+    sprite_4->screenPosition = glm::vec2(0.0f, 256.0f);
+
+    sprite_1->layer = 1;
+    sprite_2->layer = 1;
+    sprite_3->layer = 0;
+    sprite_4->layer = 1;
+
     //CameraComponent* cam = obj2->AddComponent<CameraComponent>();
     //cam->camera.Position = glm::vec3(0, 50, 15);
     //cam->camera.Yaw = -90.0f;
@@ -413,7 +463,6 @@ int main(int, char**)
 
     //createHouse();
     //startGroupInstanced(root.get());
-
     ecs.GetSystem<HID>()->name_action("move_right", GLFW_KEY_D);
     ecs.GetSystem<HID>()->name_action("move_left", GLFW_KEY_A);
     ecs.GetSystem<HID>()->name_action("move_up", GLFW_KEY_W);
@@ -426,7 +475,7 @@ int main(int, char**)
     ecs.GetSystem<HID>()->name_action_gamepad("move_right", GLFW_GAMEPAD_BUTTON_SQUARE, 0);
     ecs.GetSystem<HID>()->name_action_gamepad("move_right_1", GLFW_GAMEPAD_BUTTON_SQUARE, 1);
 
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    int test_score = 0;
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
@@ -440,6 +489,8 @@ int main(int, char**)
         //    transform->position.x,
         //    transform->position.y,
         //    transform->position.z);
+        test_score++;
+        sprite_4->text = "score: " + std::to_string(test_score);
         sceneManager.Update(16);
 
         // Process I/O operations here
@@ -497,7 +548,7 @@ bool init()
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // 3.0+ only
 
     // Create window with graphics context
-    window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Dear ImGui GLFW+OpenGL4 example", NULL, NULL);
+    window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "MimiCry", NULL, NULL);
     if (window == NULL)
     {
         spdlog::error("Failed to create GLFW Window!");
@@ -1121,6 +1172,7 @@ void imgui_render()
             wireframeMode ? GL_LINE : GL_FILL);
     }
 
+    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
     ImGui::SliderFloat("rotation X", &rotationX, -480.0f, 480.0f);
     ImGui::SliderFloat("rotation Y", &rotationY, -480.0f, 480.0f);
     ImGui::SliderFloat("Camera Distance", &cameraDistance, 5.0f, 1000.0f);
