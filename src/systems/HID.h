@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <vector>
 #include "core/ecs.h"
+#include "../yaml_config.h"
 
 class HID : public System{
 private:
@@ -49,6 +50,8 @@ public:
     void name_action(const std::string action_name, int glfw_key);
     void name_action_mouse(const std::string action_name, int glfw_key);
     void name_action_gamepad(const std::string action_name, int glfw_key, int gamepad_id);
+
+    void load_inputs_from_yaml(const std::string& path);
 
     bool is_action_pressed(const std::string& action_name);
     bool is_action_just_pressed(const std::string& action_name);

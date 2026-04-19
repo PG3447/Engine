@@ -451,17 +451,6 @@ int main(int, char**)
 
     //createHouse();
     //startGroupInstanced(root.get());
-    ecs.GetSystem<HID>()->name_action("move_right", GLFW_KEY_D);
-    ecs.GetSystem<HID>()->name_action("move_left", GLFW_KEY_A);
-    ecs.GetSystem<HID>()->name_action("move_up", GLFW_KEY_W);
-    ecs.GetSystem<HID>()->name_action("move_down", GLFW_KEY_S);
-    ecs.GetSystem<HID>()->name_action("move_right1", GLFW_KEY_RIGHT);
-    ecs.GetSystem<HID>()->name_action("move_left1", GLFW_KEY_LEFT);
-    ecs.GetSystem<HID>()->name_action("move_up1", GLFW_KEY_UP);
-    ecs.GetSystem<HID>()->name_action("move_down1", GLFW_KEY_DOWN);
-    ecs.GetSystem<HID>()->name_action_mouse("move_right", GLFW_MOUSE_BUTTON_LEFT);
-    ecs.GetSystem<HID>()->name_action_gamepad("move_right", GLFW_GAMEPAD_BUTTON_SQUARE, 0);
-    ecs.GetSystem<HID>()->name_action_gamepad("move_right_1", GLFW_GAMEPAD_BUTTON_SQUARE, 1);
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 

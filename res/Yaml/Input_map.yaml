@@ -1,0 +1,17 @@
+input:
+  keyboard:
+    move_right: [GLFW_KEY_D]
+    move_left: [GLFW_KEY_A]
+    move_up: [GLFW_KEY_W]
+    move_down: [GLFW_KEY_S]
+    move_right1: [GLFW_KEY_RIGHT]
+    move_left1: [GLFW_KEY_LEFT]
+    move_up1: [GLFW_KEY_UP]
+    move_down1: [GLFW_KEY_DOWN]
+  mouse:
+    move_right: [GLFW_MOUSE_BUTTON_LEFT]
+  gamepad:
+    move_right:
+      - {button: GLFW_GAMEPAD_BUTTON_SQUARE, id: 0}
+    move_right_1:
+      - {button: GLFW_GAMEPAD_BUTTON_SQUARE, id: 1}
