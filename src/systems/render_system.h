@@ -20,7 +20,7 @@ private:
     };
 
     Query<TransformComponent, RenderComponent>* renderQuery;
-    Query<CameraComponent>* cameraQuery;
+    Query<TransformComponent, CameraComponent>* cameraQuery;
 
     std::unordered_map<std::pair<Model*, Shader*>, std::vector<size_t>, pair_hash> instancedGroups;
 
@@ -39,7 +39,7 @@ public:
     RenderSystem(ECS& ecs, GLFWwindow* win) : window(win) 
     {
         renderQuery = ecs.CreateQuery<TransformComponent, RenderComponent>();
-        cameraQuery = ecs.CreateQuery<CameraComponent>();
+        cameraQuery = ecs.CreateQuery<TransformComponent, CameraComponent>();
         
         Init();
     }
@@ -122,7 +122,8 @@ public:
     }
 
     void RenderAllCameras() {
-        auto& cameras = std::get<0>(cameraQuery->componentsVectors);
+        auto& transforms = std::get<0>(cameraQuery->componentsVectors);
+        auto& cameras = std::get<1>(cameraQuery->componentsVectors);
 
         int display_w, display_h;
         glfwGetFramebufferSize(window, &display_w, &display_h);
@@ -131,16 +132,16 @@ public:
             if (!cameras[i]->isActive)
                 continue;
 
-            RenderCamera(*cameras[i], display_w, display_h);
+            RenderCamera(*cameras[i], *transforms[i], display_w, display_h);
         }
     }
 
-    void RenderCamera(CameraComponent& cam, int width, int height) {
+    void RenderCamera(CameraComponent& cam, TransformComponent& transform, int width, int height) {
         
         ApplyViewport(cam.viewport, width, height);
 
         //view = cam.camera.beginRender(width, height);
-        view = CameraHelper::getViewMatrix(cam);
+        view = CameraHelper::getViewMatrix(cam, transform);
         projection = CameraHelper::getProjectionMatrix(cam);
         //projection = cam.camera.getProjectionMatrix(
         //    cam.nearPlane,

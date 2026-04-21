@@ -329,7 +329,7 @@ void processCameraInput(ECS& ecs,CameraComponent& cam,
     if (glm::length(dir) > 0.0f)
         dir = glm::normalize(dir);
 
-    cam.transform.position += dir * MovementSpeed * deltaTime;
+    //cam.transform.position += dir * MovementSpeed * deltaTime;
 }
 
 void processCameraMouse(ECS& ecs, CameraComponent& cam)
@@ -383,8 +383,8 @@ int main(int, char**)
     GameObject* obj2 = scena1->CreateGameObject(nullptr);
     CameraComponent* camCompRight = obj2->AddComponent<CameraComponent>();
 
+    obj->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 20.0f, 50.0f);
      CameraHelper::InitialCamera(*camCompLeft,
-         glm::vec3(0.0f, 20.0f, 50.0f),
          glm::vec3(0.0f, 1.0f, 0.0f),
          YAW,
          PITCH,
@@ -393,8 +393,8 @@ int main(int, char**)
 
     camCompLeft->isActive = true;
 
+    obj2->GetComponent<TransformComponent>()->position = glm::vec3(50.0f, 30.0f, 0.0f);
     CameraHelper::InitialCamera(*camCompRight,
-        glm::vec3(50.0f, 30.0f, 0.0f),
         glm::vec3(0.0f, 1.0f, 0.0f),
         0.0f, -20.0f,
         Viewport{ 0.5f, 0.0f, 0.5f, 1.0f }

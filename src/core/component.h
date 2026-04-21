@@ -121,7 +121,7 @@ struct CameraComponent : Component {
 
     CameraState state;
 
-    TransformComponent transform;
+    //TransformComponent transform;
 
     float yaw = -90.0f;
     float pitch = 0.0f;
