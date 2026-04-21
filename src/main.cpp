@@ -21,7 +21,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <shader.h>
-#include <camera.h>
+#include <unused/camera.h>
 #include <model.h>
 #include <entity.h>
 #include <prefab.h>
@@ -389,7 +389,7 @@ int main(int, char**)
     ourShader = std::make_unique<Shader>("res/shaders/basic.vert", "res/shaders/basic.frag");
     ourShader->use();
 
-    groundModel = std::make_unique<Prefab>("res/backpack/podloze.glb");
+    groundModel = std::make_unique<Prefab>("res/models/podloze.glb");
     GameObject* obb = groundModel->Instantiate(*scena1, nullptr, ourShader.get());
 
     obb->GetComponent<TransformComponent>()->scale.x = 1000;
@@ -697,7 +697,7 @@ void compileShader()
 
     //ladowanie bazowego shader-a
  
-    sunModel = std::make_unique<Prefab>("res/backpack/sun.glb");
+    sunModel = std::make_unique<Prefab>("res/models/sun.glb");
     
     root = std::make_unique<Entity>();
     root->name = "root";
@@ -751,9 +751,9 @@ void compileShader()
 //    root->addChild(ground);
 //    
 //    emptyModel = std::make_unique<Model>();
-//    //emptyModel1 = std::make_unique<Prefab>("res/backpack/podloze.glb", 0.25f, false);
-//    //emptyModel2 = std::make_unique<Prefab>("res/backpack/podloze.glb", 1.0f, false);
-//    //emptyModel3 = std::make_unique<Prefab>("res/backpack/podloze.glb", 1.0f, false);
+//    //emptyModel1 = std::make_unique<Prefab>("res/models/podloze.glb", 0.25f, false);
+//    //emptyModel2 = std::make_unique<Prefab>("res/models/podloze.glb", 1.0f, false);
+//    //emptyModel3 = std::make_unique<Prefab>("res/models/podloze.glb", 1.0f, false);
 //    //
 //    dircetLight = std::make_unique<Light>(Light::Directional);
 //    dircetLight->direction = glm::vec3(-0.3f, -1.0f, -0.1f);
