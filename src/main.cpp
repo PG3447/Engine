@@ -161,6 +161,25 @@ unsigned int triangleVAO = 0;
 unsigned int triangleVBO = 0;
 std::unique_ptr<Shader> triangleShader;
 
+
+const int MAX_SAMPLES = 100;
+float frameTimes[MAX_SAMPLES];
+int index = 0;
+
+void updateFPS(float deltaTime) {
+    frameTimes[index] = deltaTime;
+    index = (index + 1) % MAX_SAMPLES;
+
+    float sum = 0.0f;
+    for (int i = 0; i < MAX_SAMPLES; i++)
+        sum += frameTimes[i];
+
+    float avg = sum / MAX_SAMPLES;
+    float fps = 1.0f / avg;
+
+    spdlog::info("FPS: {}", fps);
+}
+
 //
 //struct pair_hash {
 //    std::size_t operator()(const std::pair<Model*, Shader*>& p) const {
@@ -455,12 +474,14 @@ int main(int, char**)
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     int test_score = 0;
+
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
         float currentFrame = static_cast<float>(glfwGetTime());
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
+        updateFPS(deltaTime);
 
         processCameraInput(ecs , camCompLeft->camera, "move_up", "move_down", "move_left", "move_right");
         processCameraMouse(ecs, camCompLeft->camera);
@@ -470,7 +491,10 @@ int main(int, char**)
         //    transform->position.z);
         test_score++;
         sprite_4->text = "score: " + std::to_string(test_score);
-        sceneManager.Update(16);
+
+
+
+        sceneManager.Update(deltaTime);
 
         // Process I/O operations here
         input();
