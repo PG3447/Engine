@@ -195,7 +195,7 @@ public:
 
                 shader->setBool("useInstance", false);
                 shader->setMat4("model", transforms[i]->modelMatrix);
-                spdlog::info("renderowanie");
+                //spdlog::info("renderowanie");
                 model->Draw(*shader);
             }
             else {

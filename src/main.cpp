@@ -21,7 +21,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <shader.h>
-#include <camera.h>
+#include <unused/camera.h>
 #include <model.h>
 #include <entity.h>
 #include <prefab.h>
@@ -160,6 +160,25 @@ Entity* koparkaEntity;
 unsigned int triangleVAO = 0;
 unsigned int triangleVBO = 0;
 std::unique_ptr<Shader> triangleShader;
+
+
+const int MAX_SAMPLES = 100;
+float frameTimes[MAX_SAMPLES];
+int index = 0;
+
+void updateFPS(float deltaTime) {
+    frameTimes[index] = deltaTime;
+    index = (index + 1) % MAX_SAMPLES;
+
+    float sum = 0.0f;
+    for (int i = 0; i < MAX_SAMPLES; i++)
+        sum += frameTimes[i];
+
+    float avg = sum / MAX_SAMPLES;
+    float fps = 1.0f / avg;
+
+    spdlog::info("FPS: {}", fps);
+}
 
 //
 //struct pair_hash {
@@ -370,7 +389,7 @@ int main(int, char**)
     ourShader = std::make_unique<Shader>("res/shaders/basic.vert", "res/shaders/basic.frag");
     ourShader->use();
 
-    groundModel = std::make_unique<Prefab>("res/backpack/podloze.glb");
+    groundModel = std::make_unique<Prefab>("res/models/podloze.glb");
     GameObject* obb = groundModel->Instantiate(*scena1, nullptr, ourShader.get());
 
     obb->GetComponent<TransformComponent>()->scale.x = 1000;
@@ -456,12 +475,14 @@ int main(int, char**)
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     int test_score = 0;
+
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
         float currentFrame = static_cast<float>(glfwGetTime());
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
+        updateFPS(deltaTime);
 
         processCameraInput(ecs , *camCompLeft, "move_up", "move_down", "move_left", "move_right");
         processCameraMouse(ecs, *camCompLeft);
@@ -471,7 +492,10 @@ int main(int, char**)
         //    transform->position.z);
         test_score++;
         sprite_4->text = "score: " + std::to_string(test_score);
-        sceneManager.Update(16);
+
+
+
+        sceneManager.Update(deltaTime);
 
         // Process I/O operations here
         input();
@@ -674,7 +698,7 @@ void compileShader()
 
     //ladowanie bazowego shader-a
  
-    sunModel = std::make_unique<Prefab>("res/backpack/sun.glb");
+    sunModel = std::make_unique<Prefab>("res/models/sun.glb");
     
     root = std::make_unique<Entity>();
     root->name = "root";
@@ -728,9 +752,9 @@ void compileShader()
 //    root->addChild(ground);
 //    
 //    emptyModel = std::make_unique<Model>();
-//    //emptyModel1 = std::make_unique<Prefab>("res/backpack/podloze.glb", 0.25f, false);
-//    //emptyModel2 = std::make_unique<Prefab>("res/backpack/podloze.glb", 1.0f, false);
-//    //emptyModel3 = std::make_unique<Prefab>("res/backpack/podloze.glb", 1.0f, false);
+//    //emptyModel1 = std::make_unique<Prefab>("res/models/podloze.glb", 0.25f, false);
+//    //emptyModel2 = std::make_unique<Prefab>("res/models/podloze.glb", 1.0f, false);
+//    //emptyModel3 = std::make_unique<Prefab>("res/models/podloze.glb", 1.0f, false);
 //    //
 //    dircetLight = std::make_unique<Light>(Light::Directional);
 //    dircetLight->direction = glm::vec3(-0.3f, -1.0f, -0.1f);

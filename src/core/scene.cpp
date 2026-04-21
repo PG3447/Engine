@@ -55,13 +55,13 @@ void Scene::DebugHierarchy(GameObject* obj, int depth)
 
     std::string indent(depth * 2, ' ');
 
-    spdlog::info("{}GameObject: {}", indent, (void*)obj);
+    //spdlog::info("{}GameObject: {}", indent, (void*)obj);
 
     auto* t = obj->GetComponent<TransformComponent>();
     if (t)
     {
-        spdlog::info("{}  pos: {:.2f}, {:.2f}, {:.2f}",
-            indent, t->position.x, t->position.y, t->position.z);
+        //spdlog::info("{}  pos: {:.2f}, {:.2f}, {:.2f}",
+        //    indent, t->position.x, t->position.y, t->position.z);
     }
 
     for (auto* child : obj->GetChildren())
