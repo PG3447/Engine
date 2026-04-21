@@ -89,21 +89,6 @@ const     char* glsl_version = "#version 460";
 constexpr int32_t GL_VERSION_MAJOR = 4;
 constexpr int32_t GL_VERSION_MINOR = 6;
 
-/*
-Camera camera(
-    glm::vec3(0.0f, 20.0f, 50.0f),
-    glm::vec3(0.0f, 1.0f, 0.0f),
-    YAW, PITCH,
-    Viewport{ 0.0f, 0.0f, 0.5f, 1.0f }
-);
-
-Camera cameraRight(
-    glm::vec3(50.0f, 30.0f, 0.0f),
-    glm::vec3(0.0f, 1.0f, 0.0f),
-    0.0f, -20.0f,
-    Viewport{ 0.5f, 0.0f, 0.5f, 1.0f }
-);*/
-
 // camera
 //Camera camera(glm::vec3(0.0f, 20.0f, 50.0f));
 float lastX = WINDOW_WIDTH / 2.0f;
@@ -161,158 +146,7 @@ unsigned int triangleVAO = 0;
 unsigned int triangleVBO = 0;
 std::unique_ptr<Shader> triangleShader;
 
-//
-//struct pair_hash {
-//    std::size_t operator()(const std::pair<Model*, Shader*>& p) const {
-//        return std::hash<Model*>()(p.first) ^ (std::hash<Shader*>()(p.second) << 1);
-//    }
-//};
-//
-//
-//std::unordered_map<std::pair<Model*, Shader*>, std::vector<Entity*>, pair_hash> instancedGroups;
-//
-//void startGroupInstanced(Entity* root)
-//{
-//    instancedGroups.clear();
-//       std::vector<Entity*> stackEntity;
-//    stackEntity.push_back(root);
-//
-//    while (!stackEntity.empty())
-//    {
-//        Entity* entity = stackEntity.back();
-//        stackEntity.pop_back();
-//
-//        if (entity->pModel)
-//        {
-//            std::pair<Model*, Shader*> key = { entity->pModel, entity->pShader };
-//            instancedGroups[key].push_back(entity);
-//        }
-//
-//        for (auto& child : entity->children)
-//        {
-//            stackEntity.push_back(child.get());
-//        }
-//    }
-//;
-//}
-//
-//void AddEntityToGroupInstanced(Entity* entity)
-//{
-//    if (!entity->pModel)
-//        return;
-//    
-//    std::pair<Model*, Shader*> key = { entity->pModel, entity->pShader };
-//    std::vector<Entity*>& group = instancedGroups[key];
-//    
-//    group.push_back(entity);
-//
-// }
-//
-//bool start = true;
-//bool change = false;
-//
-//void renderGroup(glm::mat4 projection, glm::mat4 view, glm::mat4 systemModel)
-//{
-//    for (auto& [key, entities] : instancedGroups)
-//    {
-//        Model* model = key.first;
-//        Shader* shader = key.second;
-//
-//        shader->use();
-//
-//        shader->setVec3("viewPos", camera.Position);
-//        shader->setVec3("cameraPos", camera.Position);
-//
-//        shader->setMat4("projection", projection);
-//        shader->setMat4("view", view);
-//
-//        if (entities.size() == 0)
-//        {
-//            continue;
-//        }
-//        else if (entities.size() == 1)
-//        {
-//            shader->setBool("useInstance", false);
-//            shader->setMat4("model", systemModel * entities[0]->transform.getModelMatrix());
-//
-//            if (entities[0]->pLight != nullptr)
-//            {
-//                entities[0]->transform.setLocalPosition(entities[0]->pLight->position);
-//                glm::vec3 dir = glm::normalize(entities[0]->pLight->direction);
-//
-//                float yaw = atan2(dir.x, dir.z);
-//                float pitch = asin(-dir.y);
-//
-//                entities[0]->transform.setLocalRotation(glm::degrees(glm::vec3(pitch, yaw, 0.0f)));
-//                entities[0]->pLight->Apply(*shader);
-//            }
-//            
-//            if (model != nullptr)
-//            {
-//                model->Draw(*shader);
-//            }
-//        }
-//        else
-//        {
-//            shader->setBool("useInstance", true);
-//            renderInstanced(model, shader, entities);
-//            
-//        }
-//    }
-//    start = false;
-//    change = false;
-//}
-//
-//
-//void renderInstanced(Model* model, Shader* shader, std::vector<Entity*>& entities)
-//{
-//    if (start || change) {
-//        size_t numEntities = entities.size();
-//
-//        std::vector<glm::mat4> modelMatrices(numEntities);
-//        for (size_t i = 0; i < numEntities; ++i) {
-//            modelMatrices[i] = entities[i]->transform.getModelMatrix();
-//        }
-//
-//        if (model->instanceVBO == 0)
-//            glGenBuffers(1, &model->instanceVBO);
-//        glBindBuffer(GL_ARRAY_BUFFER, model->instanceVBO);
-//        glBufferData(GL_ARRAY_BUFFER, numEntities * sizeof(glm::mat4), modelMatrices.data(), GL_DYNAMIC_DRAW);
-//    }
-//
-//    if (start) {
-//        for (unsigned int i = 0; i < model->meshes.size(); i++)
-//        {
-//            unsigned int VAO = model->meshes[i].renderData->VAO;
-//            glBindVertexArray(VAO);
-//
-//            // matrix
-//            GLsizei vec4Size = sizeof(glm::vec4);
-//            glEnableVertexAttribArray(7);
-//            glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)0);
-//            glEnableVertexAttribArray(8);
-//            glVertexAttribPointer(8, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(vec4Size));
-//            glEnableVertexAttribArray(9);
-//            glVertexAttribPointer(9, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(2 * vec4Size));
-//            glEnableVertexAttribArray(10);
-//            glVertexAttribPointer(10, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(3 * vec4Size));
-//
-//            glVertexAttribDivisor(7, 1);
-//            glVertexAttribDivisor(8, 1);
-//            glVertexAttribDivisor(9, 1);
-//            glVertexAttribDivisor(10, 1);
-//
-//            glBindVertexArray(0);
-//        }
-//    }
-//    if (model != nullptr)
-//    {
-//        model->Draw(*shader, (GLsizei)entities.size());
-//    }
-//}
-
-
-void processCameraInput(ECS& ecs,CameraComponent& cam,
+void processCameraInput(ECS& ecs,CameraComponent& cam, TransformComponent& transform,
                        const std::string& up,
                        const std::string& down,
                        const std::string& left,
@@ -329,7 +163,10 @@ void processCameraInput(ECS& ecs,CameraComponent& cam,
     if (glm::length(dir) > 0.0f)
         dir = glm::normalize(dir);
 
-    //cam.transform.position += dir * MovementSpeed * deltaTime;
+    if (glm::length(dir) > 0.0f) {
+        dir = glm::normalize(dir);
+        transform.position += dir * MovementSpeed * deltaTime;
+    }
 }
 
 void processCameraMouse(ECS& ecs, CameraComponent& cam)
@@ -340,6 +177,11 @@ void processCameraMouse(ECS& ecs, CameraComponent& cam)
         (float)-hid->get_mouse_dy()
     );
 }
+
+void processCameraGamepad(ECS& ecs,
+                         CameraComponent& cam,
+                         TransformComponent& transform,
+                         int gamepad_id);
 
 int main(int, char**)
 {
@@ -463,8 +305,17 @@ int main(int, char**)
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
-        processCameraInput(ecs , *camCompLeft, "move_up", "move_down", "move_left", "move_right");
+        auto* t0 = obj->GetComponent<TransformComponent>();
+        auto* t1 = obj2->GetComponent<TransformComponent>();
+        processCameraInput(ecs, *camCompLeft, *t0,
+    "move_up", "move_down", "move_left", "move_right");
+
+        processCameraInput(ecs, *camCompRight, *t1,
+            "move_up_2", "move_down_2", "move_left_2", "move_right_2");
+
         processCameraMouse(ecs, *camCompLeft);
+        processCameraGamepad(ecs, *camCompLeft, *t0, 0);
+        processCameraGamepad(ecs, *camCompRight, *t1, 1);
         //spdlog::info("GameObject position: x={}, y={}, z={}",
         //    transform->position.x,
         //    transform->position.y,
@@ -510,7 +361,6 @@ int main(int, char**)
 
     return 0;
 }
-
 bool init()
 {
     // Setup window
@@ -1348,6 +1198,31 @@ unsigned int loadCubemap(vector<std::string> faces)
 
 
 */
+void processCameraGamepad(ECS &ecs, CameraComponent &cam, TransformComponent &transform, int gamepad_id) {
+    const auto& hid = ecs.GetSystem<HID>();
 
+    // ruch
+    float lx = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_LEFT_X, gamepad_id);
+    float ly = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_LEFT_Y, gamepad_id);
 
+    glm::vec3 dir(0.0f);
 
+    dir += cam.state.Front * (-ly); // przód/tył
+    dir += cam.state.Right * lx;    // lewo/prawo
+
+    if (glm::length(dir) > 0.0f) {
+        dir = glm::normalize(dir);
+        transform.position += dir * MovementSpeed * deltaTime;
+    }
+
+    // obrót kamery
+    float rx = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_RIGHT_X, gamepad_id);
+    float ry = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_RIGHT_Y, gamepad_id);
+
+    const float sensitivity = 100.0f;
+
+    CameraHelper::ProcessMouseMovement(cam,
+        rx * sensitivity * deltaTime,
+        -ry * sensitivity * deltaTime
+    );
+}

@@ -16,17 +16,11 @@ GameObject* Scene::CreateGameObject(GameObject* parent) {
     } 
 
     if (!parent)
-    {
-        spdlog::info("Dodanie root jako parent");
         parent = root.get();
-    }
 
+    parent->AddChild(e);
 
-    if (parent)
-    {
-        parent->AddChild(e);
-    }
-
+    ecs.NotifyGameObjectChanged(e);
     return e;
 }
 
@@ -34,13 +28,13 @@ void Scene::Update(float deltaTime) {
     // kolejność ważna: transform → fizyka → render
     if (root.get() != nullptr) {
         spdlog::info("Istnieje root");
-        DebugHierarchy(root.get());
+        //DebugHierarchy(root.get());
     }
 
-    if (auto* rs = ecs.GetSystem<HID>()) rs->Update(ecs);
+    if (auto* hid = ecs.GetSystem<HID>()) hid->Update(ecs);
     if (auto* ts = ecs.GetSystem<TransformSystem>()) ts->updateSelfAndChild(root.get());
     if (auto* ps = ecs.GetSystem<PhysicsSystem>()) ps->Update(ecs);
-    if (auto* rs = ecs.GetSystem<RenderSystem>()) rs->Update(ecs);
+    if (auto* render = ecs.GetSystem<RenderSystem>()) render->Update(ecs);
     if (auto* ss = ecs.GetSystem<SpriteSystem>()) ss->Update(ecs);
 }
 //
