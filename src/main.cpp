@@ -66,7 +66,7 @@ unsigned int loadCubemap(vector<std::string> faces);
 void regenerateSphere();
 
 //void createHouse();
-void processCameraInput(ECS& ecs, Camera& cam,
+void processCameraInput(ECS& ecs, CameraComponent& cam,
     const std::string& up,
     const std::string& down,
     const std::string& left,
@@ -105,7 +105,7 @@ Camera cameraRight(
 );*/
 
 // camera
-Camera camera(glm::vec3(0.0f, 20.0f, 50.0f));
+//Camera camera(glm::vec3(0.0f, 20.0f, 50.0f));
 float lastX = WINDOW_WIDTH / 2.0f;
 float lastY = WINDOW_HEIGHT / 2.0f;
 bool firstMouse = true;
@@ -312,7 +312,7 @@ std::unique_ptr<Shader> triangleShader;
 //}
 
 
-void processCameraInput(ECS& ecs,Camera& cam,
+void processCameraInput(ECS& ecs,CameraComponent& cam,
                        const std::string& up,
                        const std::string& down,
                        const std::string& left,
@@ -321,21 +321,21 @@ void processCameraInput(ECS& ecs,Camera& cam,
     const auto& hid = ecs.GetSystem<HID>();
     glm::vec3 dir(0.0f);
 
-    if (hid->is_action_pressed(up))    dir += cam.Front;
-    if (hid->is_action_pressed(left))  dir -= cam.Right;
-    if (hid->is_action_pressed(right)) dir += cam.Right;
-    if (hid->is_action_pressed(down))  dir -= cam.Front;
+    if (hid->is_action_pressed(up))    dir += cam.state.Front;
+    if (hid->is_action_pressed(left))  dir -= cam.state.Right;
+    if (hid->is_action_pressed(right)) dir += cam.state.Right;
+    if (hid->is_action_pressed(down))  dir -= cam.state.Front;
 
     if (glm::length(dir) > 0.0f)
         dir = glm::normalize(dir);
 
-    cam.Position += dir * cam.MovementSpeed * deltaTime;
+    cam.transform.position += dir * MovementSpeed * deltaTime;
 }
 
-void processCameraMouse(ECS& ecs, Camera& cam)
+void processCameraMouse(ECS& ecs, CameraComponent& cam)
 {
     const auto& hid = ecs.GetSystem<HID>();
-    cam.ProcessMouseMovement(
+    CameraHelper::ProcessMouseMovement(cam,
         (float)hid->get_mouse_dx(),
         (float)-hid->get_mouse_dy()
     );
@@ -383,16 +383,17 @@ int main(int, char**)
     GameObject* obj2 = scena1->CreateGameObject(nullptr);
     CameraComponent* camCompRight = obj2->AddComponent<CameraComponent>();
 
-    camCompLeft->camera = Camera(
-        glm::vec3(0.0f, 20.0f, 50.0f),
-        glm::vec3(0.0f, 1.0f, 0.0f),
-        YAW, PITCH,
-        Viewport{ 0.0f, 0.0f, 0.5f, 1.0f }
-    );
+     CameraHelper::InitialCamera(*camCompLeft,
+         glm::vec3(0.0f, 20.0f, 50.0f),
+         glm::vec3(0.0f, 1.0f, 0.0f),
+         YAW,
+         PITCH,
+         Viewport{ 0.0f, 0.0f, 0.5f, 1.0f }
+     );
 
     camCompLeft->isActive = true;
 
-    camCompRight->camera = Camera(
+    CameraHelper::InitialCamera(*camCompRight,
         glm::vec3(50.0f, 30.0f, 0.0f),
         glm::vec3(0.0f, 1.0f, 0.0f),
         0.0f, -20.0f,
@@ -462,8 +463,8 @@ int main(int, char**)
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
-        processCameraInput(ecs , camCompLeft->camera, "move_up", "move_down", "move_left", "move_right");
-        processCameraMouse(ecs, camCompLeft->camera);
+        processCameraInput(ecs , *camCompLeft, "move_up", "move_down", "move_left", "move_right");
+        processCameraMouse(ecs, *camCompLeft);
         //spdlog::info("GameObject position: x={}, y={}, z={}",
         //    transform->position.x,
         //    transform->position.y,
@@ -977,15 +978,15 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
     lastX = xpos;
     lastY = ypos;
 
-    if (mouseMove)
-        camera.ProcessMouseMovement(xoffset, yoffset);
+    //if (mouseMove)
+    //    CameraHelper::ProcessMouseMovement(cam, xoffset, yoffset);
 }
 //
 //// glfw: whenever the mouse scroll wheel scrolls, this callback is called
 //// ----------------------------------------------------------------------
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
-    camera.ProcessMouseScroll(static_cast<float>(yoffset));
+    //camera.ProcessMouseScroll(static_cast<float>(yoffset));
 }
 //
 //void regenerateSphere()

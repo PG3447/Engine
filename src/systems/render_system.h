@@ -7,6 +7,7 @@
 #include <imgui.h>
 #include <GLFW/glfw3.h>
 #include "skybox_renderer.h"
+#include "../utils/camera_helper.h"
 
 
 
@@ -110,6 +111,16 @@ public:
     //    }
     //}
 
+    void ApplyViewport(const Viewport& vp, int w, int h)
+    {
+        glViewport(
+            (GLint)(vp.x * w),
+            (GLint)(vp.y * h),
+            (GLsizei)(vp.width * w),
+            (GLsizei)(vp.height * h)
+        );
+    }
+
     void RenderAllCameras() {
         auto& cameras = std::get<0>(cameraQuery->componentsVectors);
 
@@ -126,11 +137,15 @@ public:
 
     void RenderCamera(CameraComponent& cam, int width, int height) {
         
-        view = cam.camera.beginRender(width, height);
-        projection = cam.camera.getProjectionMatrix(
-            cam.nearPlane,
-            cam.farPlane
-        );
+        ApplyViewport(cam.viewport, width, height);
+
+        //view = cam.camera.beginRender(width, height);
+        view = CameraHelper::getViewMatrix(cam);
+        projection = CameraHelper::getProjectionMatrix(cam);
+        //projection = cam.camera.getProjectionMatrix(
+        //    cam.nearPlane,
+        //    cam.farPlane
+        //);
 
         RenderGroups();
 
