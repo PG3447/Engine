@@ -37,8 +37,12 @@ struct RenderComponent : Component {
 struct RigidbodyComponent : Component {
     static constexpr uint64_t ComponentBit = 1ull << 2;
 
-    float mass = 0;
-    float vx = 0, vy = 0;
+    float mass = 1.0f;
+    glm::vec3 velocity{ 0.0f };
+    glm::vec3 acceleration{ 0.0f };
+
+    bool useGravity = true;
+    bool isStatic = false;
 };
 
 struct Viewport {
@@ -114,5 +118,17 @@ struct SpriteComponent : Component {
     int totalFrames() const { return (int)sprites.size(); }
 };
 
+
+struct ColliderComponent : Component {
+    static constexpr uint64_t ComponentBit = 1ull << 5;
+
+    // offset od transformu
+    glm::vec3 offset{ 0.0f, 0.0f, 0.0f };
+
+    // połowa rozmiaru
+    glm::vec3 halfSize{ 0.5f, 0.5f, 0.5f };
+
+    bool isTrigger = false;
+};
 
 #endif
