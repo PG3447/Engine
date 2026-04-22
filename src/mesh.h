@@ -28,6 +28,8 @@ struct RenderData {
     }
 };
 
+
+
 struct Vertex {
     // position
     glm::vec3 Position;
@@ -46,7 +48,7 @@ struct Vertex {
 };
 
 struct Texture {
-    std::shared_ptr<unsigned int> id;
+    GLuint id;
     string type;
     string path;
 };
@@ -167,7 +169,7 @@ public:
                 }
 
                 glUniform1i(glGetUniformLocation(shader.shaderProgramID, (uniformName + number).c_str()), i);
-                glBindTexture(GL_TEXTURE_2D, *(textures[i].id));
+                glBindTexture(GL_TEXTURE_2D, (textures[i].id));
             }
         }
 

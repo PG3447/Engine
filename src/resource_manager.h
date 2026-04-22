@@ -13,11 +13,11 @@ class Model;
 class ResourceManager
 {
 public:
-    static std::unordered_map<std::string, std::weak_ptr<unsigned int>> Textures;
+    static std::unordered_map<std::string, GLuint> Textures;
 
     static std::unordered_map<std::string, std::weak_ptr<Model>> Models;
 
-    static std::shared_ptr<unsigned int> LoadTexture(const std::string& path, const std::string& directory = "", const aiTexture* aiTex = nullptr);
+    static GLuint LoadTexture(const std::string& path, const std::string& directory = "", const aiTexture* aiTex = nullptr);
 
     static std::shared_ptr<Model> LoadModel(const std::string& path);
 

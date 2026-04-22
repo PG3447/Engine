@@ -85,7 +85,7 @@ struct CameraComponent : Component {
 struct SpriteComponent : Component {
     static constexpr uint64_t ComponentBit = 1ull << 4;
 
-    std::vector<std::shared_ptr<unsigned int>> sprites;
+    std::vector<unsigned int> sprites;
     int currentSprite = 0;
 
     float frameDuration = 0.1f;
@@ -112,7 +112,7 @@ struct SpriteComponent : Component {
 
     unsigned int currentTextureID() const {
         if (sprites.empty() || !sprites[currentSprite]) return 0;
-        return *sprites[currentSprite];
+        return sprites[currentSprite];
     }
 
     int totalFrames() const { return (int)sprites.size(); }

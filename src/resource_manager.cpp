@@ -11,9 +11,9 @@
 #define GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT 0x84FF
 #endif
 
-std::unordered_map<std::string, std::weak_ptr<unsigned int>> ResourceManager::Textures;
+std::unordered_map<std::string, GLuint> ResourceManager::Textures;
 
-std::shared_ptr<unsigned int> ResourceManager::LoadTexture(const std::string& path, const std::string& directory, const aiTexture* aiTex)
+GLuint ResourceManager::LoadTexture(const std::string& path, const std::string& directory, const aiTexture* aiTex)
 {
     std::string fullPath = path;
     if (!directory.empty() && !aiTex) {
@@ -26,26 +26,28 @@ std::shared_ptr<unsigned int> ResourceManager::LoadTexture(const std::string& pa
     auto it = Textures.find(fullPath);
     if (it != Textures.end())
     {
+        return it->second;
         // czy tekstura nadal zyje w VRAM
-        if (std::shared_ptr<unsigned int> sharedTex = it->second.lock())
-        {
-            return sharedTex;
-        }
+        //if (std::shared_ptr<unsigned int> sharedTex = it->second.lock())
+        //{
+        //    return sharedTex;
+        //}
     }
 
     // Jesli nie ma, ladujemy z dysku
-    unsigned int rawTextureID = loadTextureFromFile(path, directory, aiTex);
+    GLuint textureID = loadTextureFromFile(path, directory, aiTex);
+    //unsigned int rawTextureID = loadTextureFromFile(path, directory, aiTex);
 
     // gdy wskaznik ginie, automatyczine wykonuje funkcje glDeleteTextures
-    std::shared_ptr<unsigned int> textureID(new unsigned int(rawTextureID), [](unsigned int* ptr) {
-        glDeleteTextures(1, ptr);
-        delete ptr;
-        spdlog::info("Zwolniono pamiec VRAM po nieuzywanej teksturze!");
-        });
-
-    if (rawTextureID != 0) {
-        Textures[fullPath] = textureID;
-    }
+    //std::shared_ptr<unsigned int> textureID(new unsigned int(rawTextureID), [](unsigned int* ptr) {
+    //    glDeleteTextures(1, ptr);
+    //    delete ptr;
+    //    spdlog::info("Zwolniono pamiec VRAM po nieuzywanej teksturze!");
+    //    });
+    //
+    //if (rawTextureID != 0) {
+    //    Textures[fullPath] = textureID;
+    //}
 
     return textureID;
 }
