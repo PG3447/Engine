@@ -28,8 +28,11 @@ public:
         return glm::lookAt(position, position + cam.state.Front, cam.state.WorldUp);
     }
 
-    static glm::mat4 getProjectionMatrix(CameraComponent& cam) {
-        float aspectRatio = cam.viewport.width / cam.viewport.height;
+    static glm::mat4 getProjectionMatrix(CameraComponent& cam, int screenWidth, int screenHeight) {
+        float vpWidth = cam.viewport.width * screenWidth;
+        float vpHeight = cam.viewport.height * screenHeight;
+
+        float aspectRatio = vpWidth / vpHeight;
         return glm::perspective(glm::radians(cam.fov), aspectRatio, cam.nearPlane, cam.farPlane);
     }
 

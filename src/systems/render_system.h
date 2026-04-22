@@ -113,7 +113,7 @@ public:
 
         //view = cam.camera.beginRender(width, height);
         view = CameraHelper::getViewMatrix(cam, transform);
-        projection = CameraHelper::getProjectionMatrix(cam);
+        projection = CameraHelper::getProjectionMatrix(cam, width, height);
         //projection = cam.camera.getProjectionMatrix(
         //    cam.nearPlane,
         //    cam.farPlane
