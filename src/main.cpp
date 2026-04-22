@@ -129,6 +129,43 @@ std::unique_ptr<Shader> skyboxShader;
 std::unique_ptr<Shader> reflectShader;
 std::unique_ptr<Shader> refractShader;
 
+std::unique_ptr<Prefab> bed1Model;
+std::unique_ptr<Prefab> bed2Model;
+std::unique_ptr<Prefab> bed3Model;
+std::unique_ptr<Prefab> corkBoardModel;
+std::unique_ptr<Prefab> cupModel;
+std::unique_ptr<Prefab> deskModel;
+std::unique_ptr<Prefab> doorsModel;
+std::unique_ptr<Prefab> folderModel;
+std::unique_ptr<Prefab> krzesloModel;
+std::unique_ptr<Prefab> ksiazkaModel;
+std::unique_ptr<Prefab> lampa1Model;
+std::unique_ptr<Prefab> lampa2Model;
+std::unique_ptr<Prefab> lampa3Model;
+std::unique_ptr<Prefab> needleModel;
+std::unique_ptr<Prefab> bad1Model;
+std::unique_ptr<Prefab> bad2Model;
+std::unique_ptr<Prefab> bad3Model;
+std::unique_ptr<Prefab> papersModel;
+std::unique_ptr<Prefab> bossModel;
+std::unique_ptr<Prefab> characterModel;
+std::unique_ptr<Prefab> vial1Model;
+std::unique_ptr<Prefab> vial2Model;
+std::unique_ptr<Prefab> vial3Model;
+std::unique_ptr<Prefab> vial4Model;
+std::unique_ptr<Prefab> vial5Model;
+std::unique_ptr<Prefab> vial61Model;
+std::unique_ptr<Prefab> vial7Model;
+std::unique_ptr<Prefab> sinkModel;
+std::unique_ptr<Prefab> szafa1Model;
+std::unique_ptr<Prefab> szafa2Model;
+std::unique_ptr<Prefab> szafa3Model;
+std::unique_ptr<Prefab> telephoneModel;
+std::unique_ptr<Prefab> toiletModel;
+std::unique_ptr<Prefab> wozekModel;
+std::unique_ptr<Prefab> zaslonaModel;
+
+
 //std::unique_ptr<Model> sphereVenusModel;
 //
 std::unique_ptr<Prefab> wallModel;
@@ -384,31 +421,30 @@ int main(int, char**)
     ourShader->use();
 
     groundModel = std::make_unique<Prefab>("res/models/podloze.glb");
-    sunModel = std::make_unique<Prefab>("res/models/Sun.glb");
     GameObject* obb = groundModel->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* obb2 = sunModel->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* obb2 = sunModel->Instantiate(*scena1, nullptr, ourShader.get());
 
 
-    obb->GetComponent<TransformComponent>()->scale.x = 1000;
-    obb->GetComponent<TransformComponent>()->scale.y = 1000;
-    obb->GetComponent<TransformComponent>()->scale.z = 1000;
+    obb->GetComponent<TransformComponent>()->scale.x = 1;
+    obb->GetComponent<TransformComponent>()->scale.y = 1;
+    obb->GetComponent<TransformComponent>()->scale.z = 1;
 
 
-   obb2->GetComponent<TransformComponent>()->scale.x = 25;
-   obb2->GetComponent<TransformComponent>()->scale.y = 25;
-   obb2->GetComponent<TransformComponent>()->scale.z = 25;
-   obb2->GetComponent<TransformComponent>()->position.y = 250;
+   //obb2->GetComponent<TransformComponent>()->scale.x = 25;
+  //obb2->GetComponent<TransformComponent>()->scale.y = 25;
+   //obb2->GetComponent<TransformComponent>()->scale.z = 25;
+   //obb2->GetComponent<TransformComponent>()->position.y = 250;
 
     obb->AddComponent<RigidbodyComponent>();
     obb->AddComponent<ColliderComponent>();
 
-    obb2->AddComponent<RigidbodyComponent>();
-    obb2->AddComponent<ColliderComponent>();
+    //obb2->AddComponent<RigidbodyComponent>();
+    //obb2->AddComponent<ColliderComponent>();
 
     obb->GetComponent<RigidbodyComponent>()->useGravity = false;
     obb->GetComponent<RigidbodyComponent>()->isStatic = true;
-    obb2->GetComponent<RigidbodyComponent>()->useGravity = true;
-    obb2->GetComponent<ColliderComponent>()->halfSize = glm::vec3 { 25, 25, 25 };
+    //obb2->GetComponent<RigidbodyComponent>()->useGravity = true;
+    //obb2->GetComponent<ColliderComponent>()->halfSize = glm::vec3 { 25, 25, 25 };
 
     GameObject* obj = scena1->CreateGameObject(nullptr);
     CameraComponent* camCompLeft = obj->AddComponent<CameraComponent>();
@@ -472,6 +508,152 @@ int main(int, char**)
     sprite_2->layer = 1;
     sprite_4->layer = 1;
 
+    int placeholderThing = 0;
+
+    bed1Model = std::make_unique<Prefab>("res/models/bed.glb");
+    bed2Model      = std::make_unique<Prefab>("res/models/bed2.glb");
+    bed3Model      = std::make_unique<Prefab>("res/models/bed3.glb");
+    corkBoardModel = std::make_unique<Prefab>("res/models/cork_board.glb");
+    cupModel       = std::make_unique<Prefab>("res/models/cup.glb");
+    deskModel      = std::make_unique<Prefab>("res/models/desk.glb");
+    doorsModel     = std::make_unique<Prefab>("res/models/doors.glb");
+    folderModel    = std::make_unique<Prefab>("res/models/folder.glb");
+    krzesloModel   = std::make_unique<Prefab>("res/models/krzeslo.glb");
+    //ksiazkaModel   = std::make_unique<Prefab>("res/models/ksiazka.glb");
+    lampa1Model    = std::make_unique<Prefab>("res/models/lampa1.glb");
+    lampa2Model    = std::make_unique<Prefab>("res/models/lampa2.glb");
+    lampa3Model    = std::make_unique<Prefab>("res/models/lampa3.glb");
+    needleModel    = std::make_unique<Prefab>("res/models/needle.glb");
+    bad1Model      = std::make_unique<Prefab>("res/models/obiekty_bad1.glb");
+    bad2Model      = std::make_unique<Prefab>("res/models/obiekty_bad2.glb");
+    bad3Model      = std::make_unique<Prefab>("res/models/obiekty_bad3.glb");
+    papersModel    = std::make_unique<Prefab>("res/models/papers.glb");
+    bossModel      = std::make_unique<Prefab>("res/models/placehoolder_boss.glb");
+    characterModel = std::make_unique<Prefab>("res/models/placehoolder_character.glb");
+    vial1Model     = std::make_unique<Prefab>("res/models/próbówka1.glb");
+    vial2Model     = std::make_unique<Prefab>("res/models/próbówka2.glb");
+    vial3Model     = std::make_unique<Prefab>("res/models/próbówka3.glb");
+    vial4Model     = std::make_unique<Prefab>("res/models/próbówka4.glb");
+    vial5Model     = std::make_unique<Prefab>("res/models/próbówka5.glb");
+    vial61Model    = std::make_unique<Prefab>("res/models/próbówka6.glb");
+    vial7Model     = std::make_unique<Prefab>("res/models/próbówka7.glb");
+    sinkModel      = std::make_unique<Prefab>("res/models/sink.glb");
+    szafa1Model    = std::make_unique<Prefab>("res/models/szafa1.glb");
+    szafa2Model    = std::make_unique<Prefab>("res/models/szafa2.glb");
+    szafa3Model    = std::make_unique<Prefab>("res/models/szafa3.glb");
+    telephoneModel = std::make_unique<Prefab>("res/models/telephone.glb");
+    toiletModel    = std::make_unique<Prefab>("res/models/toilet.glb");
+    wozekModel     = std::make_unique<Prefab>("res/models/wózek.glb");
+    zaslonaModel   = std::make_unique<Prefab>("res/models/zasłona.glb");
+
+
+    GameObject* model1 = bed1Model->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* model2 = bed2Model->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* model3 = bed3Model->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* model4 = corkBoardModel->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* model5 = cupModel      ->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* model6 = deskModel     ->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* model7 = doorsModel    ->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* model8 = folderModel   ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model9 = krzesloModel  ->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* model10 =ksiazkaModel  ->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* model11 =lampa1Model   ->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* model12 =lampa2Model   ->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* model13 =lampa3Model   ->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* model14 =needleModel   ->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* model15 =bad1Model     ->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* model16 =bad2Model     ->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* model17 =bad3Model     ->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* model18 =papersModel   ->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* model19 =bossModel     ->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* model20 =characterModel->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* model21 =vial1Model    ->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* model22 =vial2Model    ->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* model23 =vial3Model    ->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* model24 =vial4Model    ->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* model25 =vial5Model    ->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* model26 =vial61Model   ->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* model27 =vial7Model    ->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* model28 =sinkModel     ->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* model29 =szafa1Model   ->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* model30 =szafa2Model   ->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* model31 =szafa3Model   ->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* model32 =telephoneModel->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* model33 =toiletModel   ->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* model34 =wozekModel    ->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* model35 =zaslonaModel  ->Instantiate(*scena1, nullptr, ourShader.get());
+
+    model1  ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    placeholderThing += 10;
+    model2  ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    placeholderThing += 10;
+    model3  ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    placeholderThing += 10;
+    model4  ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    placeholderThing += 10;
+    model5  ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    placeholderThing += 10;
+    model6  ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    placeholderThing += 10;
+    model7  ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    placeholderThing += 10;
+    model8  ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    placeholderThing += 10;
+    //model9  ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    placeholderThing += 10;
+    model10 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    placeholderThing += 10;
+    model11 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    placeholderThing += 10;
+    model12 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    placeholderThing += 10;
+    model13 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    placeholderThing += 10;
+    model14 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    placeholderThing += 10;
+    model15 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    placeholderThing += 10;
+    model16 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    placeholderThing += 10;
+    model17 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    placeholderThing += 10;
+    model18 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    placeholderThing += 10;
+    model19 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    placeholderThing += 10;
+    model20 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    placeholderThing += 10;
+    model21 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    placeholderThing += 10;
+    model22 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    placeholderThing += 10;
+    model23 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    placeholderThing += 10;
+    model24 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    placeholderThing += 10;
+    model25 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    placeholderThing += 10;
+    model26 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    placeholderThing += 10;
+    model27 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    placeholderThing += 10;
+    model28 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    placeholderThing += 10;
+    model29 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    placeholderThing += 10;
+    model30 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    placeholderThing += 10;
+    model31 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    placeholderThing += 10;
+    model32 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    placeholderThing += 10;
+    model33 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    placeholderThing += 10;
+    model34 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    placeholderThing += 10;
+    model35 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    placeholderThing += 10;
+
     //CameraComponent* cam = obj2->AddComponent<CameraComponent>();
     //cam->camera.Position = glm::vec3(0, 50, 15);
     //cam->camera.Yaw = -90.0f;
@@ -515,6 +697,9 @@ int main(int, char**)
         //    transform->position.z);
         test_score++;
         sprite_4->text = "score: " + std::to_string(test_score);
+
+
+
 
 
 
