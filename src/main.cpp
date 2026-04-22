@@ -555,8 +555,8 @@ int main(int, char**)
     GameObject* model6 = deskModel     ->Instantiate(*scena1, nullptr, ourShader.get());
     GameObject* model7 = doorsModel    ->Instantiate(*scena1, nullptr, ourShader.get());
     GameObject* model8 = folderModel   ->Instantiate(*scena1, nullptr, ourShader.get());
-    //GameObject* model9 = krzesloModel  ->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model10 =ksiazkaModel  ->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* model9 = krzesloModel  ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model10 =ksiazkaModel  ->Instantiate(*scena1, nullptr, ourShader.get());
     GameObject* model11 =lampa1Model   ->Instantiate(*scena1, nullptr, ourShader.get());
     GameObject* model12 =lampa2Model   ->Instantiate(*scena1, nullptr, ourShader.get());
     GameObject* model13 =lampa3Model   ->Instantiate(*scena1, nullptr, ourShader.get());
@@ -599,9 +599,9 @@ int main(int, char**)
     placeholderThing += 10;
     model8  ->GetComponent<TransformComponent>()->position.x = placeholderThing;
     placeholderThing += 10;
-    //model9  ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    model9  ->GetComponent<TransformComponent>()->position.x = placeholderThing;
     placeholderThing += 10;
-    model10 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    //model10 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
     placeholderThing += 10;
     model11 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
     placeholderThing += 10;
