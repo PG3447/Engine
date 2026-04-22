@@ -12,7 +12,7 @@ private:
 public:
     SceneManager() = default;
 
-    // Tworzy now¹ scenê i dodaje do managera
+    // Tworzy nowï¿½ scenï¿½ i dodaje do managera
     Scene* CreateScene(const std::string& name, ECS& ecs) {
         auto scene = std::make_unique<Scene>(ecs);
         Scene* ptr = scene.get();
@@ -21,25 +21,29 @@ public:
         return ptr;
     }
 
-    // Aktywuje scenê o danej nazwie
+    // Aktywuje scenï¿½ o danej nazwie
     void SetActiveScene(const std::string& name) {
         auto it = scenes.find(name);
         if (it != scenes.end()) activeScene = it->second.get();
     }
 
-    // Pobiera aktywn¹ scenê
+    // Pobiera aktywnï¿½ scenï¿½
     Scene* GetActiveScene() { return activeScene; }
 
-    // Update wywo³uje update tylko aktywnej sceny
+    // Update wywoï¿½uje update tylko aktywnej sceny
     void Update(float deltaTime) {
         if (activeScene) activeScene->Update(deltaTime);
     }
 
 
-    // Opcjonalnie usuwa scenê
+    // Opcjonalnie usuwa scenï¿½
     void DestroyScene(const std::string& name) {
-        if (activeScene == scenes[name].get()) activeScene = nullptr;
-        scenes.erase(name);
+        auto it = scenes.find(name);
+        if (it != scenes.end()) {
+            if (activeScene == it->second.get())
+                activeScene = nullptr;
+            scenes.erase(it);
+        }
     }
 };
 

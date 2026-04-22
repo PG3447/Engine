@@ -41,65 +41,6 @@ struct RigidbodyComponent : Component {
     float vx = 0, vy = 0;
 };
 
-/*
-struct CameraComponent : Component {
-    static constexpr uint64_t ComponentBit = 1ull << 3;
-
-    float fov = 45.0f;
-    float aspectRatio = 16.0f / 9.0f;
-    float nearPlane = 0.1f;
-    float farPlane = 100.0f;
-
-    glm::mat4 view{ 1.0f };
-    glm::mat4 projection{ 1.0f };
-
-    bool isActive = true;
-};
-*/
-
-
-/*
-
-struct Viewport {
-    float x, y; //bottom left corner (normalized)
-    float width, height; //size (normalized)
-
-    void apply(int windowdWidth, int windowdHeight) const {
-        glViewport(static_cast<GLint>(x * windowdWidth),
-            static_cast<GLint>(y * windowdHeight),
-            static_cast<GLsizei>(width * windowdWidth),
-            static_cast<GLsizei>(height * windowdHeight));
-    }
-
-    float aspectRatio() const {
-        return static_cast<float>(width) / static_cast<float>(height);
-    }
-};
-
-// An abstract camera class that processes input and calculates the corresponding Euler Angles, Vectors and Matrices for use in OpenGL
-class Camera
-{
-public:
-    // camera Attributes
-    glm::vec3 Position;
-    glm::vec3 Front;
-    glm::vec3 Up;
-    glm::vec3 Right;
-    glm::vec3 WorldUp;
-    // euler Angles
-    float Yaw;
-    float Pitch;
-    // camera options
-    float MovementSpeed;
-    float MouseSensitivity;
-    float Zoom;
-
-    //each camera as a viewport
-    Viewport viewport;
-
-
-*/
-
 struct Viewport {
     float x = 0.0f;
     float y = 0.0f;

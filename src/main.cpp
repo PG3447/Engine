@@ -89,21 +89,6 @@ const     char* glsl_version = "#version 460";
 constexpr int32_t GL_VERSION_MAJOR = 4;
 constexpr int32_t GL_VERSION_MINOR = 6;
 
-/*
-Camera camera(
-    glm::vec3(0.0f, 20.0f, 50.0f),
-    glm::vec3(0.0f, 1.0f, 0.0f),
-    YAW, PITCH,
-    Viewport{ 0.0f, 0.0f, 0.5f, 1.0f }
-);
-
-Camera cameraRight(
-    glm::vec3(50.0f, 30.0f, 0.0f),
-    glm::vec3(0.0f, 1.0f, 0.0f),
-    0.0f, -20.0f,
-    Viewport{ 0.5f, 0.0f, 0.5f, 1.0f }
-);*/
-
 // camera
 //Camera camera(glm::vec3(0.0f, 20.0f, 50.0f));
 float lastX = WINDOW_WIDTH / 2.0f;
@@ -331,7 +316,8 @@ void updateFPS(float deltaTime) {
 //}
 
 
-void processCameraInput(ECS& ecs,CameraComponent& cam,
+
+void processCameraInput(ECS& ecs,CameraComponent& cam, TransformComponent& transform,
                        const std::string& up,
                        const std::string& down,
                        const std::string& left,
@@ -348,7 +334,10 @@ void processCameraInput(ECS& ecs,CameraComponent& cam,
     if (glm::length(dir) > 0.0f)
         dir = glm::normalize(dir);
 
-    //cam.transform.position += dir * MovementSpeed * deltaTime;
+    if (glm::length(dir) > 0.0f) {
+        dir = glm::normalize(dir);
+        transform.position += dir * MovementSpeed * deltaTime;
+    }
 }
 
 void processCameraMouse(ECS& ecs, CameraComponent& cam)
@@ -359,6 +348,11 @@ void processCameraMouse(ECS& ecs, CameraComponent& cam)
         (float)-hid->get_mouse_dy()
     );
 }
+
+void processCameraGamepad(ECS& ecs,
+                         CameraComponent& cam,
+                         TransformComponent& transform,
+                         int gamepad_id);
 
 int main(int, char**)
 {
@@ -484,8 +478,17 @@ int main(int, char**)
         lastFrame = currentFrame;
         updateFPS(deltaTime);
 
-        processCameraInput(ecs , *camCompLeft, "move_up", "move_down", "move_left", "move_right");
+        auto* t0 = obj->GetComponent<TransformComponent>();
+        auto* t1 = obj2->GetComponent<TransformComponent>();
+        processCameraInput(ecs, *camCompLeft, *t0,
+    "move_up", "move_down", "move_left", "move_right");
+
+        processCameraInput(ecs, *camCompRight, *t1,
+            "move_up_2", "move_down_2", "move_left_2", "move_right_2");
+
         processCameraMouse(ecs, *camCompLeft);
+        processCameraGamepad(ecs, *camCompLeft, *t0, 0);
+        processCameraGamepad(ecs, *camCompRight, *t1, 1);
         //spdlog::info("GameObject position: x={}, y={}, z={}",
         //    transform->position.x,
         //    transform->position.y,
@@ -534,7 +537,6 @@ int main(int, char**)
 
     return 0;
 }
-
 bool init()
 {
     // Setup window
@@ -1372,6 +1374,31 @@ unsigned int loadCubemap(vector<std::string> faces)
 
 
 */
+void processCameraGamepad(ECS &ecs, CameraComponent &cam, TransformComponent &transform, int gamepad_id) {
+    const auto& hid = ecs.GetSystem<HID>();
 
+    // ruch
+    float lx = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_LEFT_X, gamepad_id);
+    float ly = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_LEFT_Y, gamepad_id);
 
+    glm::vec3 dir(0.0f);
 
+    dir += cam.state.Front * (-ly); // przód/tył
+    dir += cam.state.Right * lx;    // lewo/prawo
+
+    if (glm::length(dir) > 0.0f) {
+        dir = glm::normalize(dir);
+        transform.position += dir * MovementSpeed * deltaTime;
+    }
+
+    // obrót kamery
+    float rx = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_RIGHT_X, gamepad_id);
+    float ry = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_RIGHT_Y, gamepad_id);
+
+    const float sensitivity = 100.0f;
+
+    CameraHelper::ProcessMouseMovement(cam,
+        rx * sensitivity * deltaTime,
+        -ry * sensitivity * deltaTime
+    );
+}
