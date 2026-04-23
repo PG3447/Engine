@@ -530,21 +530,21 @@ int main(int, char**)
     papersModel    = std::make_unique<Prefab>("res/models/papers.glb");
     bossModel      = std::make_unique<Prefab>("res/models/placehoolder_boss.glb");
     characterModel = std::make_unique<Prefab>("res/models/placehoolder_character.glb");
-    vial1Model     = std::make_unique<Prefab>("res/models/próbówka1.glb");
-    vial2Model     = std::make_unique<Prefab>("res/models/próbówka2.glb");
-    vial3Model     = std::make_unique<Prefab>("res/models/próbówka3.glb");
-    vial4Model     = std::make_unique<Prefab>("res/models/próbówka4.glb");
-    vial5Model     = std::make_unique<Prefab>("res/models/próbówka5.glb");
-    vial61Model    = std::make_unique<Prefab>("res/models/próbówka6.glb");
-    vial7Model     = std::make_unique<Prefab>("res/models/próbówka7.glb");
+    vial1Model     = std::make_unique<Prefab>("res/models/probowka1.glb");
+    vial2Model     = std::make_unique<Prefab>("res/models/probowka2.glb");
+    vial3Model     = std::make_unique<Prefab>("res/models/probowka3.glb");
+    vial4Model     = std::make_unique<Prefab>("res/models/probowka4.glb");
+    vial5Model     = std::make_unique<Prefab>("res/models/probowka5.glb");
+    vial61Model    = std::make_unique<Prefab>("res/models/probowka6.glb");
+    vial7Model     = std::make_unique<Prefab>("res/models/probowka7.glb");
     sinkModel      = std::make_unique<Prefab>("res/models/sink.glb");
     szafa1Model    = std::make_unique<Prefab>("res/models/szafa1.glb");
     szafa2Model    = std::make_unique<Prefab>("res/models/szafa2.glb");
     szafa3Model    = std::make_unique<Prefab>("res/models/szafa3.glb");
     telephoneModel = std::make_unique<Prefab>("res/models/telephone.glb");
     toiletModel    = std::make_unique<Prefab>("res/models/toilet.glb");
-    wozekModel     = std::make_unique<Prefab>("res/models/wózek.glb");
-    zaslonaModel   = std::make_unique<Prefab>("res/models/zasłona.glb");
+    wozekModel     = std::make_unique<Prefab>("res/models/wozek.glb");
+    zaslonaModel   = std::make_unique<Prefab>("res/models/zaslona.glb");
 
 
     GameObject* model1 = bed1Model->Instantiate(*scena1, nullptr, ourShader.get());
