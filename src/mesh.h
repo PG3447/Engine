@@ -7,6 +7,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <shader.h>
+#include "material.h"
 
 #include <string>
 #include <vector>
@@ -66,7 +67,7 @@ public:
     // mesh Data
     vector<Vertex>       vertices;
     vector<unsigned int> indices;
-    vector<Texture>      textures;
+    std::shared_ptr<Material> material;
     vector<float>        ringIDs;
 
     std::shared_ptr<RenderData> renderData;
@@ -78,11 +79,11 @@ public:
     unsigned int instanceVBO = 0;
 
     // constructor 1
-    Mesh(vector<Vertex> vertices, vector<unsigned int> indices, vector<Texture> textures)
+    Mesh(vector<Vertex> vertices, vector<unsigned int> indices, std::shared_ptr<Material> mat)
     {
         this->vertices = std::move(vertices);
         this->indices = std::move(indices);
-        this->textures = std::move(textures);
+        this->material = mat;
 
         this->renderData = std::make_shared<RenderData>();
         setupMesh();
@@ -122,58 +123,23 @@ public:
     }
 
     // render the mesh
-    void Draw(Shader& shader, GLsizei instanceCount = 0)
+    void Draw(Shader& shader, GLsizei instanceCount = 0, Material* overrideMaterial = nullptr)
     {
-
-        // bind appropriate textures
-        unsigned int diffuseNr = 1;
-        unsigned int specularNr = 1;
-        unsigned int normalNr = 1;
-        unsigned int heightNr = 1;
-
-
         if (reflect && cubemapTexture)
         {
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
-            glUniform1i(glGetUniformLocation(shader.shaderProgramID, "skybox"), 0);
+            shader.setInt("skybox", 0);
         }
         else
         {
-            for (unsigned int i = 0; i < textures.size(); i++)
-            {
-                glActiveTexture(GL_TEXTURE0 + i);
-                string number;
-                string name = textures[i].type;
-                string uniformName;
-
-                if (name == "texture_diffuse")
-                {
-                    uniformName = "material.diffuse";
-                    number = std::to_string(diffuseNr++);
-                }
-                else if (name == "texture_specular")
-                {
-                    uniformName = "material.specular";
-                    number = std::to_string(specularNr++);
-                }
-                else if (name == "texture_normal")
-                {
-                    uniformName = "material.normal";
-                    number = std::to_string(normalNr++);
-                }
-                else if (name == "texture_height")
-                {
-                    uniformName = "material.height";
-                    number = std::to_string(heightNr++);
-                }
-
-                glUniform1i(glGetUniformLocation(shader.shaderProgramID, (uniformName + number).c_str()), i);
-                glBindTexture(GL_TEXTURE_2D, (textures[i].id));
+            if (overrideMaterial) {
+                overrideMaterial->Apply(shader);
+            }
+            else if (material) {
+                material->Apply(shader);
             }
         }
-
-        glUniform1f(glGetUniformLocation(shader.shaderProgramID, "material.shininess"), 32.0f);
 
         glBindVertexArray(renderData->VAO);
 
@@ -196,19 +162,18 @@ public:
                 glDrawElementsInstanced(GL_TRIANGLES, static_cast<unsigned int>(indices.size()), GL_UNSIGNED_INT, 0, instanceCount);
         }
         glBindVertexArray(0);
-
-        glActiveTexture(GL_TEXTURE0);
     }
 
 
-    void EnableInstancing()
+    void EnableInstancing(unsigned int vbo)
     {
         if (instancingEnabled)
             return;
 
         glBindVertexArray(renderData->VAO);
 
-        // matrix
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
         GLsizei vec4Size = sizeof(glm::vec4);
         glEnableVertexAttribArray(7);
         glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)0);
@@ -225,6 +190,7 @@ public:
         glVertexAttribDivisor(10, 1);
 
         glBindVertexArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
 
         instancingEnabled = true;
     }
