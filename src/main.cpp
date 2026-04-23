@@ -41,6 +41,7 @@
 #include <systems/physics_system.h>
 #include <systems/transform_system.h>
 #include <systems/SpriteSystem.h>
+#include "utils/render_helper.h"
 
 
 static void glfw_error_callback(int error, const char* description)
@@ -407,8 +408,27 @@ int main(int, char**)
 
     obb->GetComponent<RigidbodyComponent>()->useGravity = false;
     obb->GetComponent<RigidbodyComponent>()->isStatic = true;
-    obb2->GetComponent<RigidbodyComponent>()->useGravity = true;
+    obb2->GetComponent<RigidbodyComponent>()->useGravity = false;
     obb2->GetComponent<ColliderComponent>()->halfSize = glm::vec3 { 25, 25, 25 };
+
+    GameObject* obb3 = sunModel->Instantiate(*scena1, nullptr, ourShader.get());
+    obb3->GetComponent<TransformComponent>()->scale = glm::vec3(25.0f);
+    obb3->GetComponent<TransformComponent>()->position = glm::vec3(75.0f, 250.0f, 0.0f);
+
+    obb3->AddComponent<RigidbodyComponent>()->useGravity = false;
+    obb3->AddComponent<ColliderComponent>()->halfSize = glm::vec3{ 25, 25, 25 };
+
+    GLuint diff = ResourceManager::LoadTexture("diffuse_brick.png", "res/textures/");
+    GLuint spec = ResourceManager::LoadTexture("specular_brick.png", "res/textures/");
+    GLuint norm = ResourceManager::LoadTexture("normal_brick.png", "res/textures/");
+
+    auto brickMat = std::make_shared<Material>();
+    brickMat->diffuseMap = diff;
+    brickMat->specularMap = spec;
+    brickMat->normalMap = norm;
+    brickMat->shininess = 64.0f;
+
+    RenderHelper::SetMaterial(obb2, brickMat);
 
     GameObject* obj = scena1->CreateGameObject(nullptr);
     CameraComponent* camCompLeft = obj->AddComponent<CameraComponent>();

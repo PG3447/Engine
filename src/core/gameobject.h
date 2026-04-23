@@ -92,6 +92,22 @@ public:
         }
     }
 
+    template<typename T>
+    std::vector<T*> GetComponentsInChildren() {
+        std::vector<T*> result;
+
+        if (T* comp = GetComponent<T>()) {
+            result.push_back(comp);
+        }
+
+        for (GameObject* child : children) {
+            std::vector<T*> childComps = child->GetComponentsInChildren<T>();
+            result.insert(result.end(), childComps.begin(), childComps.end());
+        }
+
+        return result;
+    }
+
     void AddChild(GameObject* child) {
         if (!child || child == this) return;
 

@@ -8,6 +8,7 @@
 
 class Model;
 class Shader;
+class Material;
 
 struct Component {
     virtual ~Component() {}
@@ -31,6 +32,7 @@ struct RenderComponent : Component {
 
     Model* model = nullptr;
     Shader* shader = nullptr;
+    std::shared_ptr<Material> materialOverride = nullptr;
 };
 
 

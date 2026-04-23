@@ -46,21 +46,27 @@ void Model::PrepareInstancing()
     if (instancingPrepared)
         return;
 
-    for (auto& mesh : meshes)
-        mesh.EnableInstancing();
+    if (instanceVBO == 0) {
+        glGenBuffers(1, &instanceVBO);
+    }
+
+    for (auto& mesh : meshes) {
+        mesh.EnableInstancing(instanceVBO);
+    }
 
     instancingPrepared = true;
 }
 
 
 // draws the model, and thus all its meshes
-void Model::Draw(Shader& shader, GLsizei instanceCount)
+void Model::Draw(Shader& shader, GLsizei instanceCount, Material* materialOverride)
 {
     for (unsigned int i = 0; i < meshes.size(); i++)
     {
-        meshes[i].Draw(shader, instanceCount);
+        meshes[i].Draw(shader, instanceCount, materialOverride);
     }
 }
+
 void Model::turnOnReflect(unsigned int cubemapTexture)
 {
     for (unsigned int i = 0; i < meshes.size(); i++)
@@ -185,30 +191,29 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
         for (unsigned int j = 0; j < face.mNumIndices; j++)
             indices.push_back(face.mIndices[j]);
     }
+
     // process materials
-    aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
-    // we assume a convention for sampler names in the shaders. Each diffuse texture should be named
-    // as 'texture_diffuseN' where N is a sequential number ranging from 1 to MAX_SAMPLER_NUMBER. 
-    // Same applies to other texture as the following list summarizes:
-    // diffuse: texture_diffuseN
-    // specular: texture_specularN
-    // normal: texture_normalN
+    aiMaterial* aiMat = scene->mMaterials[mesh->mMaterialIndex];
+    std::shared_ptr<Material> myMaterial = std::make_shared<Material>();
 
-    // 1. diffuse maps
-    vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse", scene);
-    textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
-    // 2. specular maps
-    vector<Texture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular", scene);
-    textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
-    // 3. normal maps
-    std::vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, "texture_normal", scene);
-    textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
-    // 4. height maps
-    std::vector<Texture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_height", scene);
-    textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
+    // diffuse
+    vector<Texture> diffuseMaps = loadMaterialTextures(aiMat, aiTextureType_DIFFUSE, "texture_diffuse", scene);
+    if (!diffuseMaps.empty()) myMaterial->diffuseMap = diffuseMaps[0].id;
 
-    // return a mesh object created from the extracted mesh data
-    return Mesh(vertices, indices, textures);
+    // specular
+    vector<Texture> specularMaps = loadMaterialTextures(aiMat, aiTextureType_SPECULAR, "texture_specular", scene);
+    if (!specularMaps.empty()) myMaterial->specularMap = specularMaps[0].id;
+
+    // normal
+    vector<Texture> normalMaps = loadMaterialTextures(aiMat, aiTextureType_HEIGHT, "texture_normal", scene);
+    if (!normalMaps.empty()) myMaterial->normalMap = normalMaps[0].id;
+
+    // float shininess;
+    // if (aiGetMaterialFloat(aiMat, AI_MATKEY_SHININESS, &shininess) == AI_SUCCESS) {
+    //     myMaterial->shininess = shininess;
+    // }
+
+    return Mesh(vertices, indices, myMaterial);
 }
 
 

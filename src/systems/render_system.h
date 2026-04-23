@@ -13,16 +13,20 @@
 
 class RenderSystem : public System {
 private:
-    struct pair_hash {
-        std::size_t operator()(const std::pair<Model*, Shader*>& p) const {
-            return std::hash<Model*>()(p.first) ^ (std::hash<Shader*>()(p.second) << 1);
+    using GroupKey = std::tuple<Model*, Shader*, Material*>;
+
+    struct group_hash {
+        std::size_t operator()(const GroupKey& k) const {
+            return std::hash<Model*>()(std::get<0>(k)) ^
+                (std::hash<Shader*>()(std::get<1>(k)) << 1) ^
+                (std::hash<Material*>()(std::get<2>(k)) << 2);
         }
     };
 
     Query<TransformComponent, RenderComponent>* renderQuery;
     Query<TransformComponent, CameraComponent>* cameraQuery;
 
-    std::unordered_map<std::pair<Model*, Shader*>, std::vector<size_t>, pair_hash> instancedGroups;
+    std::unordered_map<GroupKey, std::vector<size_t>, group_hash> instancedGroups;
 
     bool groupsDirty = true;
 
@@ -34,6 +38,7 @@ private:
 
     glm::mat4 projection;
     glm::mat4 view;
+    glm::vec3 currentCameraPos;
 
 public:
     RenderSystem(ECS& ecs, GLFWwindow* win) : window(win) 
@@ -108,75 +113,65 @@ public:
     }
 
     void RenderCamera(CameraComponent& cam, TransformComponent& transform, int width, int height) {
-        
         ApplyViewport(cam.viewport, width, height);
 
-        //view = cam.camera.beginRender(width, height);
         view = CameraHelper::getViewMatrix(cam, transform);
         projection = CameraHelper::getProjectionMatrix(cam, width, height);
-        //projection = cam.camera.getProjectionMatrix(
-        //    cam.nearPlane,
-        //    cam.farPlane
-        //);
+
+        currentCameraPos = transform.position;
 
         RenderGroups();
 
         glBindVertexArray(0);
-        
+
         skybox.Render(view, projection);
     }
 
     void BuildGroups() {
         if (!groupsDirty) return;
-
         auto& renderers = std::get<1>(renderQuery->componentsVectors);
-
         instancedGroups.clear();
 
         for (size_t i = 0; i < renderQuery->gameobjects.size(); i++) {
             RenderComponent* r = renderers[i];
+            if (!r || !r->model) continue;
 
-            if (!r || !r->model)
-                continue;
-
-            Shader* shader = r->shader;
-
-            std::pair<Model*, Shader*> key = { r->model, shader };
+            GroupKey key = { r->model, r->shader, r->materialOverride.get() };
             instancedGroups[key].push_back(i);
         }
-
         groupsDirty = false;
     }
 
-
     void RenderGroups() {
         auto& transforms = std::get<0>(renderQuery->componentsVectors);
-        auto& renderers = std::get<1>(renderQuery->componentsVectors);
-
         for (auto& [key, indices] : instancedGroups) {
-            Model* model = key.first;
-            Shader* shader = key.second;
+            Model* model = std::get<0>(key);
+            Shader* shader = std::get<1>(key);
+            Material* overrideMat = std::get<2>(key);
 
             shader->use();
             shader->setMat4("projection", projection);
             shader->setMat4("view", view);
 
-            if (indices.size() == 1) {
-                size_t i = indices[0];
+            shader->setVec3("viewPos", currentCameraPos);
+            shader->setVec3("dirLight.direction", glm::vec3(-0.2f, -1.0f, -0.3f));
+            shader->setVec3("dirLight.ambient", glm::vec3(0.2f, 0.2f, 0.2f));
+            shader->setVec3("dirLight.diffuse", glm::vec3(0.8f, 0.8f, 0.8f));
+            shader->setVec3("dirLight.specular", glm::vec3(1.0f, 1.0f, 1.0f));
 
+            if (indices.size() == 1) {
                 shader->setBool("useInstance", false);
-                shader->setMat4("model", transforms[i]->modelMatrix);
-                //spdlog::info("renderowanie");
-                model->Draw(*shader);
+                shader->setMat4("model", transforms[indices[0]]->modelMatrix);
+                model->Draw(*shader, 0, overrideMat);
             }
             else {
                 shader->setBool("useInstance", true);
-                RenderInstanced(model, shader, indices);
+                RenderInstanced(model, shader, indices, overrideMat);
             }
         }
     }
 
-    void RenderInstanced(Model* model, Shader* shader, std::vector<size_t>& indices)
+    void RenderInstanced(Model* model, Shader* shader, std::vector<size_t>& indices, Material* overrideMat)
     {
         auto& transforms = std::get<0>(renderQuery->componentsVectors);
 
@@ -186,16 +181,14 @@ public:
         for (size_t i = 0; i < count; i++) {
             matrices[i] = transforms[indices[i]]->modelMatrix;
         }
-        
-        if (model->instanceVBO == 0)
-            glGenBuffers(1, &model->instanceVBO);
 
         model->PrepareInstancing();
-        
+
         glBindBuffer(GL_ARRAY_BUFFER, model->instanceVBO);
         glBufferData(GL_ARRAY_BUFFER, count * sizeof(glm::mat4), matrices.data(), GL_DYNAMIC_DRAW);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-        model->Draw(*shader, (GLsizei)count);
+        model->Draw(*shader, (GLsizei)count, overrideMat);
     }
 };
 
