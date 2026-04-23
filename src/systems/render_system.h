@@ -41,11 +41,83 @@ private:
     glm::vec3 currentCameraPos;
 
 public:
-    RenderSystem(ECS& ecs, GLFWwindow* win) : window(win) 
+
+    struct Plane {
+        glm::vec3 normal;
+        float d;
+    };
+
+    struct Frustum {
+        Plane planes[6];
+    };
+
+    Frustum ExtractFrustum(const glm::mat4& vp)
+    {
+        Frustum f;
+
+        // LEFT
+        f.planes[0].normal.x = vp[0][3] + vp[0][0];
+        f.planes[0].normal.y = vp[1][3] + vp[1][0];
+        f.planes[0].normal.z = vp[2][3] + vp[2][0];
+        f.planes[0].d        = vp[3][3] + vp[3][0];
+
+        // RIGHT
+        f.planes[1].normal.x = vp[0][3] - vp[0][0];
+        f.planes[1].normal.y = vp[1][3] - vp[1][0];
+        f.planes[1].normal.z = vp[2][3] - vp[2][0];
+        f.planes[1].d        = vp[3][3] - vp[3][0];
+
+        // TOP
+        f.planes[2].normal.x = vp[0][3] - vp[0][1];
+        f.planes[2].normal.y = vp[1][3] - vp[1][1];
+        f.planes[2].normal.z = vp[2][3] - vp[2][1];
+        f.planes[2].d        = vp[3][3] - vp[3][1];
+
+        // BOTTOM
+        f.planes[3].normal.x = vp[0][3] + vp[0][1];
+        f.planes[3].normal.y = vp[1][3] + vp[1][1];
+        f.planes[3].normal.z = vp[2][3] + vp[2][1];
+        f.planes[3].d        = vp[3][3] + vp[3][1];
+
+        // NEAR
+        f.planes[4].normal.x = vp[0][3] + vp[0][2];
+        f.planes[4].normal.y = vp[1][3] + vp[1][2];
+        f.planes[4].normal.z = vp[2][3] + vp[2][2];
+        f.planes[4].d        = vp[3][3] + vp[3][2];
+
+        // FAR
+        f.planes[5].normal.x = vp[0][3] - vp[0][2];
+        f.planes[5].normal.y = vp[1][3] - vp[1][2];
+        f.planes[5].normal.z = vp[2][3] - vp[2][2];
+        f.planes[5].d        = vp[3][3] - vp[3][2];
+
+        for (int i = 0; i < 6; i++)
+        {
+            float len = glm::length(f.planes[i].normal);
+            f.planes[i].normal /= len;
+            f.planes[i].d /= len;
+        }
+
+        return f;
+    }
+
+    bool SphereInFrustum(const Frustum& f, glm::vec3 pos, float radius)
+    {
+        for (int i = 0; i < 6; i++)
+        {
+            float distance =
+                glm::dot(f.planes[i].normal, pos) + f.planes[i].d;
+
+            if (distance < -radius)
+                return false;
+        }
+        return true;
+    }
+    RenderSystem(ECS& ecs, GLFWwindow* win) : window(win)
     {
         renderQuery = ecs.CreateQuery<TransformComponent, RenderComponent>();
         cameraQuery = ecs.CreateQuery<TransformComponent, CameraComponent>();
-        
+
         Init();
     }
 
@@ -118,9 +190,12 @@ public:
         view = CameraHelper::getViewMatrix(cam, transform);
         projection = CameraHelper::getProjectionMatrix(cam, width, height);
 
+        glm::mat4 vp = projection * view;
+        Frustum frustum = ExtractFrustum(vp);
+
         currentCameraPos = transform.position;
 
-        RenderGroups();
+        RenderGroups(frustum);
 
         glBindVertexArray(0);
 
@@ -146,12 +221,27 @@ public:
         groupsDirty = false;
     }
 
-    void RenderGroups() {
+    void RenderGroups(const Frustum& frustum) {
         auto& transforms = std::get<0>(renderQuery->componentsVectors);
         for (auto& [key, indices] : instancedGroups) {
             Model* model = std::get<0>(key);
             Shader* shader = std::get<1>(key);
             Material* overrideMat = std::get<2>(key);
+
+            std::vector<size_t> visible;
+            for (size_t i : indices)
+            {
+                glm::vec3 pos = glm::vec3(transforms[i]->modelMatrix[3]);
+                float radius = 1.0f; // na start
+
+                if (SphereInFrustum(frustum, pos, radius))
+                {
+                    visible.push_back(i);
+                }
+            }
+
+            if (visible.empty())
+                continue;
 
             shader->use();
             shader->setMat4("projection", projection);
@@ -163,14 +253,14 @@ public:
             shader->setVec3("dirLight.diffuse", glm::vec3(0.8f, 0.8f, 0.8f));
             shader->setVec3("dirLight.specular", glm::vec3(1.0f, 1.0f, 1.0f));
 
-            if (indices.size() == 1) {
+            if (visible.size() == 1) {
                 shader->setBool("useInstance", false);
-                shader->setMat4("model", transforms[indices[0]]->modelMatrix);
+                shader->setMat4("model", transforms[visible[0]]->modelMatrix);
                 model->Draw(0, overrideMat);
             }
             else {
                 shader->setBool("useInstance", true);
-                RenderInstanced(model, indices, overrideMat);
+                RenderInstanced(model, visible, overrideMat);
             }
         }
     }
