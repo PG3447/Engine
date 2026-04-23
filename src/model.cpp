@@ -3,7 +3,8 @@
 #endif
 
 #include "model.h"
-#include "mesh.h"
+#include "mesh_data.h"
+#include "render_mesh.h"
 #include "shader.h"
 
 #include <stb_image.h>
@@ -43,15 +44,14 @@ Model::Model(string const& path, float meshScale, bool gamma) : meshScale(meshSc
 
 void Model::PrepareInstancing()
 {
-    if (instancingPrepared)
-        return;
+    if (instancingPrepared) return;
 
     if (instanceVBO == 0) {
         glGenBuffers(1, &instanceVBO);
     }
 
-    for (auto& mesh : meshes) {
-        mesh.EnableInstancing(instanceVBO);
+    for (auto& node : nodes) {
+        node.gpuMesh->EnableInstancing(instanceVBO);
     }
 
     instancingPrepared = true;
@@ -61,19 +61,24 @@ void Model::PrepareInstancing()
 // draws the model, and thus all its meshes
 void Model::Draw(GLsizei instanceCount, Material* materialOverride)
 {
-    for (unsigned int i = 0; i < meshes.size(); i++)
+    for (auto& node : nodes)
     {
-        meshes[i].Draw(instanceCount, materialOverride);
+        Material* activeMaterial = materialOverride ? materialOverride : node.material.get();
+        if (activeMaterial) {
+            activeMaterial->Apply();
+        }
+
+        node.gpuMesh->Draw(instanceCount);
     }
 }
 
 void Model::turnOnReflect(unsigned int cubemapTexture)
 {
-    for (unsigned int i = 0; i < meshes.size(); i++)
-    {
-        meshes[i].reflect = true;
-        meshes[i].cubemapTexture = cubemapTexture;
-    }
+    //for (unsigned int i = 0; i < meshes.size(); i++)
+    //{
+    //    meshes[i].reflect = true;
+    //    meshes[i].cubemapTexture = cubemapTexture;
+    //}
 }
 
 void Model::loadModel(string const& path)
@@ -98,7 +103,7 @@ void Model::loadModel(string const& path)
 
     // Pobieramy drzewo z korzenia
     Model rootNode = processNode(scene->mRootNode, scene);
-    this->meshes = std::move(rootNode.meshes);
+    this->nodes = std::move(rootNode.nodes);
     this->children = std::move(rootNode.children);
     this->transform = rootNode.transform;
 }
@@ -123,11 +128,11 @@ Model Model::processNode(aiNode* node, const aiScene* scene)
     //model.transform.setLocalRotation({ glm::degrees(rot.x), glm::degrees(rot.y), glm::degrees(rot.z) });
     model.transform.setLocalScale({ scale.x, scale.y, scale.z });
 
-    model.meshes.reserve(node->mNumMeshes);
+    model.nodes.reserve(node->mNumMeshes);
     for (unsigned int i = 0; i < node->mNumMeshes; i++)
     {
         aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-        model.meshes.push_back(processMesh(mesh, scene));
+        model.nodes.push_back(processMesh(mesh, scene));
     }
 
     model.children.reserve(node->mNumChildren);
@@ -139,7 +144,7 @@ Model Model::processNode(aiNode* node, const aiScene* scene)
     return model;
 }
 
-Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
+MeshNode Model::processMesh(aiMesh* mesh, const aiScene* scene)
 {
     // data to fill
     vector<Vertex> vertices;
@@ -235,14 +240,27 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
     //     myMaterial->shininess = shininess;
     // }
 
-    return Mesh(vertices, indices, myMaterial);
+    std::shared_ptr<MeshData> cpuData = std::make_shared<MeshData>();
+    cpuData->vertices = std::move(vertices);
+    cpuData->indices = std::move(indices);
+
+    // Wysy³amy dane na GPU
+    std::shared_ptr<RenderMesh> gpuMesh = std::make_shared<RenderMesh>(*cpuData);
+
+    // Spinamy wszystko w wêze³
+    MeshNode node;
+    node.cpuData = cpuData;
+    node.gpuMesh = gpuMesh;
+    node.material = myMaterial;
+
+    return node;
 }
 
 void Model::SetShader(Shader* shader)
 {
-    for (auto& mesh : meshes) {
-        if (mesh.material) {
-            mesh.material->shader = shader;
+    for (auto& node : nodes) {
+        if (node.material) {
+            node.material->shader = shader;
         }
     }
 }
