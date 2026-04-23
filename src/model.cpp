@@ -204,7 +204,20 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 
     // diffuse
     vector<Texture> diffuseMaps = loadMaterialTextures(aiMat, aiTextureType_DIFFUSE, "texture_diffuse", scene);
-    if (!diffuseMaps.empty()) myMaterial->diffuseMap = diffuseMaps[0].id;
+    if (diffuseMaps.empty()) {
+        diffuseMaps = loadMaterialTextures(aiMat, aiTextureType_BASE_COLOR, "texture_diffuse", scene);
+    }
+    if (!diffuseMaps.empty()) {
+        myMaterial->diffuseMap = diffuseMaps[0].id;
+    }
+    else {
+        aiColor4D color(1.0f, 1.0f, 1.0f, 1.0f);
+        if (aiGetMaterialColor(aiMat, AI_MATKEY_BASE_COLOR, &color) == AI_SUCCESS ||
+            aiGetMaterialColor(aiMat, AI_MATKEY_COLOR_DIFFUSE, &color) == AI_SUCCESS)
+        {
+            myMaterial->diffuseColor = glm::vec3(color.r, color.g, color.b);
+        }
+    }
 
     // specular
     vector<Texture> specularMaps = loadMaterialTextures(aiMat, aiTextureType_SPECULAR, "texture_specular", scene);
@@ -212,6 +225,9 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 
     // normal
     vector<Texture> normalMaps = loadMaterialTextures(aiMat, aiTextureType_HEIGHT, "texture_normal", scene);
+    if (normalMaps.empty()) {
+        normalMaps = loadMaterialTextures(aiMat, aiTextureType_NORMALS, "texture_normal", scene);
+    }
     if (!normalMaps.empty()) myMaterial->normalMap = normalMaps[0].id;
 
     // float shininess;
@@ -236,16 +252,14 @@ vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType type,
 
         Texture texture;
 
-        if (str.C_Str()[0] == '*' && scene) // embedded texture
+        const aiTexture* embeddedTexture = scene->GetEmbeddedTexture(str.C_Str());
+
+        if (embeddedTexture)
         {
-            int texIndex = atoi(str.C_Str() + 1);
-            aiTexture* aiTex = scene->mTextures[texIndex];
-            // U¿ywamy Resource Managera!
-            texture.id = ResourceManager::LoadTexture(str.C_Str(), "", aiTex);
+            texture.id = ResourceManager::LoadTexture(str.C_Str(), "", embeddedTexture);
         }
-        else // normalna tekstura z pliku
+        else
         {
-            // U¿ywamy Resource Managera!
             texture.id = ResourceManager::LoadTexture(str.C_Str(), this->directory);
         }
 
@@ -255,6 +269,7 @@ vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType type,
     }
     return textures;
 }
+
 //
 //
 //std::unique_ptr<Model> Model::createOrbit(float radius, int segments, float tiltDegrees, float scale, vector<Texture>* textures)
