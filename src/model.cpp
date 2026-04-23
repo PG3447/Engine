@@ -114,7 +114,13 @@ Model Model::processNode(aiNode* node, const aiScene* scene)
     model.directory = this->directory;
 
     model.transform.setLocalPosition({ pos.x, pos.y, pos.z });
-    model.transform.setLocalRotation({ glm::degrees(rot.x), glm::degrees(rot.y), glm::degrees(rot.z) });
+    glm::quat q(rot.w, rot.x, rot.y, rot.z);
+
+    glm::vec3 euler = glm::eulerAngles(q); // radiany
+    euler = glm::degrees(euler);
+
+    model.transform.setLocalRotation(euler);
+    //model.transform.setLocalRotation({ glm::degrees(rot.x), glm::degrees(rot.y), glm::degrees(rot.z) });
     model.transform.setLocalScale({ scale.x, scale.y, scale.z });
 
     model.meshes.reserve(node->mNumMeshes);
