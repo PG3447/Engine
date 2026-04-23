@@ -202,157 +202,6 @@ void updateFPS(float deltaTime) {
     spdlog::info("FPS: {}", fps);
 }
 
-//
-//struct pair_hash {
-//    std::size_t operator()(const std::pair<Model*, Shader*>& p) const {
-//        return std::hash<Model*>()(p.first) ^ (std::hash<Shader*>()(p.second) << 1);
-//    }
-//};
-//
-//
-//std::unordered_map<std::pair<Model*, Shader*>, std::vector<Entity*>, pair_hash> instancedGroups;
-//
-//void startGroupInstanced(Entity* root)
-//{
-//    instancedGroups.clear();
-//       std::vector<Entity*> stackEntity;
-//    stackEntity.push_back(root);
-//
-//    while (!stackEntity.empty())
-//    {
-//        Entity* entity = stackEntity.back();
-//        stackEntity.pop_back();
-//
-//        if (entity->pModel)
-//        {
-//            std::pair<Model*, Shader*> key = { entity->pModel, entity->pShader };
-//            instancedGroups[key].push_back(entity);
-//        }
-//
-//        for (auto& child : entity->children)
-//        {
-//            stackEntity.push_back(child.get());
-//        }
-//    }
-//;
-//}
-//
-//void AddEntityToGroupInstanced(Entity* entity)
-//{
-//    if (!entity->pModel)
-//        return;
-//    
-//    std::pair<Model*, Shader*> key = { entity->pModel, entity->pShader };
-//    std::vector<Entity*>& group = instancedGroups[key];
-//    
-//    group.push_back(entity);
-//
-// }
-//
-//bool start = true;
-//bool change = false;
-//
-//void renderGroup(glm::mat4 projection, glm::mat4 view, glm::mat4 systemModel)
-//{
-//    for (auto& [key, entities] : instancedGroups)
-//    {
-//        Model* model = key.first;
-//        Shader* shader = key.second;
-//
-//        shader->use();
-//
-//        shader->setVec3("viewPos", camera.Position);
-//        shader->setVec3("cameraPos", camera.Position);
-//
-//        shader->setMat4("projection", projection);
-//        shader->setMat4("view", view);
-//
-//        if (entities.size() == 0)
-//        {
-//            continue;
-//        }
-//        else if (entities.size() == 1)
-//        {
-//            shader->setBool("useInstance", false);
-//            shader->setMat4("model", systemModel * entities[0]->transform.getModelMatrix());
-//
-//            if (entities[0]->pLight != nullptr)
-//            {
-//                entities[0]->transform.setLocalPosition(entities[0]->pLight->position);
-//                glm::vec3 dir = glm::normalize(entities[0]->pLight->direction);
-//
-//                float yaw = atan2(dir.x, dir.z);
-//                float pitch = asin(-dir.y);
-//
-//                entities[0]->transform.setLocalRotation(glm::degrees(glm::vec3(pitch, yaw, 0.0f)));
-//                entities[0]->pLight->Apply(*shader);
-//            }
-//            
-//            if (model != nullptr)
-//            {
-//                model->Draw(*shader);
-//            }
-//        }
-//        else
-//        {
-//            shader->setBool("useInstance", true);
-//            renderInstanced(model, shader, entities);
-//            
-//        }
-//    }
-//    start = false;
-//    change = false;
-//}
-//
-//
-//void renderInstanced(Model* model, Shader* shader, std::vector<Entity*>& entities)
-//{
-//    if (start || change) {
-//        size_t numEntities = entities.size();
-//
-//        std::vector<glm::mat4> modelMatrices(numEntities);
-//        for (size_t i = 0; i < numEntities; ++i) {
-//            modelMatrices[i] = entities[i]->transform.getModelMatrix();
-//        }
-//
-//        if (model->instanceVBO == 0)
-//            glGenBuffers(1, &model->instanceVBO);
-//        glBindBuffer(GL_ARRAY_BUFFER, model->instanceVBO);
-//        glBufferData(GL_ARRAY_BUFFER, numEntities * sizeof(glm::mat4), modelMatrices.data(), GL_DYNAMIC_DRAW);
-//    }
-//
-//    if (start) {
-//        for (unsigned int i = 0; i < model->meshes.size(); i++)
-//        {
-//            unsigned int VAO = model->meshes[i].renderData->VAO;
-//            glBindVertexArray(VAO);
-//
-//            // matrix
-//            GLsizei vec4Size = sizeof(glm::vec4);
-//            glEnableVertexAttribArray(7);
-//            glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)0);
-//            glEnableVertexAttribArray(8);
-//            glVertexAttribPointer(8, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(vec4Size));
-//            glEnableVertexAttribArray(9);
-//            glVertexAttribPointer(9, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(2 * vec4Size));
-//            glEnableVertexAttribArray(10);
-//            glVertexAttribPointer(10, 4, GL_FLOAT, GL_FALSE, 4 * vec4Size, (void*)(3 * vec4Size));
-//
-//            glVertexAttribDivisor(7, 1);
-//            glVertexAttribDivisor(8, 1);
-//            glVertexAttribDivisor(9, 1);
-//            glVertexAttribDivisor(10, 1);
-//
-//            glBindVertexArray(0);
-//        }
-//    }
-//    if (model != nullptr)
-//    {
-//        model->Draw(*shader, (GLsizei)entities.size());
-//    }
-//}
-
-
 
 void processCameraInput(ECS& ecs,CameraComponent& cam, TransformComponent& transform,
                        const std::string& up,
@@ -821,121 +670,6 @@ void init_imgui()
 
 void compileShader()
 {
-    //glEnable(GL_DEPTH_TEST);
-
-
-    //float skyboxVertices[] = {
-    //    // positions          
-    //    -1.0f,  1.0f, -1.0f,
-    //    -1.0f, -1.0f, -1.0f,
-    //     1.0f, -1.0f, -1.0f,
-    //     1.0f, -1.0f, -1.0f,
-    //     1.0f,  1.0f, -1.0f,
-    //    -1.0f,  1.0f, -1.0f,
-
-    //    -1.0f, -1.0f,  1.0f,
-    //    -1.0f, -1.0f, -1.0f,
-    //    -1.0f,  1.0f, -1.0f,
-    //    -1.0f,  1.0f, -1.0f,
-    //    -1.0f,  1.0f,  1.0f,
-    //    -1.0f, -1.0f,  1.0f,
-
-    //     1.0f, -1.0f, -1.0f,
-    //     1.0f, -1.0f,  1.0f,
-    //     1.0f,  1.0f,  1.0f,
-    //     1.0f,  1.0f,  1.0f,
-    //     1.0f,  1.0f, -1.0f,
-    //     1.0f, -1.0f, -1.0f,
-
-    //    -1.0f, -1.0f,  1.0f,
-    //    -1.0f,  1.0f,  1.0f,
-    //     1.0f,  1.0f,  1.0f,
-    //     1.0f,  1.0f,  1.0f,
-    //     1.0f, -1.0f,  1.0f,
-    //    -1.0f, -1.0f,  1.0f,
-
-    //    -1.0f,  1.0f, -1.0f,
-    //     1.0f,  1.0f, -1.0f,
-    //     1.0f,  1.0f,  1.0f,
-    //     1.0f,  1.0f,  1.0f,
-    //    -1.0f,  1.0f,  1.0f,
-    //    -1.0f,  1.0f, -1.0f,
-
-    //    -1.0f, -1.0f, -1.0f,
-    //    -1.0f, -1.0f,  1.0f,
-    //     1.0f, -1.0f, -1.0f,
-    //     1.0f, -1.0f, -1.0f,
-    //    -1.0f, -1.0f,  1.0f,
-    //     1.0f, -1.0f,  1.0f
-    //};
-
-    //// skybox VAO
-    //unsigned int skyboxVBO;
-    //glGenVertexArrays(1, &skyboxVAO);
-    //glGenBuffers(1, &skyboxVBO);
-    //glBindVertexArray(skyboxVAO);
-    //glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
-    //glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
-    //glEnableVertexAttribArray(0);
-    //glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-
-
-    //vector<std::string> faces
-    //{
-    //    "res/textures/skybox/right.jpg",
-    //    "res/textures/skybox/left.jpg",
-    //    "res/textures/skybox/top.jpg",
-    //    "res/textures/skybox/bottom.jpg",
-    //    "res/textures/skybox/front.jpg",
-    //    "res/textures/skybox/back.jpg"
-    //};
-
-    //cubemapTexture = loadCubemap(faces);
-
-    //skyboxShader = std::make_unique<Shader>("res/shaders/skybox.vert", "res/shaders/skybox.frag");
-
-//    skyboxShader->use();
-//    skyboxShader->setInt("skybox", 0);
-
-//    reflectShader = std::make_unique<Shader>("res/shaders/reflect.vert", "res/shaders/reflect.frag");
-//    reflectShader->use();
-//    reflectShader->setInt("skybox", 0);
-
-//    refractShader = std::make_unique<Shader>("res/shaders/reflect.vert", "res/shaders/refract.frag");
-//    refractShader->use();
-//    refractShader->setInt("skybox", 0);
-
-    //ladowanie bazowego shader-a
- 
-    sunModel = std::make_unique<Prefab>("res/models/sun.glb");
-    
-    root = std::make_unique<Entity>();
-    root->name = "root";
-
-   // float triangleVertices[] = {
-   //     0.0f,  0.5f, 0.0f,
-   //    -0.5f, -0.5f, 0.0f,
-   //     0.5f, -0.5f, 0.0f
-   //};
-
-   // glGenVertexArrays(1, &triangleVAO);
-   // glGenBuffers(1, &triangleVBO);
-
-   // glBindVertexArray(triangleVAO);
-
-   // glBindBuffer(GL_ARRAY_BUFFER, triangleVBO);
-   // glBufferData(GL_ARRAY_BUFFER, sizeof(triangleVertices), triangleVertices, GL_STATIC_DRAW);
-
-   // glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-   // glEnableVertexAttribArray(0);
-
-   // glBindVertexArray(0);
-
-   // // shader
-   // triangleShader = std::make_unique<Shader>(
-   //     "res/shaders/triangle.vert",
-   //     "res/shaders/triangle.frag"
-   // );
 
 
     spdlog::info("Success");
@@ -1084,25 +818,7 @@ void input()
         }
         mouseMove = false;
     }
-    //processCameraInput(camera, "move_up", "move_down", "move_left", "move_right");
-    //processCameraInput(cameraRight, "move_up1", "move_down1", "move_left1", "move_right1");
-    /*float velocity = camera.MovementSpeed * deltaTime;
-        if (HID::get().is_action_pressed("move_up"))
-            camera.Position += camera.Front * velocity;
-        if (HID::get().is_action_pressed("move_down"))
-            camera.ProcessKeyboard(BACKWARD, deltaTime);
-        if (HID::get().is_action_pressed("move_left"))
-            camera.ProcessKeyboard(LEFT, deltaTime);
-        if (HID::get().is_action_pressed("move_right"))
-            camera.ProcessKeyboard(RIGHT, deltaTime);
-        if (HID::get().is_action_pressed("move_right1"))
-            cameraRight.ProcessKeyboard(RIGHT, deltaTime);
-        if (HID::get().is_action_pressed("move_left1"))
-            cameraRight.ProcessKeyboard(LEFT, deltaTime);
-        if (HID::get().is_action_pressed("move_up1"))
-            cameraRight.ProcessKeyboard(FORWARD, deltaTime);
-        if (HID::get().is_action_pressed("move_down1"))
-            cameraRight.ProcessKeyboard(BACKWARD, deltaTime);*/
+
 //OLD INPUT ENDS HERE
 }
 
@@ -1112,77 +828,7 @@ void update()
     // Update game objects' state here
 }
 
-//
-//void render()
-//{
-////OLD RENDER FUNCION STARTS HERE
-//    
-//    //float time = glfwGetTime();
-//    //float radius = 10.0f;         
-//    //float speed = 2.0f;        
-//
-//
-//    //pointLight->position.x = radius * cos(speed * time);
-//    //pointLight->position.y = 1.0f; 
-//    //pointLight->position.z = radius * sin(speed * time);
-//
-//    if (!mouseMove)
-//    {
-//        updateFollowCamera();
-//    }
-//
-//    // OpenGL Rendering code goes here
-//    glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
-//    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-//
-//    //bind texture
-//    glActiveTexture(GL_TEXTURE0);
-//    glBindTexture(GL_TEXTURE_2D, texture);
-//
-//    //activating program object
-//    ourShader->use();
-//   
-//
-//    int display_w, display_h;
-//    glfwGetFramebufferSize(window, &display_w, &display_h);
-//    glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)display_w / (float)display_h, 0.1f, 10000.0f);
-//    glm::mat4 view = glm::mat4(1.0f);
-//    view = camera.GetViewMatrix();
-//
-//
-//    // render the loaded modeld
-//    root->updateSelfAndChild();
-//    glm::mat4 systemRotationX = glm::rotate(glm::mat4(1.0f), glm::radians(rotationX), glm::vec3(1, 0, 0));
-//    glm::mat4 systemRotationY = glm::rotate(glm::mat4(1.0f), glm::radians(rotationY), glm::vec3(0, 1, 0));
-//    glm::mat4 systemModel = systemRotationY * systemRotationX;
-//    renderGroup(projection, view, systemModel);
-//    //ourEntity->drawSelfAndChild(*ourShader, projection, view, sphereRadius, sphereRings, sphereSectors, systemModel);
-//
-//
-//    //glDrawElements(GL_TRIANGLES, 12, GL_UNSIGNED_INT, 0);
-//    glBindVertexArray(0);
-//
-//    // draw skybox as last
-//    glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
-////    skyboxShader->use();
-//    view = glm::mat4(glm::mat3(camera.GetViewMatrix())); // remove translation from the view matrix
-////    skyboxShader->setMat4("view", view);
-////    skyboxShader->setMat4("projection", projection);
-//    // skybox cube
-////    glBindVertexArray(skyboxVAO);
-////    glActiveTexture(GL_TEXTURE0);
-////    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
-////    glDrawArrays(GL_TRIANGLES, 0, 36);
-////    glBindVertexArray(0);
-/////    glDepthFunc(GL_LESS); // set depth function back to default*/
-////OLD RENDER FUNCTION ENDS HERE
-//
-//    triangleShader->use();
-//    glBindVertexArray(triangleVAO);
-//    glDrawArrays(GL_TRIANGLES, 0, 3);
-//    glBindVertexArray(0);
-//
-//}
+
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
@@ -1221,14 +867,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
     //camera.ProcessMouseScroll(static_cast<float>(yoffset));
 }
-//
-//void regenerateSphere()
-//{
-//    if (!venus || !venus->pModel) return;
-//    Mesh& sphereMesh = venus->pModel->meshes[0];
-//    sphereMesh.updateSphereMesh(sphereRings, sphereSectors);
-//}
-//
+
 void imgui_begin()
 {
     // Start the Dear ImGui frame
@@ -1609,3 +1248,76 @@ void processCameraGamepad(ECS &ecs, CameraComponent &cam, TransformComponent &tr
         -ry * sensitivity * deltaTime
     );
 }
+
+
+//
+//void render()
+//{
+////OLD RENDER FUNCION STARTS HERE
+//    
+//    //float time = glfwGetTime();
+//    //float radius = 10.0f;         
+//    //float speed = 2.0f;        
+//
+//
+//    //pointLight->position.x = radius * cos(speed * time);
+//    //pointLight->position.y = 1.0f; 
+//    //pointLight->position.z = radius * sin(speed * time);
+//
+//    if (!mouseMove)
+//    {
+//        updateFollowCamera();
+//    }
+//
+//    // OpenGL Rendering code goes here
+//    glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
+//    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+//
+//    //bind texture
+//    glActiveTexture(GL_TEXTURE0);
+//    glBindTexture(GL_TEXTURE_2D, texture);
+//
+//    //activating program object
+//    ourShader->use();
+//   
+//
+//    int display_w, display_h;
+//    glfwGetFramebufferSize(window, &display_w, &display_h);
+//    glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)display_w / (float)display_h, 0.1f, 10000.0f);
+//    glm::mat4 view = glm::mat4(1.0f);
+//    view = camera.GetViewMatrix();
+//
+//
+//    // render the loaded modeld
+//    root->updateSelfAndChild();
+//    glm::mat4 systemRotationX = glm::rotate(glm::mat4(1.0f), glm::radians(rotationX), glm::vec3(1, 0, 0));
+//    glm::mat4 systemRotationY = glm::rotate(glm::mat4(1.0f), glm::radians(rotationY), glm::vec3(0, 1, 0));
+//    glm::mat4 systemModel = systemRotationY * systemRotationX;
+//    renderGroup(projection, view, systemModel);
+//    //ourEntity->drawSelfAndChild(*ourShader, projection, view, sphereRadius, sphereRings, sphereSectors, systemModel);
+//
+//
+//    //glDrawElements(GL_TRIANGLES, 12, GL_UNSIGNED_INT, 0);
+//    glBindVertexArray(0);
+//
+//    // draw skybox as last
+//    glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
+////    skyboxShader->use();
+//    view = glm::mat4(glm::mat3(camera.GetViewMatrix())); // remove translation from the view matrix
+////    skyboxShader->setMat4("view", view);
+////    skyboxShader->setMat4("projection", projection);
+//    // skybox cube
+////    glBindVertexArray(skyboxVAO);
+////    glActiveTexture(GL_TEXTURE0);
+////    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+////    glDrawArrays(GL_TRIANGLES, 0, 36);
+////    glBindVertexArray(0);
+/////    glDepthFunc(GL_LESS); // set depth function back to default*/
+////OLD RENDER FUNCTION ENDS HERE
+//
+//    triangleShader->use();
+//    glBindVertexArray(triangleVAO);
+//    glDrawArrays(GL_TRIANGLES, 0, 3);
+//    glBindVertexArray(0);
+//
+//}
