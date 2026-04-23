@@ -123,22 +123,21 @@ public:
     }
 
     // render the mesh
-    void Draw(Shader& shader, GLsizei instanceCount = 0, Material* overrideMaterial = nullptr)
+    void Draw(GLsizei instanceCount = 0, Material* overrideMaterial = nullptr)
     {
-        if (reflect && cubemapTexture)
+        Material* activeMaterial = overrideMaterial ? overrideMaterial : material.get();
+        Shader* activeShader = activeMaterial ? activeMaterial->shader : nullptr;
+
+        if (reflect && cubemapTexture && activeShader)
         {
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
-            shader.setInt("skybox", 0);
+            activeShader->use();
+            activeShader->setInt("skybox", 0);
         }
-        else
+        else if (activeMaterial)
         {
-            if (overrideMaterial) {
-                overrideMaterial->Apply(shader);
-            }
-            else if (material) {
-                material->Apply(shader);
-            }
+            activeMaterial->Apply();
         }
 
         glBindVertexArray(renderData->VAO);

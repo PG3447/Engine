@@ -59,11 +59,11 @@ void Model::PrepareInstancing()
 
 
 // draws the model, and thus all its meshes
-void Model::Draw(Shader& shader, GLsizei instanceCount, Material* materialOverride)
+void Model::Draw(GLsizei instanceCount, Material* materialOverride)
 {
     for (unsigned int i = 0; i < meshes.size(); i++)
     {
-        meshes[i].Draw(shader, instanceCount, materialOverride);
+        meshes[i].Draw(instanceCount, materialOverride);
     }
 }
 
@@ -238,6 +238,14 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
     return Mesh(vertices, indices, myMaterial);
 }
 
+void Model::SetShader(Shader* shader)
+{
+    for (auto& mesh : meshes) {
+        if (mesh.material) {
+            mesh.material->shader = shader;
+        }
+    }
+}
 
 // checks all material textures of a given type and loads the textures if they're not loaded yet.
 // the required info is returned as a Texture struct.

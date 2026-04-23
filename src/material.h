@@ -3,48 +3,63 @@
 
 #include <glad/glad.h>
 #include <glm/glm.hpp>
+#include <spdlog/spdlog.h>
 #include "shader.h"
 
 class Material {
 public:
+    Shader* shader = nullptr;
+
     GLuint diffuseMap = 0;
     GLuint specularMap = 0;
     GLuint normalMap = 0;
 
     glm::vec3 diffuseColor = glm::vec3(1.0f, 1.0f, 1.0f);
-
     float shininess = 32.0f;
 
-    void Apply(Shader& shader) const {
-        shader.use();
+    Material() = default;
+
+    Material(Shader* s, GLuint diffuse = 0, GLuint specular = 0, GLuint normal = 0)
+        : shader(s), diffuseMap(diffuse), specularMap(specular), normalMap(normal) {
+    }
+
+    void Apply() const {
+        Shader* activeShader = shader;
+
+        if (!activeShader) {
+            spdlog::warn("Material probuje zostac wyrenderowany, ale nie ma przypisanego shadera!");
+            return;
+        }
+
+        activeShader->use();
 
         if (diffuseMap != 0) {
             glActiveTexture(GL_TEXTURE0);
-            shader.setInt("material.diffuse1", 0);
+            activeShader->setInt("material.diffuse1", 0);
             glBindTexture(GL_TEXTURE_2D, diffuseMap);
-            shader.setBool("material.hasDiffuseMap", true);
+            activeShader->setBool("material.hasDiffuseMap", true);
         }
         else {
-            shader.setBool("material.hasDiffuseMap", false);
+            activeShader->setBool("material.hasDiffuseMap", false);
         }
 
-        shader.setVec3("material.diffuseColor", diffuseColor);
+        activeShader->setVec3("material.diffuseColor", diffuseColor);
 
         glActiveTexture(GL_TEXTURE1);
-        shader.setInt("material.specular1", 1);
+        activeShader->setInt("material.specular1", 1);
         glBindTexture(GL_TEXTURE_2D, specularMap);
 
         glActiveTexture(GL_TEXTURE2);
-        shader.setInt("material.normalMap", 2);
+        activeShader->setInt("material.normalMap", 2);
         glBindTexture(GL_TEXTURE_2D, normalMap);
 
-        shader.setFloat("material.shininess", shininess);
+        activeShader->setFloat("material.shininess", shininess);
 
         if (normalMap != 0) {
-            shader.setBool("material.hasNormalMap", true);
+            activeShader->setBool("material.hasNormalMap", true);
         }
         else {
-            shader.setBool("material.hasNormalMap", false);
+            activeShader->setBool("material.hasNormalMap", false);
         }
 
         glActiveTexture(GL_TEXTURE0);

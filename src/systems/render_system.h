@@ -136,6 +136,10 @@ public:
             RenderComponent* r = renderers[i];
             if (!r || !r->model) continue;
 
+            if (r->shader) {
+                r->model->SetShader(r->shader);
+            }
+
             GroupKey key = { r->model, r->shader, r->materialOverride.get() };
             instancedGroups[key].push_back(i);
         }
@@ -162,16 +166,16 @@ public:
             if (indices.size() == 1) {
                 shader->setBool("useInstance", false);
                 shader->setMat4("model", transforms[indices[0]]->modelMatrix);
-                model->Draw(*shader, 0, overrideMat);
+                model->Draw(0, overrideMat);
             }
             else {
                 shader->setBool("useInstance", true);
-                RenderInstanced(model, shader, indices, overrideMat);
+                RenderInstanced(model, indices, overrideMat);
             }
         }
     }
 
-    void RenderInstanced(Model* model, Shader* shader, std::vector<size_t>& indices, Material* overrideMat)
+    void RenderInstanced(Model* model, std::vector<size_t>& indices, Material* overrideMat)
     {
         auto& transforms = std::get<0>(renderQuery->componentsVectors);
 
@@ -188,7 +192,7 @@ public:
         glBufferData(GL_ARRAY_BUFFER, count * sizeof(glm::mat4), matrices.data(), GL_DYNAMIC_DRAW);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-        model->Draw(*shader, (GLsizei)count, overrideMat);
+        model->Draw((GLsizei)count, overrideMat);
     }
 };
 

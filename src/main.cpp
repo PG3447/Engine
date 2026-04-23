@@ -306,6 +306,7 @@ int main(int, char**)
     GLuint norm = ResourceManager::LoadTexture("normal_brick.png", "res/textures/");
 
     auto brickMat = std::make_shared<Material>();
+    brickMat->shader = ourShader.get();
     brickMat->diffuseMap = diff;
     brickMat->specularMap = spec;
     brickMat->normalMap = norm;
@@ -450,6 +451,8 @@ int main(int, char**)
     GameObject* model34 =wozekModel    ->Instantiate(*scena1, nullptr, ourShader.get());
     GameObject* model35 =zaslonaModel  ->Instantiate(*scena1, nullptr, ourShader.get());
 
+    RenderHelper::SetMaterial(model29, brickMat);
+
     model1  ->GetComponent<TransformComponent>()->position.x = placeholderThing;
 
     model1->AddComponent<RigidbodyComponent>();
@@ -528,6 +531,8 @@ int main(int, char**)
     placeholderThing += 10;
     model35 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
     placeholderThing += 10;
+
+    
 
     //CameraComponent* cam = obj2->AddComponent<CameraComponent>();
     //cam->camera.Position = glm::vec3(0, 50, 15);

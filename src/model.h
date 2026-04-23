@@ -48,7 +48,7 @@ public:
 
     void PrepareInstancing();
 
-    void Draw(Shader& shader, GLsizei instanceCount = 0, Material* materialOverride = nullptr);
+    void Draw(GLsizei instanceCount = 0, Material* materialOverride = nullptr);
 
     static std::unique_ptr<Model> createOrbit(float radius, int segments = 100, float tiltDegrees = 0.0f, float scale = 1.0f, vector<Texture>* textures = nullptr);
 
@@ -57,6 +57,8 @@ public:
     void turnOnReflect(unsigned int cubemapTexture);
 
     Mesh processMesh(aiMesh* mesh, const aiScene* scene);
+
+    void SetShader(Shader* shader);
 
 private:
     void loadModel(const std::string& path);
