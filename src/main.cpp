@@ -431,20 +431,18 @@ int main(int, char**)
 
 
    //obb2->GetComponent<TransformComponent>()->scale.x = 25;
-  //obb2->GetComponent<TransformComponent>()->scale.y = 25;
+    //obb2->GetComponent<TransformComponent>()->scale.y = 25;
    //obb2->GetComponent<TransformComponent>()->scale.z = 25;
    //obb2->GetComponent<TransformComponent>()->position.y = 250;
 
     obb->AddComponent<RigidbodyComponent>();
     obb->AddComponent<ColliderComponent>();
 
-    //obb2->AddComponent<RigidbodyComponent>();
-    //obb2->AddComponent<ColliderComponent>();
+
 
     obb->GetComponent<RigidbodyComponent>()->useGravity = false;
     obb->GetComponent<RigidbodyComponent>()->isStatic = true;
-    //obb2->GetComponent<RigidbodyComponent>()->useGravity = true;
-    //obb2->GetComponent<ColliderComponent>()->halfSize = glm::vec3 { 25, 25, 25 };
+
 
     GameObject* obj = scena1->CreateGameObject(nullptr);
     CameraComponent* camCompLeft = obj->AddComponent<CameraComponent>();
@@ -584,6 +582,14 @@ int main(int, char**)
     GameObject* model35 =zaslonaModel  ->Instantiate(*scena1, nullptr, ourShader.get());
 
     model1  ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+
+    model1->AddComponent<RigidbodyComponent>();
+    model1->AddComponent<ColliderComponent>();
+
+    model1->GetComponent<RigidbodyComponent>()->useGravity = true;
+    model1->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 1, 1 };
+    model1  ->GetComponent<TransformComponent>()->position.y = 150;
+
     placeholderThing += 10;
     model2  ->GetComponent<TransformComponent>()->position.x = placeholderThing;
     placeholderThing += 10;
