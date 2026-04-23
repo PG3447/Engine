@@ -73,7 +73,6 @@ private:
         transform->modelMatrix = model->transform.getModelMatrix();
         transform->isDirty = true;
 
-        spdlog::info("dodanie modelu");
         // Render
         auto* render = go->AddComponent<RenderComponent>();
         render->model = model;

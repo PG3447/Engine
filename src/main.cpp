@@ -271,9 +271,10 @@ int main(int, char**)
     ourShader->use();
 
     groundModel = std::make_unique<Prefab>("res/models/podloze.glb");
+    sunModel = std::make_unique<Prefab>("res/models/Sun.glb");
     GameObject* obb = groundModel->Instantiate(*scena1, nullptr, ourShader.get());
     //GameObject* obb2 = sunModel->Instantiate(*scena1, nullptr, ourShader.get());
-
+ 
 
     obb->GetComponent<TransformComponent>()->scale.x = 1;
     obb->GetComponent<TransformComponent>()->scale.y = 1;
@@ -309,8 +310,8 @@ int main(int, char**)
     brickMat->specularMap = spec;
     brickMat->normalMap = norm;
     brickMat->shininess = 64.0f;
-
-    RenderHelper::SetMaterial(obb2, brickMat);
+    
+    RenderHelper::SetMaterial(obb3, brickMat);
 
     GameObject* obj = scena1->CreateGameObject(nullptr);
     CameraComponent* camCompLeft = obj->AddComponent<CameraComponent>();
