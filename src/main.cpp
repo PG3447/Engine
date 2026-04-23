@@ -377,7 +377,7 @@ int main(int, char**)
 
     int placeholderThing = 0;
 
-    bed1Model = std::make_unique<Prefab>("res/models/bed.glb");
+    bed1Model = std::make_unique<Prefab>("res/models/samochod.glb");
     bed2Model      = std::make_unique<Prefab>("res/models/bed2.glb");
     bed3Model      = std::make_unique<Prefab>("res/models/bed3.glb");
     corkBoardModel = std::make_unique<Prefab>("res/models/cork_board.glb");
