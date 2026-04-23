@@ -585,10 +585,10 @@ int main(int, char**)
 
     model1->AddComponent<RigidbodyComponent>();
     model1->AddComponent<ColliderComponent>();
-
+    
     model1->GetComponent<RigidbodyComponent>()->useGravity = true;
     model1->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 1, 1 };
-    model1  ->GetComponent<TransformComponent>()->position.y = 150;
+    model1->GetComponent<TransformComponent>()->position.y = 150;
 
     placeholderThing += 10;
     model2  ->GetComponent<TransformComponent>()->position.x = placeholderThing;
@@ -677,6 +677,8 @@ int main(int, char**)
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     int test_score = 0;
+    auto* t0 = obj->GetComponent<TransformComponent>();
+    auto* t1 = obj2->GetComponent<TransformComponent>();
 
     // Main loop
     while (!glfwWindowShouldClose(window))
@@ -686,8 +688,7 @@ int main(int, char**)
         lastFrame = currentFrame;
         updateFPS(deltaTime);
 
-        auto* t0 = obj->GetComponent<TransformComponent>();
-        auto* t1 = obj2->GetComponent<TransformComponent>();
+
         processCameraInput(ecs, *camCompLeft, *t0,
     "move_up", "move_down", "move_left", "move_right");
 
@@ -703,11 +704,6 @@ int main(int, char**)
         //    transform->position.z);
         test_score++;
         sprite_4->text = "score: " + std::to_string(test_score);
-
-
-
-
-
 
         sceneManager.Update(deltaTime);
 
