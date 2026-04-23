@@ -37,11 +37,6 @@ void TransformSystem::forceUpdateSelfAndChild(GameObject* obj)
         TransformHelper::computeModelMatrix(*tComp);
     }
 
-    spdlog::info("skala");
-    spdlog::info(tComp->scale.x);
-    spdlog::info(tComp->position.z);
-    spdlog::info("transform dziala update");
-
     for (auto* child : obj->GetChildren())
     {
         forceUpdateSelfAndChild(child);
