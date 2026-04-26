@@ -41,7 +41,6 @@ private:
     glm::vec3 currentCameraPos;
 
 public:
-
     struct Plane {
         glm::vec3 normal;
         float d;
@@ -59,7 +58,7 @@ public:
         f.planes[0].normal.x = vp[0][3] + vp[0][0];
         f.planes[0].normal.y = vp[1][3] + vp[1][0];
         f.planes[0].normal.z = vp[2][3] + vp[2][0];
-        f.planes[0].d        = vp[3][3] + vp[3][0];
+        f.planes[0].d       = vp[3][3] + vp[3][0];
 
         // RIGHT
         f.planes[1].normal.x = vp[0][3] - vp[0][0];
