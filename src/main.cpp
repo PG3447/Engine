@@ -41,6 +41,8 @@
 #include <systems/physics_system.h>
 #include <systems/transform_system.h>
 #include <systems/SpriteSystem.h>
+
+#include "diagnostics/cpu_timer.h"
 #include "utils/render_helper.h"
 
 
@@ -190,6 +192,15 @@ const int MAX_SAMPLES = 100;
 float frameTimes[MAX_SAMPLES];
 int index = 0;
 
+struct PerformanceData {
+    float cpuFrameTime = 0.0f;
+    float logicTime = 0.0f;
+    float inputTime = 0.0f;
+};
+PerformanceData perf;
+RenderSystem * renderSystem = nullptr;
+
+
 void updateFPS(float deltaTime) {
     frameTimes[index] = deltaTime;
     index = (index + 1) % MAX_SAMPLES;
@@ -317,6 +328,7 @@ int main(int, char**)
     GLuint norm = ResourceManager::LoadTexture("normal_brick.png", "res/textures/");
 
     auto brickMat = std::make_shared<Material>();
+    brickMat->shader = ourShader.get();
     brickMat->diffuseMap = diff;
     brickMat->specularMap = spec;
     brickMat->normalMap = norm;
@@ -461,6 +473,8 @@ int main(int, char**)
     GameObject* model34 =wozekModel    ->Instantiate(*scena1, nullptr, ourShader.get());
     GameObject* model35 =zaslonaModel  ->Instantiate(*scena1, nullptr, ourShader.get());
 
+    RenderHelper::SetMaterial(model29, brickMat);
+
     model1  ->GetComponent<TransformComponent>()->position.x = placeholderThing;
 
     model1->AddComponent<RigidbodyComponent>();
@@ -563,6 +577,7 @@ int main(int, char**)
     auto* t0 = obj->GetComponent<TransformComponent>();
     auto* t1 = obj2->GetComponent<TransformComponent>();
 
+    renderSystem = ecs.GetSystem<RenderSystem>();
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
@@ -588,18 +603,40 @@ int main(int, char**)
         test_score++;
         sprite_4->text = "score: " + std::to_string(test_score);
 
+        CpuTimer cpuTimer;
+        cpuTimer.start();
+
+        // --- CPU WORK START ---
+
+        auto inputStart = std::chrono::high_resolution_clock::now();
+
         if (ecs.GetSystem<HID>()->is_action_just_pressed("right_click")) {
             focused = !focused;
             updateFocus();
         }
 
-        sceneManager.Update(deltaTime);
-
         // Process I/O operations here
         input();
 
+        processCameraInput(ecs, *camCompLeft, *t0,
+    "move_up", "move_down", "move_left", "move_right");
+
+        processCameraInput(ecs, *camCompRight, *t1,
+            "move_up_2", "move_down_2", "move_left_2", "move_right_2");
+
+        processCameraMouse(ecs, *camCompLeft);
+        processCameraGamepad(ecs, *camCompLeft, *t0, 0);
+        processCameraGamepad(ecs, *camCompRight, *t1, 1);
+
+        auto inputEnd = std::chrono::high_resolution_clock::now();
+
+
+        auto logicStart = std::chrono::high_resolution_clock::now();
+        sceneManager.Update(deltaTime);
         // Update game objects' state here
         update();
+
+        auto logicEnd = std::chrono::high_resolution_clock::now();
 
         // OpenGL rendering code here
         //render();
@@ -609,8 +646,22 @@ int main(int, char**)
         imgui_render(); // edit this function to add your own ImGui controls
         imgui_end(); // this call effectively renders ImGui
 
+        // --- CPU WORK END ---
+
+        cpuTimer.stop();
+
+        float cpuFrameTime = cpuTimer.getMilliseconds();
+
+        float logicTime = std::chrono::duration<float, std::milli>(logicEnd - logicStart).count();
+        float inputTime = std::chrono::duration<float, std::milli>(inputEnd - inputStart).count();
+
+        perf.cpuFrameTime = cpuFrameTime;
+        perf.logicTime = logicTime;
+        perf.inputTime = inputTime;
+
         // End frame and swap buffers (double buffering)
         end_frame();
+
     }
 
     // Cleanup
@@ -670,7 +721,6 @@ bool init()
         spdlog::error("Failed to initialize OpenGL loader!");
         return false;
     }
-
     return true;
 }
 
@@ -709,9 +759,11 @@ void init_imgui()
 
 void compileShader()
 {
-    spdlog::info("Success");
-}
 
+
+    spdlog::info("Success");
+
+}
 
 void input()
 {
@@ -739,6 +791,7 @@ void input()
     }
     */
 
+//OLD INPUT ENDS HERE
 }
 
 
@@ -794,138 +847,6 @@ void imgui_begin()
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 }
-//
-////Wszystko ponizej to imgui
-//static Entity* selectedEntity = nullptr;
-//
-//void showLightEditor(Light& light)
-//{
-//    ImGui::Checkbox("Light Enabled", &light.isOn);
-//
-//    const char* lightTypes[] = { "Directional", "Point", "Spot" };
-//    int type = static_cast<int>(light.type);
-//    if (ImGui::Combo("Light Type", &type, lightTypes, IM_ARRAYSIZE(lightTypes)))
-//    {
-//        light.type = static_cast<Light::LightType>(type);
-//    }
-//
-//    ImGui::Separator();
-//    ImGui::Text("Colors");
-//
-//    ImGui::ColorEdit3("Ambient", &light.ambient.x);
-//    ImGui::ColorEdit3("Diffuse", &light.diffuse.x);
-//    ImGui::ColorEdit3("Specular", &light.specular.x);
-//
-//    ImGui::Separator();
-//
-//    if (light.type != Light::Directional)
-//    {
-//        ImGui::DragFloat3("Position", &light.position.x, 0.05f);
-//    }
-//
-//    if (light.type == Light::Directional || light.type == Light::Spot)
-//    {
-//        ImGui::DragFloat3("Direction", &light.direction.x, 0.05f);
-//    }
-//
-//    if (light.type == Light::Point || light.type == Light::Spot)
-//    {
-//        ImGui::Separator();
-//        ImGui::Text("Attenuation");
-//
-//        ImGui::DragFloat("Constant", &light.constant, 0.01f, 0.0f, 2.0f);
-//        ImGui::DragFloat("Linear", &light.linear, 0.001f, 0.0f, 1.0f);
-//        ImGui::DragFloat("Quadratic", &light.quadratic, 0.001f, 0.0f, 1.0f);
-//    }
-//
-//    if (light.type == Light::Spot)
-//    {
-//        ImGui::Separator();
-//        ImGui::Text("Spotlight Angles");
-//
-//        float inner = glm::degrees(acos(light.cutOff));
-//        float outer = glm::degrees(acos(light.outerCutOff));
-//
-//        if (ImGui::SliderFloat("Inner CutOff", &inner, 0.0f, 90.0f))
-//            light.cutOff = glm::cos(glm::radians(inner));
-//
-//        if (ImGui::SliderFloat("Outer CutOff", &outer, inner, 90.0f))
-//            light.outerCutOff = glm::cos(glm::radians(outer));
-//    }
-//}
-//
-//
-//void showTransformEditor(Transform& transform)
-//{
-//    glm::vec3 pos = transform.getLocalPosition();
-//    glm::vec3 rot = transform.getLocalRotation();
-//    glm::vec3 scale = transform.getLocalScale();
-//
-//    if (ImGui::DragFloat3("Position", &pos.x, 0.01f))
-//    {
-//        change = true;
-//        transform.setLocalPosition(pos);
-//    }
-//
-//    if (ImGui::DragFloat3("Rotation", &rot.x, 0.1f))
-//    {
-//        change = true;
-//        transform.setLocalRotation(rot);
-//    }
-//
-//    if (ImGui::DragFloat3("Scale", &scale.x, 0.01f, 0.01f))
-//    {
-//        change = true;
-//        transform.setLocalScale(scale);
-//    }
-//}
-//static ImGuiTextFilter entityFilter;
-//
-//bool entityMatchesFilter(Entity* entity)
-//{
-//    if (entityFilter.PassFilter(entity->name.c_str()))
-//        return true;
-//
-//    for (auto& child : entity->children)
-//    {
-//        if (entityMatchesFilter(child.get()))
-//            return true;
-//    }
-//    return false;
-//}
-//
-//
-//void showEntityTree(Entity* entity)
-//{
-//    if (!entity) return;
-//
-//    if (!entityMatchesFilter(entity))
-//        return;
-//
-//    ImGuiTreeNodeFlags flags =
-//        ImGuiTreeNodeFlags_OpenOnArrow |
-//        ImGuiTreeNodeFlags_OpenOnDoubleClick |
-//        ((entity == selectedEntity) ? ImGuiTreeNodeFlags_Selected : 0);
-//
-//    bool nodeOpen = ImGui::TreeNodeEx(
-//        (void*)entity,
-//        flags,
-//        "%s",
-//        entity->name.c_str()
-//    );
-//
-//    if (ImGui::IsItemClicked())
-//        selectedEntity = entity;
-//
-//    if (nodeOpen)
-//    {
-//        for (auto& child : entity->children)
-//            showEntityTree(child.get());
-//
-//        ImGui::TreePop();
-//    }
-//}
-//
 
 void imgui_render()
 {
@@ -943,7 +864,36 @@ void imgui_render()
             wireframeMode ? GL_LINE : GL_FILL);
     }
 
-    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+    ImGui::Begin("Performance");
+
+    // FPS i frame time
+    ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
+    ImGui::Text("Frame time: %.3f ms", 1000.0f / ImGui::GetIO().Framerate);
+
+    // CPU breakdown
+    if (ImGui::CollapsingHeader("CPU")) {
+        ImGui::Text("Total CPU: %.3f ms", perf.cpuFrameTime);
+        ImGui::Text("Input:     %.3f ms", perf.inputTime);
+        ImGui::Text("Logic:     %.3f ms", perf.logicTime);
+        ImGui::Text("Culling:   %.3f ms", renderSystem->stats.cullingTimeMs);
+        ImGui::Text("Draw prep: %.3f ms", renderSystem->stats.drawSubmitTimeMs);
+    }
+    // GPU
+    if (ImGui::CollapsingHeader("GPU")) {
+        ImGui::Text("GPU Frame: %.3f ms", renderSystem->gpuQuery.getLastResult());
+    }
+
+    if (ImGui::CollapsingHeader("Render Stats")) {
+        ImGui::Text("Draw calls:   %d", renderSystem->stats.drawCalls);
+        ImGui::Text("Objects:      %d", renderSystem->stats.renderedObjects);
+        ImGui::Text("Triangles:    %d", renderSystem->stats.triangles);
+        ImGui::Text("State changes:%d", renderSystem->stats.stateChanges);
+    }
+    ImGui::PlotLines("Frame time", frameTimes, MAX_SAMPLES, index,
+                 nullptr, 0.0f, 1.0f, ImVec2(0, 60));
+
+    ImGui::End();
+
     ImGui::SliderFloat("rotation X", &rotationX, -480.0f, 480.0f);
     ImGui::SliderFloat("rotation Y", &rotationY, -480.0f, 480.0f);
     ImGui::SliderFloat("Camera Distance", &cameraDistance, 5.0f, 1000.0f);
@@ -965,112 +915,6 @@ void imgui_render()
         ImGui::End();
     }
 }
-//
-//void imgui_render()
-//{
-//    /// Add new ImGui controls here
-//    // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-//    if (show_demo_window)
-//
-//        //ImGui::ShowDemoWindow(&show_demo_window);
-//
-//    // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
-//
-//    {
-//        ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
-//
-//
-//        if (ImGui::Button(wireframeMode ? "Switch to Fill Mode" : "Switch to Wireframe"))
-//        {
-//            wireframeMode = !wireframeMode;
-//            if (wireframeMode)
-//                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // włącz wireframe
-//            else
-//                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // normalny render
-//        }
-//
-//        ImGui::SliderFloat("rotation X", &rotationX, -480.0f, 480.0f);
-//        ImGui::SliderFloat("rotation Y", &rotationY, -480.0f, 480.0f);
-//        ImGui::SliderFloat("Camera Distance", &cameraDistance, 5.0f, 1000.0f);
-//
-//
-//        ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-//        ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
-//        ImGui::Checkbox("Another Window", &show_another_window);
-//
-//        ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
-//    }
-//    //    if (ImGui::Button("Auto rotation"))
-//    //        autoRotation = !autoRotation;
-//    //    ImGui::SameLine();
-//    //    ImGui::Text(" = %s", autoRotation ? "true" : "false");
-//
-//    //    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-//    //    
-//    //   if (root) // główny obiekt sceny
-//    //   {
-//    //       ImGui::Separator();
-//    //       ImGui::Text("Hierarchy");
-//    //       entityFilter.Draw("Search", 200);
-//    //       ImGui::Separator();
-//
-//    //       showEntityTree(root.get());
-//
-//    //   
-//    //       if (selectedEntity)
-//    //       {
-//    //           ImGui::Separator();
-//    //           ImGui::Text("Selected Entity: %s", selectedEntity->name.c_str());
-//    //           showTransformEditor(selectedEntity->transform);
-//    //       }
-//
-//
-//    //       ImGui::Separator();
-//    //       ImGui::Text("Lighting");
-//
-//    //       if (ImGui::CollapsingHeader("Directional Light"))
-//    //       {
-//    //           ImGui::PushID("Directional");
-//    //           showLightEditor(*dircetLight);
-//    //           ImGui::PopID();
-//    //       }
-//
-//    //       //if (ImGui::CollapsingHeader("Point Lights"))
-//    //       //{
-//    //       //    ImGui::PushID("pointLight");
-//    //       //    showLightEditor(*pointLight);
-//    //       //    ImGui::PopID();
-//    //       //}
-//
-//    //       //if (ImGui::CollapsingHeader("Spot Light"))
-//    //       //{
-//    //       //    ImGui::PushID("spotLight");
-//    //       //    showLightEditor(*spotLight);
-//    //       //    ImGui::PopID();
-//    //       //}
-//
-//    //       //if (ImGui::CollapsingHeader("Spot Light2"))
-//    //       //{
-//    //       //    ImGui::PushID("spotLight2");
-//    //       //    showLightEditor(*spotLight2);
-//    //       //    ImGui::PopID();
-//    //       //}
-//    //   }
-//    //   
-//    //    
-//    //    ImGui::End();
-//    //}
-//
-//    // 3. Show another simple window.
-//    if (show_another_window)
-//    {
-//        ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
-//        ImGui::Text("Hello from another window!");
-//        if (ImGui::Button("Close Me"))
-//            show_another_window = false;
-//        ImGui::End();
-//    }
-//}
 
 void imgui_end()
 {

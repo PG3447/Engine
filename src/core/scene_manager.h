@@ -12,7 +12,6 @@ private:
 public:
     SceneManager() = default;
 
-    // Tworzy now� scen� i dodaje do managera
     Scene* CreateScene(const std::string& name, ECS& ecs) {
         auto scene = std::make_unique<Scene>(ecs);
         Scene* ptr = scene.get();
@@ -21,16 +20,13 @@ public:
         return ptr;
     }
 
-    // Aktywuje scen� o danej nazwie
     void SetActiveScene(const std::string& name) {
         auto it = scenes.find(name);
         if (it != scenes.end()) activeScene = it->second.get();
     }
 
-    // Pobiera aktywn� scen�
     Scene* GetActiveScene() { return activeScene; }
 
-    // Update wywo�uje update tylko aktywnej sceny
     void Update(float deltaTime) {
         if (activeScene) activeScene->Update(deltaTime);
     }
