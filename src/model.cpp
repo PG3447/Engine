@@ -3,7 +3,8 @@
 #endif
 
 #include "model.h"
-#include "mesh.h"
+#include "mesh_data.h"
+#include "render_mesh.h"
 #include "shader.h"
 
 #include <stb_image.h>
@@ -43,15 +44,14 @@ Model::Model(string const& path, float meshScale, bool gamma) : meshScale(meshSc
 
 void Model::PrepareInstancing()
 {
-    if (instancingPrepared)
-        return;
+    if (instancingPrepared) return;
 
     if (instanceVBO == 0) {
         glGenBuffers(1, &instanceVBO);
     }
 
-    for (auto& mesh : meshes) {
-        mesh.EnableInstancing(instanceVBO);
+    for (auto& node : nodes) {
+        node.gpuMesh->EnableInstancing(instanceVBO);
     }
 
     instancingPrepared = true;
@@ -59,21 +59,26 @@ void Model::PrepareInstancing()
 
 
 // draws the model, and thus all its meshes
-void Model::Draw(Shader& shader, GLsizei instanceCount, Material* materialOverride)
+void Model::Draw(GLsizei instanceCount, Material* materialOverride)
 {
-    for (unsigned int i = 0; i < meshes.size(); i++)
+    for (auto& node : nodes)
     {
-        meshes[i].Draw(shader, instanceCount, materialOverride);
+        Material* activeMaterial = materialOverride ? materialOverride : node.material.get();
+        if (activeMaterial) {
+            activeMaterial->Apply();
+        }
+
+        node.gpuMesh->Draw(instanceCount);
     }
 }
 
 void Model::turnOnReflect(unsigned int cubemapTexture)
 {
-    for (unsigned int i = 0; i < meshes.size(); i++)
-    {
-        meshes[i].reflect = true;
-        meshes[i].cubemapTexture = cubemapTexture;
-    }
+    //for (unsigned int i = 0; i < meshes.size(); i++)
+    //{
+    //    meshes[i].reflect = true;
+    //    meshes[i].cubemapTexture = cubemapTexture;
+    //}
 }
 
 void Model::loadModel(string const& path)
@@ -98,7 +103,7 @@ void Model::loadModel(string const& path)
 
     // Pobieramy drzewo z korzenia
     Model rootNode = processNode(scene->mRootNode, scene);
-    this->meshes = std::move(rootNode.meshes);
+    this->nodes = std::move(rootNode.nodes);
     this->children = std::move(rootNode.children);
     this->transform = rootNode.transform;
 }
@@ -123,11 +128,11 @@ Model Model::processNode(aiNode* node, const aiScene* scene)
     //model.transform.setLocalRotation({ glm::degrees(rot.x), glm::degrees(rot.y), glm::degrees(rot.z) });
     model.transform.setLocalScale({ scale.x, scale.y, scale.z });
 
-    model.meshes.reserve(node->mNumMeshes);
+    model.nodes.reserve(node->mNumMeshes);
     for (unsigned int i = 0; i < node->mNumMeshes; i++)
     {
         aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-        model.meshes.push_back(processMesh(mesh, scene));
+        model.nodes.push_back(processMesh(mesh, scene));
     }
 
     model.children.reserve(node->mNumChildren);
@@ -139,7 +144,7 @@ Model Model::processNode(aiNode* node, const aiScene* scene)
     return model;
 }
 
-Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
+MeshNode Model::processMesh(aiMesh* mesh, const aiScene* scene)
 {
     // data to fill
     vector<Vertex> vertices;
@@ -204,7 +209,20 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 
     // diffuse
     vector<Texture> diffuseMaps = loadMaterialTextures(aiMat, aiTextureType_DIFFUSE, "texture_diffuse", scene);
-    if (!diffuseMaps.empty()) myMaterial->diffuseMap = diffuseMaps[0].id;
+    if (diffuseMaps.empty()) {
+        diffuseMaps = loadMaterialTextures(aiMat, aiTextureType_BASE_COLOR, "texture_diffuse", scene);
+    }
+    if (!diffuseMaps.empty()) {
+        myMaterial->diffuseMap = diffuseMaps[0].id;
+    }
+    else {
+        aiColor4D color(1.0f, 1.0f, 1.0f, 1.0f);
+        if (aiGetMaterialColor(aiMat, AI_MATKEY_BASE_COLOR, &color) == AI_SUCCESS ||
+            aiGetMaterialColor(aiMat, AI_MATKEY_COLOR_DIFFUSE, &color) == AI_SUCCESS)
+        {
+            myMaterial->diffuseColor = glm::vec3(color.r, color.g, color.b);
+        }
+    }
 
     // specular
     vector<Texture> specularMaps = loadMaterialTextures(aiMat, aiTextureType_SPECULAR, "texture_specular", scene);
@@ -212,6 +230,9 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 
     // normal
     vector<Texture> normalMaps = loadMaterialTextures(aiMat, aiTextureType_HEIGHT, "texture_normal", scene);
+    if (normalMaps.empty()) {
+        normalMaps = loadMaterialTextures(aiMat, aiTextureType_NORMALS, "texture_normal", scene);
+    }
     if (!normalMaps.empty()) myMaterial->normalMap = normalMaps[0].id;
 
     // float shininess;
@@ -219,9 +240,30 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
     //     myMaterial->shininess = shininess;
     // }
 
-    return Mesh(vertices, indices, myMaterial);
+    std::shared_ptr<MeshData> cpuData = std::make_shared<MeshData>();
+    cpuData->vertices = std::move(vertices);
+    cpuData->indices = std::move(indices);
+
+    // Wysy³amy dane na GPU
+    std::shared_ptr<RenderMesh> gpuMesh = std::make_shared<RenderMesh>(*cpuData);
+
+    // Spinamy wszystko w wêze³
+    MeshNode node;
+    node.cpuData = cpuData;
+    node.gpuMesh = gpuMesh;
+    node.material = myMaterial;
+
+    return node;
 }
 
+void Model::SetShader(Shader* shader)
+{
+    for (auto& node : nodes) {
+        if (node.material) {
+            node.material->shader = shader;
+        }
+    }
+}
 
 // checks all material textures of a given type and loads the textures if they're not loaded yet.
 // the required info is returned as a Texture struct.
@@ -236,16 +278,14 @@ vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType type,
 
         Texture texture;
 
-        if (str.C_Str()[0] == '*' && scene) // embedded texture
+        const aiTexture* embeddedTexture = scene->GetEmbeddedTexture(str.C_Str());
+
+        if (embeddedTexture)
         {
-            int texIndex = atoi(str.C_Str() + 1);
-            aiTexture* aiTex = scene->mTextures[texIndex];
-            // U¿ywamy Resource Managera!
-            texture.id = ResourceManager::LoadTexture(str.C_Str(), "", aiTex);
+            texture.id = ResourceManager::LoadTexture(str.C_Str(), "", embeddedTexture);
         }
-        else // normalna tekstura z pliku
+        else
         {
-            // U¿ywamy Resource Managera!
             texture.id = ResourceManager::LoadTexture(str.C_Str(), this->directory);
         }
 
@@ -255,6 +295,7 @@ vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType type,
     }
     return textures;
 }
+
 //
 //
 //std::unique_ptr<Model> Model::createOrbit(float radius, int segments, float tiltDegrees, float scale, vector<Texture>* textures)

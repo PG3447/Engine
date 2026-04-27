@@ -27,27 +27,13 @@ GLuint ResourceManager::LoadTexture(const std::string& path, const std::string& 
     if (it != Textures.end())
     {
         return it->second;
-        // czy tekstura nadal zyje w VRAM
-        //if (std::shared_ptr<unsigned int> sharedTex = it->second.lock())
-        //{
-        //    return sharedTex;
-        //}
     }
 
-    // Jesli nie ma, ladujemy z dysku
     GLuint textureID = loadTextureFromFile(path, directory, aiTex);
-    //unsigned int rawTextureID = loadTextureFromFile(path, directory, aiTex);
 
-    // gdy wskaznik ginie, automatyczine wykonuje funkcje glDeleteTextures
-    //std::shared_ptr<unsigned int> textureID(new unsigned int(rawTextureID), [](unsigned int* ptr) {
-    //    glDeleteTextures(1, ptr);
-    //    delete ptr;
-    //    spdlog::info("Zwolniono pamiec VRAM po nieuzywanej teksturze!");
-    //    });
-    //
-    //if (rawTextureID != 0) {
-    //    Textures[fullPath] = textureID;
-    //}
+    if (textureID != 0) {
+        Textures[fullPath] = textureID;
+    }
 
     return textureID;
 }

@@ -10,7 +10,9 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
-#include <mesh.h>
+#include "mesh_data.h"
+#include "render_mesh.h"
+#include "material.h"
 #include <shader.h>
 #include <transform.h>
 
@@ -23,6 +25,18 @@
 
 using namespace std;
 
+struct MeshNode {
+    std::shared_ptr<MeshData> cpuData;
+    std::shared_ptr<RenderMesh> gpuMesh;
+    std::shared_ptr<Material> material;
+};
+
+struct Texture {
+    unsigned int id;
+    std::string type;
+    std::string path;
+};
+
 class Model
 {
 public:
@@ -33,7 +47,7 @@ public:
     Model& operator=(Model&&) = default;
 
     // model data 
-    vector<Mesh> meshes;
+    std::vector<MeshNode> nodes;
     Transform transform;
     vector<Model> children;
     string name;
@@ -48,7 +62,7 @@ public:
 
     void PrepareInstancing();
 
-    void Draw(Shader& shader, GLsizei instanceCount = 0, Material* materialOverride = nullptr);
+    void Draw(GLsizei instanceCount = 0, Material* materialOverride = nullptr);
 
     static std::unique_ptr<Model> createOrbit(float radius, int segments = 100, float tiltDegrees = 0.0f, float scale = 1.0f, vector<Texture>* textures = nullptr);
 
@@ -56,7 +70,17 @@ public:
 
     void turnOnReflect(unsigned int cubemapTexture);
 
-    Mesh processMesh(aiMesh* mesh, const aiScene* scene);
+    MeshNode processMesh(aiMesh* mesh, const aiScene* scene);
+
+    void SetShader(Shader* shader);
+
+    int GetTriangleCount() const {
+        int total = 0;
+        for (auto& node : nodes)
+            if (node.cpuData)
+                total += node.cpuData->indices.size() / 3;
+        return total;
+    }
 
 private:
     void loadModel(const std::string& path);
