@@ -10,6 +10,7 @@ input:
     move_down1: [GLFW_KEY_DOWN]
   mouse:
     move_right: [GLFW_MOUSE_BUTTON_LEFT]
+    right_click: [GLFW_MOUSE_BUTTON_RIGHT]
   gamepad:
     move_right:
       - {button: GLFW_GAMEPAD_BUTTON_SQUARE, id: 0}

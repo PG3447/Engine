@@ -106,6 +106,7 @@ float lastFrame = 0.0f;
 bool   show_demo_window = true;
 bool   show_another_window = false;
 bool wireframeMode = false;
+bool focused = false;
 int sphereRings = 10;
 int sphereSectors = 10;
 float sphereRadius = 1.0f;
@@ -201,6 +202,16 @@ void updateFPS(float deltaTime) {
     float fps = 1.0f / avg;
 
     spdlog::info("FPS: {}", fps);
+}
+
+void updateFocus() {
+    if (focused) {
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    }
+    if (!focused) {
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    }
+
 }
 
 
@@ -395,8 +406,8 @@ int main(int, char**)
     bad2Model      = std::make_unique<Prefab>("res/models/obiekty_bad2.glb");
     bad3Model      = std::make_unique<Prefab>("res/models/obiekty_bad3.glb");
     papersModel    = std::make_unique<Prefab>("res/models/papers.glb");
-    bossModel      = std::make_unique<Prefab>("res/models/placehoolder_boss.glb");
-    characterModel = std::make_unique<Prefab>("res/models/placehoolder_character.glb");
+    bossModel      = std::make_unique<Prefab>("res/models/placeholder_boss.glb");
+    characterModel = std::make_unique<Prefab>("res/models/placeholder_character.glb");
     vial1Model     = std::make_unique<Prefab>("res/models/probowka1.glb");
     vial2Model     = std::make_unique<Prefab>("res/models/probowka2.glb");
     vial3Model     = std::make_unique<Prefab>("res/models/probowka3.glb");
@@ -543,7 +554,10 @@ int main(int, char**)
     //createHouse();
     //startGroupInstanced(root.get());
 
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+    focused = true;
+    updateFocus();
+
 
     int test_score = 0;
     auto* t0 = obj->GetComponent<TransformComponent>();
@@ -573,6 +587,11 @@ int main(int, char**)
         //    transform->position.z);
         test_score++;
         sprite_4->text = "score: " + std::to_string(test_score);
+
+        if (ecs.GetSystem<HID>()->is_action_just_pressed("right_click")) {
+            focused = !focused;
+            updateFocus();
+        }
 
         sceneManager.Update(deltaTime);
 
@@ -690,128 +709,8 @@ void init_imgui()
 
 void compileShader()
 {
-
-
     spdlog::info("Success");
-
 }
-//
-//std::unique_ptr<Light> dircetLight;
-////std::unique_ptr<Light> pointLight;
-////std::unique_ptr<Light> spotLight;
-////std::unique_ptr<Light> spotLight2;
-//
-//std::unique_ptr<Model> emptyModel;
-//std::unique_ptr<Prefab> emptyModel1;
-//std::unique_ptr<Prefab> emptyModel2;
-//std::unique_ptr<Prefab> emptyModel3;
-//
-//
-//void createHouse()
-//{
-//    Entity* ground = groundModel->getEntitiesCreate(ourShader.get());
-//    ground->name = "podloze";
-//    ground->transform.setLocalScale(glm::vec3(100.0f));
-//    root->addChild(ground);
-//    
-//    emptyModel = std::make_unique<Model>();
-//    //emptyModel1 = std::make_unique<Prefab>("res/models/podloze.glb", 0.25f, false);
-//    //emptyModel2 = std::make_unique<Prefab>("res/models/podloze.glb", 1.0f, false);
-//    //emptyModel3 = std::make_unique<Prefab>("res/models/podloze.glb", 1.0f, false);
-//    //
-//    dircetLight = std::make_unique<Light>(Light::Directional);
-//    dircetLight->direction = glm::vec3(-0.3f, -1.0f, -0.1f);
-//    dircetLight->ambient  = glm::vec3(0.25f);
-//    dircetLight->diffuse = glm::vec3(0.85f);
-//    dircetLight->specular = glm::vec3(0.4f);
-//    //
-//    //pointLight = std::make_unique<Light>(Light::Point);
-//    //pointLight->index = 0;
-//    //pointLight->position = glm::vec3(-10.0f, 1.0f, -0.3f);
-//    //pointLight->ambient = glm::vec3(0.05f);
-//    //pointLight->diffuse = glm::vec3(0.8f);
-//    //pointLight->specular = glm::vec3(1.0f);
-//    //pointLight->constant = 1.0f;
-//    //pointLight->linear = 0.09f;
-//    //pointLight->quadratic = 0.032f;
-//
-//    //spotLight = std::make_unique<Light>(Light::Spot);
-//    //spotLight->index = 0;
-//    //spotLight->position = glm::vec3(-12.0f, 5.0f, 1.5f);
-//    //spotLight->direction = glm::vec3(-0.15f, -0.9f, -0.25f);
-//    //spotLight->ambient = glm::vec3(0.0f);
-//    //spotLight->diffuse = glm::vec3(1.0f);
-//    //spotLight->specular = glm::vec3(1.0f);
-//    //spotLight->constant = 1.0f;
-//    //spotLight->linear = 0.09f;
-//    //spotLight->quadratic = 0.032f;
-//    //spotLight->cutOff = glm::cos(glm::radians(12.5f));
-//    //spotLight->outerCutOff = glm::cos(glm::radians(15.0f));
-//
-//
-//    //spotLight2 = std::make_unique<Light>(Light::Spot);
-//    //spotLight2->index = 1;
-//    //spotLight2->position = glm::vec3(-2.0f, 5.0f, 1.5f);
-//    //spotLight2->direction = glm::vec3(-0.15f, -0.9f, -0.25f);
-//    //spotLight2->ambient = glm::vec3(0.0f);
-//    //spotLight2->diffuse = glm::vec3(1.0f);
-//    //spotLight2->specular = glm::vec3(1.0f);
-//    //spotLight2->constant = 1.0f;
-//    //spotLight2->linear = 0.09f;
-//    //spotLight2->quadratic = 0.032f;
-//    //spotLight2->cutOff = glm::cos(glm::radians(25.0f));
-//    //spotLight2->outerCutOff = glm::cos(glm::radians(30.0f));
-//
-//    
-//    Entity* directonalLight = root->addChild(emptyModel.get(), ourShader.get(), dircetLight.get());
-//    directonalLight->name = "directonalLight";
-//
-//    //Entity* pointLightEnt = emptyModel1->getEntitiesCreate(ourShader.get(), pointLight.get());
-//    //pointLightEnt->name = "pointLight";
-//    //root->addChild(pointLightEnt);
-//
-//    //Entity* spotLightEnt = emptyModel2->getEntitiesCreate(ourShader.get(), spotLight.get());
-//    //spotLightEnt->name = "spotLight";
-//    //root->addChild(spotLightEnt);
-//
-//    //Entity* spotLight2Ent = emptyModel3->getEntitiesCreate(ourShader.get(), spotLight2.get());
-//    //spotLight2Ent->name = "spotLight2";
-//    //root->addChild(spotLight2Ent);
-//    //
-//    // Wstępne obliczenie pozycji orbit
-//
-//    Entity* sun = sunModel->getEntitiesCreate(ourShader.get());
-//    sun->name = "sun";
-//    sun->transform.setLocalPosition(glm::vec3(0.0f, 10.0f, 0.0f));
-//    sun->transform.setLocalScale(glm::vec3(1.0f));
-//    root->addChild(sun);
-//    
-//    root->updateSelfAndChild();
-//}
-
-
-//void updateFollowCamera()
-//{
-//    if (!koparkaEntity) return;
-//
-//    Transform& t = koparkaEntity->transform;
-//
-//    glm::vec3 koparkaPos = t.getGlobalPosition();
-//    glm::vec3 back = -t.getForward();
-//
-//    glm::vec3 desiredPos =
-//        koparkaPos +
-//        back * cameraOffset.z +
-//        glm::vec3(0.0f, cameraOffset.y, 0.0f);
-//
-//
-//    camera.Position = glm::mix(camera.Position, desiredPos, 5.0f * deltaTime);
-//
-//    glm::vec3 lookTarget = koparkaPos + glm::vec3(0.0f, 5.0f, 0.0f);
-//    camera.Front = glm::normalize(lookTarget - camera.Position);
-//    camera.Right = glm::normalize(glm::cross(camera.Front, glm::vec3(0, 1, 0)));
-//    camera.Up = glm::normalize(glm::cross(camera.Right, camera.Front));
-//}
 
 
 void input()
@@ -823,7 +722,7 @@ void input()
     {
         glfwSetWindowShouldClose(window, true);
     }
-
+/*
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_2) == GLFW_PRESS) {
         if (!mouseMove) {
             firstMouse = true;
@@ -838,8 +737,8 @@ void input()
         }
         mouseMove = false;
     }
+    */
 
-//OLD INPUT ENDS HERE
 }
 
 
