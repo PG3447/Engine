@@ -46,6 +46,50 @@ public:
         float d;
     };
 
+    struct GpuQuery {
+        GLuint queries[2];
+        int current = 0;
+        float lastResult = 0.0f;  // cache wyniku
+
+        void begin() {
+            glBeginQuery(GL_TIME_ELAPSED, queries[current]);
+        }
+
+        void end() {
+            glEndQuery(GL_TIME_ELAPSED);
+        }
+
+        void nextFrame() {
+            int prev = current;
+            current = (current + 1) % 2;
+
+            // Wymuś odczyt — może lekko stallować ale zawsze aktualny
+            GLuint64 time = 0;
+            glGetQueryObjectui64v(queries[prev], GL_QUERY_RESULT, &time);
+            lastResult = time / 1000000.0f;
+        }
+
+        float getLastResult() const {
+            return lastResult;
+        }
+    };
+    GpuQuery gpuQuery;
+
+    struct RenderStats {
+        int drawCalls = 0;
+        int renderedObjects = 0;
+        int triangles = 0;
+        int stateChanges = 0;
+        float cullingTimeMs = 0.0f;
+        float drawSubmitTimeMs = 0.0f;
+
+        void Reset() {
+            drawCalls = renderedObjects = triangles = stateChanges = 0;
+            cullingTimeMs = drawSubmitTimeMs = 0.0f;
+        }
+    };
+    RenderStats stats;
+
     struct Frustum {
         Plane planes[6];
     };
@@ -123,6 +167,20 @@ public:
     void Init() {
         glEnable(GL_DEPTH_TEST);
         skybox.Init();
+
+        glGenQueries(2, gpuQuery.queries);
+
+        for (int i = 0; i < 2; i++) {
+            glBeginQuery(GL_TIME_ELAPSED, gpuQuery.queries[i]);
+            glEndQuery(GL_TIME_ELAPSED);
+        }
+
+        GLuint available = 0;
+        while (!available) {
+            glGetQueryObjectuiv(gpuQuery.queries[0],
+                               GL_QUERY_RESULT_AVAILABLE,
+                               &available);
+        }
     }
 
     void OnGameObjectUpdated(GameObject* e) override {
@@ -137,26 +195,19 @@ public:
     }
 
     void Update(ECS& ecs) override {
+        stats.Reset();
+        gpuQuery.begin();
 
         // OpenGL Rendering code goes here
         glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        //bind texture
-        //glActiveTexture(GL_TEXTURE0);
-        //glBindTexture(GL_TEXTURE_2D, texture);
-
         BuildGroups();
 
         RenderAllCameras();
 
-        //BuildGroups();
-        //UpdateCamera();
-        //RenderGroups();
-
-        //glBindVertexArray(0);
-
-        //skybox.Render(view, projection);
+        gpuQuery.end();
+        gpuQuery.nextFrame();
     }
     void ApplyViewport(const Viewport& vp, int w, int h)
     {
@@ -228,6 +279,8 @@ public:
             Material* overrideMat = std::get<2>(key);
 
             std::vector<size_t> visible;
+            // Culling
+            auto cullStart = std::chrono::high_resolution_clock::now();
             for (size_t i : indices)
             {
                 glm::vec3 pos = glm::vec3(transforms[i]->modelMatrix[3]);
@@ -238,6 +291,9 @@ public:
                     visible.push_back(i);
                 }
             }
+            auto cullEnd = std::chrono::high_resolution_clock::now();
+            stats.cullingTimeMs += std::chrono::duration<float, std::milli>(cullEnd - cullStart).count();
+
 
             if (visible.empty())
                 continue;
@@ -255,11 +311,25 @@ public:
             if (visible.size() == 1) {
                 shader->setBool("useInstance", false);
                 shader->setMat4("model", transforms[visible[0]]->modelMatrix);
+                auto drawStart = std::chrono::high_resolution_clock::now();
                 model->Draw(0, overrideMat);
+                stats.drawCalls++;
+                stats.renderedObjects += visible.size();
+                stats.stateChanges++;
+                stats.triangles += model->GetTriangleCount() * visible.size();
+                auto drawEnd = std::chrono::high_resolution_clock::now();
+                stats.drawSubmitTimeMs += std::chrono::duration<float, std::milli>(drawEnd - drawStart).count();
             }
             else {
                 shader->setBool("useInstance", true);
+                auto drawStart = std::chrono::high_resolution_clock::now();
                 RenderInstanced(model, visible, overrideMat);
+                auto drawEnd = std::chrono::high_resolution_clock::now();
+                stats.drawSubmitTimeMs += std::chrono::duration<float, std::milli>(drawEnd - drawStart).count(); // ← dodaj
+                stats.drawCalls++;
+                stats.renderedObjects += (int)visible.size();
+                stats.stateChanges++;
+                stats.triangles += model->GetTriangleCount() * (int)visible.size();
             }
         }
     }

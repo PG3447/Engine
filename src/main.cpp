@@ -41,6 +41,8 @@
 #include <systems/physics_system.h>
 #include <systems/transform_system.h>
 #include <systems/SpriteSystem.h>
+
+#include "diagnostics/cpu_timer.h"
 #include "utils/render_helper.h"
 
 
@@ -188,6 +190,15 @@ std::unique_ptr<Shader> triangleShader;
 const int MAX_SAMPLES = 100;
 float frameTimes[MAX_SAMPLES];
 int index = 0;
+
+struct PerformanceData {
+    float cpuFrameTime = 0.0f;
+    float logicTime = 0.0f;
+    float inputTime = 0.0f;
+};
+PerformanceData perf;
+RenderSystem * renderSystem = nullptr;
+
 
 void updateFPS(float deltaTime) {
     frameTimes[index] = deltaTime;
@@ -532,14 +543,6 @@ int main(int, char**)
     model35 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
     placeholderThing += 10;
 
-    
-
-    //CameraComponent* cam = obj2->AddComponent<CameraComponent>();
-    //cam->camera.Position = glm::vec3(0, 50, 15);
-    //cam->camera.Yaw = -90.0f;
-    //cam->camera.Pitch = -10.0f;
-    //cam->camera.updateCameraVectors();
-
     sceneManager.Update(16);
 
     spdlog::info("Scena git.");
@@ -554,6 +557,7 @@ int main(int, char**)
     auto* t0 = obj->GetComponent<TransformComponent>();
     auto* t1 = obj2->GetComponent<TransformComponent>();
 
+    renderSystem = ecs.GetSystem<RenderSystem>();
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
@@ -561,7 +565,22 @@ int main(int, char**)
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
         updateFPS(deltaTime);
+        //spdlog::info("GameObject position: x={}, y={}, z={}",
+        //    transform->position.x,
+        //    transform->position.y,
+        //    transform->position.z);
+        test_score++;
+        sprite_4->text = "score: " + std::to_string(test_score);
 
+        CpuTimer cpuTimer;
+        cpuTimer.start();
+
+        // --- CPU WORK START ---
+
+        auto inputStart = std::chrono::high_resolution_clock::now();
+
+        // Process I/O operations here
+        input();
 
         processCameraInput(ecs, *camCompLeft, *t0,
     "move_up", "move_down", "move_left", "move_right");
@@ -572,20 +591,16 @@ int main(int, char**)
         processCameraMouse(ecs, *camCompLeft);
         processCameraGamepad(ecs, *camCompLeft, *t0, 0);
         processCameraGamepad(ecs, *camCompRight, *t1, 1);
-        //spdlog::info("GameObject position: x={}, y={}, z={}",
-        //    transform->position.x,
-        //    transform->position.y,
-        //    transform->position.z);
-        test_score++;
-        sprite_4->text = "score: " + std::to_string(test_score);
 
+        auto inputEnd = std::chrono::high_resolution_clock::now();
+
+
+        auto logicStart = std::chrono::high_resolution_clock::now();
         sceneManager.Update(deltaTime);
-
-        // Process I/O operations here
-        input();
-
         // Update game objects' state here
         update();
+
+        auto logicEnd = std::chrono::high_resolution_clock::now();
 
         // OpenGL rendering code here
         //render();
@@ -595,8 +610,22 @@ int main(int, char**)
         imgui_render(); // edit this function to add your own ImGui controls
         imgui_end(); // this call effectively renders ImGui
 
+        // --- CPU WORK END ---
+
+        cpuTimer.stop();
+
+        float cpuFrameTime = cpuTimer.getMilliseconds();
+
+        float logicTime = std::chrono::duration<float, std::milli>(logicEnd - logicStart).count();
+        float inputTime = std::chrono::duration<float, std::milli>(inputEnd - inputStart).count();
+
+        perf.cpuFrameTime = cpuFrameTime;
+        perf.logicTime = logicTime;
+        perf.inputTime = inputTime;
+
         // End frame and swap buffers (double buffering)
         end_frame();
+
     }
 
     // Cleanup
@@ -656,7 +685,6 @@ bool init()
         spdlog::error("Failed to initialize OpenGL loader!");
         return false;
     }
-
     return true;
 }
 
@@ -799,7 +827,36 @@ void imgui_render()
             wireframeMode ? GL_LINE : GL_FILL);
     }
 
-    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+    ImGui::Begin("Performance");
+
+    // FPS i frame time
+    ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
+    ImGui::Text("Frame time: %.3f ms", 1000.0f / ImGui::GetIO().Framerate);
+
+    // CPU breakdown
+    if (ImGui::CollapsingHeader("CPU")) {
+        ImGui::Text("Total CPU: %.3f ms", perf.cpuFrameTime);
+        ImGui::Text("Input:     %.3f ms", perf.inputTime);
+        ImGui::Text("Logic:     %.3f ms", perf.logicTime);
+        ImGui::Text("Culling:   %.3f ms", renderSystem->stats.cullingTimeMs);
+        ImGui::Text("Draw prep: %.3f ms", renderSystem->stats.drawSubmitTimeMs);
+    }
+    // GPU
+    if (ImGui::CollapsingHeader("GPU")) {
+        ImGui::Text("GPU Frame: %.3f ms", renderSystem->gpuQuery.getLastResult());
+    }
+
+    if (ImGui::CollapsingHeader("Render Stats")) {
+        ImGui::Text("Draw calls:   %d", renderSystem->stats.drawCalls);
+        ImGui::Text("Objects:      %d", renderSystem->stats.renderedObjects);
+        ImGui::Text("Triangles:    %d", renderSystem->stats.triangles);
+        ImGui::Text("State changes:%d", renderSystem->stats.stateChanges);
+    }
+    ImGui::PlotLines("Frame time", frameTimes, MAX_SAMPLES, index,
+                 nullptr, 0.0f, 1.0f, ImVec2(0, 60));
+
+    ImGui::End();
+
     ImGui::SliderFloat("rotation X", &rotationX, -480.0f, 480.0f);
     ImGui::SliderFloat("rotation Y", &rotationY, -480.0f, 480.0f);
     ImGui::SliderFloat("Camera Distance", &cameraDistance, 5.0f, 1000.0f);

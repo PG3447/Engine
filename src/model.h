@@ -74,6 +74,14 @@ public:
 
     void SetShader(Shader* shader);
 
+    int GetTriangleCount() const {
+        int total = 0;
+        for (auto& node : nodes)
+            if (node.cpuData)
+                total += node.cpuData->indices.size() / 3;
+        return total;
+    }
+
 private:
     void loadModel(const std::string& path);
     Model processNode(aiNode* node, const aiScene* scene);
