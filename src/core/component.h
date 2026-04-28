@@ -137,6 +137,32 @@ struct ColliderComponent : Component {
 struct LightComponent : Component {
     static constexpr uint64_t ComponentBit = 1ull << 6;
 
+    enum LightType {
+        Directional = 0,
+        Point = 1,
+        Spot = 2
+    };
+
+    // wspólne
+    int index = 0;
+    bool isOn = true;
+    LightType type;
+
+    glm::vec3 ambient = glm::vec3(0.05f);
+    glm::vec3 diffuse = glm::vec3(1.0f);
+    glm::vec3 specular = glm::vec3(1.0f);
+
+    glm::vec3 position = glm::vec3(0.0f);
+    glm::vec3 direction = glm::vec3(0.0f, -1.0f, 0.0f);
+
+    // attenuation (Point / Spot)
+    float constant = 1.0f;
+    float linear = 0.09f;
+    float quadratic = 0.032f;
+
+    // Spot
+    float cutOff = glm::cos(glm::radians(12.5f));
+    float outerCutOff = glm::cos(glm::radians(17.5f));
 
 };
 
