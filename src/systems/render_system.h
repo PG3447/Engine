@@ -39,6 +39,7 @@ private:
     glm::mat4 projection;
     glm::mat4 view;
     glm::vec3 currentCameraPos;
+    glm::vec3 currentCameraFront;
 
 public:
     struct Plane {
@@ -244,6 +245,7 @@ public:
         Frustum frustum = ExtractFrustum(vp);
 
         currentCameraPos = transform.position;
+        currentCameraFront = cam.state.Front;
 
         RenderGroups(frustum);
 
@@ -307,6 +309,13 @@ public:
             shader->setVec3("dirLight.ambient", glm::vec3(0.2f, 0.2f, 0.2f));
             shader->setVec3("dirLight.diffuse", glm::vec3(0.8f, 0.8f, 0.8f));
             shader->setVec3("dirLight.specular", glm::vec3(1.0f, 1.0f, 1.0f));
+            shader->setVec3("spotLight.position",  currentCameraPos);
+shader->setVec3("spotLight.direction", currentCameraFront); // potrzebujesz front kamery
+shader->setFloat("spotLight.cutOff",   glm::cos(glm::radians(12.5f)));
+shader->setFloat("spotLight.outerCutOff", glm::cos(glm::radians(17.5f)));
+            shader->setVec3("spotLight.ambient",       glm::vec3(0.0f));        // latarka nie daje ambient
+            shader->setVec3("spotLight.diffuse",       glm::vec3(1.0f));        // biała latarka
+            shader->setVec3("spotLight.specular",      glm::vec3(1.0f));
 
             if (visible.size() == 1) {
                 shader->setBool("useInstance", false);

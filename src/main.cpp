@@ -280,10 +280,19 @@ int main(int, char**)
 
     ourShader = std::make_unique<Shader>("res/shaders/basic.vert", "res/shaders/basic.frag");
     ourShader->use();
+    auto phongShader = std::make_unique<Shader>(
+        "res/shaders/phong.vert",
+        "res/shaders/phong.frag"
+    );
+
+    phongShader->use();
+    phongShader->setInt("material.diffuse",  0);
+    phongShader->setInt("material.specular", 1);
+    phongShader->setFloat("material.shininess", 64.0f);
 
     groundModel = std::make_unique<Prefab>("res/models/podloze.glb");
     sunModel = std::make_unique<Prefab>("res/models/Sun.glb");
-    GameObject* obb = groundModel->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* obb = groundModel->Instantiate(*scena1, nullptr, phongShader.get());
     //GameObject* obb2 = sunModel->Instantiate(*scena1, nullptr, ourShader.get());
  
 
@@ -305,7 +314,7 @@ int main(int, char**)
     obb->GetComponent<RigidbodyComponent>()->useGravity = false;
     obb->GetComponent<RigidbodyComponent>()->isStatic = true;
 
-    GameObject* obb3 = sunModel->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* obb3 = sunModel->Instantiate(*scena1, nullptr, phongShader.get());
     obb3->GetComponent<TransformComponent>()->scale = glm::vec3(25.0f);
     obb3->GetComponent<TransformComponent>()->position = glm::vec3(75.0f, 250.0f, 0.0f);
 
@@ -426,17 +435,17 @@ int main(int, char**)
     zaslonaModel   = std::make_unique<Prefab>("res/models/zaslona.glb");
 
 
-    GameObject* model1 = bed1Model->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model2 = bed2Model->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model3 = bed3Model->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model4 = corkBoardModel->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model5 = cupModel      ->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model6 = deskModel     ->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model7 = doorsModel    ->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model8 = folderModel   ->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model9 = krzesloModel  ->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* model1 = bed1Model->Instantiate(*scena1, nullptr, phongShader.get());
+    GameObject* model2 = bed2Model->Instantiate(*scena1, nullptr, phongShader.get());
+    GameObject* model3 = bed3Model->Instantiate(*scena1, nullptr, phongShader.get());
+    GameObject* model4 = corkBoardModel->Instantiate(*scena1, nullptr, phongShader.get());
+    GameObject* model5 = cupModel      ->Instantiate(*scena1, nullptr, phongShader.get());
+    GameObject* model6 = deskModel     ->Instantiate(*scena1, nullptr, phongShader.get());
+    GameObject* model7 = doorsModel    ->Instantiate(*scena1, nullptr, phongShader.get());
+    GameObject* model8 = folderModel   ->Instantiate(*scena1, nullptr, phongShader.get());
+    GameObject* model9 = krzesloModel  ->Instantiate(*scena1, nullptr, phongShader.get());
     //GameObject* model10 =ksiazkaModel  ->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model11 =lampa1Model   ->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* model11 =lampa1Model   ->Instantiate(*scena1, nullptr, phongShader.get());
     GameObject* model12 =lampa2Model   ->Instantiate(*scena1, nullptr, ourShader.get());
     GameObject* model13 =lampa3Model   ->Instantiate(*scena1, nullptr, ourShader.get());
     GameObject* model14 =needleModel   ->Instantiate(*scena1, nullptr, ourShader.get());
