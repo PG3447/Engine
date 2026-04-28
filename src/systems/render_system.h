@@ -8,6 +8,7 @@
 #include <GLFW/glfw3.h>
 #include "skybox_renderer.h"
 #include "../utils/camera_helper.h"
+#include "../utils/light_helper.h"
 
 
 
