@@ -439,7 +439,7 @@ int main(int, char**)
     roomModel = std::make_unique<Prefab>("res/models/room.glb");
 
 
-    GameObject* model1 = bed1Model->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model1 = bed1Model->Instantiate(*scena1, nullptr, ourShader.get());
     //GameObject* model2 = bed2Model->Instantiate(*scena1, nullptr, ourShader.get());
     //GameObject* model3 = bed3Model->Instantiate(*scena1, nullptr, ourShader.get());
     //GameObject* model4 = corkBoardModel->Instantiate(*scena1, nullptr, ourShader.get());
@@ -467,7 +467,7 @@ int main(int, char**)
     //GameObject* model26 =vial61Model   ->Instantiate(*scena1, nullptr, ourShader.get());
     //GameObject* model27 =vial7Model    ->Instantiate(*scena1, nullptr, ourShader.get());
     //GameObject* model28 =sinkModel     ->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model29 =szafa1Model   ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model29 =szafa1Model   ->Instantiate(*scena1, nullptr, ourShader.get());
     //GameObject* model30 =szafa2Model   ->Instantiate(*scena1, nullptr, ourShader.get());
     //GameObject* model31 =szafa3Model   ->Instantiate(*scena1, nullptr, ourShader.get());
     //GameObject* model32 =telephoneModel->Instantiate(*scena1, nullptr, ourShader.get());
@@ -477,16 +477,16 @@ int main(int, char**)
 
     GameObject* roomObj = roomModel->Instantiate(*scena1, nullptr, ourShader.get());
 
-    RenderHelper::SetMaterial(model29, brickMat);
+    //RenderHelper::SetMaterial(model29, brickMat);
 
-    model1  ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    //model1  ->GetComponent<TransformComponent>()->position.x = placeholderThing;
 
-    model1->AddComponent<RigidbodyComponent>();
-    model1->AddComponent<ColliderComponent>();
+    //model1->AddComponent<RigidbodyComponent>();
+    //model1->AddComponent<ColliderComponent>();
     
-    model1->GetComponent<RigidbodyComponent>()->useGravity = true;
-    model1->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 1, 1 };
-    model1->GetComponent<TransformComponent>()->position.y = 150;
+    //model1->GetComponent<RigidbodyComponent>()->useGravity = true;
+    //model1->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 1, 1 };
+    //model1->GetComponent<TransformComponent>()->position.y = 150;
 
     //placeholderThing += 10;
     //model2  ->GetComponent<TransformComponent>()->position.x = placeholderThing;
