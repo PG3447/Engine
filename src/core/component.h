@@ -133,4 +133,12 @@ struct ColliderComponent : Component {
     bool isTrigger = false;
 };
 
+
+struct LightComponent : Component {
+    static constexpr uint64_t ComponentBit = 1ull << 6;
+
+
+};
+
+
 #endif
