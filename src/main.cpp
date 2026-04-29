@@ -128,6 +128,9 @@ GLuint VAO;
 GLuint texture;
 std::unique_ptr<Prefab> sunModel;
 std::unique_ptr<Shader> ourShader;
+std::unique_ptr<Shader> shaderLambert;
+std::unique_ptr<Shader> shaderPhong;
+std::unique_ptr<Shader> shaderBlinn;
 //std::unique_ptr<Shader> sphereShader;
 std::unique_ptr<Shader> skyboxShader;
 std::unique_ptr<Shader> reflectShader;
@@ -292,6 +295,14 @@ int main(int, char**)
     ourShader = std::make_unique<Shader>("res/shaders/basic.vert", "res/shaders/basic.frag");
     ourShader->use();
 
+    shaderBlinn = std::make_unique<Shader>("res/shaders/basic.vert", "res/shaders/blinn.frag");
+    shaderBlinn->use();
+    shaderLambert = std::make_unique<Shader>("res/shaders/basic.vert", "res/shaders/lambert.frag");
+    shaderLambert->use();
+    shaderPhong = std::make_unique<Shader>("res/shaders/basic.vert", "res/shaders/phong.frag");
+    shaderPhong->use();
+
+
     groundModel = std::make_unique<Prefab>("res/models/podloze.glb");
     sunModel = std::make_unique<Prefab>("res/models/Sun.glb");
     GameObject* obb = groundModel->Instantiate(*scena1, nullptr, ourShader.get());
@@ -438,10 +449,10 @@ int main(int, char**)
 
 
     GameObject* model1 = bed1Model->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model2 = bed2Model->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model3 = bed3Model->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* model2 = bed2Model->Instantiate(*scena1, nullptr, shaderBlinn.get());
+    GameObject* model3 = bed3Model->Instantiate(*scena1, nullptr, shaderLambert.get());
     GameObject* model4 = corkBoardModel->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model5 = cupModel      ->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* model5 = cupModel      ->Instantiate(*scena1, nullptr, shaderPhong.get());
     GameObject* model6 = deskModel     ->Instantiate(*scena1, nullptr, ourShader.get());
     GameObject* model7 = doorsModel    ->Instantiate(*scena1, nullptr, ourShader.get());
     GameObject* model8 = folderModel   ->Instantiate(*scena1, nullptr, ourShader.get());
@@ -471,7 +482,7 @@ int main(int, char**)
     GameObject* model32 =telephoneModel->Instantiate(*scena1, nullptr, ourShader.get());
     GameObject* model33 =toiletModel   ->Instantiate(*scena1, nullptr, ourShader.get());
     GameObject* model34 =wozekModel    ->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model35 =zaslonaModel  ->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* model35 =zaslonaModel  ->Instantiate(*scena1, nullptr, shaderBlinn.get());
 
     RenderHelper::SetMaterial(model29, brickMat);
 
