@@ -247,30 +247,11 @@ public:
         Frustum frustum = ExtractFrustum(vp);
 
         currentCameraPos = transform.position;
-        Light();
         RenderGroups(frustum);
 
         glBindVertexArray(0);
 
         skybox.Render(view, projection);
-    }
-    
-    void Light() {
-        auto& renderers = std::get<1>(renderQuery->componentsVectors);
-        
-        auto& transforms = std::get<0>(lightQuery->componentsVectors);
-        auto& lights = std::get<1>(lightQuery->componentsVectors);
-
-
-        for (size_t i = 0; i < renderQuery->gameobjects.size(); i++) {
-
-            for (size_t j = 0; j < lightQuery->gameobjects.size(); j++) {
-
-                LightHelper::Apply(*transforms[j], *lights[j], *renderers[i]->materialOverride->shader);
-            }
-        }
-        
-     
     }
 
     void BuildGroups() {
@@ -294,6 +275,11 @@ public:
 
     void RenderGroups(const Frustum& frustum) {
         auto& transforms = std::get<0>(renderQuery->componentsVectors);
+
+        auto& transformsLights = std::get<0>(lightQuery->componentsVectors);
+        auto& lights = std::get<1>(lightQuery->componentsVectors);
+
+
         for (auto& [key, indices] : instancedGroups) {
             Model* model = std::get<0>(key);
             Material* overrideMat = std::get<1>(key);
@@ -324,7 +310,13 @@ public:
             shader->setMat4("view", view);
 
             shader->setVec3("viewPos", currentCameraPos);
-      
+            
+            // light
+            for (size_t i = 0; i < lightQuery->gameobjects.size(); i++)
+            {
+                LightHelper::Apply(*transforms[i], *lights[i], *shader);
+            }
+
             //shader->setVec3("dirLight.direction", glm::vec3(-0.2f, -1.0f, -0.3f));
             //shader->setVec3("dirLight.ambient", glm::vec3(0.2f, 0.2f, 0.2f));
             //shader->setVec3("dirLight.diffuse", glm::vec3(0.8f, 0.8f, 0.8f));
