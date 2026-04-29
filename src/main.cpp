@@ -312,15 +312,15 @@ int main(int, char**)
     shaderPhong->use();
 
 
-    groundModel = std::make_unique<Prefab>("res/models/podloze.glb");
+    //groundModel = std::make_unique<Prefab>("res/models/podloze.glb");
     sunModel = std::make_unique<Prefab>("res/models/Sun.glb");
-    GameObject* obb = groundModel->Instantiate(*scena1, nullptr, phongShader.get());
+    //GameObject* obb = groundModel->Instantiate(*scena1, nullptr, phongShader.get());
     //GameObject* obb2 = sunModel->Instantiate(*scena1, nullptr, ourShader.get());
  
 
-    obb->GetComponent<TransformComponent>()->scale.x = 1;
-    obb->GetComponent<TransformComponent>()->scale.y = 1;
-    obb->GetComponent<TransformComponent>()->scale.z = 1;
+    //obb->GetComponent<TransformComponent>()->scale.x = 1;
+    //obb->GetComponent<TransformComponent>()->scale.y = 1;
+    //obb->GetComponent<TransformComponent>()->scale.z = 1;
 
 
    //obb2->GetComponent<TransformComponent>()->scale.x = 25;
@@ -328,13 +328,13 @@ int main(int, char**)
    //obb2->GetComponent<TransformComponent>()->scale.z = 25;
    //obb2->GetComponent<TransformComponent>()->position.y = 250;
 
-    obb->AddComponent<RigidbodyComponent>();
-    obb->AddComponent<ColliderComponent>();
+    //obb->AddComponent<RigidbodyComponent>();
+    //obb->AddComponent<ColliderComponent>();
 
 
 
-    obb->GetComponent<RigidbodyComponent>()->useGravity = false;
-    obb->GetComponent<RigidbodyComponent>()->isStatic = true;
+    //obb->GetComponent<RigidbodyComponent>()->useGravity = false;
+    //obb->GetComponent<RigidbodyComponent>()->isStatic = true;
 
     GameObject* obb3 = sunModel->Instantiate(*scena1, nullptr, phongShader.get());
     obb3->GetComponent<TransformComponent>()->scale = glm::vec3(25.0f);
@@ -466,9 +466,9 @@ int main(int, char**)
     GameObject* model8 = folderModel   ->Instantiate(*scena1, nullptr, ourShader.get());
     GameObject* model9 = krzesloModel  ->Instantiate(*scena1, nullptr, ourShader.get());
     //GameObject* model10 =ksiazkaModel  ->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model11 =lampa1Model   ->Instantiate(*scena1, nullptr, phongShader.get());
-    GameObject* model12 =lampa2Model   ->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model13 =lampa3Model   ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model11 =lampa1Model   ->Instantiate(*scena1, nullptr, phongShader.get());
+    //GameObject* model12 =lampa2Model   ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model13 =lampa3Model   ->Instantiate(*scena1, nullptr, ourShader.get());
     GameObject* model14 =needleModel   ->Instantiate(*scena1, nullptr, ourShader.get());
     GameObject* model15 =bad1Model     ->Instantiate(*scena1, nullptr, ourShader.get());
     GameObject* model16 =bad2Model     ->Instantiate(*scena1, nullptr, ourShader.get());
@@ -532,11 +532,11 @@ int main(int, char**)
     placeholderThing += 10;
     //model10 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
     placeholderThing += 10;
-    model11 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    //model11 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
     placeholderThing += 10;
-    model12 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    //model12 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
     placeholderThing += 10;
-    model13 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    //model13 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
     placeholderThing += 10;
     model14 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
     placeholderThing += 10;

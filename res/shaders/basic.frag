@@ -69,25 +69,20 @@ vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir);
 
 void main()
 {
-    //vec3 norm;
-    //if (material.hasNormalMap) {
-    //    vec3 normalFromMap = texture(material.normalMap, TexCoords).rgb;
-    //    normalFromMap = normalFromMap * 2.0 - 1.0;   
-    //    norm = normalize(TBN * normalFromMap); 
-    //} else {
-    //    norm = normalize(Normal);
-    //}
-    //
-    //vec3 viewDir = normalize(viewPos - FragPos);
-    
-    //vec3 result = CalcDirLight(dirLight, norm, viewDir);
-    
-     vec3 objColor = material.hasDiffuseMap ? vec3(texture(material.diffuse1, TexCoords)) : material.diffuseColor;
+    vec3 norm;
+    if (material.hasNormalMap) {
+        vec3 normalFromMap = texture(material.normalMap, TexCoords).rgb;
+        normalFromMap = normalFromMap * 2.0 - 1.0;
+        norm = normalize(TBN * normalFromMap);
+    } else {
+        norm = normalize(Normal);
+    }
 
-    vec3 ambient = dirLight.ambient * objColor;
+    vec3 viewDir = normalize(viewPos - FragPos);
 
-     FragColor = vec4(ambient, 1.0);
-    //FragColor = vec4(result, 1.0);
+    vec3 result = CalcDirLight(dirLight, norm, viewDir);
+
+    FragColor = vec4(result, 1.0);
 }
 
 vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir)
@@ -95,9 +90,11 @@ vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir)
     vec3 lightDir = normalize(-light.direction);
     // diffuse shading
     float diff = max(dot(normal, lightDir), 0.0);
-    // specular shading
+    float levels = 3.0;
+    diff = floor(diff * levels) / levels;
     vec3 halfDir = normalize(lightDir + viewDir);
     float spec = pow(max(dot(normal, halfDir), 0.0), material.shininess);
+    spec = floor(spec * 2.0) / 2.0;
     // combine results
     vec3 objColor = material.hasDiffuseMap ? vec3(texture(material.diffuse1, TexCoords)) : material.diffuseColor;
     vec3 ambient = light.ambient * objColor;
