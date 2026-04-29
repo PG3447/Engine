@@ -90,9 +90,12 @@ vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir)
     vec3 lightDir = normalize(-light.direction);
     // diffuse shading
     float diff = max(dot(normal, lightDir), 0.0);
-    // specular shading
+    float levels = 3.0;
+    diff = floor(diff * levels) / levels;
+    // specular shading - opcjonalnie też możesz quantizować:
     vec3 halfDir = normalize(lightDir + viewDir);
     float spec = pow(max(dot(normal, halfDir), 0.0), material.shininess);
+    spec = floor(spec * 2.0) / 2.0;
     // combine results
     vec3 objColor = material.hasDiffuseMap ? vec3(texture(material.diffuse1, TexCoords)) : material.diffuseColor;
     vec3 ambient = light.ambient * objColor;
