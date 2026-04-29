@@ -69,20 +69,25 @@ vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir);
 
 void main()
 {
-    vec3 norm;
-    if (material.hasNormalMap) {
-        vec3 normalFromMap = texture(material.normalMap, TexCoords).rgb;
-        normalFromMap = normalFromMap * 2.0 - 1.0;   
-        norm = normalize(TBN * normalFromMap); 
-    } else {
-        norm = normalize(Normal);
-    }
+    //vec3 norm;
+    //if (material.hasNormalMap) {
+    //    vec3 normalFromMap = texture(material.normalMap, TexCoords).rgb;
+    //    normalFromMap = normalFromMap * 2.0 - 1.0;   
+    //    norm = normalize(TBN * normalFromMap); 
+    //} else {
+    //    norm = normalize(Normal);
+    //}
+    //
+    //vec3 viewDir = normalize(viewPos - FragPos);
+    
+    //vec3 result = CalcDirLight(dirLight, norm, viewDir);
+    
+     vec3 objColor = material.hasDiffuseMap ? vec3(texture(material.diffuse1, TexCoords)) : material.diffuseColor;
 
-    vec3 viewDir = normalize(viewPos - FragPos);
-    
-    vec3 result = CalcDirLight(dirLight, norm, viewDir);
-    
-    FragColor = vec4(result, 1.0);
+    vec3 ambient = dirLight.ambient * objColor;
+
+     FragColor = vec4(ambient, 1.0);
+    //FragColor = vec4(result, 1.0);
 }
 
 vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir)

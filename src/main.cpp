@@ -449,12 +449,12 @@ int main(int, char**)
 
 
     GameObject* model1 = bed1Model->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model2 = bed2Model->Instantiate(*scena1, nullptr, shaderBlinn.get());
+    GameObject* model2 = bed2Model->Instantiate(*scena1, nullptr, shaderLambert.get());
     GameObject* model3 = bed3Model->Instantiate(*scena1, nullptr, shaderLambert.get());
-    GameObject* model4 = corkBoardModel->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* model4 = corkBoardModel->Instantiate(*scena1, nullptr, shaderPhong.get());
     GameObject* model5 = cupModel      ->Instantiate(*scena1, nullptr, shaderPhong.get());
-    GameObject* model6 = deskModel     ->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model7 = doorsModel    ->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* model6 = deskModel     ->Instantiate(*scena1, nullptr, shaderBlinn.get());
+    GameObject* model7 = doorsModel    ->Instantiate(*scena1, nullptr, shaderBlinn.get());
     GameObject* model8 = folderModel   ->Instantiate(*scena1, nullptr, ourShader.get());
     GameObject* model9 = krzesloModel  ->Instantiate(*scena1, nullptr, ourShader.get());
     //GameObject* model10 =ksiazkaModel  ->Instantiate(*scena1, nullptr, ourShader.get());
