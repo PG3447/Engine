@@ -479,7 +479,17 @@ int main(int, char**)
 
     model1->AddComponent<RigidbodyComponent>();
     model1->AddComponent<ColliderComponent>();
+    model1->AddComponent<LightComponent>();
+
+
+    model1->GetComponent<LightComponent>()->type = Directional;
+    model1->GetComponent<LightComponent>()->index = 0;
+    model1->GetComponent<LightComponent>()->direction = glm::vec3(-0.3f, -1.0f, -0.1f);
+    model1->GetComponent<LightComponent>()->ambient =  glm::vec3(0.25f);
+    model1->GetComponent<LightComponent>()->diffuse = glm::vec3(0.85f);
+    model1->GetComponent<LightComponent>()->specular = glm::vec3(0.4f);
     
+
     model1->GetComponent<RigidbodyComponent>()->useGravity = true;
     model1->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 1, 1 };
     model1->GetComponent<TransformComponent>()->position.y = 150;

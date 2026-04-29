@@ -133,15 +133,16 @@ struct ColliderComponent : Component {
     bool isTrigger = false;
 };
 
+enum LightType {
+    Directional = 0,
+    Point = 1,
+    Spot = 2
+};
 
 struct LightComponent : Component {
     static constexpr uint64_t ComponentBit = 1ull << 6;
 
-    enum LightType {
-        Directional = 0,
-        Point = 1,
-        Spot = 2
-    };
+
 
     // wspólne
     int index = 0;
@@ -152,7 +153,7 @@ struct LightComponent : Component {
     glm::vec3 diffuse = glm::vec3(1.0f);
     glm::vec3 specular = glm::vec3(1.0f);
 
-    glm::vec3 position = glm::vec3(0.0f);
+    //glm::vec3 position = glm::vec3(0.0f);
     glm::vec3 direction = glm::vec3(0.0f, -1.0f, 0.0f);
 
     // attenuation (Point / Spot)

@@ -14,17 +14,17 @@
 
 class RenderSystem : public System {
 private:
-    using GroupKey = std::tuple<Model*, Shader*, Material*>;
+    using GroupKey = std::tuple<Model*, Material*>;
 
     struct group_hash {
         std::size_t operator()(const GroupKey& k) const {
             return std::hash<Model*>()(std::get<0>(k)) ^
-                (std::hash<Shader*>()(std::get<1>(k)) << 1) ^
-                (std::hash<Material*>()(std::get<2>(k)) << 2);
+                (std::hash<Material*>()(std::get<1>(k)) << 1);
         }
     };
 
     Query<TransformComponent, RenderComponent>* renderQuery;
+    Query<TransformComponent, LightComponent>* lightQuery;
     Query<TransformComponent, CameraComponent>* cameraQuery;
 
     std::unordered_map<GroupKey, std::vector<size_t>, group_hash> instancedGroups;
@@ -160,6 +160,7 @@ public:
     RenderSystem(ECS& ecs, GLFWwindow* win) : window(win)
     {
         renderQuery = ecs.CreateQuery<TransformComponent, RenderComponent>();
+        lightQuery = ecs.CreateQuery<TransformComponent, LightComponent>();
         cameraQuery = ecs.CreateQuery<TransformComponent, CameraComponent>();
 
         Init();
@@ -186,6 +187,7 @@ public:
 
     void OnGameObjectUpdated(GameObject* e) override {
         renderQuery->OnGameObjectUpdated(e); // forward do query
+        lightQuery->OnGameObjectUpdated(e);  // forward do query
         cameraQuery->OnGameObjectUpdated(e); // forward do query
 
         groupsDirty = true;
@@ -245,12 +247,30 @@ public:
         Frustum frustum = ExtractFrustum(vp);
 
         currentCameraPos = transform.position;
-
+        Light();
         RenderGroups(frustum);
 
         glBindVertexArray(0);
 
         skybox.Render(view, projection);
+    }
+    
+    void Light() {
+        auto& renderers = std::get<1>(renderQuery->componentsVectors);
+        
+        auto& transforms = std::get<0>(lightQuery->componentsVectors);
+        auto& lights = std::get<1>(lightQuery->componentsVectors);
+
+
+        for (size_t i = 0; i < renderQuery->gameobjects.size(); i++) {
+
+            for (size_t j = 0; j < lightQuery->gameobjects.size(); j++) {
+
+                LightHelper::Apply(*transforms[j], *lights[j], *renderers[i]->materialOverride->shader);
+            }
+        }
+        
+     
     }
 
     void BuildGroups() {
@@ -266,7 +286,7 @@ public:
                 r->model->SetShader(r->shader);
             }
 
-            GroupKey key = { r->model, r->shader, r->materialOverride.get() };
+            GroupKey key = { r->model, r->materialOverride.get() };
             instancedGroups[key].push_back(i);
         }
         groupsDirty = false;
@@ -276,8 +296,8 @@ public:
         auto& transforms = std::get<0>(renderQuery->componentsVectors);
         for (auto& [key, indices] : instancedGroups) {
             Model* model = std::get<0>(key);
-            Shader* shader = std::get<1>(key);
-            Material* overrideMat = std::get<2>(key);
+            Material* overrideMat = std::get<1>(key);
+            Shader* shader = overrideMat->shader;
 
             std::vector<size_t> visible;
             // Culling
@@ -304,10 +324,11 @@ public:
             shader->setMat4("view", view);
 
             shader->setVec3("viewPos", currentCameraPos);
-            shader->setVec3("dirLight.direction", glm::vec3(-0.2f, -1.0f, -0.3f));
-            shader->setVec3("dirLight.ambient", glm::vec3(0.2f, 0.2f, 0.2f));
-            shader->setVec3("dirLight.diffuse", glm::vec3(0.8f, 0.8f, 0.8f));
-            shader->setVec3("dirLight.specular", glm::vec3(1.0f, 1.0f, 1.0f));
+      
+            //shader->setVec3("dirLight.direction", glm::vec3(-0.2f, -1.0f, -0.3f));
+            //shader->setVec3("dirLight.ambient", glm::vec3(0.2f, 0.2f, 0.2f));
+            //shader->setVec3("dirLight.diffuse", glm::vec3(0.8f, 0.8f, 0.8f));
+            //shader->setVec3("dirLight.specular", glm::vec3(1.0f, 1.0f, 1.0f));
 
             if (visible.size() == 1) {
                 shader->setBool("useInstance", false);

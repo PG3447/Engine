@@ -77,6 +77,7 @@ private:
         auto* render = go->AddComponent<RenderComponent>();
         render->model = model;
         render->shader = shader;
+        render->materialOverride = std::make_shared<Material>(shader);
 
         // (opcjonalnie światło jeśli model ma)
         //if (model->hasLight) {
