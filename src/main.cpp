@@ -108,6 +108,7 @@ float lastFrame = 0.0f;
 bool   show_demo_window = true;
 bool   show_another_window = false;
 bool wireframeMode = false;
+bool focused = false;
 int sphereRings = 10;
 int sphereSectors = 10;
 float sphereRadius = 1.0f;
@@ -127,6 +128,9 @@ GLuint VAO;
 GLuint texture;
 std::unique_ptr<Prefab> sunModel;
 std::unique_ptr<Shader> ourShader;
+std::unique_ptr<Shader> shaderLambert;
+std::unique_ptr<Shader> shaderPhong;
+std::unique_ptr<Shader> shaderBlinn;
 //std::unique_ptr<Shader> sphereShader;
 std::unique_ptr<Shader> skyboxShader;
 std::unique_ptr<Shader> reflectShader;
@@ -214,6 +218,16 @@ void updateFPS(float deltaTime) {
     spdlog::info("FPS: {}", fps);
 }
 
+void updateFocus() {
+    if (focused) {
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    }
+    if (!focused) {
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    }
+
+}
+
 
 void processCameraInput(ECS& ecs,CameraComponent& cam, TransformComponent& transform,
                        const std::string& up,
@@ -289,6 +303,14 @@ int main(int, char**)
     phongShader->setInt("material.diffuse",  0);
     phongShader->setInt("material.specular", 1);
     phongShader->setFloat("material.shininess", 64.0f);
+
+    shaderBlinn = std::make_unique<Shader>("res/shaders/basic.vert", "res/shaders/blinn.frag");
+    shaderBlinn->use();
+    shaderLambert = std::make_unique<Shader>("res/shaders/basic.vert", "res/shaders/lambert.frag");
+    shaderLambert->use();
+    shaderPhong = std::make_unique<Shader>("res/shaders/basic.vert", "res/shaders/phong.frag");
+    shaderPhong->use();
+
 
     groundModel = std::make_unique<Prefab>("res/models/podloze.glb");
     sunModel = std::make_unique<Prefab>("res/models/Sun.glb");
@@ -416,8 +438,8 @@ int main(int, char**)
     bad2Model      = std::make_unique<Prefab>("res/models/obiekty_bad2.glb");
     bad3Model      = std::make_unique<Prefab>("res/models/obiekty_bad3.glb");
     papersModel    = std::make_unique<Prefab>("res/models/papers.glb");
-    bossModel      = std::make_unique<Prefab>("res/models/placehoolder_boss.glb");
-    characterModel = std::make_unique<Prefab>("res/models/placehoolder_character.glb");
+    bossModel      = std::make_unique<Prefab>("res/models/placeholder_boss.glb");
+    characterModel = std::make_unique<Prefab>("res/models/placeholder_character.glb");
     vial1Model     = std::make_unique<Prefab>("res/models/probowka1.glb");
     vial2Model     = std::make_unique<Prefab>("res/models/probowka2.glb");
     vial3Model     = std::make_unique<Prefab>("res/models/probowka3.glb");
@@ -434,16 +456,15 @@ int main(int, char**)
     wozekModel     = std::make_unique<Prefab>("res/models/wozek.glb");
     zaslonaModel   = std::make_unique<Prefab>("res/models/zaslona.glb");
 
-
-    GameObject* model1 = bed1Model->Instantiate(*scena1, nullptr, phongShader.get());
-    GameObject* model2 = bed2Model->Instantiate(*scena1, nullptr, phongShader.get());
-    GameObject* model3 = bed3Model->Instantiate(*scena1, nullptr, phongShader.get());
-    GameObject* model4 = corkBoardModel->Instantiate(*scena1, nullptr, phongShader.get());
-    GameObject* model5 = cupModel      ->Instantiate(*scena1, nullptr, phongShader.get());
-    GameObject* model6 = deskModel     ->Instantiate(*scena1, nullptr, phongShader.get());
-    GameObject* model7 = doorsModel    ->Instantiate(*scena1, nullptr, phongShader.get());
-    GameObject* model8 = folderModel   ->Instantiate(*scena1, nullptr, phongShader.get());
-    GameObject* model9 = krzesloModel  ->Instantiate(*scena1, nullptr, phongShader.get());
+    GameObject* model1 = bed1Model->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* model2 = bed2Model->Instantiate(*scena1, nullptr, shaderLambert.get());
+    GameObject* model3 = bed3Model->Instantiate(*scena1, nullptr, shaderLambert.get());
+    GameObject* model4 = corkBoardModel->Instantiate(*scena1, nullptr, shaderPhong.get());
+    GameObject* model5 = cupModel      ->Instantiate(*scena1, nullptr, shaderPhong.get());
+    GameObject* model6 = deskModel     ->Instantiate(*scena1, nullptr, shaderBlinn.get());
+    GameObject* model7 = doorsModel    ->Instantiate(*scena1, nullptr, shaderBlinn.get());
+    GameObject* model8 = folderModel   ->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* model9 = krzesloModel  ->Instantiate(*scena1, nullptr, ourShader.get());
     //GameObject* model10 =ksiazkaModel  ->Instantiate(*scena1, nullptr, ourShader.get());
     GameObject* model11 =lampa1Model   ->Instantiate(*scena1, nullptr, phongShader.get());
     GameObject* model12 =lampa2Model   ->Instantiate(*scena1, nullptr, ourShader.get());
@@ -469,7 +490,7 @@ int main(int, char**)
     GameObject* model32 =telephoneModel->Instantiate(*scena1, nullptr, ourShader.get());
     GameObject* model33 =toiletModel   ->Instantiate(*scena1, nullptr, ourShader.get());
     GameObject* model34 =wozekModel    ->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model35 =zaslonaModel  ->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* model35 =zaslonaModel  ->Instantiate(*scena1, nullptr, shaderBlinn.get());
 
     RenderHelper::SetMaterial(model29, brickMat);
 
@@ -477,7 +498,17 @@ int main(int, char**)
 
     model1->AddComponent<RigidbodyComponent>();
     model1->AddComponent<ColliderComponent>();
+    model1->AddComponent<LightComponent>();
+
+
+    model1->GetComponent<LightComponent>()->type = Directional;
+    model1->GetComponent<LightComponent>()->index = 0;
+    model1->GetComponent<LightComponent>()->direction = glm::vec3(-0.3f, -1.0f, -0.1f);
+    model1->GetComponent<LightComponent>()->ambient =  glm::vec3(0.25f);
+    model1->GetComponent<LightComponent>()->diffuse = glm::vec3(0.85f);
+    model1->GetComponent<LightComponent>()->specular = glm::vec3(0.4f);
     
+
     model1->GetComponent<RigidbodyComponent>()->useGravity = true;
     model1->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 1, 1 };
     model1->GetComponent<TransformComponent>()->position.y = 150;
@@ -552,6 +583,12 @@ int main(int, char**)
     model35 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
     placeholderThing += 10;
 
+    //CameraComponent* cam = obj2->AddComponent<CameraComponent>();
+    //cam->camera.Position = glm::vec3(0, 50, 15);
+    //cam->camera.Yaw = -90.0f;
+    //cam->camera.Pitch = -10.0f;
+    //cam->camera.updateCameraVectors();
+
     sceneManager.Update(16);
 
     spdlog::info("Scena git.");
@@ -560,7 +597,10 @@ int main(int, char**)
     //createHouse();
     //startGroupInstanced(root.get());
 
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+    focused = true;
+    updateFocus();
+
 
     int test_score = 0;
     auto* t0 = obj->GetComponent<TransformComponent>();
@@ -574,6 +614,17 @@ int main(int, char**)
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
         updateFPS(deltaTime);
+
+
+        processCameraInput(ecs, *camCompLeft, *t0,
+    "move_up", "move_down", "move_left", "move_right");
+
+        processCameraInput(ecs, *camCompRight, *t1,
+            "move_up_2", "move_down_2", "move_left_2", "move_right_2");
+
+        processCameraMouse(ecs, *camCompLeft);
+        processCameraGamepad(ecs, *camCompLeft, *t0, 0);
+        processCameraGamepad(ecs, *camCompRight, *t1, 1);
         //spdlog::info("GameObject position: x={}, y={}, z={}",
         //    transform->position.x,
         //    transform->position.y,
@@ -587,6 +638,11 @@ int main(int, char**)
         // --- CPU WORK START ---
 
         auto inputStart = std::chrono::high_resolution_clock::now();
+
+        if (ecs.GetSystem<HID>()->is_action_just_pressed("right_click")) {
+            focused = !focused;
+            updateFocus();
+        }
 
         // Process I/O operations here
         input();
@@ -747,7 +803,7 @@ void input()
     {
         glfwSetWindowShouldClose(window, true);
     }
-
+/*
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_2) == GLFW_PRESS) {
         if (!mouseMove) {
             firstMouse = true;
@@ -762,6 +818,7 @@ void input()
         }
         mouseMove = false;
     }
+    */
 
 //OLD INPUT ENDS HERE
 }
@@ -913,6 +970,48 @@ void end_frame()
     glfwSwapBuffers(window);
 }
 
+/*
+// loads a cubemap texture from 6 individual texture faces
+// order:
+// +X (right)
+// -X (left)
+// +Y (top)
+// -Y (bottom)
+// +Z (front) 
+// -Z (back)
+// -------------------------------------------------------
+unsigned int loadCubemap(vector<std::string> faces)
+{
+    unsigned int textureID;
+    glGenTextures(1, &textureID);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+
+    int width, height, nrChannels;
+    for (unsigned int i = 0; i < faces.size(); i++)
+    {
+        unsigned char* data = stbi_load(faces[i].c_str(), &width, &height, &nrChannels, 0);
+        if (data)
+        {
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+            stbi_image_free(data);
+        }
+        else
+        {
+            std::cout << "Cubemap texture failed to load at path: " << faces[i] << std::endl;
+            stbi_image_free(data);
+        }
+    }
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    return textureID;
+}
+
+
+*/
 void processCameraGamepad(ECS &ecs, CameraComponent &cam, TransformComponent &transform, int gamepad_id) {
     const auto& hid = ecs.GetSystem<HID>();
 
@@ -941,3 +1040,76 @@ void processCameraGamepad(ECS &ecs, CameraComponent &cam, TransformComponent &tr
         -ry * sensitivity * deltaTime
     );
 }
+
+
+//
+//void render()
+//{
+////OLD RENDER FUNCION STARTS HERE
+//    
+//    //float time = glfwGetTime();
+//    //float radius = 10.0f;         
+//    //float speed = 2.0f;        
+//
+//
+//    //pointLight->position.x = radius * cos(speed * time);
+//    //pointLight->position.y = 1.0f; 
+//    //pointLight->position.z = radius * sin(speed * time);
+//
+//    if (!mouseMove)
+//    {
+//        updateFollowCamera();
+//    }
+//
+//    // OpenGL Rendering code goes here
+//    glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
+//    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+//
+//    //bind texture
+//    glActiveTexture(GL_TEXTURE0);
+//    glBindTexture(GL_TEXTURE_2D, texture);
+//
+//    //activating program object
+//    ourShader->use();
+//   
+//
+//    int display_w, display_h;
+//    glfwGetFramebufferSize(window, &display_w, &display_h);
+//    glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)display_w / (float)display_h, 0.1f, 10000.0f);
+//    glm::mat4 view = glm::mat4(1.0f);
+//    view = camera.GetViewMatrix();
+//
+//
+//    // render the loaded modeld
+//    root->updateSelfAndChild();
+//    glm::mat4 systemRotationX = glm::rotate(glm::mat4(1.0f), glm::radians(rotationX), glm::vec3(1, 0, 0));
+//    glm::mat4 systemRotationY = glm::rotate(glm::mat4(1.0f), glm::radians(rotationY), glm::vec3(0, 1, 0));
+//    glm::mat4 systemModel = systemRotationY * systemRotationX;
+//    renderGroup(projection, view, systemModel);
+//    //ourEntity->drawSelfAndChild(*ourShader, projection, view, sphereRadius, sphereRings, sphereSectors, systemModel);
+//
+//
+//    //glDrawElements(GL_TRIANGLES, 12, GL_UNSIGNED_INT, 0);
+//    glBindVertexArray(0);
+//
+//    // draw skybox as last
+//    glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
+////    skyboxShader->use();
+//    view = glm::mat4(glm::mat3(camera.GetViewMatrix())); // remove translation from the view matrix
+////    skyboxShader->setMat4("view", view);
+////    skyboxShader->setMat4("projection", projection);
+//    // skybox cube
+////    glBindVertexArray(skyboxVAO);
+////    glActiveTexture(GL_TEXTURE0);
+////    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+////    glDrawArrays(GL_TRIANGLES, 0, 36);
+////    glBindVertexArray(0);
+/////    glDepthFunc(GL_LESS); // set depth function back to default*/
+////OLD RENDER FUNCTION ENDS HERE
+//
+//    triangleShader->use();
+//    glBindVertexArray(triangleVAO);
+//    glDrawArrays(GL_TRIANGLES, 0, 3);
+//    glBindVertexArray(0);
+//
+//}

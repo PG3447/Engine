@@ -8,22 +8,23 @@
 #include <GLFW/glfw3.h>
 #include "skybox_renderer.h"
 #include "../utils/camera_helper.h"
+#include "../utils/light_helper.h"
 
 
 
 class RenderSystem : public System {
 private:
-    using GroupKey = std::tuple<Model*, Shader*, Material*>;
+    using GroupKey = std::tuple<Model*, Material*>;
 
     struct group_hash {
         std::size_t operator()(const GroupKey& k) const {
             return std::hash<Model*>()(std::get<0>(k)) ^
-                (std::hash<Shader*>()(std::get<1>(k)) << 1) ^
-                (std::hash<Material*>()(std::get<2>(k)) << 2);
+                (std::hash<Material*>()(std::get<1>(k)) << 1);
         }
     };
 
     Query<TransformComponent, RenderComponent>* renderQuery;
+    Query<TransformComponent, LightComponent>* lightQuery;
     Query<TransformComponent, CameraComponent>* cameraQuery;
 
     std::unordered_map<GroupKey, std::vector<size_t>, group_hash> instancedGroups;
@@ -160,6 +161,7 @@ public:
     RenderSystem(ECS& ecs, GLFWwindow* win) : window(win)
     {
         renderQuery = ecs.CreateQuery<TransformComponent, RenderComponent>();
+        lightQuery = ecs.CreateQuery<TransformComponent, LightComponent>();
         cameraQuery = ecs.CreateQuery<TransformComponent, CameraComponent>();
 
         Init();
@@ -186,6 +188,7 @@ public:
 
     void OnGameObjectUpdated(GameObject* e) override {
         renderQuery->OnGameObjectUpdated(e); // forward do query
+        lightQuery->OnGameObjectUpdated(e);  // forward do query
         cameraQuery->OnGameObjectUpdated(e); // forward do query
 
         groupsDirty = true;
@@ -245,8 +248,7 @@ public:
         Frustum frustum = ExtractFrustum(vp);
 
         currentCameraPos = transform.position;
-        currentCameraFront = cam.state.Front;
-
+     
         RenderGroups(frustum);
 
         glBindVertexArray(0);
@@ -267,7 +269,7 @@ public:
                 r->model->SetShader(r->shader);
             }
 
-            GroupKey key = { r->model, r->shader, r->materialOverride.get() };
+            GroupKey key = { r->model, r->materialOverride.get() };
             instancedGroups[key].push_back(i);
         }
         groupsDirty = false;
@@ -275,10 +277,15 @@ public:
 
     void RenderGroups(const Frustum& frustum) {
         auto& transforms = std::get<0>(renderQuery->componentsVectors);
+
+        auto& transformsLights = std::get<0>(lightQuery->componentsVectors);
+        auto& lights = std::get<1>(lightQuery->componentsVectors);
+
+
         for (auto& [key, indices] : instancedGroups) {
             Model* model = std::get<0>(key);
-            Shader* shader = std::get<1>(key);
-            Material* overrideMat = std::get<2>(key);
+            Material* overrideMat = std::get<1>(key);
+            Shader* shader = overrideMat->shader;
 
             std::vector<size_t> visible;
             // Culling
@@ -305,17 +312,17 @@ public:
             shader->setMat4("view", view);
 
             shader->setVec3("viewPos", currentCameraPos);
-            shader->setVec3("dirLight.direction", glm::vec3(-0.2f, -1.0f, -0.3f));
-            shader->setVec3("dirLight.ambient", glm::vec3(0.2f, 0.2f, 0.2f));
-            shader->setVec3("dirLight.diffuse", glm::vec3(0.8f, 0.8f, 0.8f));
-            shader->setVec3("dirLight.specular", glm::vec3(1.0f, 1.0f, 1.0f));
-            shader->setVec3("spotLight.position",  currentCameraPos);
-shader->setVec3("spotLight.direction", currentCameraFront); // potrzebujesz front kamery
-shader->setFloat("spotLight.cutOff",   glm::cos(glm::radians(12.5f)));
-shader->setFloat("spotLight.outerCutOff", glm::cos(glm::radians(17.5f)));
-            shader->setVec3("spotLight.ambient",       glm::vec3(0.0f));        // latarka nie daje ambient
-            shader->setVec3("spotLight.diffuse",       glm::vec3(1.0f));        // biała latarka
-            shader->setVec3("spotLight.specular",      glm::vec3(1.0f));
+            
+            // light
+            for (size_t i = 0; i < lightQuery->gameobjects.size(); i++)
+            {
+                LightHelper::Apply(*transforms[i], *lights[i], *shader);
+            }
+
+            //shader->setVec3("dirLight.direction", glm::vec3(-0.2f, -1.0f, -0.3f));
+            //shader->setVec3("dirLight.ambient", glm::vec3(0.2f, 0.2f, 0.2f));
+            //shader->setVec3("dirLight.diffuse", glm::vec3(0.8f, 0.8f, 0.8f));
+            //shader->setVec3("dirLight.specular", glm::vec3(1.0f, 1.0f, 1.0f));
 
             if (visible.size() == 1) {
                 shader->setBool("useInstance", false);
