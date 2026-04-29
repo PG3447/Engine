@@ -468,7 +468,7 @@ int main(int, char**)
     //GameObject* model10 =ksiazkaModel  ->Instantiate(*scena1, nullptr, ourShader.get());
     //GameObject* model11 =lampa1Model   ->Instantiate(*scena1, nullptr, phongShader.get());
     //GameObject* model12 =lampa2Model   ->Instantiate(*scena1, nullptr, ourShader.get());
-    //GameObject* model13 =lampa3Model   ->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* model13 =lampa3Model   ->Instantiate(*scena1, nullptr, ourShader.get());
     GameObject* model14 =needleModel   ->Instantiate(*scena1, nullptr, ourShader.get());
     GameObject* model15 =bad1Model     ->Instantiate(*scena1, nullptr, ourShader.get());
     GameObject* model16 =bad2Model     ->Instantiate(*scena1, nullptr, ourShader.get());
