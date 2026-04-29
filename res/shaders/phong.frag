@@ -44,8 +44,8 @@ void main()
 
     vec3 lightDir   = normalize(-dirLight.direction);
     float diff      = max(dot(norm, lightDir), 0.0);
-    vec3 halfwayDir = normalize(lightDir + viewDir);
-    float spec      = pow(max(dot(norm, halfwayDir), 0.0), material.shininess);
+    vec3 reflectDir = reflect(-lightDir, norm);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
 
     vec3 ambient  = dirLight.ambient  * texDiffuse;
     vec3 diffuse  = dirLight.diffuse  * diff * texDiffuse;
@@ -57,8 +57,8 @@ void main()
     float intensity = clamp((theta - spotLight.outerCutOff) / epsilon, 0.0, 1.0);
 
     float spotDiff  = max(dot(norm, spotDir), 0.0);
-    vec3 spotHalf   = normalize(spotDir + viewDir);
-    float spotSpec  = pow(max(dot(norm, spotHalf), 0.0), material.shininess);
+    vec3 spotReflect = reflect(-spotDir, norm);
+    float spotSpec = pow(max(dot(viewDir, spotReflect), 0.0), material.shininess);
 
     vec3 spotDiffuse  = spotLight.diffuse  * intensity * spotDiff * texDiffuse;
     vec3 spotSpecular = spotLight.specular * intensity * spotSpec * texSpecular;
