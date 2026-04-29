@@ -40,6 +40,7 @@ private:
     glm::mat4 projection;
     glm::mat4 view;
     glm::vec3 currentCameraPos;
+    glm::vec3 currentCameraFront;
 
 public:
     struct Plane {
@@ -247,6 +248,7 @@ public:
         Frustum frustum = ExtractFrustum(vp);
 
         currentCameraPos = transform.position;
+     
         RenderGroups(frustum);
 
         glBindVertexArray(0);

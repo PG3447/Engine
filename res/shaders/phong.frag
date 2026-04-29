@@ -1,4 +1,5 @@
 #version 460 core
+
 out vec4 FragColor;
 
 struct Material {
@@ -11,7 +12,6 @@ struct Material {
 
     float shininess;
 };
-
 
 struct DirLight {
     vec3 direction;
