@@ -317,6 +317,8 @@ int main(int, char**)
     obb->GetComponent<RigidbodyComponent>()->useGravity = false;
     obb->GetComponent<RigidbodyComponent>()->isStatic = true;
 
+    obb->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 25, 25, 5 };
+
     GameObject* obb3 = sunModel->Instantiate(*scena1, nullptr, ourShader.get());
     obb3->GetComponent<TransformComponent>()->scale = glm::vec3(25.0f);
     obb3->GetComponent<TransformComponent>()->position = glm::vec3(75.0f, 250.0f, 0.0f);
@@ -337,13 +339,17 @@ int main(int, char**)
     
     RenderHelper::SetMaterial(obb3, brickMat);
 
-    GameObject* obj = scena1->CreateGameObject(nullptr);
-    CameraComponent* camCompLeft = obj->AddComponent<CameraComponent>();
+    GameObject* camera1 = scena1->CreateGameObject(nullptr);
+    CameraComponent* camCompLeft = camera1->AddComponent<CameraComponent>();
+    ColliderComponent* camera1collider = camera1->AddComponent<ColliderComponent>();
+    RigidbodyComponent* rigidBodyCamera1 = camera1->AddComponent<RigidbodyComponent>();
+    camera1->GetComponent<RigidbodyComponent>()->useGravity = false;
+    camera1->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1.0f, 1.0f, 1.0f };
 
-    GameObject* obj2 = scena1->CreateGameObject(nullptr);
-    CameraComponent* camCompRight = obj2->AddComponent<CameraComponent>();
+    GameObject* camera2 = scena1->CreateGameObject(nullptr);
+    CameraComponent* camCompRight = camera2->AddComponent<CameraComponent>();
 
-    obj->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 20.0f, 50.0f);
+    camera1->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 20.0f, 0.0f);
      CameraHelper::InitialCamera(*camCompLeft,
          glm::vec3(0.0f, 1.0f, 0.0f),
          YAW,
@@ -353,7 +359,7 @@ int main(int, char**)
 
     camCompLeft->isActive = true;
 
-    obj2->GetComponent<TransformComponent>()->position = glm::vec3(50.0f, 30.0f, 0.0f);
+    camera2->GetComponent<TransformComponent>()->position = glm::vec3(50.0f, 30.0f, 0.0f);
     CameraHelper::InitialCamera(*camCompRight,
         glm::vec3(0.0f, 1.0f, 0.0f),
         0.0f, -20.0f,
@@ -475,7 +481,7 @@ int main(int, char**)
     //GameObject* model34 =wozekModel    ->Instantiate(*scena1, nullptr, ourShader.get());
     //GameObject* model35 =zaslonaModel  ->Instantiate(*scena1, nullptr, ourShader.get());
 
-    GameObject* roomObj = roomModel->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* roomObj = roomModel->Instantiate(*scena1, nullptr, ourShader.get());
 
     //RenderHelper::SetMaterial(model29, brickMat);
 
@@ -578,8 +584,8 @@ int main(int, char**)
 
 
     int test_score = 0;
-    auto* t0 = obj->GetComponent<TransformComponent>();
-    auto* t1 = obj2->GetComponent<TransformComponent>();
+    auto* t0 = camera1->GetComponent<TransformComponent>();
+    auto* t1 = camera2->GetComponent<TransformComponent>();
 
     renderSystem = ecs.GetSystem<RenderSystem>();
     // Main loop
@@ -589,6 +595,8 @@ int main(int, char**)
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
         updateFPS(deltaTime);
+
+        //rigidBodyCamera1->useGravity = true;
 
 
         processCameraInput(ecs, *camCompLeft, *t0,
