@@ -241,12 +241,10 @@ void processCameraInput(ECS& ecs,CameraComponent& cam, TransformComponent& trans
     if (hid->is_action_pressed(right)) dir += cam.state.Right;
     if (hid->is_action_pressed(down))  dir -= cam.state.Front;
 
-    if (glm::length(dir) > 0.0f)
-        dir = glm::normalize(dir);
-
     if (glm::length(dir) > 0.0f) {
         dir = glm::normalize(dir);
         transform.position += dir * MovementSpeed * deltaTime;
+        transform.isDirty = true;
     }
 }
 
@@ -608,10 +606,6 @@ int main(int, char**)
         processCameraMouse(ecs, *camCompLeft);
         processCameraGamepad(ecs, *camCompLeft, *t0, 0);
         processCameraGamepad(ecs, *camCompRight, *t1, 1);
-        //spdlog::info("GameObject position: x={}, y={}, z={}",
-        //    transform->position.x,
-        //    transform->position.y,
-        //    transform->position.z);
         test_score++;
         sprite_4->text = "score: " + std::to_string(test_score);
 

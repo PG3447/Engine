@@ -29,6 +29,7 @@ struct MeshNode {
     std::shared_ptr<MeshData> cpuData;
     std::shared_ptr<RenderMesh> gpuMesh;
     std::shared_ptr<Material> material;
+    AABB aabb;
 };
 
 struct Texture {
@@ -73,6 +74,15 @@ public:
     MeshNode processMesh(aiMesh* mesh, const aiScene* scene);
 
     void SetShader(Shader* shader);
+
+    AABB GetLocalAABB() const {
+        AABB result;
+        for (auto& node : nodes) {
+            result.min = glm::min(result.min, node.aabb.min);
+            result.max = glm::max(result.max, node.aabb.max);
+        }
+        return result;
+    }
 
     int GetTriangleCount() const {
         int total = 0;

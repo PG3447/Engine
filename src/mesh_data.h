@@ -14,6 +14,11 @@ struct Vertex {
     float m_Weights[4];
 };
 
+struct AABB {
+    glm::vec3 min{ FLT_MAX };
+    glm::vec3 max{ -FLT_MAX };
+};
+
 struct MeshData {
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
