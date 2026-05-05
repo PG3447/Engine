@@ -41,6 +41,7 @@ private:
     glm::vec3 currentCameraPos;
 
 public:
+    bool frustumCullingEnabled = true;
     struct Plane {
         glm::vec3 normal;
         float d;
@@ -283,6 +284,12 @@ public:
             auto cullStart = std::chrono::high_resolution_clock::now();
             for (size_t i : indices)
             {
+
+                if (!frustumCullingEnabled) {
+                    visible.push_back(i);
+                    continue;
+                }
+
                 glm::vec3 pos = glm::vec3(transforms[i]->modelMatrix[3]);
                 float radius = 1.0f; // na start
 

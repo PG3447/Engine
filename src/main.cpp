@@ -626,6 +626,11 @@ int main(int, char**)
             focused = !focused;
             updateFocus();
         }
+        if (ecs.GetSystem<HID>()->is_action_just_pressed("toggle_culling")) {
+            renderSystem->frustumCullingEnabled = !renderSystem->frustumCullingEnabled;
+            spdlog::info("Frustum culling: {}",
+                renderSystem->frustumCullingEnabled ? "ON" : "OFF");
+        }
 
         // Process I/O operations here
         input();
