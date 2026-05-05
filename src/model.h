@@ -25,6 +25,13 @@
 
 using namespace std;
 
+struct Texture {
+    unsigned int id;
+    std::string type;
+    std::string path;
+};
+
+
 //MeshNode to tak naprawde dane nie zaladowane do RenderComponent
 struct MeshNode {
     std::shared_ptr<MeshData> cpuData;
@@ -32,11 +39,6 @@ struct MeshNode {
     std::shared_ptr<Material> material;
 };
 
-struct Texture {
-    unsigned int id;
-    std::string type;
-    std::string path;
-};
 
 //Model Node to tak naprawde przechowywany GameObject
 struct ModelNode
@@ -58,9 +60,11 @@ public:
     Model& operator=(Model&&) = default;
 
     // model data 
-    std::vector<MeshNode> nodes;
-    Transform transform;
-    vector<std::unique_ptr<Model>> children;
+    std::unique_ptr<ModelNode> rootNode;
+
+    //std::vector<MeshNode> nodes;
+    //Transform transform;
+    //vector<std::unique_ptr<Model>> children;
     string name;
     string directory;
     bool gammaCorrection;
@@ -91,7 +95,7 @@ public:
 
 private:
     void loadModel(const std::string& path);
-    std::unique_ptr<Model> processNode(aiNode* node, const aiScene* scene);
+    std::unique_ptr<ModelNode> processNode(aiNode* node, const aiScene* scene);
 
     std::vector<Texture> loadMaterialTextures(aiMaterial* mat, aiTextureType type, std::string typeName, const aiScene* scene);
 };
