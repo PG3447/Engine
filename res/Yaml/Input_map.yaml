@@ -8,6 +8,7 @@ input:
     move_left1: [GLFW_KEY_LEFT]
     move_up1: [GLFW_KEY_UP]
     move_down1: [GLFW_KEY_DOWN]
+    toggle_culling: [GLFW_KEY_C]
   mouse:
     move_right: [GLFW_MOUSE_BUTTON_LEFT]
     right_click: [GLFW_MOUSE_BUTTON_RIGHT]
