@@ -102,43 +102,44 @@ void Model::loadModel(string const& path)
     name = path;
 
     // Pobieramy drzewo z korzenia
-    Model rootNode = processNode(scene->mRootNode, scene);
-    this->nodes = std::move(rootNode.nodes);
-    this->children = std::move(rootNode.children);
-    this->transform = rootNode.transform;
+    std::unique_ptr<Model> rootNode = processNode(scene->mRootNode, scene);
+    this->nodes = std::move(rootNode->nodes);
+    this->children = std::move(rootNode->children);
+    this->transform = rootNode->transform;
 }
 
-Model Model::processNode(aiNode* node, const aiScene* scene)
+std::unique_ptr<Model> Model::processNode(aiNode* node, const aiScene* scene)
 {
-    Model model;
+    auto model = std::make_unique<Model>();
+
     aiVector3D scale, pos;
     aiQuaternion rot;
     node->mTransformation.Decompose(scale, rot, pos);
 
-    model.name = node->mName.C_Str();
-    model.directory = this->directory;
+    model->name = node->mName.C_Str();
+    model->directory = this->directory;
 
-    model.transform.setLocalPosition({ pos.x, pos.y, pos.z });
+    model->transform.setLocalPosition({ pos.x, pos.y, pos.z });
     glm::quat q(rot.w, rot.x, rot.y, rot.z);
 
     glm::vec3 euler = glm::eulerAngles(q); // radiany
     euler = glm::degrees(euler);
 
-    model.transform.setLocalRotation(euler);
+    model->transform.setLocalRotation(euler);
     //model.transform.setLocalRotation({ glm::degrees(rot.x), glm::degrees(rot.y), glm::degrees(rot.z) });
-    model.transform.setLocalScale({ scale.x, scale.y, scale.z });
+    model->transform.setLocalScale({ scale.x, scale.y, scale.z });
 
-    model.nodes.reserve(node->mNumMeshes);
+    model->nodes.reserve(node->mNumMeshes);
     for (unsigned int i = 0; i < node->mNumMeshes; i++)
     {
         aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-        model.nodes.push_back(processMesh(mesh, scene));
+        model->nodes.push_back(processMesh(mesh, scene));
     }
 
-    model.children.reserve(node->mNumChildren);
+    model->children.reserve(node->mNumChildren);
     for (unsigned int i = 0; i < node->mNumChildren; i++)
     {
-        model.children.push_back(processNode(node->mChildren[i], scene));
+        model->children.push_back(processNode(node->mChildren[i], scene));
     }
 
     return model;

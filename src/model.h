@@ -49,7 +49,7 @@ public:
     // model data 
     std::vector<MeshNode> nodes;
     Transform transform;
-    vector<Model> children;
+    vector<std::unique_ptr<Model>> children;
     string name;
     string directory;
     bool gammaCorrection;
@@ -63,10 +63,6 @@ public:
     void PrepareInstancing();
 
     void Draw(GLsizei instanceCount = 0, Material* materialOverride = nullptr);
-
-    static std::unique_ptr<Model> createOrbit(float radius, int segments = 100, float tiltDegrees = 0.0f, float scale = 1.0f, vector<Texture>* textures = nullptr);
-
-    static std::unique_ptr<Model> createSphere(int rings = 10, int sectors = 10, const std::string& texturePath = "");
 
     void turnOnReflect(unsigned int cubemapTexture);
 
@@ -84,7 +80,7 @@ public:
 
 private:
     void loadModel(const std::string& path);
-    Model processNode(aiNode* node, const aiScene* scene);
+    std::unique_ptr<Model> processNode(aiNode* node, const aiScene* scene);
 
     std::vector<Texture> loadMaterialTextures(aiMaterial* mat, aiTextureType type, std::string typeName, const aiScene* scene);
 };

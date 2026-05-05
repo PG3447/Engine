@@ -26,10 +26,10 @@ GameObject* Scene::CreateGameObject(GameObject* parent) {
 
 void Scene::Update(float deltaTime) {
     // kolejność ważna: transform → fizyka → render
-    if (root.get() != nullptr) {
+  /*  if (root.get() != nullptr) {
         spdlog::info("Istnieje root");
-        //DebugHierarchy(root.get());
-    }
+        DebugHierarchy(root.get());
+    }*/
 
     if (auto* hid = ecs.GetSystem<HID>()) hid->Update(ecs);
     if (auto* ts = ecs.GetSystem<TransformSystem>()) ts->updateSelfAndChild(root.get());
@@ -49,13 +49,14 @@ void Scene::DebugHierarchy(GameObject* obj, int depth)
 
     std::string indent(depth * 2, ' ');
 
-    //spdlog::info("{}GameObject: {}", indent, (void*)obj);
+    spdlog::info("{}GameObject: {}", indent, (void*)obj);
+    spdlog::info("GameObject: {}", obj->name);
 
     auto* t = obj->GetComponent<TransformComponent>();
     if (t)
     {
-        //spdlog::info("{}  pos: {:.2f}, {:.2f}, {:.2f}",
-        //    indent, t->position.x, t->position.y, t->position.z);
+        spdlog::info("{}  pos: {:.2f}, {:.2f}, {:.2f}",
+            indent, t->position.x, t->position.y, t->position.z);
     }
 
     for (auto* child : obj->GetChildren())

@@ -65,6 +65,8 @@ private:
 
         GameObject* go = scene->CreateGameObject(parent);
 
+        go->name = model->name;
+
         // Transform
         auto* transform = go->AddComponent<TransformComponent>();
         transform->position = model->transform.getLocalPosition();
@@ -99,7 +101,7 @@ private:
 
         // ===== DZIECI =====
         for (auto& child : model->children) {
-            CreateRecursive(scene, &child, go, shader);
+            CreateRecursive(scene, child.get(), go, shader);
         }
 
         return go;

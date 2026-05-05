@@ -157,6 +157,7 @@ public:
         }
         return true;
     }
+
     RenderSystem(ECS& ecs, GLFWwindow* win) : window(win)
     {
         renderQuery = ecs.CreateQuery<TransformComponent, RenderComponent>();
@@ -212,6 +213,7 @@ public:
         gpuQuery.end();
         gpuQuery.nextFrame();
     }
+
     void ApplyViewport(const Viewport& vp, int w, int h)
     {
         glViewport(
