@@ -299,9 +299,9 @@ int main(int, char**)
     //GameObject* obb2 = sunModel->Instantiate(*scena1, nullptr, ourShader.get());
  
 
-    obb->GetComponent<TransformComponent>()->scale.x = 1;
+    obb->GetComponent<TransformComponent>()->scale.x = 10;
     obb->GetComponent<TransformComponent>()->scale.y = 1;
-    obb->GetComponent<TransformComponent>()->scale.z = 1;
+    obb->GetComponent<TransformComponent>()->scale.z = 10;
 
 
    //obb2->GetComponent<TransformComponent>()->scale.x = 25;
@@ -317,7 +317,7 @@ int main(int, char**)
     obb->GetComponent<RigidbodyComponent>()->useGravity = false;
     obb->GetComponent<RigidbodyComponent>()->isStatic = true;
 
-    obb->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 25, 25, 5 };
+    obb->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 1, 100 };
 
     GameObject* obb3 = sunModel->Instantiate(*scena1, nullptr, ourShader.get());
     obb3->GetComponent<TransformComponent>()->scale = glm::vec3(25.0f);
@@ -596,7 +596,7 @@ int main(int, char**)
         lastFrame = currentFrame;
         updateFPS(deltaTime);
 
-        //rigidBodyCamera1->useGravity = true;
+        rigidBodyCamera1->useGravity = true;
 
 
         processCameraInput(ecs, *camCompLeft, *t0,
