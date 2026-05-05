@@ -26,13 +26,37 @@ struct TransformComponent : Component {
     bool isDirty = true;
 };
 
+//struct ModelNode
+//{
+//    // ===== SCENE HIERARCHY =====
+//    std::string name;
+//
+//    Transform transform;
+//
+//    std::vector<std::unique_ptr<ModelNode>> children;
+//
+//    // ===== GEOMETRY =====
+//    std::vector<MeshNode> meshes;
+//};
+//
+//struct MeshNode
+//{
+//    std::shared_ptr<RenderMesh> mesh;     // GPU geometry
+//    std::shared_ptr<Material> material;   // shading data
+//};
 
 struct RenderComponent : Component {
     static constexpr uint64_t ComponentBit = 1ull << 1;
 
-    Model* model = nullptr;
-    Shader* shader = nullptr;
-    std::shared_ptr<Material> materialOverride = nullptr;
+    std::vector<std::shared_ptr<MeshNode>> nodes;
+
+    //std::shared_ptr<Model> model;
+    //
+    //
+    //std::shared_ptr<ModelNode> node;
+    //Model* model = nullptr;
+    //Shader* shader = nullptr;
+    //std::shared_ptr<Material> materialOverride = nullptr;
 };
 
 

@@ -25,6 +25,7 @@
 
 using namespace std;
 
+//MeshNode to tak naprawde dane nie zaladowane do RenderComponent
 struct MeshNode {
     std::shared_ptr<MeshData> cpuData;
     std::shared_ptr<RenderMesh> gpuMesh;
@@ -35,6 +36,16 @@ struct Texture {
     unsigned int id;
     std::string type;
     std::string path;
+};
+
+//Model Node to tak naprawde przechowywany GameObject
+struct ModelNode
+{
+    std::string name;
+    Transform transform;
+
+    std::vector<MeshNode> meshes;
+    std::vector<std::unique_ptr<ModelNode>> children;
 };
 
 class Model
