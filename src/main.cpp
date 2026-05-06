@@ -488,7 +488,7 @@ int main(int, char**)
     //GameObject* model34 =wozekModel    ->Instantiate(*scena1, nullptr, ourShader.get());
     //GameObject* model35 =zaslonaModel  ->Instantiate(*scena1, nullptr, ourShader.get());
 
-    //GameObject* roomObj = roomModel->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* roomObj = roomModel->Instantiate(*scena1, nullptr, ourShader.get()); 
 
     model1->GetComponent<TransformComponent>()->position.x = placeholderThing;
 
