@@ -168,11 +168,19 @@ std::unique_ptr<Prefab> telephoneModel;
 std::unique_ptr<Prefab> toiletModel;
 std::unique_ptr<Prefab> wozekModel;
 std::unique_ptr<Prefab> zaslonaModel;
+std::unique_ptr<Prefab> roomModel;
+
+//AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+std::unique_ptr<Prefab> floorModel;
+std::unique_ptr<Prefab> wallModel;
+std::unique_ptr<Prefab> wallModel2;
+std::unique_ptr<Prefab> wallModel3;
+
+//AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 
 
 //std::unique_ptr<Model> sphereVenusModel;
 //
-std::unique_ptr<Prefab> wallModel;
 std::unique_ptr<Prefab> roofModel;
 std::unique_ptr<Prefab> groundModel;
 
@@ -240,12 +248,10 @@ void processCameraInput(ECS& ecs,CameraComponent& cam, TransformComponent& trans
     if (hid->is_action_pressed(right)) dir += cam.state.Right;
     if (hid->is_action_pressed(down))  dir -= cam.state.Front;
 
-    if (glm::length(dir) > 0.0f)
-        dir = glm::normalize(dir);
-
     if (glm::length(dir) > 0.0f) {
         dir = glm::normalize(dir);
         transform.position += dir * MovementSpeed * deltaTime;
+        transform.isDirty = true;
     }
 }
 
@@ -294,13 +300,13 @@ int main(int, char**)
 
     groundModel = std::make_unique<Prefab>("res/models/podloze.glb");
     sunModel = std::make_unique<Prefab>("res/models/Sun.glb");
-    GameObject* obb = groundModel->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* obb = groundModel->Instantiate(*scena1, nullptr, ourShader.get());
     //GameObject* obb2 = sunModel->Instantiate(*scena1, nullptr, ourShader.get());
  
 
-    obb->GetComponent<TransformComponent>()->scale.x = 1;
-    obb->GetComponent<TransformComponent>()->scale.y = 1;
-    obb->GetComponent<TransformComponent>()->scale.z = 1;
+    //obb->GetComponent<TransformComponent>()->scale.x = 10;
+    //obb->GetComponent<TransformComponent>()->scale.y = 1;
+    //obb->GetComponent<TransformComponent>()->scale.z = 10;
 
 
    //obb2->GetComponent<TransformComponent>()->scale.x = 25;
@@ -308,12 +314,14 @@ int main(int, char**)
    //obb2->GetComponent<TransformComponent>()->scale.z = 25;
    //obb2->GetComponent<TransformComponent>()->position.y = 250;
 
-    obb->AddComponent<RigidbodyComponent>();
-    obb->AddComponent<ColliderComponent>();
+    //obb->AddComponent<RigidbodyComponent>();
+    //obb->AddComponent<ColliderComponent>();
 
 
-    obb->GetComponent<RigidbodyComponent>()->useGravity = false;
-    obb->GetComponent<RigidbodyComponent>()->isStatic = true;
+    //obb->GetComponent<RigidbodyComponent>()->useGravity = false;
+    //obb->GetComponent<RigidbodyComponent>()->isStatic = true;
+
+    //obb->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 1, 100 };
 
     GameObject* obb3 = sunModel->Instantiate(*scena1, nullptr, ourShader.get());
     obb3->GetComponent<TransformComponent>()->scale = glm::vec3(25.0f);
@@ -338,14 +346,17 @@ int main(int, char**)
 
     RenderHelper::SetMaterial(obb3, brickMat);
 
+    GameObject* camera1 = scena1->CreateGameObject(nullptr);
+    CameraComponent* camCompLeft = camera1->AddComponent<CameraComponent>();
+    ColliderComponent* camera1collider = camera1->AddComponent<ColliderComponent>();
+    RigidbodyComponent* rigidBodyCamera1 = camera1->AddComponent<RigidbodyComponent>();
+    camera1->GetComponent<RigidbodyComponent>()->useGravity = false;
+    camera1->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1.0f, 10.0f, 1.0f };
 
-    GameObject* obj = scena1->CreateGameObject(nullptr);
-    CameraComponent* camCompLeft = obj->AddComponent<CameraComponent>();
+    GameObject* camera2 = scena1->CreateGameObject(nullptr);
+    CameraComponent* camCompRight = camera2->AddComponent<CameraComponent>();
 
-    GameObject* obj2 = scena1->CreateGameObject(nullptr);
-    CameraComponent* camCompRight = obj2->AddComponent<CameraComponent>();
-
-    obj->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 20.0f, 50.0f);
+    camera1->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 20.0f, 0.0f);
      CameraHelper::InitialCamera(*camCompLeft,
          glm::vec3(0.0f, 1.0f, 0.0f),
          YAW,
@@ -355,7 +366,7 @@ int main(int, char**)
 
     camCompLeft->isActive = true;
 
-    obj2->GetComponent<TransformComponent>()->position = glm::vec3(50.0f, 30.0f, 0.0f);
+    camera2->GetComponent<TransformComponent>()->position = glm::vec3(50.0f, 30.0f, 0.0f);
     CameraHelper::InitialCamera(*camCompRight,
         glm::vec3(0.0f, 1.0f, 0.0f),
         0.0f, -20.0f,
@@ -438,45 +449,46 @@ int main(int, char**)
     toiletModel    = std::make_unique<Prefab>("res/models/toilet.glb");
     wozekModel     = std::make_unique<Prefab>("res/models/wozek.glb");
     zaslonaModel   = std::make_unique<Prefab>("res/models/zaslona.glb");
+    roomModel = std::make_unique<Prefab>("res/models/room.glb");
 
 
-    GameObject* model1 = bed1Model->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model2 = bed2Model->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model3 = bed3Model->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model4 = corkBoardModel->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model5 = cupModel      ->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model6 = deskModel     ->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model7 = doorsModel    ->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model8 = folderModel   ->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model9 = krzesloModel  ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model1 = bed1Model->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model2 = bed2Model->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model3 = bed3Model->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model4 = corkBoardModel->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model5 = cupModel      ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model6 = deskModel     ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model7 = doorsModel    ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model8 = folderModel   ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model9 = krzesloModel  ->Instantiate(*scena1, nullptr, ourShader.get());
     //GameObject* model10 =ksiazkaModel  ->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model11 =lampa1Model   ->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model12 =lampa2Model   ->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model13 =lampa3Model   ->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model14 =needleModel   ->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model15 =bad1Model     ->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model16 =bad2Model     ->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model17 =bad3Model     ->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model18 =papersModel   ->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model19 =bossModel     ->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model20 =characterModel->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model21 =vial1Model    ->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model22 =vial2Model    ->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model23 =vial3Model    ->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model24 =vial4Model    ->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model25 =vial5Model    ->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model26 =vial61Model   ->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model27 =vial7Model    ->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model28 =sinkModel     ->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model29 =szafa1Model   ->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model30 =szafa2Model   ->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model31 =szafa3Model   ->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model32 =telephoneModel->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model33 =toiletModel   ->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model34 =wozekModel    ->Instantiate(*scena1, nullptr, ourShader.get());
-    GameObject* model35 =zaslonaModel  ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model11 =lampa1Model   ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model12 =lampa2Model   ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model13 =lampa3Model   ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model14 =needleModel   ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model15 =bad1Model     ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model16 =bad2Model     ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model17 =bad3Model     ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model18 =papersModel   ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model19 =bossModel     ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model20 =characterModel->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model21 =vial1Model    ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model22 =vial2Model    ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model23 =vial3Model    ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model24 =vial4Model    ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model25 =vial5Model    ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model26 =vial61Model   ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model27 =vial7Model    ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model28 =sinkModel     ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model29 =szafa1Model   ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model30 =szafa2Model   ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model31 =szafa3Model   ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model32 =telephoneModel->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model33 =toiletModel   ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model34 =wozekModel    ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model35 =zaslonaModel  ->Instantiate(*scena1, nullptr, ourShader.get());
 
-    RenderHelper::SetMaterial(model29, brickMat);
+    //GameObject* roomObj = roomModel->Instantiate(*scena1, nullptr, ourShader.get());
 
     model1->GetComponent<TransformComponent>()->position.x = placeholderThing;
 
@@ -502,76 +514,86 @@ int main(int, char**)
     model1->GetComponent<RigidbodyComponent>()->useGravity = true;
     model1->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 1, 1 };
     model1->GetComponent<TransformComponent>()->position.y = 150;
+    //RenderHelper::SetMaterial(model29, brickMat);
 
-    placeholderThing += 10;
-    model2  ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    placeholderThing += 10;
-    model3  ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    placeholderThing += 10;
-    model4  ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    placeholderThing += 10;
-    model5  ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    placeholderThing += 10;
-    model6  ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    placeholderThing += 10;
-    model7  ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    placeholderThing += 10;
-    model8  ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    placeholderThing += 10;
-    model9  ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    placeholderThing += 10;
+    //model1  ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+
+    //model1->AddComponent<RigidbodyComponent>();
+    //model1->AddComponent<ColliderComponent>();
+    
+    //model1->GetComponent<RigidbodyComponent>()->useGravity = true;
+    //model1->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 1, 1 };
+    //model1->GetComponent<TransformComponent>()->position.y = 150;
+
+    //placeholderThing += 10;
+    //model2  ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    //placeholderThing += 10;
+    //model3  ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    //placeholderThing += 10;
+    //model4  ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    //placeholderThing += 10;
+    //model5  ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    //placeholderThing += 10;
+    //model6  ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    //placeholderThing += 10;
+    //model7  ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    //placeholderThing += 10;
+    //model8  ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    //placeholderThing += 10;
+    //model9  ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    //placeholderThing += 10;
     //model10 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    placeholderThing += 10;
-    model11 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    placeholderThing += 10;
-    model12 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    placeholderThing += 10;
-    model13 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    placeholderThing += 10;
-    model14 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    placeholderThing += 10;
-    model15 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    placeholderThing += 10;
-    model16 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    placeholderThing += 10;
-    model17 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    placeholderThing += 10;
-    model18 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    placeholderThing += 10;
-    model19 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    placeholderThing += 10;
-    model20 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    placeholderThing += 10;
-    model21 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    placeholderThing += 10;
-    model22 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    placeholderThing += 10;
-    model23 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    placeholderThing += 10;
-    model24 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    placeholderThing += 10;
-    model25 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    placeholderThing += 10;
-    model26 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    placeholderThing += 10;
-    model27 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    placeholderThing += 10;
-    model28 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    placeholderThing += 10;
-    model29 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    placeholderThing += 10;
-    model30 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    placeholderThing += 10;
-    model31 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    placeholderThing += 10;
-    model32 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    placeholderThing += 10;
-    model33 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    placeholderThing += 10;
-    model34 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    placeholderThing += 10;
-    model35 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    placeholderThing += 10;
+    //placeholderThing += 10;
+    //model11 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    //placeholderThing += 10;
+    //model12 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    //placeholderThing += 10;
+    //model13 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    //placeholderThing += 10;
+    //model14 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    //placeholderThing += 10;
+    //model15 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    //placeholderThing += 10;
+    //model16 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    //placeholderThing += 10;
+    //model17 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    //placeholderThing += 10;
+    //model18 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    //placeholderThing += 10;
+    //model19 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    //placeholderThing += 10;
+    //model20 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    //placeholderThing += 10;
+    //model21 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    //placeholderThing += 10;
+    //model22 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    //placeholderThing += 10;
+    //model23 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    //placeholderThing += 10;
+    //model24 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    //placeholderThing += 10;
+    //model25 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    //placeholderThing += 10;
+    //model26 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    //placeholderThing += 10;
+    //model27 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    //placeholderThing += 10;
+    //model28 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    //placeholderThing += 10;
+    //model29 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    //placeholderThing += 10;
+    //model30 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    //placeholderThing += 10;
+    //model31 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    //placeholderThing += 10;
+    //model32 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    //placeholderThing += 10;
+    //model33 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    //placeholderThing += 10;
+    //model34 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    //placeholderThing += 10;
+    //model35 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    //placeholderThing += 10;
 
     //CameraComponent* cam = obj2->AddComponent<CameraComponent>();
     //cam->camera.Position = glm::vec3(0, 50, 15);
@@ -593,10 +615,312 @@ int main(int, char**)
 
 
     int test_score = 0;
-    auto* t0 = obj->GetComponent<TransformComponent>();
-    auto* t1 = obj2->GetComponent<TransformComponent>();
+    auto* t0 = camera1->GetComponent<TransformComponent>();
+    auto* t1 = camera2->GetComponent<TransformComponent>();
 
     renderSystem = ecs.GetSystem<RenderSystem>();
+
+
+    //pokoj bedzie tu
+    floorModel = std::make_unique<Prefab>("res/models/number_floor.glb");
+    GameObject* groundObject = floorModel->Instantiate(*scena1, nullptr, ourShader.get());
+    groundObject->GetComponent<TransformComponent>()->scale.x = 100;
+    groundObject->GetComponent<TransformComponent>()->scale.y = 1;
+    groundObject->GetComponent<TransformComponent>()->scale.z = 100;
+
+    groundObject->AddComponent<RigidbodyComponent>();
+    groundObject->AddComponent<ColliderComponent>();
+
+    groundObject->GetComponent<RigidbodyComponent>()->useGravity = false;
+    groundObject->GetComponent<RigidbodyComponent>()->isStatic = true;
+
+    groundObject->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 1, 100 };
+
+    GameObject* groundObject2 = floorModel->Instantiate(*scena1, nullptr, ourShader.get());
+    groundObject2->GetComponent<TransformComponent>()->scale.x = 100;
+    groundObject2->GetComponent<TransformComponent>()->scale.y = 1;
+    groundObject2->GetComponent<TransformComponent>()->scale.z = 100;
+
+    groundObject2->AddComponent<RigidbodyComponent>();
+    groundObject2->AddComponent<ColliderComponent>();
+
+    groundObject2->GetComponent<RigidbodyComponent>()->useGravity = false;
+    groundObject2->GetComponent<RigidbodyComponent>()->isStatic = true;
+
+    groundObject2->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 1, 100 };
+    groundObject2->GetComponent<TransformComponent>()->position.x = 0;
+    groundObject2->GetComponent<TransformComponent>()->position.y = 0;
+    groundObject2->GetComponent<TransformComponent>()->position.z = -200;
+
+
+    GameObject* groundObject3 = floorModel->Instantiate(*scena1, nullptr, ourShader.get());
+    groundObject3->GetComponent<TransformComponent>()->scale.x = 100;
+    groundObject3->GetComponent<TransformComponent>()->scale.y = 1;
+    groundObject3->GetComponent<TransformComponent>()->scale.z = 100;
+
+    groundObject3->AddComponent<RigidbodyComponent>();
+    groundObject3->AddComponent<ColliderComponent>();
+
+    groundObject3->GetComponent<RigidbodyComponent>()->useGravity = false;
+    groundObject3->GetComponent<RigidbodyComponent>()->isStatic = true;
+
+    groundObject3->GetComponent<TransformComponent>()->position.y = 40;
+
+    groundObject3->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 1, 100 };
+
+    GameObject* groundObject4 = floorModel->Instantiate(*scena1, nullptr, ourShader.get());
+    groundObject4->GetComponent<TransformComponent>()->scale.x = 100;
+    groundObject4->GetComponent<TransformComponent>()->scale.y = 1;
+    groundObject4->GetComponent<TransformComponent>()->scale.z = 100;
+
+    groundObject4->AddComponent<RigidbodyComponent>();
+    groundObject4->AddComponent<ColliderComponent>();
+
+    groundObject4->GetComponent<RigidbodyComponent>()->useGravity = false;
+    groundObject4->GetComponent<RigidbodyComponent>()->isStatic = true;
+
+    groundObject4->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 1, 100 };
+    groundObject4->GetComponent<TransformComponent>()->position.x = 0;
+    groundObject4->GetComponent<TransformComponent>()->position.y = 40;
+    groundObject4->GetComponent<TransformComponent>()->position.z = -200;
+
+
+    wallModel = std::make_unique<Prefab>("res/models/wall.glb");
+    wallModel2 = std::make_unique<Prefab>("res/models/wall2.glb");
+    wallModel3 = std::make_unique<Prefab>("res/models/wall3.glb");
+    GameObject* wallObject = wallModel->Instantiate(*scena1, nullptr, ourShader.get());
+    wallObject->GetComponent<TransformComponent>()->scale.x = 100;
+    wallObject->GetComponent<TransformComponent>()->scale.y = 50;
+    wallObject->GetComponent<TransformComponent>()->scale.z = 1;
+
+    wallObject->AddComponent<RigidbodyComponent>();
+    wallObject->AddComponent<ColliderComponent>();
+
+    wallObject->GetComponent<RigidbodyComponent>()->useGravity = false;
+    wallObject->GetComponent<RigidbodyComponent>()->isStatic = true;
+
+    wallObject->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 100, 1 };
+
+    wallObject->GetComponent<TransformComponent>()->position.x = 0;
+    wallObject->GetComponent<TransformComponent>()->position.y = 0;
+    wallObject->GetComponent<TransformComponent>()->position.z = 100;
+
+
+    GameObject* wallObject2 = wallModel2->Instantiate(*scena1, nullptr, ourShader.get());
+    wallObject2->GetComponent<TransformComponent>()->scale.y = 50;
+    wallObject2->GetComponent<TransformComponent>()->scale.z = 1;
+    wallObject2->GetComponent<TransformComponent>()->scale.x = 100;
+
+
+    wallObject2->AddComponent<RigidbodyComponent>();
+    wallObject2->AddComponent<ColliderComponent>();
+
+    wallObject2->GetComponent<RigidbodyComponent>()->useGravity = false;
+    wallObject2->GetComponent<RigidbodyComponent>()->isStatic = true;
+
+    wallObject2->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 100, 100 };
+
+    wallObject2->GetComponent<TransformComponent>()->position.x = 100;
+    wallObject2->GetComponent<TransformComponent>()->position.y = 0;
+    wallObject2->GetComponent<TransformComponent>()->position.z = 0;
+
+    GameObject* wallObject3 = wallModel2->Instantiate(*scena1, nullptr, ourShader.get());
+    wallObject3->GetComponent<TransformComponent>()->scale.y = 50;
+    wallObject3->GetComponent<TransformComponent>()->scale.z = 1;
+    wallObject3->GetComponent<TransformComponent>()->scale.x = 100;
+
+
+    wallObject3->AddComponent<RigidbodyComponent>();
+    wallObject3->AddComponent<ColliderComponent>();
+
+    wallObject3->GetComponent<RigidbodyComponent>()->useGravity = false;
+    wallObject3->GetComponent<RigidbodyComponent>()->isStatic = true;
+
+    wallObject3->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 100, 100 };
+
+    wallObject3->GetComponent<TransformComponent>()->position.x = -100;
+    wallObject3->GetComponent<TransformComponent>()->position.y = 0;
+    wallObject3->GetComponent<TransformComponent>()->position.z = 0;
+
+
+    GameObject* wallObject4 = wallModel->Instantiate(*scena1, nullptr, ourShader.get());
+    wallObject4->GetComponent<TransformComponent>()->scale.x = 100;
+    wallObject4->GetComponent<TransformComponent>()->scale.y = 50;
+    wallObject4->GetComponent<TransformComponent>()->scale.z = 1;
+
+    wallObject4->AddComponent<RigidbodyComponent>();
+    wallObject4->AddComponent<ColliderComponent>();
+
+    wallObject4->GetComponent<RigidbodyComponent>()->useGravity = false;
+    wallObject4->GetComponent<RigidbodyComponent>()->isStatic = true;
+
+    wallObject4->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 100, 1 };
+
+    wallObject4->GetComponent<TransformComponent>()->position.x = 0;
+    wallObject4->GetComponent<TransformComponent>()->position.y = 0;
+    wallObject4->GetComponent<TransformComponent>()->position.z = -300;
+
+
+    GameObject* wallObject5 = wallModel2->Instantiate(*scena1, nullptr, ourShader.get());
+    wallObject5->GetComponent<TransformComponent>()->scale.y = 50;
+    wallObject5->GetComponent<TransformComponent>()->scale.z = 1;
+    wallObject5->GetComponent<TransformComponent>()->scale.x = 100;
+
+
+    wallObject5->AddComponent<RigidbodyComponent>();
+    wallObject5->AddComponent<ColliderComponent>();
+
+    wallObject5->GetComponent<RigidbodyComponent>()->useGravity = false;
+    wallObject5->GetComponent<RigidbodyComponent>()->isStatic = true;
+
+    wallObject5->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 100, 100 };
+
+    wallObject5->GetComponent<TransformComponent>()->position.x = 100;
+    wallObject5->GetComponent<TransformComponent>()->position.y = 0;
+    wallObject5->GetComponent<TransformComponent>()->position.z = -200;
+
+    GameObject* wallObject6 = wallModel2->Instantiate(*scena1, nullptr, ourShader.get());
+    wallObject6->GetComponent<TransformComponent>()->scale.y = 50;
+    wallObject6->GetComponent<TransformComponent>()->scale.z = 1;
+    wallObject6->GetComponent<TransformComponent>()->scale.x = 100;
+
+
+    wallObject6->AddComponent<RigidbodyComponent>();
+    wallObject6->AddComponent<ColliderComponent>();
+
+    wallObject6->GetComponent<RigidbodyComponent>()->useGravity = false;
+    wallObject6->GetComponent<RigidbodyComponent>()->isStatic = true;
+
+    wallObject6->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 100, 100 };
+
+    wallObject6->GetComponent<TransformComponent>()->position.x = -100;
+    wallObject6->GetComponent<TransformComponent>()->position.y = 0;
+    wallObject6->GetComponent<TransformComponent>()->position.z = -200;
+
+
+    GameObject* wallObject7 = wallModel->Instantiate(*scena1, nullptr, ourShader.get());
+    wallObject7->GetComponent<TransformComponent>()->scale.x = 100;
+    wallObject7->GetComponent<TransformComponent>()->scale.y = 50;
+    wallObject7->GetComponent<TransformComponent>()->scale.z = 1;
+
+    wallObject7->AddComponent<RigidbodyComponent>();
+    wallObject7->AddComponent<ColliderComponent>();
+
+    wallObject7->GetComponent<RigidbodyComponent>()->useGravity = false;
+    wallObject7->GetComponent<RigidbodyComponent>()->isStatic = true;
+
+    wallObject7->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 100, 1 };
+
+    wallObject7->GetComponent<TransformComponent>()->position.x = 110;
+    wallObject7->GetComponent<TransformComponent>()->position.y = 0;
+    wallObject7->GetComponent<TransformComponent>()->position.z = -100;
+
+    GameObject* wallObject8 = wallModel->Instantiate(*scena1, nullptr, ourShader.get());
+    wallObject8->GetComponent<TransformComponent>()->scale.x = 100;
+    wallObject8->GetComponent<TransformComponent>()->scale.y = 50;
+    wallObject8->GetComponent<TransformComponent>()->scale.z = 1;
+
+    wallObject8->AddComponent<RigidbodyComponent>();
+    wallObject8->AddComponent<ColliderComponent>();
+
+    wallObject8->GetComponent<RigidbodyComponent>()->useGravity = false;
+    wallObject8->GetComponent<RigidbodyComponent>()->isStatic = true;
+
+    wallObject8->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 100, 1 };
+
+    wallObject8->GetComponent<TransformComponent>()->position.x = -110;
+    wallObject8->GetComponent<TransformComponent>()->position.y = 0;
+    wallObject8->GetComponent<TransformComponent>()->position.z = -100;
+
+    GameObject* wallObject9 = wallModel->Instantiate(*scena1, nullptr, ourShader.get());
+    wallObject9->GetComponent<TransformComponent>()->scale.x = 100;
+    wallObject9->GetComponent<TransformComponent>()->scale.y = 50;
+    wallObject9->GetComponent<TransformComponent>()->scale.z = 1;
+
+    wallObject9->AddComponent<RigidbodyComponent>();
+    wallObject9->AddComponent<ColliderComponent>();
+
+    wallObject9->GetComponent<RigidbodyComponent>()->useGravity = false;
+    wallObject9->GetComponent<RigidbodyComponent>()->isStatic = true;
+
+    wallObject9->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 10, 44, 1 };
+
+    wallObject9->GetComponent<TransformComponent>()->position.x = 0;
+    wallObject9->GetComponent<TransformComponent>()->position.y = 70;
+    wallObject9->GetComponent<TransformComponent>()->position.z = -100;
+
+
+    GameObject* wallObject10 = wallModel3->Instantiate(*scena1, nullptr, ourShader.get());
+    wallObject10->GetComponent<TransformComponent>()->scale.x = 30;
+    wallObject10->GetComponent<TransformComponent>()->scale.y = 10;
+    wallObject10->GetComponent<TransformComponent>()->scale.z = 10;
+
+    wallObject10->AddComponent<RigidbodyComponent>();
+    wallObject10->AddComponent<ColliderComponent>();
+
+    wallObject10->GetComponent<RigidbodyComponent>()->useGravity = false;
+    wallObject10->GetComponent<RigidbodyComponent>()->isStatic = true;
+
+    wallObject10->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 11, 11, 33 };
+
+    wallObject10->GetComponent<TransformComponent>()->position.x = 30;
+    wallObject10->GetComponent<TransformComponent>()->position.y = 0;
+    wallObject10->GetComponent<TransformComponent>()->position.z = 0;
+
+    GameObject* wallObject11 = wallModel3->Instantiate(*scena1, nullptr, ourShader.get());
+    wallObject11->GetComponent<TransformComponent>()->scale.x = 30;
+    wallObject11->GetComponent<TransformComponent>()->scale.y = 10;
+    wallObject11->GetComponent<TransformComponent>()->scale.z = 10;
+
+    wallObject11->AddComponent<RigidbodyComponent>();
+    wallObject11->AddComponent<ColliderComponent>();
+
+    wallObject11->GetComponent<RigidbodyComponent>()->useGravity = false;
+    wallObject11->GetComponent<RigidbodyComponent>()->isStatic = true;
+
+    wallObject11->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 11, 11, 33 };
+
+    wallObject11->GetComponent<TransformComponent>()->position.x = -30;
+    wallObject11->GetComponent<TransformComponent>()->position.y = 0;
+    wallObject11->GetComponent<TransformComponent>()->position.z = 0;
+
+    GameObject* wallObject12 = wallModel3->Instantiate(*scena1, nullptr, ourShader.get());
+    wallObject12->GetComponent<TransformComponent>()->scale.x = 30;
+    wallObject12->GetComponent<TransformComponent>()->scale.y = 10;
+    wallObject12->GetComponent<TransformComponent>()->scale.z = 10;
+
+    wallObject12->AddComponent<RigidbodyComponent>();
+    wallObject12->AddComponent<ColliderComponent>();
+
+    wallObject12->GetComponent<RigidbodyComponent>()->useGravity = false;
+    wallObject12->GetComponent<RigidbodyComponent>()->isStatic = true;
+
+    wallObject12->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 11, 11, 33 };
+
+    wallObject12->GetComponent<TransformComponent>()->position.x = 30;
+    wallObject12->GetComponent<TransformComponent>()->position.y = 0;
+    wallObject12->GetComponent<TransformComponent>()->position.z = -200;
+
+    GameObject* wallObject13 = wallModel3->Instantiate(*scena1, nullptr, ourShader.get());
+    wallObject13->GetComponent<TransformComponent>()->scale.x = 30;
+    wallObject13->GetComponent<TransformComponent>()->scale.y = 10;
+    wallObject13->GetComponent<TransformComponent>()->scale.z = 10;
+
+    wallObject13->AddComponent<RigidbodyComponent>();
+    wallObject13->AddComponent<ColliderComponent>();
+
+    wallObject13->GetComponent<RigidbodyComponent>()->useGravity = false;
+    wallObject13->GetComponent<RigidbodyComponent>()->isStatic = true;
+
+    wallObject13->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 11, 11, 33 };
+
+    wallObject13->GetComponent<TransformComponent>()->position.x = -30;
+    wallObject13->GetComponent<TransformComponent>()->position.y = 0;
+    wallObject13->GetComponent<TransformComponent>()->position.z = -200;
+
+
+
+
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
@@ -604,6 +928,8 @@ int main(int, char**)
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
         updateFPS(deltaTime);
+
+        rigidBodyCamera1->useGravity = true;
 
 
         processCameraInput(ecs, *camCompLeft, *t0,
@@ -615,10 +941,6 @@ int main(int, char**)
         processCameraMouse(ecs, *camCompLeft);
         processCameraGamepad(ecs, *camCompLeft, *t0, 0);
         processCameraGamepad(ecs, *camCompRight, *t1, 1);
-        //spdlog::info("GameObject position: x={}, y={}, z={}",
-        //    transform->position.x,
-        //    transform->position.y,
-        //    transform->position.z);
         test_score++;
         sprite_4->text = "score: " + std::to_string(test_score);
 
@@ -632,6 +954,11 @@ int main(int, char**)
         if (ecs.GetSystem<HID>()->is_action_just_pressed("right_click")) {
             focused = !focused;
             updateFocus();
+        }
+        if (ecs.GetSystem<HID>()->is_action_just_pressed("toggle_culling")) {
+            renderSystem->frustumCullingEnabled = !renderSystem->frustumCullingEnabled;
+            spdlog::info("Frustum culling: {}",
+                renderSystem->frustumCullingEnabled ? "ON" : "OFF");
         }
 
         // Process I/O operations here

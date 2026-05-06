@@ -42,6 +42,7 @@ private:
     glm::vec3 currentCameraPos;
 
 public:
+    bool frustumCullingEnabled = true;
     struct Plane {
         glm::vec3 normal;
         float d;
@@ -145,7 +146,7 @@ public:
         return f;
     }
 
-    bool SphereInFrustum(const Frustum& f, glm::vec3 pos, float radius)
+    /*bool SphereInFrustum(const Frustum& f, glm::vec3 pos, float radius)
     {
         for (int i = 0; i < 6; i++)
         {
@@ -154,6 +155,30 @@ public:
 
             if (distance < -radius)
                 return false;
+        }
+        return true;
+    }*/
+    bool AABBInFrustum(const Frustum& f, const AABB& aabb, const glm::mat4& modelMatrix)
+    {
+        glm::vec3 corners[8] = {
+            {aabb.min.x, aabb.min.y, aabb.min.z},
+            {aabb.max.x, aabb.min.y, aabb.min.z},
+            {aabb.min.x, aabb.max.y, aabb.min.z},
+            {aabb.max.x, aabb.max.y, aabb.min.z},
+            {aabb.min.x, aabb.min.y, aabb.max.z},
+            {aabb.max.x, aabb.min.y, aabb.max.z},
+            {aabb.min.x, aabb.max.y, aabb.max.z},
+            {aabb.max.x, aabb.max.y, aabb.max.z},
+        };
+
+        for (int p = 0; p < 6; p++) {
+            int outside = 0;
+            for (int c = 0; c < 8; c++) {
+                glm::vec3 world = glm::vec3(modelMatrix * glm::vec4(corners[c], 1.0f));
+                if (glm::dot(f.planes[p].normal, world) + f.planes[p].d < 0)
+                    outside++;
+            }
+            if (outside == 8) return false;
         }
         return true;
     }
@@ -315,13 +340,24 @@ public:
             auto cullStart = std::chrono::high_resolution_clock::now();
             for (size_t i : indices)
             {
-                glm::vec3 pos = glm::vec3(transforms[i]->modelMatrix[3]);
+
+                if (!frustumCullingEnabled) {
+                    visible.push_back(i);
+                    continue;
+                }
+
+                /*glm::vec3 pos = glm::vec3(transforms[i]->modelMatrix[3]);
                 float radius = 1.0f; // na start
 
                 if (SphereInFrustum(frustum, pos, radius))
                 {
                     visible.push_back(i);
-                }
+                }*/
+                auto* renderComp = std::get<1>(renderQuery->componentsVectors)[i];
+                AABB localAABB = renderComp->model->GetLocalAABB();
+
+                if (AABBInFrustum(frustum, localAABB, transforms[i]->modelMatrix))
+                    visible.push_back(i);
             }
             auto cullEnd = std::chrono::high_resolution_clock::now();
             stats.cullingTimeMs += std::chrono::duration<float, std::milli>(cullEnd - cullStart).count();

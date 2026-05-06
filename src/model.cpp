@@ -31,6 +31,7 @@ Model::Model(string const& path, bool gamma) : gammaCorrection(gamma)
     loadModel(path);
 }
 
+
 /*
 // constructor, expects a filepath to a 3D model.
 Model::Model(string const& path, float meshScale, bool gamma) : meshScale(meshScale), gammaCorrection(gamma)
@@ -238,23 +239,24 @@ MeshNode Model::processMesh(aiMesh* mesh, const aiScene* scene)
     }
     if (!normalMaps.empty()) myMaterial->normalMap = normalMaps[0].id;
 
-    // float shininess;
-    // if (aiGetMaterialFloat(aiMat, AI_MATKEY_SHININESS, &shininess) == AI_SUCCESS) {
-    //     myMaterial->shininess = shininess;
-    // }
 
     std::shared_ptr<MeshData> cpuData = std::make_shared<MeshData>();
     cpuData->vertices = std::move(vertices);
     cpuData->indices = std::move(indices);
 
-    // Wysy³amy dane na GPU
     std::shared_ptr<RenderMesh> gpuMesh = std::make_shared<RenderMesh>(*cpuData);
 
-    // Spinamy wszystko w wêze³
     MeshNode node;
     node.cpuData = cpuData;
     node.gpuMesh = gpuMesh;
     node.material = myMaterial;
+
+    AABB aabb;
+    for (auto& v : cpuData->vertices) {
+        aabb.min = glm::min(aabb.min, v.Position);
+        aabb.max = glm::max(aabb.max, v.Position);
+    }
+    node.aabb = aabb;
 
     return node;
 }

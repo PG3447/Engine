@@ -24,6 +24,13 @@
 
 using namespace std;
 
+struct MeshNode {
+    std::shared_ptr<MeshData> cpuData;
+    std::shared_ptr<RenderMesh> gpuMesh;
+    std::shared_ptr<Material> material;
+    AABB aabb;
+};
+
 struct Texture {
     unsigned int id;
     std::string type;
@@ -94,6 +101,18 @@ public:
     void SetShaderRecursive(ModelNode* node, Shader* shader);
 
     void SetShader(Shader* shader);
+
+
+    AABB GetLocalAABB() const {
+        AABB result;
+        for (auto& node : nodes) {
+            result.min = glm::min(result.min, node.aabb.min);
+            result.max = glm::max(result.max, node.aabb.max);
+        }
+        return result;
+    }
+
+   // int GetTriangleCount() const {
 
     int CountTriangles(const ModelNode* node) const
     {
