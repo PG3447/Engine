@@ -7,6 +7,7 @@
 #include <spdlog/spdlog.h>
 #include <assimp/texture.h>
 #include <memory>
+#include "model.h"
 
 class Model;
 
@@ -19,7 +20,7 @@ public:
 
     static GLuint LoadTexture(const std::string& path, const std::string& directory = "", const aiTexture* aiTex = nullptr);
 
-    static std::shared_ptr<Model> LoadModel(const std::string& path);
+    static std::shared_ptr<ModelNode> LoadModel(const std::string& path);
 
     static void Clear();
 

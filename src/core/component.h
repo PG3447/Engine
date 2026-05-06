@@ -5,6 +5,7 @@
 #include <memory>
 #include <string>
 #include "../unused/camera.h"
+#include "model.h"
 
 class Model;
 class Shader;
@@ -48,7 +49,7 @@ struct TransformComponent : Component {
 struct RenderComponent : Component {
     static constexpr uint64_t ComponentBit = 1ull << 1;
 
-    std::vector<std::shared_ptr<MeshNode>> nodes;
+    std::vector<MeshNode> meshes;
 
     //std::shared_ptr<Model> model;
     //

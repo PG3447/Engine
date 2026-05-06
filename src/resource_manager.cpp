@@ -1,7 +1,7 @@
 #include "resource_manager.h"
 #include <stb_image.h>
 #include <iostream>
-#include "model.h"
+
 
 #ifndef GL_TEXTURE_MAX_ANISOTROPY_EXT
 #define GL_TEXTURE_MAX_ANISOTROPY_EXT 0x84FE
@@ -40,14 +40,14 @@ GLuint ResourceManager::LoadTexture(const std::string& path, const std::string& 
 
 std::unordered_map<std::string, std::weak_ptr<Model>> ResourceManager::Models;
 
-std::shared_ptr<Model> ResourceManager::LoadModel(const std::string& path)
+std::shared_ptr<ModelNode> ResourceManager::LoadModel(const std::string& path)
 {
     auto it = Models.find(path);
     if (it != Models.end())
     {
         if (std::shared_ptr<Model> sharedModel = it->second.lock())
         {
-            return sharedModel;
+            return sharedModel->rootNode;
         }
     }
 
@@ -56,7 +56,7 @@ std::shared_ptr<Model> ResourceManager::LoadModel(const std::string& path)
     Models[path] = model;
 
     spdlog::info("ResourceManager: Zaladowano model {}", path);
-    return model;
+    return model->rootNode;
 }
 
 unsigned int ResourceManager::loadTextureFromFile(const std::string& path, const std::string& directory, const aiTexture* aiTex)

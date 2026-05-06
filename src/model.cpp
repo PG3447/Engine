@@ -103,9 +103,9 @@ void Model::loadModel(string const& path)
 
     // Pobieramy drzewo z korzenia
     std::unique_ptr<ModelNode> rootNode = processNode(scene->mRootNode, scene);
-    this->nodes = std::move(rootNode->nodes);
-    this->children = std::move(rootNode->children);
-    this->transform = rootNode->transform;
+    //this->nodes = std::move(rootNode->nodes);
+    //this->children = std::move(rootNode->children);
+    //this->transform = rootNode->transform;
 }
 
 std::unique_ptr<ModelNode> Model::processNode(aiNode* node, const aiScene* scene)

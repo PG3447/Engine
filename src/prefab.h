@@ -13,7 +13,7 @@ using namespace std;
 class Prefab
 {
 public:
-    std::shared_ptr<Model> rootModel;
+    std::shared_ptr<ModelNode> rootModel;
 
     Prefab(string const& path)
     {
@@ -59,7 +59,7 @@ private:
     //}
 
 
-    GameObject* CreateRecursive(Scene* scene, Model* model, GameObject* parent, Shader* shader)
+    GameObject* CreateRecursive(Scene* scene, ModelNode* model, GameObject* parent, Shader* shader)
     {
         if (!model) return nullptr;
 
@@ -77,16 +77,18 @@ private:
 
         // Render
         auto* render = go->AddComponent<RenderComponent>();
-        render->model = model;
-        render->shader = shader;
+        render->meshes = model->meshes;
 
-        if (model && !model->nodes.empty()) {
-            render->materialOverride = model->nodes[0].material;
-        }
-        else
-        {
-            render->materialOverride = std::make_shared<Material>(shader);
-        }
+        //render->model = model;
+        //render->shader = shader;
+        //
+        //if (model && !model->nodes.empty()) {
+        //    render->materialOverride = model->nodes[0].material;
+        //}
+        //else
+        //{
+        //    render->materialOverride = std::make_shared<Material>(shader);
+        //}
 
        
 

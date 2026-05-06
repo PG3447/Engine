@@ -32,8 +32,15 @@ struct Texture {
 };
 
 
+struct Mesh {
+    std::vector<MeshNode> meshes;
+};
+
 //MeshNode to tak naprawde dane nie zaladowane do RenderComponent
 struct MeshNode {
+    //bool instancingPrepared = false;
+    //unsigned int instanceVBO = 0;
+
     std::shared_ptr<MeshData> cpuData;
     std::shared_ptr<RenderMesh> gpuMesh;
     std::shared_ptr<Material> material;
@@ -46,7 +53,7 @@ struct ModelNode
     std::string name;
     Transform transform;
 
-    std::vector<MeshNode> meshes;
+    std::shared_ptr<Mesh> mesh;
     std::vector<std::unique_ptr<ModelNode>> children;
 };
 
@@ -60,7 +67,7 @@ public:
     Model& operator=(Model&&) = default;
 
     // model data 
-    std::unique_ptr<ModelNode> rootNode;
+    std::shared_ptr<ModelNode> rootNode;
 
     //std::vector<MeshNode> nodes;
     //Transform transform;
@@ -68,8 +75,8 @@ public:
     string name;
     string directory;
     bool gammaCorrection;
-    bool instancingPrepared = false;
-    unsigned int instanceVBO = 0;
+    //bool instancingPrepared = false;
+    //unsigned int instanceVBO = 0;
     
     Model();
     ~Model();
