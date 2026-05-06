@@ -24,8 +24,11 @@ public:
 
     static void Clear();
 
+    static GLuint CreateTextureFromColor(const std::string& name, const glm::vec3& color);
+
 private:
     static unsigned int loadTextureFromFile(const std::string& path, const std::string& directory, const aiTexture* aiTex);
+
 };
 
 #endif

@@ -335,11 +335,9 @@ int main(int, char**)
     brickMat->specularMap = spec;
     brickMat->normalMap = norm;
     brickMat->shininess = 64.0f;
-    spdlog::error("Failed to initialize asddsda loader!");
 
     RenderHelper::SetMaterial(obb3, brickMat);
 
-    spdlog::info("Failed to initialize asddsda loader!");
 
     GameObject* obj = scena1->CreateGameObject(nullptr);
     CameraComponent* camCompLeft = obj->AddComponent<CameraComponent>();
@@ -480,7 +478,7 @@ int main(int, char**)
 
     RenderHelper::SetMaterial(model29, brickMat);
 
-    model1  ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    model1->GetComponent<TransformComponent>()->position.x = placeholderThing;
 
     model1->AddComponent<RigidbodyComponent>();
     model1->AddComponent<ColliderComponent>();
@@ -489,11 +487,17 @@ int main(int, char**)
 
     model1->GetComponent<LightComponent>()->type = Directional;
     model1->GetComponent<LightComponent>()->index = 0;
-    model1->GetComponent<LightComponent>()->direction = glm::vec3(-0.3f, -1.0f, -0.1f);
-    model1->GetComponent<LightComponent>()->ambient =  glm::vec3(0.25f);
-    model1->GetComponent<LightComponent>()->diffuse = glm::vec3(0.85f);
-    model1->GetComponent<LightComponent>()->specular = glm::vec3(0.4f);
+    auto* light = model1->GetComponent<LightComponent>();
+
+    light->direction = glm::normalize(glm::vec3(-0.3f, -1.0f, -0.1f));
+
+    light->ambient = glm::vec3(0.3f);
+    light->diffuse = glm::vec3(0.6f);
+    light->specular = glm::vec3(0.9f);
     
+    GLuint whiteSpecular = ResourceManager::CreateTextureFromColor("white_spec", glm::vec3(1.0f));
+
+    RenderHelper::SetSpecularTexture(model1, whiteSpecular);
 
     model1->GetComponent<RigidbodyComponent>()->useGravity = true;
     model1->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 1, 1 };
