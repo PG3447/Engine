@@ -312,7 +312,6 @@ int main(int, char**)
     obb->AddComponent<ColliderComponent>();
 
 
-
     obb->GetComponent<RigidbodyComponent>()->useGravity = false;
     obb->GetComponent<RigidbodyComponent>()->isStatic = true;
 
@@ -327,14 +326,20 @@ int main(int, char**)
     GLuint spec = ResourceManager::LoadTexture("specular_brick.png", "res/textures/");
     GLuint norm = ResourceManager::LoadTexture("normal_brick.png", "res/textures/");
 
+
+
+
     auto brickMat = std::make_shared<Material>();
     brickMat->shader = ourShader.get();
     brickMat->diffuseMap = diff;
     brickMat->specularMap = spec;
     brickMat->normalMap = norm;
     brickMat->shininess = 64.0f;
-    
+    spdlog::error("Failed to initialize asddsda loader!");
+
     RenderHelper::SetMaterial(obb3, brickMat);
+
+    spdlog::info("Failed to initialize asddsda loader!");
 
     GameObject* obj = scena1->CreateGameObject(nullptr);
     CameraComponent* camCompLeft = obj->AddComponent<CameraComponent>();

@@ -53,6 +53,12 @@ std::shared_ptr<ModelNode> ResourceManager::LoadModel(const std::string& path)
 
     std::shared_ptr<Model> model = std::make_shared<Model>(path);
 
+    if (!model->rootNode)
+    {
+        spdlog::error("Model load failed (rootNode null): {}", path);
+        return nullptr;
+    }
+
     Models[path] = model;
 
     spdlog::info("ResourceManager: Zaladowano model {}", path);

@@ -21,9 +21,9 @@ Model::Model() : gammaCorrection(false)
 }
 
 Model::~Model() {
-    if (instanceVBO != 0) {
-        glDeleteBuffers(1, &instanceVBO);
-    }
+    //if (instanceVBO != 0) {
+    //    glDeleteBuffers(1, &instanceVBO);
+    //}
 }
 
 Model::Model(string const& path, bool gamma) : gammaCorrection(gamma)
@@ -42,35 +42,36 @@ Model::Model(string const& path, float meshScale, bool gamma) : meshScale(meshSc
 }
 */
 
-void Model::PrepareInstancing()
-{
-    if (instancingPrepared) return;
-
-    if (instanceVBO == 0) {
-        glGenBuffers(1, &instanceVBO);
-    }
-
-    for (auto& node : nodes) {
-        node.gpuMesh->EnableInstancing(instanceVBO);
-    }
-
-    instancingPrepared = true;
-}
+//
+//void Model::PrepareInstancing()
+//{
+//    if (instancingPrepared) return;
+//
+//    if (instanceVBO == 0) {
+//        glGenBuffers(1, &instanceVBO);
+//    }
+//
+//    for (auto& node : nodes) {
+//        node.gpuMesh->EnableInstancing(instanceVBO);
+//    }
+//
+//    instancingPrepared = true;
+//}
 
 
 // draws the model, and thus all its meshes
-void Model::Draw(GLsizei instanceCount, Material* materialOverride)
-{
-    for (auto& node : nodes)
-    {
-        Material* activeMaterial = materialOverride ? materialOverride : node.material.get();
-        if (activeMaterial) {
-            activeMaterial->Apply();
-        }
-
-        node.gpuMesh->Draw(instanceCount);
-    }
-}
+//void Model::Draw(GLsizei instanceCount, Material* materialOverride)
+//{
+//    for (auto& node : nodes)
+//    {
+//        Material* activeMaterial = materialOverride ? materialOverride : node.material.get();
+//        if (activeMaterial) {
+//            activeMaterial->Apply();
+//        }
+//
+//        node.gpuMesh->Draw(instanceCount);
+//    }
+//}
 
 void Model::turnOnReflect(unsigned int cubemapTexture)
 {
@@ -102,13 +103,14 @@ void Model::loadModel(string const& path)
     name = path;
 
     // Pobieramy drzewo z korzenia
-    std::unique_ptr<ModelNode> rootNode = processNode(scene->mRootNode, scene);
+    std::shared_ptr<ModelNode> rootNode = processNode(scene->mRootNode, scene);
+    this->rootNode = std::move(rootNode);
     //this->nodes = std::move(rootNode->nodes);
     //this->children = std::move(rootNode->children);
     //this->transform = rootNode->transform;
 }
 
-std::unique_ptr<ModelNode> Model::processNode(aiNode* node, const aiScene* scene)
+std::shared_ptr<ModelNode> Model::processNode(aiNode* node, const aiScene* scene)
 {
     auto model = std::make_unique<ModelNode>();
 
@@ -257,12 +259,36 @@ MeshNode Model::processMesh(aiMesh* mesh, const aiScene* scene)
     return node;
 }
 
+//void Model::SetShader(Shader* shader)
+//{
+//    for (auto& node : nodes) {
+//        if (node.material) {
+//            node.material->shader = shader;
+//        }
+//    }
+//}
+
 void Model::SetShader(Shader* shader)
 {
-    for (auto& node : nodes) {
-        if (node.material) {
-            node.material->shader = shader;
+    if (!rootNode)
+        return;
+
+    SetShaderRecursive(rootNode.get(), shader);
+}
+
+void Model::SetShaderRecursive(ModelNode* node, Shader* shader)
+{
+    for (auto& mesh : node->meshes)
+    {
+        if (mesh.material)
+        {
+            mesh.material->shader = shader;
         }
+    }
+
+    for (auto& child : node->children)
+    {
+        SetShaderRecursive(child.get(), shader);
     }
 }
 

@@ -61,6 +61,7 @@ private:
 
     GameObject* CreateRecursive(Scene* scene, ModelNode* model, GameObject* parent, Shader* shader)
     {
+        
         if (!model) return nullptr;
 
         GameObject* go = scene->CreateGameObject(parent);
@@ -79,6 +80,10 @@ private:
         auto* render = go->AddComponent<RenderComponent>();
         render->meshes = model->meshes;
 
+        for (auto& mesh : render->meshes)
+        {
+            mesh.material->shader = shader;
+        }
         //render->model = model;
         //render->shader = shader;
         //

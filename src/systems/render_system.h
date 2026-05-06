@@ -14,11 +14,11 @@
 
 class RenderSystem : public System {
 private:
-    using GroupKey = std::tuple<Model*, Material*>;
+    using GroupKey = std::tuple<RenderMesh*, Material*>;
 
     struct group_hash {
         std::size_t operator()(const GroupKey& k) const {
-            return std::hash<Model*>()(std::get<0>(k)) ^
+            return std::hash<RenderMesh*>()(std::get<0>(k)) ^
                 (std::hash<Material*>()(std::get<1>(k)) << 1);
         }
     };
@@ -263,17 +263,36 @@ public:
 
         for (size_t i = 0; i < renderQuery->gameobjects.size(); i++) {
             RenderComponent* r = renderers[i];
-            if (!r || !r->model) continue;
+            if (!r) continue;
 
-            if (r->shader) {
-                r->model->SetShader(r->shader);
+            for (auto& mesh : r->meshes)
+            {
+                if (!mesh.gpuMesh || !mesh.material)
+                    continue;
+
+                GroupKey key = {
+                    mesh.gpuMesh.get(),
+                    mesh.material.get()
+                };
+
+                instancedGroups[key].push_back(i);
             }
-
-            GroupKey key = { r->model, r->materialOverride.get() };
-            instancedGroups[key].push_back(i);
         }
+
         groupsDirty = false;
     }
+
+
+    //if (!r || !r->model) continue;
+
+    //if (r->shader) {
+    //    r->model->SetShader(r->shader);
+    //}
+
+    //GroupKey key = { r->model, r->materialOverride.get() };
+    //instancedGroups[key].push_back(i);
+    //    }
+
 
     void RenderGroups(const Frustum& frustum) {
         auto& transforms = std::get<0>(renderQuery->componentsVectors);
@@ -283,9 +302,13 @@ public:
 
 
         for (auto& [key, indices] : instancedGroups) {
-            Model* model = std::get<0>(key);
+            RenderMesh* model = std::get<0>(key);
             Material* overrideMat = std::get<1>(key);
             Shader* shader = overrideMat->shader;
+
+            if (shader == nullptr) 
+                continue;
+            
 
             std::vector<size_t> visible;
             // Culling
@@ -328,11 +351,12 @@ public:
                 shader->setBool("useInstance", false);
                 shader->setMat4("model", transforms[visible[0]]->modelMatrix);
                 auto drawStart = std::chrono::high_resolution_clock::now();
-                model->Draw(0, overrideMat);
+                overrideMat->Apply();
+                model->Draw(0);
                 stats.drawCalls++;
                 stats.renderedObjects += visible.size();
                 stats.stateChanges++;
-                stats.triangles += model->GetTriangleCount() * visible.size();
+                //stats.triangles += model->GetTriangleCount() * visible.size();
                 auto drawEnd = std::chrono::high_resolution_clock::now();
                 stats.drawSubmitTimeMs += std::chrono::duration<float, std::milli>(drawEnd - drawStart).count();
             }
@@ -345,12 +369,12 @@ public:
                 stats.drawCalls++;
                 stats.renderedObjects += (int)visible.size();
                 stats.stateChanges++;
-                stats.triangles += model->GetTriangleCount() * (int)visible.size();
+                //stats.triangles += model->GetTriangleCount() * (int)visible.size();
             }
         }
     }
 
-    void RenderInstanced(Model* model, std::vector<size_t>& indices, Material* overrideMat)
+    void RenderInstanced(RenderMesh* model, std::vector<size_t>& indices, Material* overrideMat)
     {
         auto& transforms = std::get<0>(renderQuery->componentsVectors);
 
@@ -367,7 +391,8 @@ public:
         glBufferData(GL_ARRAY_BUFFER, count * sizeof(glm::mat4), matrices.data(), GL_DYNAMIC_DRAW);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-        model->Draw((GLsizei)count, overrideMat);
+        overrideMat->Apply();
+        model->Draw((GLsizei)count);
     }
 };
 

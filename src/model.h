@@ -10,7 +10,6 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
-#include "mesh_data.h"
 #include "render_mesh.h"
 #include "material.h"
 #include <shader.h>
@@ -31,10 +30,10 @@ struct Texture {
     std::string path;
 };
 
-
-struct Mesh {
-    std::vector<MeshNode> meshes;
-};
+//
+//struct Mesh {
+//    std::vector<MeshNode> meshes;
+//};
 
 //MeshNode to tak naprawde dane nie zaladowane do RenderComponent
 struct MeshNode {
@@ -44,6 +43,7 @@ struct MeshNode {
     std::shared_ptr<MeshData> cpuData;
     std::shared_ptr<RenderMesh> gpuMesh;
     std::shared_ptr<Material> material;
+    //int indexMaterial;
 };
 
 
@@ -53,8 +53,9 @@ struct ModelNode
     std::string name;
     Transform transform;
 
-    std::shared_ptr<Mesh> mesh;
-    std::vector<std::unique_ptr<ModelNode>> children;
+    std::vector<MeshNode> meshes;
+    //std::vector<std::shared_ptr<Material>> materials;
+    std::vector<std::shared_ptr<ModelNode>> children;
 };
 
 class Model
@@ -90,19 +91,47 @@ public:
 
     MeshNode processMesh(aiMesh* mesh, const aiScene* scene);
 
+    void SetShaderRecursive(ModelNode* node, Shader* shader);
+
     void SetShader(Shader* shader);
 
-    int GetTriangleCount() const {
+    int CountTriangles(const ModelNode* node) const
+    {
         int total = 0;
-        for (auto& node : nodes)
-            if (node.cpuData)
-                total += node.cpuData->indices.size() / 3;
+
+        for (const auto& mesh : node->meshes)
+        {
+            if (mesh.cpuData)
+                total += mesh.cpuData->indices.size() / 3;
+        }
+
+        for (const auto& child : node->children)
+        {
+            total += CountTriangles(child.get());
+        }
+
         return total;
     }
 
+    int GetTriangleCount() const
+    {
+        if (!rootNode)
+            return 0;
+
+        return CountTriangles(rootNode.get());
+    }
+
+    //int GetTriangleCount() const {
+    //    int total = 0;
+    //    for (auto& node : nodes)
+    //        if (node.cpuData)
+    //            total += node.cpuData->indices.size() / 3;
+    //    return total;
+    //}
+
 private:
     void loadModel(const std::string& path);
-    std::unique_ptr<ModelNode> processNode(aiNode* node, const aiScene* scene);
+    std::shared_ptr<ModelNode> processNode(aiNode* node, const aiScene* scene);
 
     std::vector<Texture> loadMaterialTextures(aiMaterial* mat, aiTextureType type, std::string typeName, const aiScene* scene);
 };
