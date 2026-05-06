@@ -349,7 +349,7 @@ int main(int, char**)
     ColliderComponent* camera1collider = camera1->AddComponent<ColliderComponent>();
     RigidbodyComponent* rigidBodyCamera1 = camera1->AddComponent<RigidbodyComponent>();
     camera1->GetComponent<RigidbodyComponent>()->useGravity = false;
-    camera1->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1.0f, 8.0f, 1.0f };
+    camera1->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1.0f, 10.0f, 1.0f };
 
     GameObject* camera2 = scena1->CreateGameObject(nullptr);
     CameraComponent* camCompRight = camera2->AddComponent<CameraComponent>();
@@ -627,6 +627,38 @@ int main(int, char**)
     groundObject2->GetComponent<TransformComponent>()->position.z = -200;
 
 
+    GameObject* groundObject3 = floorModel->Instantiate(*scena1, nullptr, ourShader.get());
+    groundObject3->GetComponent<TransformComponent>()->scale.x = 100;
+    groundObject3->GetComponent<TransformComponent>()->scale.y = 1;
+    groundObject3->GetComponent<TransformComponent>()->scale.z = 100;
+
+    groundObject3->AddComponent<RigidbodyComponent>();
+    groundObject3->AddComponent<ColliderComponent>();
+
+    groundObject3->GetComponent<RigidbodyComponent>()->useGravity = false;
+    groundObject3->GetComponent<RigidbodyComponent>()->isStatic = true;
+
+    groundObject3->GetComponent<TransformComponent>()->position.y = 40;
+
+    groundObject3->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 1, 100 };
+
+    GameObject* groundObject4 = floorModel->Instantiate(*scena1, nullptr, ourShader.get());
+    groundObject4->GetComponent<TransformComponent>()->scale.x = 100;
+    groundObject4->GetComponent<TransformComponent>()->scale.y = 1;
+    groundObject4->GetComponent<TransformComponent>()->scale.z = 100;
+
+    groundObject4->AddComponent<RigidbodyComponent>();
+    groundObject4->AddComponent<ColliderComponent>();
+
+    groundObject4->GetComponent<RigidbodyComponent>()->useGravity = false;
+    groundObject4->GetComponent<RigidbodyComponent>()->isStatic = true;
+
+    groundObject4->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 1, 100 };
+    groundObject4->GetComponent<TransformComponent>()->position.x = 0;
+    groundObject4->GetComponent<TransformComponent>()->position.y = 40;
+    groundObject4->GetComponent<TransformComponent>()->position.z = -200;
+
+
     wallModel = std::make_unique<Prefab>("res/models/wall.glb");
     wallModel2 = std::make_unique<Prefab>("res/models/wall2.glb");
     wallModel3 = std::make_unique<Prefab>("res/models/wall3.glb");
@@ -753,7 +785,7 @@ int main(int, char**)
 
     wallObject7->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 100, 1 };
 
-    wallObject7->GetComponent<TransformComponent>()->position.x = 120;
+    wallObject7->GetComponent<TransformComponent>()->position.x = 110;
     wallObject7->GetComponent<TransformComponent>()->position.y = 0;
     wallObject7->GetComponent<TransformComponent>()->position.z = -100;
 
@@ -770,9 +802,26 @@ int main(int, char**)
 
     wallObject8->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 100, 1 };
 
-    wallObject8->GetComponent<TransformComponent>()->position.x = -120;
+    wallObject8->GetComponent<TransformComponent>()->position.x = -110;
     wallObject8->GetComponent<TransformComponent>()->position.y = 0;
     wallObject8->GetComponent<TransformComponent>()->position.z = -100;
+
+    GameObject* wallObject9 = wallModel->Instantiate(*scena1, nullptr, ourShader.get());
+    wallObject9->GetComponent<TransformComponent>()->scale.x = 100;
+    wallObject9->GetComponent<TransformComponent>()->scale.y = 50;
+    wallObject9->GetComponent<TransformComponent>()->scale.z = 1;
+
+    wallObject9->AddComponent<RigidbodyComponent>();
+    wallObject9->AddComponent<ColliderComponent>();
+
+    wallObject9->GetComponent<RigidbodyComponent>()->useGravity = false;
+    wallObject9->GetComponent<RigidbodyComponent>()->isStatic = true;
+
+    wallObject9->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 10, 44, 1 };
+
+    wallObject9->GetComponent<TransformComponent>()->position.x = 0;
+    wallObject9->GetComponent<TransformComponent>()->position.y = 70;
+    wallObject9->GetComponent<TransformComponent>()->position.z = -100;
 
 
 
