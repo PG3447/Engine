@@ -24,12 +24,6 @@
 
 using namespace std;
 
-struct MeshNode {
-    std::shared_ptr<MeshData> cpuData;
-    std::shared_ptr<RenderMesh> gpuMesh;
-    std::shared_ptr<Material> material;
-    AABB aabb;
-};
 
 struct Texture {
     unsigned int id;
@@ -50,6 +44,7 @@ struct MeshNode {
     std::shared_ptr<MeshData> cpuData;
     std::shared_ptr<RenderMesh> gpuMesh;
     std::shared_ptr<Material> material;
+    AABB aabb;
     //int indexMaterial;
 };
 
@@ -103,14 +98,14 @@ public:
     void SetShader(Shader* shader);
 
 
-    AABB GetLocalAABB() const {
-        AABB result;
-        for (auto& node : nodes) {
-            result.min = glm::min(result.min, node.aabb.min);
-            result.max = glm::max(result.max, node.aabb.max);
-        }
-        return result;
-    }
+    //AABB GetLocalAABB() const {
+    //    AABB result;
+    //    for (auto& node : nodes) {
+    //        result.min = glm::min(result.min, node.aabb.min);
+    //        result.max = glm::max(result.max, node.aabb.max);
+    //    }
+    //    return result;
+    //}
 
    // int GetTriangleCount() const {
 

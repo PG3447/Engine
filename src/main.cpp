@@ -452,7 +452,7 @@ int main(int, char**)
     roomModel = std::make_unique<Prefab>("res/models/room.glb");
 
 
-    //GameObject* model1 = bed1Model->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* model1 = bed1Model->Instantiate(*scena1, nullptr, ourShader.get());
     //GameObject* model2 = bed2Model->Instantiate(*scena1, nullptr, ourShader.get());
     //GameObject* model3 = bed3Model->Instantiate(*scena1, nullptr, ourShader.get());
     //GameObject* model4 = corkBoardModel->Instantiate(*scena1, nullptr, ourShader.get());
@@ -488,7 +488,7 @@ int main(int, char**)
     //GameObject* model34 =wozekModel    ->Instantiate(*scena1, nullptr, ourShader.get());
     //GameObject* model35 =zaslonaModel  ->Instantiate(*scena1, nullptr, ourShader.get());
 
-    //GameObject* roomObj = roomModel->Instantiate(*scena1, nullptr, ourShader.get()); 
+    //GameObject* roomObj = roomModel->Instantiate(*scena1, nullptr, ourShader.get());
 
     model1->GetComponent<TransformComponent>()->position.x = placeholderThing;
 

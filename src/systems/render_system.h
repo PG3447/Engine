@@ -354,7 +354,7 @@ public:
                     visible.push_back(i);
                 }*/
                 auto* renderComp = std::get<1>(renderQuery->componentsVectors)[i];
-                AABB localAABB = renderComp->model->GetLocalAABB();
+                AABB localAABB = GetLocalAABB(renderComp->meshes);
 
                 if (AABBInFrustum(frustum, localAABB, transforms[i]->modelMatrix))
                     visible.push_back(i);
@@ -430,6 +430,17 @@ public:
         overrideMat->Apply();
         model->Draw((GLsizei)count);
     }
+
+    AABB GetLocalAABB(vector<MeshNode> meshes) const {
+        AABB result;
+        for (auto& node : meshes) {
+            result.min = glm::min(result.min, node.aabb.min);
+            result.max = glm::max(result.max, node.aabb.max);
+        }
+        return result;
+    }
+
+
 };
 
 #endif
