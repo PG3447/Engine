@@ -392,7 +392,7 @@ public:
                 stats.drawCalls++;
                 stats.renderedObjects += visible.size();
                 stats.stateChanges++;
-                //stats.triangles += model->GetTriangleCount() * visible.size();
+                stats.triangles += GetTriangleCount(model) * visible.size();
                 auto drawEnd = std::chrono::high_resolution_clock::now();
                 stats.drawSubmitTimeMs += std::chrono::duration<float, std::milli>(drawEnd - drawStart).count();
             }
@@ -405,7 +405,7 @@ public:
                 stats.drawCalls++;
                 stats.renderedObjects += (int)visible.size();
                 stats.stateChanges++;
-                //stats.triangles += model->GetTriangleCount() * (int)visible.size();
+                stats.triangles += GetTriangleCount(model) * (int)visible.size();
             }
         }
     }
@@ -431,7 +431,8 @@ public:
         model->Draw((GLsizei)count);
     }
 
-    AABB GetLocalAABB(vector<MeshNode> meshes) const {
+    AABB GetLocalAABB(vector<MeshNode> meshes) const
+    {
         AABB result;
         for (auto& node : meshes) {
             result.min = glm::min(result.min, node.aabb.min);
@@ -440,7 +441,15 @@ public:
         return result;
     }
 
+    int GetTriangleCount(RenderMesh* mesh) const
+    {
+        int total = 0;
+      
+        total += mesh->indicesCount / 3;
+        
 
+        return total;
+    }
 };
 
 #endif

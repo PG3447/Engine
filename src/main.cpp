@@ -427,29 +427,29 @@ int main(int, char**)
     lampa1Model    = std::make_unique<Prefab>("res/models/lampa1.glb");
     lampa2Model    = std::make_unique<Prefab>("res/models/lampa2.glb");
     lampa3Model    = std::make_unique<Prefab>("res/models/lampa3.glb");
-    needleModel    = std::make_unique<Prefab>("res/models/needle.glb");
-    bad1Model      = std::make_unique<Prefab>("res/models/obiekty_bad1.glb");
-    bad2Model      = std::make_unique<Prefab>("res/models/obiekty_bad2.glb");
-    bad3Model      = std::make_unique<Prefab>("res/models/obiekty_bad3.glb");
-    papersModel    = std::make_unique<Prefab>("res/models/papers.glb");
-    bossModel      = std::make_unique<Prefab>("res/models/placeholder_boss.glb");
-    characterModel = std::make_unique<Prefab>("res/models/placeholder_character.glb");
-    vial1Model     = std::make_unique<Prefab>("res/models/probowka1.glb");
-    vial2Model     = std::make_unique<Prefab>("res/models/probowka2.glb");
-    vial3Model     = std::make_unique<Prefab>("res/models/probowka3.glb");
-    vial4Model     = std::make_unique<Prefab>("res/models/probowka4.glb");
-    vial5Model     = std::make_unique<Prefab>("res/models/probowka5.glb");
-    vial61Model    = std::make_unique<Prefab>("res/models/probowka6.glb");
-    vial7Model     = std::make_unique<Prefab>("res/models/probowka7.glb");
-    sinkModel      = std::make_unique<Prefab>("res/models/sink.glb");
-    szafa1Model    = std::make_unique<Prefab>("res/models/szafa1.glb");
-    szafa2Model    = std::make_unique<Prefab>("res/models/szafa2.glb");
-    szafa3Model    = std::make_unique<Prefab>("res/models/szafa3.glb");
-    telephoneModel = std::make_unique<Prefab>("res/models/telephone.glb");
-    toiletModel    = std::make_unique<Prefab>("res/models/toilet.glb");
-    wozekModel     = std::make_unique<Prefab>("res/models/wozek.glb");
-    zaslonaModel   = std::make_unique<Prefab>("res/models/zaslona.glb");
-    roomModel = std::make_unique<Prefab>("res/models/room.glb");
+    //needleModel    = std::make_unique<Prefab>("res/models/needle.glb");
+    //bad1Model      = std::make_unique<Prefab>("res/models/obiekty_bad1.glb");
+    //bad2Model      = std::make_unique<Prefab>("res/models/obiekty_bad2.glb");
+    //bad3Model      = std::make_unique<Prefab>("res/models/obiekty_bad3.glb");
+    //papersModel    = std::make_unique<Prefab>("res/models/papers.glb");
+    //bossModel      = std::make_unique<Prefab>("res/models/placeholder_boss.glb");
+    //characterModel = std::make_unique<Prefab>("res/models/placeholder_character.glb");
+    //vial1Model     = std::make_unique<Prefab>("res/models/probowka1.glb");
+    //vial2Model     = std::make_unique<Prefab>("res/models/probowka2.glb");
+    //vial3Model     = std::make_unique<Prefab>("res/models/probowka3.glb");
+    //vial4Model     = std::make_unique<Prefab>("res/models/probowka4.glb");
+    //vial5Model     = std::make_unique<Prefab>("res/models/probowka5.glb");
+    //vial61Model    = std::make_unique<Prefab>("res/models/probowka6.glb");
+    //vial7Model     = std::make_unique<Prefab>("res/models/probowka7.glb");
+    //sinkModel      = std::make_unique<Prefab>("res/models/sink.glb");
+    //szafa1Model    = std::make_unique<Prefab>("res/models/szafa1.glb");
+    //szafa2Model    = std::make_unique<Prefab>("res/models/szafa2.glb");
+    //szafa3Model    = std::make_unique<Prefab>("res/models/szafa3.glb");
+    //telephoneModel = std::make_unique<Prefab>("res/models/telephone.glb");
+    //toiletModel    = std::make_unique<Prefab>("res/models/toilet.glb");
+    //wozekModel     = std::make_unique<Prefab>("res/models/wozek.glb");
+    //zaslonaModel   = std::make_unique<Prefab>("res/models/zaslona.glb");
+    //roomModel = std::make_unique<Prefab>("res/models/room.glb");
 
 
     GameObject* model1 = bed1Model->Instantiate(*scena1, nullptr, ourShader.get());
@@ -490,7 +490,9 @@ int main(int, char**)
 
     //GameObject* roomObj = roomModel->Instantiate(*scena1, nullptr, ourShader.get());
 
-    model1->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    model1->GetComponent<TransformComponent>()->position.x = 0.0f;
+    model1->GetComponent<TransformComponent>()->position.y = 2.0f;
+    model1->GetComponent<TransformComponent>()->position.z = 20.0f;
 
     model1->AddComponent<RigidbodyComponent>();
     model1->AddComponent<ColliderComponent>();
@@ -511,9 +513,9 @@ int main(int, char**)
 
     RenderHelper::SetSpecularTexture(model1, whiteSpecular);
 
-    model1->GetComponent<RigidbodyComponent>()->useGravity = true;
-    model1->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 1, 1 };
-    model1->GetComponent<TransformComponent>()->position.y = 150;
+    //model1->GetComponent<RigidbodyComponent>()->useGravity = true;
+    // model1->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 1, 1 };
+    //model1->GetComponent<TransformComponent>()->position.y = 150;
     //RenderHelper::SetMaterial(model29, brickMat);
 
     //model1  ->GetComponent<TransformComponent>()->position.x = placeholderThing;
