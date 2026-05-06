@@ -419,14 +419,14 @@ int main(int, char**)
     bed3Model      = std::make_unique<Prefab>("res/models/bed3.glb");
     corkBoardModel = std::make_unique<Prefab>("res/models/cork_board.glb");
     cupModel       = std::make_unique<Prefab>("res/models/cup.glb");
-    deskModel      = std::make_unique<Prefab>("res/models/desk.glb");
-    doorsModel     = std::make_unique<Prefab>("res/models/doors.glb");
-    folderModel    = std::make_unique<Prefab>("res/models/folder.glb");
-    krzesloModel   = std::make_unique<Prefab>("res/models/krzeslo.glb");
-    //ksiazkaModel   = std::make_unique<Prefab>("res/models/ksiazka.glb");
-    lampa1Model    = std::make_unique<Prefab>("res/models/lampa1.glb");
-    lampa2Model    = std::make_unique<Prefab>("res/models/lampa2.glb");
-    lampa3Model    = std::make_unique<Prefab>("res/models/lampa3.glb");
+    //deskModel      = std::make_unique<Prefab>("res/models/desk.glb");
+    //doorsModel     = std::make_unique<Prefab>("res/models/doors.glb");
+    //folderModel    = std::make_unique<Prefab>("res/models/folder.glb");
+    //krzesloModel   = std::make_unique<Prefab>("res/models/krzeslo.glb");
+    ////ksiazkaModel   = std::make_unique<Prefab>("res/models/ksiazka.glb");
+    //lampa1Model    = std::make_unique<Prefab>("res/models/lampa1.glb");
+    //lampa2Model    = std::make_unique<Prefab>("res/models/lampa2.glb");
+    //lampa3Model    = std::make_unique<Prefab>("res/models/lampa3.glb");
     //needleModel    = std::make_unique<Prefab>("res/models/needle.glb");
     //bad1Model      = std::make_unique<Prefab>("res/models/obiekty_bad1.glb");
     //bad2Model      = std::make_unique<Prefab>("res/models/obiekty_bad2.glb");
@@ -505,8 +505,8 @@ int main(int, char**)
 
     light->direction = glm::normalize(glm::vec3(-0.3f, -1.0f, -0.1f));
 
-    light->ambient = glm::vec3(0.3f);
-    light->diffuse = glm::vec3(0.6f);
+    light->ambient = glm::vec3(0.1f);
+    light->diffuse = glm::vec3(0.3f);
     light->specular = glm::vec3(0.9f);
     
     GLuint whiteSpecular = ResourceManager::CreateTextureFromColor("white_spec", glm::vec3(1.0f));
