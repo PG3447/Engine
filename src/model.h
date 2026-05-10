@@ -15,6 +15,9 @@
 #include <shader.h>
 #include <transform.h>
 
+#include "animation/skeleton.h"
+#include "animation/animation_clip.h"
+
 #include <string>
 #include <fstream>
 #include <sstream>
@@ -71,6 +74,9 @@ public:
 
     // model data 
     std::shared_ptr<ModelNode> rootNode;
+    Skeleton skeleton;
+
+    std::vector<AnimationClip> animations;
 
     //std::vector<MeshNode> nodes;
     //Transform transform;
@@ -148,6 +154,14 @@ private:
     std::shared_ptr<ModelNode> processNode(aiNode* node, const aiScene* scene);
 
     std::vector<Texture> loadMaterialTextures(aiMaterial* mat, aiTextureType type, std::string typeName, const aiScene* scene);
+
+    void ExtractBoneWeightForVertices(std::vector<Vertex>& vertices, aiMesh* mesh, const aiScene* scene);
+    void SetVertexBoneDataToDefault(Vertex& vertex);
+
+    void ReadSkeletonHierarchy(aiNode* srcNode, SkeletonNode& destNode, int& nodeCounter);
+
+    void LoadAnimations(const aiScene* scene);
+    void ReadKeyframes(aiNodeAnim* channel, AnimationChannel& destChannel);
 };
 
 

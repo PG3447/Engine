@@ -5,6 +5,8 @@
 #include <glm/glm.hpp>
 #include <spdlog/spdlog.h>
 
+#include <glm/gtc/type_ptr.hpp>
+#include <vector>
 #include <string>
 #include <fstream>
 #include <sstream>
@@ -177,6 +179,18 @@ public:
     void setMat4(const std::string& name, const glm::mat4& mat) const
     {
         glUniformMatrix4fv(glGetUniformLocation(shaderProgramID, name.c_str()), 1, GL_FALSE, &mat[0][0]);
+    }
+
+    void setMat4Array(const std::string& name, const std::vector<glm::mat4>& matrices) const
+    {
+        if (matrices.empty()) return;
+
+        glUniformMatrix4fv(
+            glGetUniformLocation(shaderProgramID, name.c_str()),
+            (GLsizei)matrices.size(),
+            GL_FALSE,
+            glm::value_ptr(matrices[0])
+        );
     }
 
 private:

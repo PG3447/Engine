@@ -34,6 +34,7 @@ void Scene::Update(float deltaTime) {
     if (auto* hid = ecs.GetSystem<HID>()) hid->Update(ecs);
     if (auto* ts = ecs.GetSystem<TransformSystem>()) ts->updateSelfAndChild(root.get());
     if (auto* ps = ecs.GetSystem<PhysicsSystem>()) ps->Update(ecs);
+    if (auto* anim = ecs.GetSystem<AnimationSystem>()) anim->Update(ecs);
     if (auto* render = ecs.GetSystem<RenderSystem>()) render->Update(ecs);
     if (auto* ss = ecs.GetSystem<SpriteSystem>()) ss->Update(ecs);
 }

@@ -5,13 +5,13 @@
 #include <glm/glm.hpp>
 
 struct Vertex {
-    glm::vec3 Position;
-    glm::vec3 Normal;
-    glm::vec2 TexCoords;
-    glm::vec3 Tangent;
-    glm::vec3 Bitangent;
-    int m_BoneIDs[4];
-    float m_Weights[4];
+    glm::vec3 Position{ 0.0f };
+    glm::vec3 Normal{ 0.0f };
+    glm::vec2 TexCoords{ 0.0f };
+    glm::vec3 Tangent{ 0.0f };
+    glm::vec3 Bitangent{ 0.0f };
+    int m_BoneIDs[4] = { 0, 0, 0, 0 };
+    float m_Weights[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 };
 
 struct AABB {
