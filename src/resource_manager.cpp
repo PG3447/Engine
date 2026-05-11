@@ -40,14 +40,14 @@ GLuint ResourceManager::LoadTexture(const std::string& path, const std::string& 
 
 std::unordered_map<std::string, std::weak_ptr<Model>> ResourceManager::Models;
 
-std::shared_ptr<ModelNode> ResourceManager::LoadModel(const std::string& path)
+std::shared_ptr<Model> ResourceManager::LoadModel(const std::string& path)
 {
     auto it = Models.find(path);
     if (it != Models.end())
     {
         if (std::shared_ptr<Model> sharedModel = it->second.lock())
         {
-            return sharedModel->rootNode;
+            return sharedModel;
         }
     }
 
@@ -62,7 +62,7 @@ std::shared_ptr<ModelNode> ResourceManager::LoadModel(const std::string& path)
     Models[path] = model;
 
     spdlog::info("ResourceManager: Zaladowano model {}", path);
-    return model->rootNode;
+    return model;
 }
 
 unsigned int ResourceManager::loadTextureFromFile(const std::string& path, const std::string& directory, const aiTexture* aiTex)

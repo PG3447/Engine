@@ -40,10 +40,12 @@
 #include "core/gameobject.h" 
 #include <systems/physics_system.h>
 #include <systems/transform_system.h>
+#include <systems/animation_system.h>
 #include <systems/SpriteSystem.h>
 
 #include "diagnostics/cpu_timer.h"
 #include "utils/render_helper.h"
+#include "utils/animation_helper.h"
 
 
 static void glfw_error_callback(int error, const char* description)
@@ -178,6 +180,13 @@ std::unique_ptr<Prefab> wallModel3;
 
 //AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 
+//EEEEEEEEEEEEEEEEEEEEEEE
+
+std::unique_ptr<Prefab> dyingModelPrefab;
+std::unique_ptr<Prefab> jumpSkeletonPrefab;
+
+//OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
+
 
 //std::unique_ptr<Model> sphereVenusModel;
 //
@@ -291,6 +300,7 @@ int main(int, char**)
 
     ecs.AddSystem<TransformSystem>(ecs);
     ecs.AddSystem<PhysicsSystem>(ecs);
+    ecs.AddSystem<AnimationSystem>(ecs);
     ecs.AddSystem<RenderSystem>(ecs, window);
     ecs.AddSystem<HID>(ecs, window);
     ecs.AddSystem<SpriteSystem>(ecs, window);
@@ -925,7 +935,19 @@ int main(int, char**)
     wallObject13->GetComponent<TransformComponent>()->position.z = -200;
 
 
+    // aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 
+    dyingModelPrefab = std::make_unique<Prefab>("res/models/Dying.fbx");
+    jumpSkeletonPrefab = std::make_unique<Prefab>("res/models/Jump.fbx");
+
+    GameObject* dyingObj = dyingModelPrefab->Instantiate(*scena1, nullptr, ourShader.get());
+
+    dyingObj->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 0.0f, -50.0f);
+    dyingObj->GetComponent<TransformComponent>()->scale = glm::vec3(0.1f);
+
+    AnimatorComponent* animator = dyingObj->AddComponent<AnimatorComponent>();
+
+    // aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 
     // Main loop
     while (!glfwWindowShouldClose(window))
@@ -967,6 +989,38 @@ int main(int, char**)
             spdlog::info("Frustum culling: {}",
                 renderSystem->frustumCullingEnabled ? "ON" : "OFF");
         }
+
+        // testy animacji
+
+		//animacja umierania (wywoływanie animacji po nazwie z pliku modelu)
+        if (ecs.GetSystem<HID>()->is_action_just_pressed("anim_play_dying")) {
+            auto* clip = AnimationHelper::FindAnimation(dyingModelPrefab->rootModel->animations, "mixamo.com");
+            if (clip) {
+                AnimationHelper::Play(animator, clip, true, 1.0f);
+                spdlog::info("Odtworzono animacje umierania");
+            }
+        }
+
+		//animacja skoku (wywoływanie animacji po indeksie - pierwsza z Jump.fbx)
+        if (ecs.GetSystem<HID>()->is_action_just_pressed("anim_play_jump")) {
+            auto* clip = &jumpSkeletonPrefab->rootModel->animations[0];
+            if (clip) {
+                AnimationHelper::Play(animator, clip, true, 1.0f);
+                spdlog::info("Odtworzono animacje skoku");
+            }
+        }
+
+        if (ecs.GetSystem<HID>()->is_action_pressed("anim_slow_mo")) {
+            animator->playbackSpeed = 0.5f;
+        }
+        else if (ecs.GetSystem<HID>()->is_action_pressed("anim_fast_forward")) {
+            animator->playbackSpeed = 2.0f;
+        }
+        else {
+            animator->playbackSpeed = 1.0f;
+        }
+
+		// testy animacji
 
         // Process I/O operations here
         input();

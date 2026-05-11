@@ -9,6 +9,22 @@
 class MeshNode;
 class Shader;
 class Material;
+class Skeleton;
+
+struct AnimatorComponent;
+struct AnimationChannel;
+struct AnimationClip;
+
+struct NodeAnimCache {
+    const AnimationChannel* channel = nullptr;
+    bool isBone = false;
+    int boneID = -1;
+    glm::mat4 offset{ 1.0f };
+
+    int lastPosIndex = 0;
+    int lastRotIndex = 0;
+    int lastScaleIndex = 0;
+};
 
 struct Component {
     virtual ~Component() {}
@@ -191,6 +207,28 @@ struct LightComponent : Component {
     float cutOff = glm::cos(glm::radians(12.5f));
     float outerCutOff = glm::cos(glm::radians(17.5f));
 
+};
+
+struct AnimatorComponent : Component {
+    static constexpr uint64_t ComponentBit = 1ull << 7;
+
+    static const int MAX_BONES = 200;
+
+    Skeleton* currentSkeleton = nullptr;
+    AnimationClip* currentAnimation = nullptr;
+    float currentTime = 0.0f;
+    float playbackSpeed = 1.0f;
+    bool looping = true;
+    bool isFinished = false;
+
+    std::vector<NodeAnimCache> animCache;
+
+    std::vector<glm::mat4> finalBoneMatrices;
+
+    AnimatorComponent()
+    {
+        finalBoneMatrices.resize(MAX_BONES, glm::mat4(1.0f));
+    }
 };
 
 

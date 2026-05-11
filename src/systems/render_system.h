@@ -9,7 +9,7 @@
 #include "skybox_renderer.h"
 #include "../utils/camera_helper.h"
 #include "../utils/light_helper.h"
-
+#include <glm/gtc/type_ptr.hpp>
 
 
 class RenderSystem : public System {
@@ -383,29 +383,96 @@ public:
             //shader->setVec3("dirLight.diffuse", glm::vec3(0.8f, 0.8f, 0.8f));
             //shader->setVec3("dirLight.specular", glm::vec3(1.0f, 1.0f, 1.0f));
 
-            if (visible.size() == 1) {
-                shader->setBool("useInstance", false);
-                shader->setMat4("model", transforms[visible[0]]->modelMatrix);
-                auto drawStart = std::chrono::high_resolution_clock::now();
-                overrideMat->Apply();
-                model->Draw(0);
-                stats.drawCalls++;
-                stats.renderedObjects += visible.size();
-                stats.stateChanges++;
-                stats.triangles += GetTriangleCount(model) * visible.size();
-                auto drawEnd = std::chrono::high_resolution_clock::now();
-                stats.drawSubmitTimeMs += std::chrono::duration<float, std::milli>(drawEnd - drawStart).count();
+            std::vector<size_t> standardVisible;
+            std::vector<size_t> animatedVisible;
+
+            for (size_t i : visible) {
+                auto* go = renderQuery->gameobjects[i];
+                auto* renderComp = std::get<1>(renderQuery->componentsVectors)[i];
+
+                AnimatorComponent* animator = go->template GetComponent<AnimatorComponent>();
+
+                GameObject* current = go->GetParent();
+                while (animator == nullptr && current != nullptr) {
+                    animator = current->template GetComponent<AnimatorComponent>();
+                    current = current->GetParent();
+                }
+                //if (!animator && renderComp->rootAnimator) {
+                //    animator = renderComp->rootAnimator;
+                //}
+
+                if (animator != nullptr) {
+                    animatedVisible.push_back(i);
+                }
+                else {
+                    standardVisible.push_back(i);
+                }
             }
-            else {
-                shader->setBool("useInstance", true);
-                auto drawStart = std::chrono::high_resolution_clock::now();
-                RenderInstanced(model, visible, overrideMat);
-                auto drawEnd = std::chrono::high_resolution_clock::now();
-                stats.drawSubmitTimeMs += std::chrono::duration<float, std::milli>(drawEnd - drawStart).count(); // ← dodaj
-                stats.drawCalls++;
-                stats.renderedObjects += (int)visible.size();
-                stats.stateChanges++;
-                stats.triangles += GetTriangleCount(model) * (int)visible.size();
+
+            if (!standardVisible.empty()) {
+                shader->setBool("isAnimated", false);
+
+                if (standardVisible.size() == 1) {
+                    shader->setBool("useInstance", false);
+                    shader->setMat4("model", transforms[standardVisible[0]]->modelMatrix);
+                    auto drawStart = std::chrono::high_resolution_clock::now();
+                    overrideMat->Apply();
+                    model->Draw(0);
+                    stats.drawCalls++;
+                    stats.renderedObjects++;
+                    stats.stateChanges++;
+                    stats.triangles += GetTriangleCount(model);
+                    auto drawEnd = std::chrono::high_resolution_clock::now();
+                    stats.drawSubmitTimeMs += std::chrono::duration<float, std::milli>(drawEnd - drawStart).count();
+                }
+                else {
+                    shader->setBool("useInstance", true);
+                    auto drawStart = std::chrono::high_resolution_clock::now();
+                    RenderInstanced(model, standardVisible, overrideMat);
+                    auto drawEnd = std::chrono::high_resolution_clock::now();
+                    stats.drawSubmitTimeMs += std::chrono::duration<float, std::milli>(drawEnd - drawStart).count();
+                    stats.drawCalls++;
+                    stats.renderedObjects += (int)standardVisible.size();
+                    stats.stateChanges++;
+                    stats.triangles += GetTriangleCount(model) * (int)standardVisible.size();
+                }
+            }
+
+            if (!animatedVisible.empty()) {
+                shader->setBool("useInstance", false);
+                shader->setBool("isAnimated", true);
+
+                for (size_t i : animatedVisible) {
+                    auto* go = renderQuery->gameobjects[i];
+                    auto* renderComp = std::get<1>(renderQuery->componentsVectors)[i];
+
+                    AnimatorComponent* animator = go->template GetComponent<AnimatorComponent>();
+
+                    GameObject* current = go->GetParent();
+                    while (animator == nullptr && current != nullptr) {
+                        animator = current->template GetComponent<AnimatorComponent>();
+                        current = current->GetParent();
+                    }
+                    //if (!animator && renderComp->rootAnimator) {
+                    //    animator = renderComp->rootAnimator;
+                    //}
+
+                    shader->setMat4("model", transforms[i]->modelMatrix);
+
+                    if (animator && animator->currentSkeleton) {
+                        shader->setMat4Array("finalBonesMatrices", animator->finalBoneMatrices);
+                    }
+
+                    auto drawStart = std::chrono::high_resolution_clock::now();
+                    overrideMat->Apply();
+                    model->Draw(0);
+                    stats.drawCalls++;
+                    stats.renderedObjects++;
+                    stats.stateChanges++;
+                    stats.triangles += GetTriangleCount(model);
+                    auto drawEnd = std::chrono::high_resolution_clock::now();
+                    stats.drawSubmitTimeMs += std::chrono::duration<float, std::milli>(drawEnd - drawStart).count();
+                }
             }
         }
     }
