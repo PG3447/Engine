@@ -355,6 +355,10 @@ int main(int, char**)
 
     GameObject* camera2 = scena1->CreateGameObject(nullptr);
     CameraComponent* camCompRight = camera2->AddComponent<CameraComponent>();
+    ColliderComponent* camera2collider = camera2->AddComponent<ColliderComponent>();
+    RigidbodyComponent* rigidBodyCamera2 = camera2->AddComponent<RigidbodyComponent>();
+    camera2->GetComponent<RigidbodyComponent>()->useGravity = false;
+    camera2->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1.0f, 10.0f, 1.0f };
 
     camera1->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 20.0f, 0.0f);
      CameraHelper::InitialCamera(*camCompLeft,
@@ -932,6 +936,7 @@ int main(int, char**)
         updateFPS(deltaTime);
 
         rigidBodyCamera1->useGravity = true;
+        rigidBodyCamera2->useGravity = true;
 
 
         processCameraInput(ecs, *camCompLeft, *t0,
@@ -1352,7 +1357,7 @@ void processCameraGamepad(ECS &ecs, CameraComponent &cam, TransformComponent &tr
     float rx = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_RIGHT_X, gamepad_id);
     float ry = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_RIGHT_Y, gamepad_id);
 
-    const float sensitivity = 100.0f;
+    const float sensitivity = 600.0f;
 
     CameraHelper::ProcessMouseMovement(cam,
         rx * sensitivity * deltaTime,
