@@ -48,8 +48,8 @@ struct SpotLight {
 };
 
 
-#define NR_POINT_LIGHTS 1
-#define NR_SPOT_LIGHTS 2
+#define MAX_POINT_LIGHTS 16
+#define MAX_SPOT_LIGHTS 16
 
 in vec3 FragPos;
 in vec3 Normal;
@@ -58,9 +58,13 @@ in mat3 TBN;
 
 //uniform sampler2D texture_diffuse1;
 uniform vec3 viewPos;
+
+uniform int numPointLights;
+uniform int numSpotLights;
+
 uniform DirLight dirLight;
-uniform PointLight pointLights[NR_POINT_LIGHTS];
-uniform SpotLight spotLights[NR_SPOT_LIGHTS];
+uniform PointLight pointLights[MAX_POINT_LIGHTS];
+uniform SpotLight spotLights[MAX_SPOT_LIGHTS];
 uniform Material material;
 
 vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir);
@@ -79,9 +83,21 @@ void main()
     }
 
     vec3 viewDir = normalize(viewPos - FragPos);
-    
+
     vec3 result = CalcDirLight(dirLight, norm, viewDir);
     
+    for(int i = 0; i < numPointLights; i++)
+    {
+        result += CalcPointLight(pointLights[i], norm, FragPos, viewDir);
+    }
+
+        
+    for(int i = 0; i < numSpotLights; i++)
+    {
+        result += CalcPointLight(pointLights[i], norm, FragPos, viewDir);
+    }
+
+
     FragColor = vec4(result, 1.0);
 }
 
