@@ -43,6 +43,11 @@ private:
     glm::mat4 view;
     glm::vec3 currentCameraPos;
 
+    GLuint sceneFBO;
+    GLuint sceneColorTexture;
+    GLuint sceneDepthRBO;
+    int fboWidth = 0, fboHeight = 0;
+
 public:
     bool frustumCullingEnabled = true;
     struct Plane {
@@ -230,13 +235,18 @@ public:
         stats.Reset();
         gpuQuery.begin();
 
-        // OpenGL Rendering code goes here
+        int display_w, display_h;
+        glfwGetFramebufferSize(window, &display_w, &display_h);
+        InitFBO(display_w, display_h);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, sceneFBO);
         glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         BuildGroups();
-
         RenderAllCameras();
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         gpuQuery.end();
         gpuQuery.nextFrame();
@@ -523,6 +533,43 @@ public:
 
         return total;
     }
+
+
+    void InitFBO(int w, int h) {
+        if (fboWidth == w && fboHeight == h) return; // bez zmian
+        fboWidth = w; fboHeight = h;
+
+        if (sceneFBO) {
+            glDeleteFramebuffers(1, &sceneFBO);
+            glDeleteTextures(1, &sceneColorTexture);
+            glDeleteRenderbuffers(1, &sceneDepthRBO);
+        }
+
+        glGenFramebuffers(1, &sceneFBO);
+        glBindFramebuffer(GL_FRAMEBUFFER, sceneFBO);
+
+        // Textura koloru
+        glGenTextures(1, &sceneColorTexture);
+        glBindTexture(GL_TEXTURE_2D, sceneColorTexture);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, sceneColorTexture, 0);
+
+        // Renderbuffer dla depth+stencil
+        glGenRenderbuffers(1, &sceneDepthRBO);
+        glBindRenderbuffer(GL_RENDERBUFFER, sceneDepthRBO);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, w, h);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, sceneDepthRBO);
+
+        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+            spdlog::error("PostProcessing FBO incomplete!");
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
+
+    GLuint GetSceneTexture() const { return sceneColorTexture; }
+
 };
 
 #endif

@@ -45,6 +45,7 @@
 #include <systems/raycastSystem.h>
 
 #include "diagnostics/cpu_timer.h"
+#include "systems/PostProcessingSystem.h"
 #include "utils/render_helper.h"
 #include "utils/animation_helper.h"
 
@@ -332,6 +333,7 @@ int main(int, char**)
     ecs.AddSystem<AnimationSystem>(ecs);
     ecs.AddSystem<RenderSystem>(ecs, window);
     ecs.AddSystem<HID>(ecs, window);
+    ecs.AddSystem<PostProcessingSystem>(ecs, window);
     ecs.AddSystem<SpriteSystem>(ecs, window);
     ecs.AddSystem<RaycastSystem>(ecs);
 
