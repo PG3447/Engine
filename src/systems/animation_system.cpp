@@ -14,7 +14,7 @@ void AnimationSystem::OnGameObjectUpdated(GameObject* e) {
     query->OnGameObjectUpdated(e);
 }
 
-void AnimationSystem::Update(ECS&) {
+void AnimationSystem::Update(ECS&, float) {
     auto& animators = std::get<0>(query->componentsVectors);
 
 	// to samo dt co w PhysicsSystem, kiedys mozna zmienic na globalny timer czy cos

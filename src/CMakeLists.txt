@@ -26,7 +26,7 @@ add_executable(${PROJECT_NAME} ${HEADER_FILES} ${SOURCE_FILES} ${ASSETS_FILES} "
 		systems/raycastSystem.cpp
 		systems/raycastSystem.h
 		systems/DebugDrawSystem.h
-		systems/DebugDrawSystem.cpp)
+		systems/DebugDrawSystem.cpp
 		diagnostics/cpu_timer.h "animation/bone_info.h" "animation/animation_clip.h" "animation/skeleton.h" "systems/animation_system.h" "systems/animation_system.cpp" "utils/animation_helper.h")
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE GLFW_INCLUDE_NONE)

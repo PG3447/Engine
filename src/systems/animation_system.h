@@ -28,7 +28,7 @@ public:
 
     void OnGameObjectUpdated(GameObject* e) override;
 
-    void Update(ECS& ecs) override;
+    void Update(ECS& ecs, float) override;
 };
 
 #endif
