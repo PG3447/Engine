@@ -49,6 +49,13 @@ public:
             shader.setFloat(base + ".outerCutOff", light.outerCutOff);
         }
     }
+
+
+    static void ApplyNumberLight(int numPointLights, int numSpotLights, Shader& shader)
+    {
+        shader.setInt("numPointLights", numPointLights);
+        shader.setInt("numSpotLights", numSpotLights);
+    }
 };
 
 #endif

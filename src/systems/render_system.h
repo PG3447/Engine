@@ -372,10 +372,28 @@ public:
 
             shader->setVec3("viewPos", currentCameraPos);
             
+            int numPointLight = 0;
+            int numSpotLight = 0;
+
             // light
+            for (size_t i = 0; i < lights.size(); i++)
+            {
+                if (lights[i]->type == Point) 
+                {
+                    numPointLight++;
+                }
+
+                if (lights[i]->type == Spot) 
+                {
+                    numSpotLight++;
+                }
+            }
+
+            LightHelper::ApplyNumberLight(numPointLight, numSpotLight, *shader);
+
             for (size_t i = 0; i < lightQuery->gameobjects.size(); i++)
             {
-                LightHelper::Apply(*transforms[i], *lights[i], *shader);
+                LightHelper::Apply(*transformsLights[i], *lights[i], *shader);
             }
 
             //shader->setVec3("dirLight.direction", glm::vec3(-0.2f, -1.0f, -0.3f));

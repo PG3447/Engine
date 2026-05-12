@@ -94,7 +94,7 @@ void main()
         
     for(int i = 0; i < numSpotLights; i++)
     {
-        result += CalcPointLight(pointLights[i], norm, FragPos, viewDir);
+        result += CalcSpotLight(spotLights[i], norm, FragPos, viewDir);
     }
 
 

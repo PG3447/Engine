@@ -360,6 +360,35 @@ int main(int, char**)
     CameraComponent* camCompLeft = camera1->AddComponent<CameraComponent>();
     ColliderComponent* camera1collider = camera1->AddComponent<ColliderComponent>();
     RigidbodyComponent* rigidBodyCamera1 = camera1->AddComponent<RigidbodyComponent>();
+    
+
+    camera1->AddComponent<LightComponent>();
+    LightComponent* light2 = camera1->GetComponent<LightComponent>();
+
+    light2->type = Spot;
+    light2->index = 0;
+
+    light2->ambient = glm::vec3(0.22f);
+    light2->diffuse = glm::vec3(1.0f);
+    light2->specular = glm::vec3(1.0f);
+
+    //// attenuation
+    light2->constant = 1.0f;
+    light2->linear = 0.014f;
+    light2->quadratic = 0.001f;
+
+
+    //// spotlight cone
+    //light2->cutOff = glm::cos(glm::radians(12.5f));
+    //light2->outerCutOff = glm::cos(glm::radians(17.5f));
+
+    light2->cutOff = glm::cos(glm::radians(20.0f));
+    light2->outerCutOff = glm::cos(glm::radians(30.0f));
+
+    //// direction będzie z kamery
+    light2->direction = glm::vec3(0, 0, -1);
+
+
     camera1->GetComponent<RigidbodyComponent>()->useGravity = false;
     camera1->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1.0f, 10.0f, 1.0f };
 
@@ -522,7 +551,7 @@ int main(int, char**)
     light->ambient = glm::vec3(0.1f);
     light->diffuse = glm::vec3(0.3f);
     light->specular = glm::vec3(0.9f);
-    
+
     GLuint whiteSpecular = ResourceManager::CreateTextureFromColor("white_spec", glm::vec3(1.0f));
 
     RenderHelper::SetSpecularTexture(model1, whiteSpecular);
