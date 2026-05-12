@@ -4,12 +4,14 @@ in vec2 TexCoords;
 out vec4 FragColor;
 
 uniform sampler2D screenTexture;
+uniform float gamma;
 
 void main() {
     vec3 color = texture(screenTexture, TexCoords).rgb;
     //vec3 negative = 1.0 - color;
     //FragColor = vec4(negative, 1.0);
 
+    //green camera
     float R = color.r;
     float G = color.g;
     float B = color.b;
@@ -29,7 +31,10 @@ void main() {
 
     float dotProduct = dot(color, vec3(0.0, 0.58, 0.11));
 
-    vec3 finalColor =  mix(vec3(dotProduct) ,color, GIGAWYNIK);
+    vec3 GreenCameraColor =  mix(vec3(dotProduct) ,color, GIGAWYNIK);
+    //green camera end
+
+    vec3 finalColor = pow(GreenCameraColor, vec3(1.0 / gamma));//gamma
 
     FragColor = vec4(finalColor, 1.0);
 }

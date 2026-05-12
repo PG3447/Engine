@@ -18,6 +18,8 @@ private:
     GLuint quadVAO = 0;
     GLuint quadVBO = 0;
 
+    float gamma = 1.0f;
+
     void InitQuad() {
         // Fullscreen quad — dwa trójkąty pokrywające NDC [-1,1]
         float vertices[] = {
@@ -79,6 +81,7 @@ public:
 
         postShader->use();
         postShader->setInt("screenTexture", 0);
+        postShader->setFloat("gamma", gamma);
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, renderSystem->GetSceneTexture());
@@ -88,6 +91,14 @@ public:
         glBindVertexArray(0);
 
         glEnable(GL_DEPTH_TEST);
+    }
+
+    [[nodiscard]] float get_gamma() const {
+        return gamma;
+    }
+
+    void set_gamma(float gamma) {
+        this->gamma = gamma;
     }
 };
 

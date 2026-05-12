@@ -226,6 +226,7 @@ struct PerformanceData {
 };
 PerformanceData perf;
 RenderSystem * renderSystem = nullptr;
+PostProcessingSystem* postProcessingSystem = nullptr;
 
 
 void updateFPS(float deltaTime) {
@@ -597,6 +598,7 @@ int main(int, char**)
     auto* t1 = camera2->GetComponent<TransformComponent>();
 
     renderSystem = ecs.GetSystem<RenderSystem>();
+    postProcessingSystem = ecs.GetSystem<PostProcessingSystem>();
 
 
     //pokoj bedzie tu
@@ -948,6 +950,8 @@ int main(int, char**)
         test_score++;
         sprite_4->text = "score: " + std::to_string(test_score);
 
+
+
         CpuTimer cpuTimer;
         cpuTimer.start();
 
@@ -963,6 +967,13 @@ int main(int, char**)
             renderSystem->frustumCullingEnabled = !renderSystem->frustumCullingEnabled;
             spdlog::info("Frustum culling: {}",
                 renderSystem->frustumCullingEnabled ? "ON" : "OFF");
+        }
+
+        if (ecs.GetSystem<HID>()->is_action_just_pressed("gamma_up")) {
+            postProcessingSystem->set_gamma(postProcessingSystem->get_gamma() + 0.1f);
+        }
+        if (ecs.GetSystem<HID>()->is_action_just_pressed("gamma_down")) {
+            postProcessingSystem->set_gamma(postProcessingSystem->get_gamma() - 0.1f);
         }
 
         // testy animacji
