@@ -15,6 +15,7 @@ class GameObject {
 public:
     size_t id;
     uint64_t componentMask = 0;
+    std::string name;
 
 private:
     static size_t nextId;

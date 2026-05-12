@@ -10,11 +10,13 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
-#include "mesh_data.h"
 #include "render_mesh.h"
 #include "material.h"
 #include <shader.h>
 #include <transform.h>
+
+#include "animation/skeleton.h"
+#include "animation/animation_clip.h"
 
 #include <string>
 #include <fstream>
@@ -25,17 +27,40 @@
 
 using namespace std;
 
-struct MeshNode {
-    std::shared_ptr<MeshData> cpuData;
-    std::shared_ptr<RenderMesh> gpuMesh;
-    std::shared_ptr<Material> material;
-    AABB aabb;
-};
 
 struct Texture {
     unsigned int id;
     std::string type;
     std::string path;
+};
+
+//
+//struct Mesh {
+//    std::vector<MeshNode> meshes;
+//};
+
+//MeshNode to tak naprawde dane nie zaladowane do RenderComponent
+struct MeshNode {
+    //bool instancingPrepared = false;
+    //unsigned int instanceVBO = 0;
+
+    std::shared_ptr<MeshData> cpuData;
+    std::shared_ptr<RenderMesh> gpuMesh;
+    std::shared_ptr<Material> material;
+    AABB aabb;
+    //int indexMaterial;
+};
+
+
+//Model Node to tak naprawde przechowywany GameObject
+struct ModelNode
+{
+    std::string name;
+    Transform transform;
+
+    std::vector<MeshNode> meshes;
+    //std::vector<std::shared_ptr<Material>> materials;
+    std::vector<std::shared_ptr<ModelNode>> children;
 };
 
 class Model
@@ -48,14 +73,19 @@ public:
     Model& operator=(Model&&) = default;
 
     // model data 
-    std::vector<MeshNode> nodes;
-    Transform transform;
-    vector<Model> children;
+    std::shared_ptr<ModelNode> rootNode;
+    Skeleton skeleton;
+
+    std::vector<AnimationClip> animations;
+
+    //std::vector<MeshNode> nodes;
+    //Transform transform;
+    //vector<std::unique_ptr<Model>> children;
     string name;
     string directory;
     bool gammaCorrection;
-    bool instancingPrepared = false;
-    unsigned int instanceVBO = 0;
+    //bool instancingPrepared = false;
+    //unsigned int instanceVBO = 0;
     
     Model();
     ~Model();
@@ -65,38 +95,73 @@ public:
 
     void Draw(GLsizei instanceCount = 0, Material* materialOverride = nullptr);
 
-    static std::unique_ptr<Model> createOrbit(float radius, int segments = 100, float tiltDegrees = 0.0f, float scale = 1.0f, vector<Texture>* textures = nullptr);
-
-    static std::unique_ptr<Model> createSphere(int rings = 10, int sectors = 10, const std::string& texturePath = "");
-
     void turnOnReflect(unsigned int cubemapTexture);
 
     MeshNode processMesh(aiMesh* mesh, const aiScene* scene);
 
+    void SetShaderRecursive(ModelNode* node, Shader* shader);
+
     void SetShader(Shader* shader);
 
-    AABB GetLocalAABB() const {
-        AABB result;
-        for (auto& node : nodes) {
-            result.min = glm::min(result.min, node.aabb.min);
-            result.max = glm::max(result.max, node.aabb.max);
-        }
-        return result;
-    }
 
-    int GetTriangleCount() const {
+    //AABB GetLocalAABB() const {
+    //    AABB result;
+    //    for (auto& node : nodes) {
+    //        result.min = glm::min(result.min, node.aabb.min);
+    //        result.max = glm::max(result.max, node.aabb.max);
+    //    }
+    //    return result;
+    //}
+
+   // int GetTriangleCount() const {
+
+    int CountTriangles(const ModelNode* node) const
+    {
         int total = 0;
-        for (auto& node : nodes)
-            if (node.cpuData)
-                total += node.cpuData->indices.size() / 3;
+
+        for (const auto& mesh : node->meshes)
+        {
+            if (mesh.cpuData)
+                total += mesh.cpuData->indices.size() / 3;
+        }
+
+        for (const auto& child : node->children)
+        {
+            total += CountTriangles(child.get());
+        }
+
         return total;
     }
 
+    int GetTriangleCount() const
+    {
+        if (!rootNode)
+            return 0;
+
+        return CountTriangles(rootNode.get());
+    }
+
+    //int GetTriangleCount() const {
+    //    int total = 0;
+    //    for (auto& node : nodes)
+    //        if (node.cpuData)
+    //            total += node.cpuData->indices.size() / 3;
+    //    return total;
+    //}
+
 private:
     void loadModel(const std::string& path);
-    Model processNode(aiNode* node, const aiScene* scene);
+    std::shared_ptr<ModelNode> processNode(aiNode* node, const aiScene* scene);
 
     std::vector<Texture> loadMaterialTextures(aiMaterial* mat, aiTextureType type, std::string typeName, const aiScene* scene);
+
+    void ExtractBoneWeightForVertices(std::vector<Vertex>& vertices, aiMesh* mesh, const aiScene* scene);
+    void SetVertexBoneDataToDefault(Vertex& vertex);
+
+    void ReadSkeletonHierarchy(aiNode* srcNode, SkeletonNode& destNode, int& nodeCounter);
+
+    void LoadAnimations(const aiScene* scene);
+    void ReadKeyframes(aiNodeAnim* channel, AnimationChannel& destChannel);
 };
 
 

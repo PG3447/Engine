@@ -6,9 +6,25 @@
 #include <string>
 #include "../unused/camera.h"
 
-class Model;
+class MeshNode;
 class Shader;
 class Material;
+class Skeleton;
+
+struct AnimatorComponent;
+struct AnimationChannel;
+struct AnimationClip;
+
+struct NodeAnimCache {
+    const AnimationChannel* channel = nullptr;
+    bool isBone = false;
+    int boneID = -1;
+    glm::mat4 offset{ 1.0f };
+
+    int lastPosIndex = 0;
+    int lastRotIndex = 0;
+    int lastScaleIndex = 0;
+};
 
 struct Component {
     virtual ~Component() {}
@@ -26,13 +42,39 @@ struct TransformComponent : Component {
     bool isDirty = true;
 };
 
+//struct ModelNode
+//{
+//    // ===== SCENE HIERARCHY =====
+//    std::string name;
+//
+//    Transform transform;
+//
+//    std::vector<std::unique_ptr<ModelNode>> children;
+//
+//    // ===== GEOMETRY =====
+//    std::vector<MeshNode> meshes;
+//};
+//
+//struct MeshNode
+//{
+//    std::shared_ptr<RenderMesh> mesh;     // GPU geometry
+//    std::shared_ptr<Material> material;   // shading data
+//};
 
 struct RenderComponent : Component {
     static constexpr uint64_t ComponentBit = 1ull << 1;
 
-    Model* model = nullptr;
-    Shader* shader = nullptr;
-    std::shared_ptr<Material> materialOverride = nullptr;
+    std::vector<MeshNode> meshes;
+    
+    //std::vector<std::shared_ptr<Material>> materials; Fajnie jak bedzie xD
+
+    //std::shared_ptr<Model> model;
+    //
+    //
+    //std::shared_ptr<ModelNode> node;
+    //Model* model = nullptr;
+    //Shader* shader = nullptr;
+    //std::shared_ptr<Material> materialOverride = nullptr;
 };
 
 
@@ -132,7 +174,61 @@ struct ColliderComponent : Component {
 
     bool isTrigger = false;
 };
+enum LightType {
+    Directional = 0,
+    Point = 1,
+    Spot = 2
+};
 
+struct LightComponent : Component {
+    static constexpr uint64_t ComponentBit = 1ull << 6;
+
+
+
+    // wspólne
+    int index = 0;
+    bool isOn = true;
+    LightType type;
+
+    glm::vec3 ambient = glm::vec3(0.05f);
+    glm::vec3 diffuse = glm::vec3(1.0f);
+    glm::vec3 specular = glm::vec3(1.0f);
+
+    //glm::vec3 position = glm::vec3(0.0f);
+    glm::vec3 direction = glm::vec3(0.0f, -1.0f, 0.0f);
+
+    // attenuation (Point / Spot)
+    float constant = 1.0f;
+    float linear = 0.09f;
+    float quadratic = 0.032f;
+
+    // Spot
+    float cutOff = glm::cos(glm::radians(12.5f));
+    float outerCutOff = glm::cos(glm::radians(17.5f));
+
+};
+
+struct AnimatorComponent : Component {
+    static constexpr uint64_t ComponentBit = 1ull << 7;
+
+    static const int MAX_BONES = 200;
+
+    Skeleton* currentSkeleton = nullptr;
+    AnimationClip* currentAnimation = nullptr;
+    float currentTime = 0.0f;
+    float playbackSpeed = 1.0f;
+    bool looping = true;
+    bool isFinished = false;
+
+    std::vector<NodeAnimCache> animCache;
+
+    std::vector<glm::mat4> finalBoneMatrices;
+
+    AnimatorComponent()
+    {
+        finalBoneMatrices.resize(MAX_BONES, glm::mat4(1.0f));
+    }
+};
 struct RaycastHit {
     bool hit = false;
     float distance = 0.0f; //odleglosc
@@ -142,7 +238,7 @@ struct RaycastHit {
 };
 
 struct RaycastComponent : Component {
-    static constexpr uint64_t ComponentBit = 1ull << 6;
+    static constexpr uint64_t ComponentBit = 1ull << 8;
 
     //wartosci domyslne
     float range = 50.0f; // zasieg widzenia
@@ -179,5 +275,4 @@ struct RaycastComponent : Component {
     glm::vec4 colorHit  = {1.0f, 0.3f, 0.0f, 1.0f}; // pomarańczowy = trafienie
 
 };
-
 #endif

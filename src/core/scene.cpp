@@ -34,6 +34,9 @@ void Scene::Update(float deltaTime) {
 
     if (auto* ps = ecs.GetSystem<PhysicsSystem>())
         ps->Update(ecs, deltaTime);
+  
+    if (auto* ps = ecs.GetSystem<AnimationSystem>())
+        ps->Update(ecs, deltaTime);
 
     if (auto* rs = ecs.GetSystem<RaycastSystem>())
         rs->Update(ecs, deltaTime);
@@ -56,13 +59,14 @@ void Scene::DebugHierarchy(GameObject* obj, int depth)
 
     std::string indent(depth * 2, ' ');
 
-    //spdlog::info("{}GameObject: {}", indent, (void*)obj);
+    spdlog::info("{}GameObject: {}", indent, (void*)obj);
+    spdlog::info("GameObject: {}", obj->name);
 
     auto* t = obj->GetComponent<TransformComponent>();
     if (t)
     {
-        //spdlog::info("{}  pos: {:.2f}, {:.2f}, {:.2f}",
-        //    indent, t->position.x, t->position.y, t->position.z);
+        spdlog::info("{}  pos: {:.2f}, {:.2f}, {:.2f}",
+            indent, t->position.x, t->position.y, t->position.z);
     }
 
     for (auto* child : obj->GetChildren())

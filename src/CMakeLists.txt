@@ -23,11 +23,11 @@ source_group(TREE ${CMAKE_SOURCE_DIR}         FILES ${ASSETS_FILES})
 
 # Define the executable
 add_executable(${PROJECT_NAME} ${HEADER_FILES} ${SOURCE_FILES} ${ASSETS_FILES} "yaml_config.h" "resource_manager.h" "resource_manager.cpp" "utils/camera_helper.h"
-		diagnostics/cpu_timer.h
 		systems/raycastSystem.cpp
 		systems/raycastSystem.h
 		systems/DebugDrawSystem.h
 		systems/DebugDrawSystem.cpp)
+		diagnostics/cpu_timer.h "animation/bone_info.h" "animation/animation_clip.h" "animation/skeleton.h" "systems/animation_system.h" "systems/animation_system.cpp" "utils/animation_helper.h")
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE GLFW_INCLUDE_NONE)
 target_compile_definitions(${PROJECT_NAME} PRIVATE LIBRARY_SUFFIX="")

@@ -10,6 +10,9 @@ public:
     unsigned int indicesCount;
     bool instancingEnabled = false;
 
+    bool instancingPrepared = false;
+    unsigned int instanceVBO = 0;
+
     RenderMesh(const MeshData& data) {
         indicesCount = data.indices.size();
         setupMesh(data);
@@ -19,6 +22,9 @@ public:
         glDeleteVertexArrays(1, &VAO);
         glDeleteBuffers(1, &VBO);
         glDeleteBuffers(1, &EBO);
+        if (instanceVBO != 0) {
+            glDeleteBuffers(1, &instanceVBO);
+        }
     }
 
     void Draw(GLsizei instanceCount = 0) const {
@@ -56,6 +62,19 @@ public:
         glBindVertexArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         instancingEnabled = true;
+    }
+
+    void PrepareInstancing()
+    {
+        if (instancingPrepared) return;
+
+        if (instanceVBO == 0) {
+            glGenBuffers(1, &instanceVBO);
+        }
+
+        EnableInstancing(instanceVBO);
+
+        instancingPrepared = true;
     }
 
 private:

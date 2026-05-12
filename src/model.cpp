@@ -11,6 +11,7 @@
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#include <algorithm>
 
 #include <iostream>
 
@@ -21,9 +22,9 @@ Model::Model() : gammaCorrection(false)
 }
 
 Model::~Model() {
-    if (instanceVBO != 0) {
-        glDeleteBuffers(1, &instanceVBO);
-    }
+    //if (instanceVBO != 0) {
+    //    glDeleteBuffers(1, &instanceVBO);
+    //}
 }
 
 Model::Model(string const& path, bool gamma) : gammaCorrection(gamma)
@@ -31,35 +32,48 @@ Model::Model(string const& path, bool gamma) : gammaCorrection(gamma)
     loadModel(path);
 }
 
-void Model::PrepareInstancing()
+
+/*
+// constructor, expects a filepath to a 3D model.
+Model::Model(string const& path, float meshScale, bool gamma) : meshScale(meshScale), gammaCorrection(gamma)
 {
-    if (instancingPrepared) return;
-
-    if (instanceVBO == 0) {
-        glGenBuffers(1, &instanceVBO);
+    if (!path.empty())
+    {
+        loadModel(path);
     }
-
-    for (auto& node : nodes) {
-        node.gpuMesh->EnableInstancing(instanceVBO);
-    }
-
-    instancingPrepared = true;
 }
+*/
+
+//
+//void Model::PrepareInstancing()
+//{
+//    if (instancingPrepared) return;
+//
+//    if (instanceVBO == 0) {
+//        glGenBuffers(1, &instanceVBO);
+//    }
+//
+//    for (auto& node : nodes) {
+//        node.gpuMesh->EnableInstancing(instanceVBO);
+//    }
+//
+//    instancingPrepared = true;
+//}
 
 
 // draws the model, and thus all its meshes
-void Model::Draw(GLsizei instanceCount, Material* materialOverride)
-{
-    for (auto& node : nodes)
-    {
-        Material* activeMaterial = materialOverride ? materialOverride : node.material.get();
-        if (activeMaterial) {
-            activeMaterial->Apply();
-        }
-
-        node.gpuMesh->Draw(instanceCount);
-    }
-}
+//void Model::Draw(GLsizei instanceCount, Material* materialOverride)
+//{
+//    for (auto& node : nodes)
+//    {
+//        Material* activeMaterial = materialOverride ? materialOverride : node.material.get();
+//        if (activeMaterial) {
+//            activeMaterial->Apply();
+//        }
+//
+//        node.gpuMesh->Draw(instanceCount);
+//    }
+//}
 
 void Model::turnOnReflect(unsigned int cubemapTexture)
 {
@@ -73,15 +87,17 @@ void Model::turnOnReflect(unsigned int cubemapTexture)
 void Model::loadModel(string const& path)
 {
     Assimp::Importer importer;
+    importer.SetPropertyBool(AI_CONFIG_IMPORT_FBX_PRESERVE_PIVOTS, false);
     const aiScene* scene = importer.ReadFile(path,
         aiProcess_Triangulate |
         aiProcess_GenSmoothNormals |
         aiProcess_FlipUVs |
         aiProcess_CalcTangentSpace |
         aiProcess_JoinIdenticalVertices |
+        aiProcess_LimitBoneWeights |
         aiProcess_OptimizeMeshes
     ); 
-    if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
+    if (!scene || !scene->mRootNode || ((scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) && !scene->HasAnimations()))
     {
         spdlog::error("ERROR::ASSIMP:: {}", importer.GetErrorString());
         return;
@@ -90,44 +106,63 @@ void Model::loadModel(string const& path)
     directory = path.substr(0, path.find_last_of('/'));
     name = path;
 
-    // Pobieramy drzewo z korzenia
-    Model rootNode = processNode(scene->mRootNode, scene);
-    this->nodes = std::move(rootNode.nodes);
-    this->children = std::move(rootNode.children);
-    this->transform = rootNode.transform;
+    std::shared_ptr<ModelNode> rootNode = processNode(scene->mRootNode, scene);
+    this->rootNode = std::move(rootNode);
+
+    aiMatrix4x4 globalTransform = scene->mRootNode->mTransformation;
+
+    glm::mat4 globalMat(
+        globalTransform.a1, globalTransform.b1, globalTransform.c1, globalTransform.d1,
+        globalTransform.a2, globalTransform.b2, globalTransform.c2, globalTransform.d2,
+        globalTransform.a3, globalTransform.b3, globalTransform.c3, globalTransform.d3,
+        globalTransform.a4, globalTransform.b4, globalTransform.c4, globalTransform.d4
+    );
+
+    this->skeleton.globalInverseTransform = glm::inverse(globalMat);
+
+    int nodeCounter = 0;
+    ReadSkeletonHierarchy(scene->mRootNode, this->skeleton.rootNode, nodeCounter);
+    this->skeleton.totalNodes = nodeCounter;
+
+    LoadAnimations(scene);
+
+    //this->nodes = std::move(rootNode->nodes);
+    //this->children = std::move(rootNode->children);
+    //this->transform = rootNode->transform;
 }
 
-Model Model::processNode(aiNode* node, const aiScene* scene)
+std::shared_ptr<ModelNode> Model::processNode(aiNode* node, const aiScene* scene)
 {
-    Model model;
+    auto model = std::make_unique<ModelNode>();
+
     aiVector3D scale, pos;
     aiQuaternion rot;
     node->mTransformation.Decompose(scale, rot, pos);
 
-    model.name = node->mName.C_Str();
-    model.directory = this->directory;
+    model->name = node->mName.C_Str();
+    //model->directory = this->directory;
 
-    model.transform.setLocalPosition({ pos.x, pos.y, pos.z });
+    model->transform.setLocalPosition({ pos.x, pos.y, pos.z });
     glm::quat q(rot.w, rot.x, rot.y, rot.z);
 
     glm::vec3 euler = glm::eulerAngles(q); // radiany
     euler = glm::degrees(euler);
 
-    model.transform.setLocalRotation(euler);
+    model->transform.setLocalRotation(euler);
     //model.transform.setLocalRotation({ glm::degrees(rot.x), glm::degrees(rot.y), glm::degrees(rot.z) });
-    model.transform.setLocalScale({ scale.x, scale.y, scale.z });
+    model->transform.setLocalScale({ scale.x, scale.y, scale.z });
 
-    model.nodes.reserve(node->mNumMeshes);
+    model->meshes.reserve(node->mNumMeshes);
     for (unsigned int i = 0; i < node->mNumMeshes; i++)
     {
         aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-        model.nodes.push_back(processMesh(mesh, scene));
+        model->meshes.push_back(processMesh(mesh, scene));
     }
 
-    model.children.reserve(node->mNumChildren);
+    model->children.reserve(node->mNumChildren);
     for (unsigned int i = 0; i < node->mNumChildren; i++)
     {
-        model.children.push_back(processNode(node->mChildren[i], scene));
+        model->children.push_back(processNode(node->mChildren[i], scene));
     }
 
     return model;
@@ -181,6 +216,8 @@ MeshNode Model::processMesh(aiMesh* mesh, const aiScene* scene)
         else
             vertex.TexCoords = glm::vec2(0.0f, 0.0f);
 
+        SetVertexBoneDataToDefault(vertex);
+
         vertices.push_back(vertex);
     }
     // now wak through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
@@ -191,6 +228,8 @@ MeshNode Model::processMesh(aiMesh* mesh, const aiScene* scene)
         for (unsigned int j = 0; j < face.mNumIndices; j++)
             indices.push_back(face.mIndices[j]);
     }
+
+    ExtractBoneWeightForVertices(vertices, mesh, scene);
 
     // process materials
     aiMaterial* aiMat = scene->mMaterials[mesh->mMaterialIndex];
@@ -246,12 +285,36 @@ MeshNode Model::processMesh(aiMesh* mesh, const aiScene* scene)
     return node;
 }
 
+//void Model::SetShader(Shader* shader)
+//{
+//    for (auto& node : nodes) {
+//        if (node.material) {
+//            node.material->shader = shader;
+//        }
+//    }
+//}
+
 void Model::SetShader(Shader* shader)
 {
-    for (auto& node : nodes) {
-        if (node.material) {
-            node.material->shader = shader;
+    if (!rootNode)
+        return;
+
+    SetShaderRecursive(rootNode.get(), shader);
+}
+
+void Model::SetShaderRecursive(ModelNode* node, Shader* shader)
+{
+    for (auto& mesh : node->meshes)
+    {
+        if (mesh.material)
+        {
+            mesh.material->shader = shader;
         }
+    }
+
+    for (auto& child : node->children)
+    {
+        SetShaderRecursive(child.get(), shader);
     }
 }
 
@@ -284,6 +347,186 @@ vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType type,
         textures.push_back(texture);
     }
     return textures;
+}
+
+void Model::SetVertexBoneDataToDefault(Vertex& vertex)
+{
+    for (int i = 0; i < 4; i++)
+    {
+        vertex.m_BoneIDs[i] = 0;
+        vertex.m_Weights[i] = 0.0f;
+    }
+}
+
+void Model::ExtractBoneWeightForVertices(std::vector<Vertex>& vertices, aiMesh* mesh, const aiScene* scene)
+{
+    struct VertexWeight {
+        int boneID;
+        float weight;
+    };
+
+    std::vector<std::vector<VertexWeight>> tempVertexWeights(vertices.size());
+
+    for (unsigned int boneIndex = 0; boneIndex < mesh->mNumBones; ++boneIndex)
+    {
+        int boneID = -1;
+        std::string boneName = mesh->mBones[boneIndex]->mName.C_Str();
+
+        if (!skeleton.HasBone(boneName))
+        {
+            BoneInfo newBoneInfo;
+            newBoneInfo.id = skeleton.boneCount;
+
+            aiMatrix4x4 aiMat = mesh->mBones[boneIndex]->mOffsetMatrix;
+            newBoneInfo.offset = glm::mat4(
+                aiMat.a1, aiMat.b1, aiMat.c1, aiMat.d1,
+                aiMat.a2, aiMat.b2, aiMat.c2, aiMat.d2,
+                aiMat.a3, aiMat.b3, aiMat.c3, aiMat.d3,
+                aiMat.a4, aiMat.b4, aiMat.c4, aiMat.d4
+            );
+
+            skeleton.boneMap[boneName] = newBoneInfo;
+            boneID = skeleton.boneCount;
+            skeleton.boneCount++;
+        }
+        else
+        {
+            boneID = skeleton.boneMap[boneName].id;
+        }
+
+        auto weights = mesh->mBones[boneIndex]->mWeights;
+        int numWeights = mesh->mBones[boneIndex]->mNumWeights;
+
+        for (int weightIndex = 0; weightIndex < numWeights; ++weightIndex)
+        {
+            int vertexId = weights[weightIndex].mVertexId;
+            float weight = weights[weightIndex].mWeight;
+
+            tempVertexWeights[vertexId].push_back({ boneID, weight });
+        }
+    }
+
+    for (size_t i = 0; i < vertices.size(); ++i)
+    {
+        auto& weightsList = tempVertexWeights[i];
+
+        std::sort(weightsList.begin(), weightsList.end(), [](const VertexWeight& a, const VertexWeight& b) {
+            return a.weight > b.weight;
+        });
+
+        int limit = std::min((int)weightsList.size(), 4);
+        float totalWeight = 0.0f;
+        for (int j = 0; j < limit; ++j) {
+            totalWeight += weightsList[j].weight;
+        }
+
+        for (int j = 0; j < limit; ++j) {
+            vertices[i].m_BoneIDs[j] = weightsList[j].boneID;
+
+            if (totalWeight > 0.0f) {
+                vertices[i].m_Weights[j] = weightsList[j].weight / totalWeight;
+            }
+            else {
+                vertices[i].m_Weights[j] = 0.0f;
+            }
+        }
+    }
+}
+
+void Model::ReadSkeletonHierarchy(aiNode* srcNode, SkeletonNode& destNode, int& nodeCounter)
+{
+    destNode.name = srcNode->mName.data;
+    destNode.nodeIndex = nodeCounter++;
+
+    aiMatrix4x4 aiMat = srcNode->mTransformation;
+    destNode.localTransform = glm::mat4(
+        aiMat.a1, aiMat.b1, aiMat.c1, aiMat.d1,
+        aiMat.a2, aiMat.b2, aiMat.c2, aiMat.d2,
+        aiMat.a3, aiMat.b3, aiMat.c3, aiMat.d3,
+        aiMat.a4, aiMat.b4, aiMat.c4, aiMat.d4
+    );
+
+    aiVector3D pos, scale;
+    aiQuaternion rot;
+    aiMat.Decompose(scale, rot, pos);
+
+    destNode.defaultPosition = glm::vec3(pos.x, pos.y, pos.z);
+    destNode.defaultRotation = glm::quat(rot.w, rot.x, rot.y, rot.z);
+    destNode.defaultScale = glm::vec3(scale.x, scale.y, scale.z);
+
+    destNode.children.resize(srcNode->mNumChildren);
+    for (unsigned int i = 0; i < srcNode->mNumChildren; i++)
+    {
+        ReadSkeletonHierarchy(srcNode->mChildren[i], destNode.children[i], nodeCounter);
+    }
+}
+
+void Model::LoadAnimations(const aiScene* scene)
+{
+    if (!scene->HasAnimations())
+        return;
+
+    for (unsigned int i = 0; i < scene->mNumAnimations; i++)
+    {
+        aiAnimation* aiAnim = scene->mAnimations[i];
+        AnimationClip clip;
+
+        clip.name = aiAnim->mName.data;
+        clip.duration = (float)aiAnim->mDuration;
+		clip.ticksPerSecond = aiAnim->mTicksPerSecond != 0.0 ? (float)aiAnim->mTicksPerSecond : 24.0f; //24 fps domyslnie, jesli brak informacji w pliku
+
+        for (unsigned int j = 0; j < aiAnim->mNumChannels; j++)
+        {
+            aiNodeAnim* channel = aiAnim->mChannels[j];
+            std::string boneName = channel->mNodeName.data;
+
+            AnimationChannel myChannel;
+            myChannel.boneName = boneName;
+
+            ReadKeyframes(channel, myChannel);
+
+            clip.channels[boneName] = myChannel;
+        }
+
+        this->animations.push_back(clip);
+    }
+}
+
+void Model::ReadKeyframes(aiNodeAnim* channel, AnimationChannel& destChannel)
+{
+    // position keyframes
+    for (unsigned int i = 0; i < channel->mNumPositionKeys; i++)
+    {
+        KeyPosition key;
+        key.position = glm::vec3(channel->mPositionKeys[i].mValue.x,
+            channel->mPositionKeys[i].mValue.y,
+            channel->mPositionKeys[i].mValue.z);
+        key.timeStamp = (float)channel->mPositionKeys[i].mTime;
+        destChannel.positions.push_back(key);
+    }
+
+	// rotation keyframes (quaternions WXYZ)
+    for (unsigned int i = 0; i < channel->mNumRotationKeys; i++)
+    {
+        KeyRotation key;
+        key.orientation = glm::quat(channel->mRotationKeys[i].mValue.w,
+            channel->mRotationKeys[i].mValue.x,
+            channel->mRotationKeys[i].mValue.y,
+            channel->mRotationKeys[i].mValue.z);
+        key.timeStamp = (float)channel->mRotationKeys[i].mTime;
+        destChannel.rotations.push_back(key);
+    }
+
+	// scaling keyframes
+    for (unsigned int i = 0; i < channel->mNumScalingKeys; i++)
+    {
+        KeyScale key;
+        key.scale = glm::vec3(channel->mScalingKeys[i].mValue.x,
+            channel->mScalingKeys[i].mValue.y,
+            channel->mScalingKeys[i].mValue.z);
+        key.timeStamp = (float)channel->mScalingKeys[i].mTime;
+        destChannel.scales.push_back(key);
+    }
 }
 
 //
