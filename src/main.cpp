@@ -379,14 +379,12 @@ int main(int, char**)
 
 
     //// spotlight cone
-    //light2->cutOff = glm::cos(glm::radians(12.5f));
-    //light2->outerCutOff = glm::cos(glm::radians(17.5f));
-
-    light2->cutOff = glm::cos(glm::radians(20.0f));
-    light2->outerCutOff = glm::cos(glm::radians(30.0f));
+    light2->cutOff = glm::cos(glm::radians(12.5f));
+    light2->outerCutOff = glm::cos(glm::radians(17.5f));
 
     //// direction będzie z kamery
-    light2->direction = glm::vec3(0, 0, -1);
+    //light2->direction = glm::vec3(0, 0, -1);
+    light2->direction = camCompLeft->state.Right;
 
 
     camera1->GetComponent<RigidbodyComponent>()->useGravity = false;
@@ -985,6 +983,8 @@ int main(int, char**)
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
         updateFPS(deltaTime);
+
+        light2->direction = camCompLeft->state.Right;
 
         rigidBodyCamera1->useGravity = true;
         rigidBodyCamera2->useGravity = true;
