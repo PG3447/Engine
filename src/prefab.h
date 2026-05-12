@@ -31,69 +31,60 @@ public:
 
     GameObject* Instantiate(Scene& scene, GameObject* parent = nullptr, Shader* shader = nullptr)
     {
-        if (!rootModel) return nullptr;
-         
-        return CreateRecursive(&scene, rootModel.get(), parent, shader);
+        if (!rootModel || !rootModel->rootNode) return nullptr;
+
+        bool isAnimatedModel = rootModel->skeleton.boneCount > 0;
+
+        return CreateRecursive(&scene, rootModel->rootNode.get(), parent, shader, nullptr, true, isAnimatedModel);
     }
 
 private:
 
-    //Entity* createEntityRecursive(Model* model, Entity* parent, Shader* shader, Light* light)
-    //{
-    //    if (!model) return nullptr;
-
-    //    Entity* entity = new Entity();
-    //    entity->transform = model->transform;
-    //    entity->pModel = model;
-    //    entity->pShader = shader;
-    //    entity->pLight = light;
-    //    entity->name = model->name;
-
-    //    if (parent)
-    //        parent->addChild(entity);
-
-    //    for (auto& childModel : model->children)
-    //        createEntityRecursive(&childModel, entity, shader, light);
-
-    //    return entity;
-    //}
-
-
-    GameObject* CreateRecursive(Scene* scene, Model* model, GameObject* parent, Shader* shader)
+    GameObject* CreateRecursive(Scene* scene, ModelNode* model, GameObject* parent, Shader* shader,
+        AnimatorComponent* rootAnimator, bool isRoot, bool isAnimated)
     {
         if (!model) return nullptr;
 
         GameObject* go = scene->CreateGameObject(parent);
+        go->name = model->name;
 
-        // Transform
-        auto* transform = go->AddComponent<TransformComponent>();
-        transform->position = model->transform.getLocalPosition();
-        transform->rotation = model->transform.getLocalRotation();
-        transform->scale = model->transform.getLocalScale();
-        transform->modelMatrix = model->transform.getModelMatrix();
-        transform->isDirty = true;
+        AnimatorComponent* currentAnimator = rootAnimator;
 
-        // Render
+        if (isRoot && isAnimated) {
+            currentAnimator = go->AddComponent<AnimatorComponent>();
+            currentAnimator->currentSkeleton = &rootModel->skeleton;
+        }
+
+        auto* transform = go->GetComponent<TransformComponent>();
+        if (transform) {
+            if (currentAnimator != nullptr) {
+                transform->position = glm::vec3(0.0f);
+                transform->rotation = glm::vec3(0.0f);
+                transform->scale = glm::vec3(1.0f);
+            }
+            else {
+                transform->position = model->transform.getLocalPosition();
+                transform->rotation = model->transform.getLocalRotation();
+                transform->scale = model->transform.getLocalScale();
+            }
+            transform->isDirty = true;
+        }
+
         auto* render = go->AddComponent<RenderComponent>();
-        render->model = model;
-        render->shader = shader;
+        render->meshes = model->meshes;
+        //render->rootAnimator = currentAnimator;
 
-        // (opcjonalnie światło jeśli model ma)
-        //if (model->hasLight) {
-        //    auto* light = go->AddComponent<LightComponent>();
-        //    light->data = model->lightData;
-        //}
+        for (auto& mesh : render->meshes) {
+            if (mesh.material) mesh.material->shader = shader;
+        }
 
-        // nazwa (jeśli masz pole)
-        // go->name = model->name;
-
-        // ===== DZIECI =====
         for (auto& child : model->children) {
-            CreateRecursive(scene, &child, go, shader);
+            CreateRecursive(scene, child.get(), go, shader, currentAnimator, false, isAnimated);
         }
 
         return go;
     }
+
 };
 #endif
 
