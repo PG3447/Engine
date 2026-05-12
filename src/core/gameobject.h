@@ -94,6 +94,27 @@ public:
     }
 
     template<typename T>
+    T* GetComponentInParent()
+    {
+        // Sprawdzanie samego siebie
+        if (T* comp = GetComponent<T>())
+            return comp;
+
+        // W gore hierarchi
+        GameObject* p = parent;
+
+        while (p)
+        {
+            if (T* comp = p->GetComponent<T>())
+                return comp;
+
+            p = p->parent;
+        }
+
+        return nullptr;
+    }
+
+    template<typename T>
     std::vector<T*> GetComponentsInChildren() {
         std::vector<T*> result;
 

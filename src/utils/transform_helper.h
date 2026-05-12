@@ -73,9 +73,29 @@ public:
 	}
 
 	// Pobranie pozycji globalnej (z macierzy)
-	glm::vec3 getGlobalPosition(const TransformComponent& comp) const
+	static glm::vec3 getGlobalPosition(const TransformComponent& comp)
 	{
 		return glm::vec3(comp.modelMatrix[3]);
+	}
+
+	static void setGlobalPosition(TransformComponent& comp, const glm::vec3& worldPos, const TransformComponent* parent = nullptr)
+	{
+		if (parent)
+		{
+			// world → local
+			glm::mat4 parentWorld = parent->modelMatrix;
+			glm::mat4 invParent = glm::inverse(parentWorld);
+
+			glm::vec4 local = invParent * glm::vec4(worldPos, 1.0f);
+
+			comp.position = glm::vec3(local);
+		}
+		else
+		{
+			comp.position = worldPos;
+		}
+
+		comp.isDirty = true;
 	}
 
 	const glm::vec3& getLocalPosition(const TransformComponent& comp) const
@@ -113,7 +133,7 @@ public:
 		return glm::vec3(comp.modelMatrix[2]);
 	}
 
-	glm::vec3 getForward(const TransformComponent& comp) const
+	static glm::vec3 getForward(const TransformComponent& comp)
 	{
 		return -glm::vec3(comp.modelMatrix[2]);
 	}

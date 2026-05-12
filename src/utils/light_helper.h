@@ -37,7 +37,7 @@ public:
             std::string base = "spotLights[" + std::to_string(light.index) + "]";
 
             shader.setVec3(base + ".position", transform.position);
-            shader.setVec3(base + ".direction", light.direction);
+            shader.setVec3(base + ".direction", TransformHelper::getForward(transform)); //light.direction
             shader.setVec3(base + ".ambient", light.isOn ? light.ambient : glm::vec3(0.0f));
             shader.setVec3(base + ".diffuse", light.isOn ? light.diffuse : glm::vec3(0.0f));
             shader.setVec3(base + ".specular", light.isOn ? light.specular : glm::vec3(0.0f));

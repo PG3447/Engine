@@ -71,11 +71,17 @@ unsigned int loadCubemap(vector<std::string> faces);
 void regenerateSphere();
 
 //void createHouse();
-void processCameraInput(ECS& ecs, CameraComponent& cam,
+void processCameraInput(ECS& ecs, CameraComponent& cam, TransformComponent& transform,
     const std::string& up,
     const std::string& down,
     const std::string& left,
     const std::string& right);
+
+
+void processCameraGamepad(ECS& ecs,
+    CameraComponent& cam,
+    TransformComponent& transform,
+    int gamepad_id);
 
 
 void imgui_begin();
@@ -243,7 +249,7 @@ void updateFocus() {
 }
 
 
-void processCameraInput(ECS& ecs,CameraComponent& cam, TransformComponent& transform,
+void processCameraInput(ECS& ecs, CameraComponent& cam, TransformComponent& transform,
                        const std::string& up,
                        const std::string& down,
                        const std::string& left,
@@ -252,13 +258,24 @@ void processCameraInput(ECS& ecs,CameraComponent& cam, TransformComponent& trans
     const auto& hid = ecs.GetSystem<HID>();
     glm::vec3 dir(0.0f);
 
-    if (hid->is_action_pressed(up))    dir += cam.state.Front;
-    if (hid->is_action_pressed(left))  dir -= cam.state.Right;
-    if (hid->is_action_pressed(right)) dir += cam.state.Right;
-    if (hid->is_action_pressed(down))  dir -= cam.state.Front;
+    glm::vec3 camFront = cam.state.Front;
+    camFront.y = 0.0f;
+    camFront = glm::normalize(camFront);
+
+    glm::vec3 camRight = cam.state.Right;
+    camRight.y = 0.0f;
+    camRight = glm::normalize(camRight);
+
+    if (hid->is_action_pressed(up))    dir += camFront;
+    if (hid->is_action_pressed(down))  dir -= camFront;
+    if (hid->is_action_pressed(left))  dir -= camRight;
+    if (hid->is_action_pressed(right)) dir += camRight;
 
     if (glm::length(dir) > 0.0f) {
         dir = glm::normalize(dir);
+        //glm::vec3 pos = TransformHelper::getGlobalPosition(transform);
+        //TransformHelper::setGlobalPosition(transform, pos, camera.GetParent()->GetComponent<TransformComponent>());
+
         transform.position += dir * MovementSpeed * deltaTime;
         transform.isDirty = true;
     }
@@ -272,11 +289,6 @@ void processCameraMouse(ECS& ecs, CameraComponent& cam)
         (float)-hid->get_mouse_dy()
     );
 }
-
-void processCameraGamepad(ECS& ecs,
-                         CameraComponent& cam,
-                         TransformComponent& transform,
-                         int gamepad_id);
 
 int main(int, char**)
 {
@@ -984,21 +996,11 @@ int main(int, char**)
         lastFrame = currentFrame;
         updateFPS(deltaTime);
 
-        light2->direction = camCompLeft->state.Right;
+        //light2->direction = camCompLeft->state.Front;
 
         rigidBodyCamera1->useGravity = true;
         rigidBodyCamera2->useGravity = true;
 
-
-        processCameraInput(ecs, *camCompLeft, *t0,
-    "move_up", "move_down", "move_left", "move_right");
-
-        processCameraInput(ecs, *camCompRight, *t1,
-            "move_up_2", "move_down_2", "move_left_2", "move_right_2");
-
-        processCameraMouse(ecs, *camCompLeft);
-        processCameraGamepad(ecs, *camCompLeft, *t0, 0);
-        processCameraGamepad(ecs, *camCompRight, *t1, 1);
         test_score++;
         sprite_4->text = "score: " + std::to_string(test_score);
 
@@ -1055,10 +1057,11 @@ int main(int, char**)
         input();
 
         processCameraInput(ecs, *camCompLeft, *t0,
-    "move_up", "move_down", "move_left", "move_right");
+            "move_up", "move_down", "move_left", "move_right");
 
         processCameraInput(ecs, *camCompRight, *t1,
             "move_up_2", "move_down_2", "move_left_2", "move_right_2");
+
 
         processCameraMouse(ecs, *camCompLeft);
         processCameraGamepad(ecs, *camCompLeft, *t0, 0);
@@ -1428,8 +1431,16 @@ void processCameraGamepad(ECS &ecs, CameraComponent &cam, TransformComponent &tr
 
     glm::vec3 dir(0.0f);
 
-    dir += cam.state.Front * (-ly); // przód/tył
-    dir += cam.state.Right * lx;    // lewo/prawo
+    glm::vec3 camFront = cam.state.Front;
+    camFront.y = 0.0f;
+    camFront = glm::normalize(camFront);
+
+    glm::vec3 camRight = cam.state.Right;
+    camRight.y = 0.0f;
+    camRight = glm::normalize(camRight);
+
+    dir += camFront * (-ly); // przód/tył
+    dir += camRight * lx;    // lewo/prawo
 
     if (glm::length(dir) > 0.0f) {
         dir = glm::normalize(dir);
