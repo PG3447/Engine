@@ -191,6 +191,13 @@ std::unique_ptr<Prefab> jumpSkeletonPrefab;
 //OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
 
 
+//testowe obiekty do postprocessingu
+std::unique_ptr<Prefab> RedModel;
+std::unique_ptr<Prefab> BlueModel;
+std::unique_ptr<Prefab> GreenModel;
+
+//tu sie one koncza
+
 //std::unique_ptr<Model> sphereVenusModel;
 //
 std::unique_ptr<Prefab> roofModel;
@@ -554,7 +561,7 @@ int main(int, char**)
 
     light->direction = glm::normalize(glm::vec3(-0.3f, -1.0f, -0.1f));
 
-    light->ambient = glm::vec3(0.1f);
+    light->ambient = glm::vec3(0.5f);
     light->diffuse = glm::vec3(0.3f);
     light->specular = glm::vec3(0.9f);
     
@@ -903,6 +910,19 @@ int main(int, char**)
     AnimatorComponent* animator = dyingObj->AddComponent<AnimatorComponent>();
 
     // aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+
+    //PostProcessTest
+    RedModel = std::make_unique<Prefab>("res/models/test/red_test.glb");
+    GreenModel = std::make_unique<Prefab>("res/models/test/green_test.glb");
+    BlueModel = std::make_unique<Prefab>("res/models/test/blue_test.glb");
+
+    GameObject* redObject = RedModel->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* blueObject = BlueModel->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* greenObject = GreenModel->Instantiate(*scena1, nullptr, ourShader.get());
+
+    redObject->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 30.0f, 50.0f);
+    blueObject->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 30.0f, 0.0f);
+    greenObject->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 30.0f, -50.0f);
 
     // Main loop
     while (!glfwWindowShouldClose(window))
