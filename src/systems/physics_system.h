@@ -24,7 +24,7 @@ public:
 
     void OnGameObjectUpdated(GameObject* e) override;
 
-    void Update(ECS&) override;
+    void Update(ECS&, float dt) override;
 
     void ApplyForce(GameObject* e, float fx, float fy);
 

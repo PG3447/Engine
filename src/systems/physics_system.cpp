@@ -11,13 +11,13 @@ void PhysicsSystem::OnGameObjectUpdated(GameObject* e) {
     query->OnGameObjectUpdated(e);
 }
 
-void PhysicsSystem::Update(ECS&) {
+void PhysicsSystem::Update(ECS&, float dt) {
 
     auto& transforms = std::get<0>(query->componentsVectors);
     auto& rigidbodies = std::get<1>(query->componentsVectors);
     auto& colliders = std::get<2>(query->componentsVectors);
 
-    float dt = 1.0f / 60.0f;
+    dt = 1.0f / 60.0f;
 
     // RUCH
     for (size_t i = 0; i < query->gameobjects.size(); i++) {

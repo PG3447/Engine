@@ -153,7 +153,7 @@ void HID::load_inputs_from_yaml(const std::string& path) {
     spdlog::info("HID: input map loaded from {}", path);
 }
 
-void HID::Update(ECS& ecs) {
+void HID::Update(ECS& ecs, float dt) {
     //to czy obecnie klawisz jest klikniety i czy wlasnie nie byl puszczony
     for (auto& [key, state] : input_keys) {
         state.previous = state.current;

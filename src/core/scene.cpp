@@ -1,6 +1,8 @@
 ﻿#include "scene.h"
 #include <spdlog/spdlog.h>
 
+#include "systems/raycastSystem.h"
+
 
 //Scene::Scene(ECS& ecsRef) : ecs(ecsRef) {}
 
@@ -25,17 +27,22 @@ GameObject* Scene::CreateGameObject(GameObject* parent) {
 }
 
 void Scene::Update(float deltaTime) {
-    // kolejność ważna: transform → fizyka → render
-    if (root.get() != nullptr) {
-        spdlog::info("Istnieje root");
-        //DebugHierarchy(root.get());
-    }
+    if (auto* hid = ecs.GetSystem<HID>()) hid->Update(ecs, deltaTime);
 
-    if (auto* hid = ecs.GetSystem<HID>()) hid->Update(ecs);
-    if (auto* ts = ecs.GetSystem<TransformSystem>()) ts->updateSelfAndChild(root.get());
-    if (auto* ps = ecs.GetSystem<PhysicsSystem>()) ps->Update(ecs);
-    if (auto* render = ecs.GetSystem<RenderSystem>()) render->Update(ecs);
-    if (auto* ss = ecs.GetSystem<SpriteSystem>()) ss->Update(ecs);
+    if (auto* ts = ecs.GetSystem<TransformSystem>())
+        ts->updateSelfAndChild(root.get());
+
+    if (auto* ps = ecs.GetSystem<PhysicsSystem>())
+        ps->Update(ecs, deltaTime);
+
+    if (auto* rs = ecs.GetSystem<RaycastSystem>())
+        rs->Update(ecs, deltaTime);
+
+    if (auto* render = ecs.GetSystem<RenderSystem>())
+        render->Update(ecs, deltaTime);
+
+    if (auto* ss = ecs.GetSystem<SpriteSystem>())
+        ss->Update(ecs, deltaTime);
 }
 //
 //std::vector<GameObject*> Scene::GetGameObjects() {

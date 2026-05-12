@@ -15,8 +15,7 @@ public:
     void OnGameObjectUpdated(GameObject* e) override {};
 
     void updateSelfAndChild(GameObject* obj);
-    void Update(ECS& ecs) override {};
-
+    void Update(ECS& ecs, float dt) override {};
 };
 
 #endif

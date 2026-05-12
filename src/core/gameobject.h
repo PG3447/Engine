@@ -168,18 +168,6 @@ public:
 
     const std::vector<GameObject*>& GetChildren() const { return children; }
 
-    //template<typename T, typename... Args>
-    //T* AddComponent(Args&&... args);
-
-    //template<typename T>
-    //T* GetComponent();
-    //
-    //template<typename T>
-    //std::vector<T*> GetComponents();
-    //
-    //template<typename T>
-    //void RemoveComponent(T* component);
-
     void NotifyChanged();
 
     ~GameObject();
@@ -188,35 +176,3 @@ public:
 
 
 #endif
-
-
-/*
-template<typename T, typename... Args>
-T* AddComponent(Args&&... args) {
-    static_assert(std::is_base_of<Component, T>::value, "Must inherit Component");
-
-    T* comp = new T(std::forward<Args>(args)...);
-    components.emplace_back(comp);
-    return comp;
-}*/
-
-/*
-template<typename T, typename... Args>
-T* AddComponent(Args&&... args) {
-    T* comp = new T(std::forward<Args>(args)...);
-    components.emplace_back(comp);
-
-    ecs->NotifyEntityChanged(this);
-
-    return comp;
-}
-
-template<typename T>
-T* GetComponent() {
-    for (auto& c : components) {
-        if (auto casted = dynamic_cast<T*>(c.get()))
-            return casted;
-    }
-    return nullptr;
-}
-*/

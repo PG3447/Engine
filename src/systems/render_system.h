@@ -6,6 +6,8 @@
 #include <model.h>
 #include <imgui.h>
 #include <GLFW/glfw3.h>
+
+#include "DebugDrawSystem.h"
 #include "skybox_renderer.h"
 #include "../utils/camera_helper.h"
 
@@ -187,6 +189,7 @@ public:
         cameraQuery = ecs.CreateQuery<TransformComponent, CameraComponent>();
 
         Init();
+        DebugDrawSystem::Init();
     }
 
     void Init() {
@@ -219,7 +222,7 @@ public:
         groupsDirty = true;
     }
 
-    void Update(ECS& ecs) override {
+    void Update(ECS& ecs, float dt) override {
         stats.Reset();
         gpuQuery.begin();
 
@@ -271,6 +274,9 @@ public:
         currentCameraPos = transform.position;
 
         RenderGroups(frustum);
+
+        DebugDrawSystem::Flush(vp);
+
 
         glBindVertexArray(0);
 
@@ -369,6 +375,7 @@ public:
             }
         }
     }
+
 
     void RenderInstanced(Model* model, std::vector<size_t>& indices, Material* overrideMat)
     {
