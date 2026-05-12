@@ -69,7 +69,10 @@ public:
     }
 
     void Update(ECS& ecs, float dt) override {
+        int display_w, display_h;
+        glfwGetFramebufferSize(window, &display_w, &display_h);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glViewport(0, 0, display_w, display_h);
         glClear(GL_COLOR_BUFFER_BIT);
 
         glDisable(GL_DEPTH_TEST);
