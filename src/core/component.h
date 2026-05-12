@@ -174,7 +174,6 @@ struct ColliderComponent : Component {
 
     bool isTrigger = false;
 };
-
 enum LightType {
     Directional = 0,
     Point = 1,
@@ -230,6 +229,50 @@ struct AnimatorComponent : Component {
         finalBoneMatrices.resize(MAX_BONES, glm::mat4(1.0f));
     }
 };
+struct RaycastHit {
+    bool hit = false;
+    float distance = 0.0f; //odleglosc
+    glm::vec3 point = {}; //punkt trafienia
+    glm::vec3 normal = {}; //normalna od trafionej sciany AABB
+    size_t hitObjectID = SIZE_MAX; //id trafionego GameObjectu (Size max to brak)
+};
 
+struct RaycastComponent : Component {
+    static constexpr uint64_t ComponentBit = 1ull << 8;
 
+    //wartosci domyslne
+    float range = 50.0f; // zasieg widzenia
+    int fovRayCount = 1;
+    float fovAngle = 90.0f; //kat luku w stopniach
+    glm::vec3 originOffset = glm::vec3(0.0f, 0.0f, 0.0f); //przesuniece od zrodla pozycji
+
+    std::vector<RaycastHit> raycastHits;
+
+    //Czy w klatce promien trafil w cokolwiek
+    bool anyHit() const {
+        for (const auto & h : raycastHits) {
+            if (h.hit) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    RaycastHit closestHit() const {
+        RaycastHit bestHit;
+        bestHit.distance = 1e30f;
+        for (const auto & h : raycastHits) {
+            if (h.hit && h.distance < bestHit.distance) {
+                bestHit = h;
+            }
+        }
+        return (bestHit.distance < 1e30f) ? bestHit : RaycastHit{};
+    }
+
+    //debug
+    bool debugDraw = true;
+    glm::vec4 colorMiss = {0.0f, 1.0f, 0.0f, 1.0f}; // zielony  = brak trafienia
+    glm::vec4 colorHit  = {1.0f, 0.3f, 0.0f, 1.0f}; // pomarańczowy = trafienie
+
+};
 #endif

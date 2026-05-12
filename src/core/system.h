@@ -8,7 +8,7 @@ class System {
 public:
     virtual ~System() {}
 
-    virtual void Update(ECS& ecs) = 0;
+    virtual void Update(ECS& ecs, float deltaTime) = 0;
 
     virtual void OnGameObjectUpdated(GameObject* e) = 0;
 
