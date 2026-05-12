@@ -258,13 +258,13 @@ GameObject* CreateRaycastTestObject(
     tr->isDirty  = true;
 
     auto* col = go->AddComponent<ColliderComponent>();
-    col->halfSize = glm::vec3(1.0f);   // ⬅️ na start, potem dopasujesz
+    col->halfSize = glm::vec3(1.0f);
     col->offset   = glm::vec3(0.0f);
 
     auto* rc = go->AddComponent<RaycastComponent>();
     rc->range        = 5000.0f;
-    rc->fovRayCount  = 5;        // 5 promieni
-    rc->fovAngle     = 45.0f;    // wachlarz
+    rc->fovRayCount  = 200;
+    rc->fovAngle     = 200.0f;
     rc->originOffset = glm::vec3(0.0f, 0.5f, 0.0f);
     rc->debugDraw    = true;
 
@@ -565,14 +565,27 @@ int main(int, char**)
     //model1->GetComponent<TransformComponent>()->position.y = 150;
     //RenderHelper::SetMaterial(model29, brickMat);
 
-    GameObject* raycastCar =
+    GameObject* raycastTarget = placeholderModel->Instantiate(*scena1, nullptr, ourShader.get());
+
+    auto* targetTr = raycastTarget->GetComponent<TransformComponent>();
+    targetTr->position = glm::vec3(0.0f, 8.0f, -30.0f); // 30 jednostek przed placeholderem
+    targetTr->scale = glm::vec3(3.0f);
+    targetTr->isDirty = true;
+
+    auto* targetCol = raycastTarget->AddComponent<ColliderComponent>();
+    targetCol->halfSize = glm::vec3(3.0f);
+    targetCol->offset   = glm::vec3(0.0f);
+
+    /*GameObject* RaycastSource =
         CreateRaycastTestObject(
             *scena1,
             *placeholderModel,
             ourShader.get(),
-            glm::vec3(0.0f, 0.0f, 0.0f),
+            glm::vec3(0.0f, 5.0f, 0.0f),
             glm::vec3(1.0f)
         );
+        */
+
 
 
     sceneManager.Update(16);
@@ -995,9 +1008,6 @@ int main(int, char**)
         sceneManager.Update(deltaTime);
         // Update game objects' state here
         update();
-        auto* tr = raycastCar->GetComponent<TransformComponent>();
-        tr->rotation.y += 30.0f * deltaTime;
-        tr->isDirty = true;
 
         auto logicEnd = std::chrono::high_resolution_clock::now();
 
@@ -1208,6 +1218,7 @@ void imgui_render()
         glPolygonMode(GL_FRONT_AND_BACK,
             wireframeMode ? GL_LINE : GL_FILL);
     }
+    ImGui::End();
 
     ImGui::Begin("Performance");
 
@@ -1234,31 +1245,19 @@ void imgui_render()
         ImGui::Text("Triangles:    %d", renderSystem->stats.triangles);
         ImGui::Text("State changes:%d", renderSystem->stats.stateChanges);
     }
+    if (ImGui::CollapsingHeader("Culling")) {
+        ImGui::Text("Frustum culled:   %d", renderSystem->stats.culledByFrustum);
+        ImGui::Text("Occlusion culled: %d", renderSystem->stats.culledByOcclusion);
+        ImGui::Text("Culling Time:     %.3f ms", renderSystem->stats.cullingTimeMs);
+    }
     ImGui::PlotLines("Frame time", frameTimes, MAX_SAMPLES, index,
                  nullptr, 0.0f, 1.0f, ImVec2(0, 60));
 
     ImGui::End();
 
-    ImGui::SliderFloat("rotation X", &rotationX, -480.0f, 480.0f);
+    /*ImGui::SliderFloat("rotation X", &rotationX, -480.0f, 480.0f);
     ImGui::SliderFloat("rotation Y", &rotationY, -480.0f, 480.0f);
-    ImGui::SliderFloat("Camera Distance", &cameraDistance, 5.0f, 1000.0f);
-
-    ImGui::Text("This is some useful text.");
-    ImGui::Checkbox("Demo Window", &show_demo_window);
-    ImGui::Checkbox("Another Window", &show_another_window);
-
-    ImGui::ColorEdit3("clear color", (float*)&clear_color);
-
-    ImGui::End();
-
-    if (show_another_window)
-    {
-        ImGui::Begin("Another Window", &show_another_window);
-        ImGui::Text("Hello from another window!");
-        if (ImGui::Button("Close Me"))
-            show_another_window = false;
-        ImGui::End();
-    }
+    ImGui::SliderFloat("Camera Distance", &cameraDistance, 5.0f, 1000.0f);*/
 }
 
 void imgui_end()

@@ -25,21 +25,15 @@ public:
     RaycastSystem(ECS& ecs)
             : ecs_(ecs)
     {
-        query_ = ecs_.CreateQuery<
-            TransformComponent,
-            ColliderComponent,
-            RaycastComponent
-        >();
+        shooterQuery_ = ecs_.CreateQuery<TransformComponent, RaycastComponent>();
+        targetQuery_  = ecs_.CreateQuery<TransformComponent, ColliderComponent>();
     }
     void OnGameObjectUpdated(GameObject* gameObject) override {}
     void Update(ECS& ecs, float dt) override;
 private:
     ECS& ecs_;
-    Query<
-        TransformComponent,
-        ColliderComponent,
-        RaycastComponent
-    >* query_;
+    Query<TransformComponent, RaycastComponent>*  shooterQuery_;
+    Query<TransformComponent, ColliderComponent>* targetQuery_;
 
     static glm::vec3 rotateY(const glm::vec3& dir, float angleDeg) {
         float r = glm::radians(angleDeg);
