@@ -37,7 +37,7 @@ void main() {
 
         float GIGAWYNIK = max(m1, m2);
 
-        float dotProduct = dot(color, vec3(0.0, 0.58, 0.11));
+        float dotProduct = dot(color, vec3(0.0, 0.587, 0.114));
 
         playerColor =  mix(vec3(dotProduct) ,color, GIGAWYNIK);
     } else {
@@ -58,7 +58,7 @@ void main() {
 
         float GIGAWYNIK = max(m1, m2);
 
-        float dotProduct = dot(color, vec3(0.25, 0.0, 0.11));
+        float dotProduct = dot(color, vec3(0.299, 0.0, 0.114));
 
         vec3 tempColor =  mix(vec3(dotProduct) ,color, GIGAWYNIK);
 
