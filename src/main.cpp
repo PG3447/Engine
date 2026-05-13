@@ -45,6 +45,7 @@
 #include <systems/raycastSystem.h>
 
 #include "diagnostics/cpu_timer.h"
+#include "systems/PostProcessingSystem.h"
 #include "utils/render_helper.h"
 #include "utils/animation_helper.h"
 
@@ -196,6 +197,13 @@ std::unique_ptr<Prefab> jumpSkeletonPrefab;
 //OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
 
 
+//testowe obiekty do postprocessingu
+std::unique_ptr<Prefab> RedModel;
+std::unique_ptr<Prefab> BlueModel;
+std::unique_ptr<Prefab> GreenModel;
+
+//tu sie one koncza
+
 //std::unique_ptr<Model> sphereVenusModel;
 //
 std::unique_ptr<Prefab> roofModel;
@@ -224,6 +232,7 @@ struct PerformanceData {
 };
 PerformanceData perf;
 RenderSystem * renderSystem = nullptr;
+PostProcessingSystem* postProcessingSystem = nullptr;
 
 
 void updateFPS(float deltaTime) {
@@ -344,6 +353,7 @@ int main(int, char**)
     ecs.AddSystem<AnimationSystem>(ecs);
     ecs.AddSystem<RenderSystem>(ecs, window);
     ecs.AddSystem<HID>(ecs, window);
+    ecs.AddSystem<PostProcessingSystem>(ecs, window);
     ecs.AddSystem<SpriteSystem>(ecs, window);
     ecs.AddSystem<RaycastSystem>(ecs);
 
@@ -589,7 +599,7 @@ int main(int, char**)
 
     light->direction = glm::normalize(glm::vec3(-0.3f, -1.0f, -0.1f));
 
-    light->ambient = glm::vec3(0.1f);
+    light->ambient = glm::vec3(0.5f);
     light->diffuse = glm::vec3(0.3f);
     light->specular = glm::vec3(0.9f);
 
@@ -643,6 +653,7 @@ int main(int, char**)
     auto* t1 = camera2->GetComponent<TransformComponent>();
 
     renderSystem = ecs.GetSystem<RenderSystem>();
+    postProcessingSystem = ecs.GetSystem<PostProcessingSystem>();
 
 
     //pokoj bedzie tu
@@ -957,6 +968,19 @@ int main(int, char**)
 
     // aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 
+    //PostProcessTest
+    RedModel = std::make_unique<Prefab>("res/models/test/red_test.glb");
+    GreenModel = std::make_unique<Prefab>("res/models/test/green_test.glb");
+    BlueModel = std::make_unique<Prefab>("res/models/test/blue_test.glb");
+
+    GameObject* redObject = RedModel->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* blueObject = BlueModel->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* greenObject = GreenModel->Instantiate(*scena1, nullptr, ourShader.get());
+
+    redObject->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 30.0f, 50.0f);
+    blueObject->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 30.0f, 0.0f);
+    greenObject->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 30.0f, -50.0f);
+
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
@@ -972,6 +996,8 @@ int main(int, char**)
 
         test_score++;
         sprite_4->text = "score: " + std::to_string(test_score);
+
+
 
         CpuTimer cpuTimer;
         cpuTimer.start();
@@ -993,6 +1019,13 @@ int main(int, char**)
             renderSystem->occlusionCullingEnabled = !renderSystem->occlusionCullingEnabled;
             spdlog::info("Oclussion culling: {}",
                 renderSystem->frustumCullingEnabled ? "ON" : "OFF");
+        }
+
+        if (ecs.GetSystem<HID>()->is_action_just_pressed("gamma_up")) {
+            postProcessingSystem->set_gamma(postProcessingSystem->get_gamma() + 0.1f);
+        }
+        if (ecs.GetSystem<HID>()->is_action_just_pressed("gamma_down")) {
+            postProcessingSystem->set_gamma(postProcessingSystem->get_gamma() - 0.1f);
         }
 
         // testy animacji
