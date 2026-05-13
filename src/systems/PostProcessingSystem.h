@@ -19,6 +19,7 @@ private:
     GLuint quadVBO = 0;
 
     float gamma = 1.0f;
+    float time = 0.0f;
 
     void InitQuad() {
         // Fullscreen quad — dwa trójkąty pokrywające NDC [-1,1]
@@ -71,6 +72,7 @@ public:
     }
 
     void Update(ECS& ecs, float dt) override {
+        time += dt;
         int display_w, display_h;
         glfwGetFramebufferSize(window, &display_w, &display_h);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -82,6 +84,7 @@ public:
         postShader->use();
         postShader->setInt("screenTexture", 0);
         postShader->setFloat("gamma", gamma);
+        postShader->setFloat("time", time);
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, renderSystem->GetSceneTexture());

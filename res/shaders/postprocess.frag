@@ -5,10 +5,11 @@ out vec4 FragColor;
 
 uniform sampler2D screenTexture;
 uniform float gamma;
+uniform float time;
 
 void main() {
     //vec2 uv = TexCoords;
-    //uv.y += sin(uv.x * 20.0) * 0.02;
+    //uv.y += sin(uv.x * 20.0 + time) * 0.02;
     //vec3 color = texture(screenTexture, uv).rgb;
 
     vec3 color = texture(screenTexture, TexCoords).rgb;
@@ -63,26 +64,38 @@ void main() {
 
         playerColor = pow(tempColor, vec3(1.0 / 1.8));//dont worry about it
     }
-    //color efects
-
-    //Efekt 1
-    float scanline = sin(TexCoords.y * 800.0) * 0.04;
-    playerColor -= scanline;
-
-    //Efekt 2
-    float noise = fract(sin(dot(TexCoords, vec2(12.9898,78.233))) * 43758.5453);
-    playerColor += noise * 0.05;
 
     //Contrast
     float contrast = 1.5;
     playerColor = (playerColor - 0.5) * contrast + 0.5;
 
-    //Efekt 3
-    vec2 uv = TexCoords;
-    float dist = distance(uv, vec2(0.5));
-    float vignette = smoothstep(0.8, 0.3, dist);
+    //depth of field
 
+    //Lines
+    float scanline = sin(TexCoords.y * 800.0) * 0.04;
+    playerColor -= scanline;
+
+    //Grain
+    float noise = fract(sin(dot(TexCoords + time * 0.1, vec2(12.9898,78.233))) * 43758.5453);
+    playerColor += noise * 0.1;
+
+    //Vignette
+    vec2 center;
+    if(TexCoords.x < 0.5)
+    {
+        center = vec2(0.25, 0.5);
+    }
+    else
+    {
+        center = vec2(0.75, 0.5);
+    }
+    float dist = distance(TexCoords, center);
+    float vignette = smoothstep(0.7, 0.2, dist);
     playerColor *= vignette;
+
+    //divider
+    float divider = smoothstep(0.001, 0.005, abs(TexCoords.x - 0.5));
+    playerColor *= divider;
 
 
     vec3 finalColor = pow(playerColor, vec3(1.0 / gamma));//gamma
