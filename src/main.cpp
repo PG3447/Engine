@@ -281,13 +281,13 @@ void processCameraInput(ECS& ecs, CameraComponent& cam, TransformComponent& tran
     }
 }
 
-void processCameraMouse(ECS& ecs, CameraComponent& cam)
+void processCameraMouse(ECS& ecs, CameraComponent& cam, TransformComponent& transform)
 {
     const auto& hid = ecs.GetSystem<HID>();
-    CameraHelper::ProcessMouseMovement(cam,
-        (float)hid->get_mouse_dx(),
-        (float)-hid->get_mouse_dy()
-    );
+    float dx = hid->get_mouse_dx();
+    float dy = hid->get_mouse_dy();
+
+    CameraHelper::ProcessMouseMovement(cam, transform, dx, dy);
 }
 
 int main(int, char**)
@@ -380,23 +380,19 @@ int main(int, char**)
     light2->type = Spot;
     light2->index = 0;
 
-    light2->ambient = glm::vec3(0.22f);
+    light2->ambient = glm::vec3(0.25f);
     light2->diffuse = glm::vec3(1.0f);
     light2->specular = glm::vec3(1.0f);
 
-    //// attenuation
     light2->constant = 1.0f;
-    light2->linear = 0.014f;
-    light2->quadratic = 0.001f;
+    light2->linear = 0.10f;
+    light2->quadratic = 0.00001f;
 
-
-    //// spotlight cone
-    light2->cutOff = glm::cos(glm::radians(12.5f));
-    light2->outerCutOff = glm::cos(glm::radians(17.5f));
+    light2->cutOff = glm::cos(glm::radians(4.0f));
+    light2->outerCutOff = glm::cos(glm::radians(16.0f));
 
     //// direction będzie z kamery
     //light2->direction = glm::vec3(0, 0, -1);
-    light2->direction = camCompLeft->state.Right;
 
 
     camera1->GetComponent<RigidbodyComponent>()->useGravity = false;
@@ -409,8 +405,9 @@ int main(int, char**)
     camera2->GetComponent<RigidbodyComponent>()->useGravity = false;
     camera2->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1.0f, 10.0f, 1.0f };
 
-    camera1->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 20.0f, 0.0f);
-     CameraHelper::InitialCamera(*camCompLeft,
+    TransformComponent* camTransform1 = camera1->GetComponent<TransformComponent>();
+    camTransform1->position = glm::vec3(0.0f, 20.0f, 0.0f);
+    CameraHelper::InitialCamera(*camCompLeft, *camTransform1,
          glm::vec3(0.0f, 1.0f, 0.0f),
          YAW,
          PITCH,
@@ -419,8 +416,10 @@ int main(int, char**)
 
     camCompLeft->isActive = true;
 
-    camera2->GetComponent<TransformComponent>()->position = glm::vec3(50.0f, 30.0f, 0.0f);
-    CameraHelper::InitialCamera(*camCompRight,
+    TransformComponent* camTransform2 = camera2->GetComponent<TransformComponent>();
+
+    camTransform2->position = glm::vec3(50.0f, 30.0f, 0.0f);
+    CameraHelper::InitialCamera(*camCompRight, *camTransform2,
         glm::vec3(0.0f, 1.0f, 0.0f),
         0.0f, -20.0f,
         Viewport{ 0.5f, 0.0f, 0.5f, 1.0f }
@@ -1063,7 +1062,7 @@ int main(int, char**)
             "move_up_2", "move_down_2", "move_left_2", "move_right_2");
 
 
-        processCameraMouse(ecs, *camCompLeft);
+        processCameraMouse(ecs, *camCompLeft, *camTransform1);
         processCameraGamepad(ecs, *camCompLeft, *t0, 0);
         processCameraGamepad(ecs, *camCompRight, *t1, 1);
 
@@ -1453,9 +1452,9 @@ void processCameraGamepad(ECS &ecs, CameraComponent &cam, TransformComponent &tr
 
     const float sensitivity = 600.0f;
 
-    CameraHelper::ProcessMouseMovement(cam,
+    CameraHelper::ProcessMouseMovement(cam, transform,
         rx * sensitivity * deltaTime,
-        -ry * sensitivity * deltaTime
+        ry * sensitivity * deltaTime
     );
 }
 

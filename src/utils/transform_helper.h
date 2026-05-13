@@ -82,7 +82,7 @@ public:
 	{
 		if (parent)
 		{
-			// world → local
+			// world -> local
 			glm::mat4 parentWorld = parent->modelMatrix;
 			glm::mat4 invParent = glm::inverse(parentWorld);
 
@@ -118,17 +118,27 @@ public:
 		return comp.modelMatrix;
 	}
 
-	glm::vec3 getRight(const TransformComponent& comp) const
+	static glm::vec3 getRight(const TransformComponent& comp)
 	{
 		return glm::vec3(comp.modelMatrix[0]);
 	}
+	
+	static glm::vec3 getLeft(const TransformComponent& comp)
+	{
+		return -glm::vec3(comp.modelMatrix[0]);
+	}
 
-	glm::vec3 getUp(const TransformComponent& comp) const
+	static glm::vec3 getUp(const TransformComponent& comp)
 	{
 		return glm::vec3(comp.modelMatrix[1]);
 	}
 
-	glm::vec3 getBackward(const TransformComponent& comp) const
+	static glm::vec3 getDown(const TransformComponent& comp)
+	{
+		return -glm::vec3(comp.modelMatrix[1]);
+	}
+
+	static glm::vec3 getBackward(const TransformComponent& comp)
 	{
 		return glm::vec3(comp.modelMatrix[2]);
 	}
@@ -138,7 +148,7 @@ public:
 		return -glm::vec3(comp.modelMatrix[2]);
 	}
 
-	glm::vec3 getGlobalScale(const TransformComponent& comp) const
+	static glm::vec3 getGlobalScale(const TransformComponent& comp)
 	{
 		return { glm::length(getRight(comp)), glm::length(getUp(comp)), glm::length(getBackward(comp)) };
 	}
