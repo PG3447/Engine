@@ -281,4 +281,63 @@ struct RaycastComponent : Component {
     glm::vec4 colorHit  = {1.0f, 0.3f, 0.0f, 1.0f}; // pomarańczowy = trafienie
 
 };
+struct NavVertex {
+    glm::vec3 position;
+};
+
+// Trojkat siatki nawigacyjnej
+struct NavTriangle {
+    int v[3];
+    int neighbors[3];
+
+    glm::vec3 centroid;
+    bool walkable = true;
+
+    NavTriangle() {
+        v[0] = v[1] = v[2] = -1;
+        neighbors[0] = neighbors[1] = neighbors[2] = -1;
+        centroid = glm::vec3(0.0f);
+    }
+    NavTriangle(int a, int b, int c) {
+        v[0] = a; v[1] = b; v[2] = c;
+        neighbors[0] = neighbors[1] = neighbors[2] = -1;
+        centroid = glm::vec3(0.0f);
+    }
+};
+// Zbior danych wynikowych po bake
+struct NavMeshData {
+    std::vector<NavVertex>   vertices;
+    std::vector<NavTriangle> triangles;
+    bool isBaked = false;
+
+    void Clear() {
+        vertices.clear();
+        triangles.clear();
+        isBaked = false;
+    }
+};
+struct NavMeshComponent : Component {
+    static constexpr uint64_t ComponentBit = 1ull << 10;
+
+    NavMeshData data;
+
+    // Parametry bake
+    float agentRadius   = 0.5f;   // Promien agenta (margines przy przeszkodach)
+    float agentHeight   = 2.0f;   // Wysokosc agenta
+    float voxelSize     = 1.0f;   // Rozmiar voksela dla siatki punktow probkowania
+    float maxSlopeAngle = 45.0f;  // Max kat nachylenia (w stopniach) - powyzej = niechodzalne
+
+    // Debug
+    bool debugDraw = true;
+    glm::vec4 colorWalkable    = glm::vec4(0.0f, 0.8f, 0.2f, 0.4f); // zielony
+    glm::vec4 colorUnwalkable  = glm::vec4(0.8f, 0.1f, 0.1f, 0.4f); // czerwony
+    glm::vec4 colorEdge        = glm::vec4(0.0f, 1.0f, 0.5f, 1.0f); // jasny zielony
+
+    // Znajdz trojkat zawierajacy punkt (XZ), zwraca indeks lub -1
+    int FindTriangle(const glm::vec3& worldPos) const;
+
+    // Czy punkt jest na navmeshu
+    bool IsPointWalkable(const glm::vec3& worldPos) const;
+};
+
 #endif

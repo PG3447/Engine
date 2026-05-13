@@ -59,7 +59,6 @@ public:
         OcclusionData& data = occlusionMap[entityIdx];
         if (data.queryId == 0) glGenQueries(1, &data.queryId);
 
-        // Transformuj rogi lokalnego AABB na world space — identycznie jak AABBInFrustum
         const glm::vec3 localCorners[8] = {
             {localAABB.min.x, localAABB.min.y, localAABB.min.z},
             {localAABB.max.x, localAABB.min.y, localAABB.min.z},
@@ -393,8 +392,8 @@ public:
                 continue;
 
 
-            std::vector<size_t> occluders; // Duże obiekty - rysujemy zawsze
-            std::vector<size_t> subjects;  // Małe obiekty - testujemy occlusion
+            std::vector<size_t> occluders;
+            std::vector<size_t> subjects;
             // Culling
             auto cullStart = std::chrono::high_resolution_clock::now();
             for (size_t i : indices) {
@@ -407,7 +406,6 @@ public:
                     continue;
                 }
 
-                // Decyzja: czy obiekt jest na tyle duży, by sam zasłaniał inne?
                 glm::vec3 size = localAABB.max - localAABB.min;
 
                 float dims[3] = { size.x, size.y, size.z };
@@ -429,14 +427,12 @@ public:
                 for (size_t i : subjects) {
                     OcclusionData& data = occlusionMap[i];
 
-                    // Pobieramy wynik z poprzedniej klatki
                     if (data.queryId != 0 && data.queryActive) {
                         GLuint available = 0;
                         glGetQueryObjectuiv(data.queryId, GL_QUERY_RESULT_AVAILABLE, &available);
                         if (available) {
                             GLuint anyPassed = 0;
                             glGetQueryObjectuiv(data.queryId, GL_QUERY_RESULT, &anyPassed);
-                            //printf("Entity %zu: anyPassed = %u\n", i, anyPassed);
                             if (anyPassed > 0) {
                                 data.isVisible = true;
                                 data.hiddenFrames = 0; // reset licznika
@@ -448,7 +444,6 @@ public:
                             data.queryActive = false;
                         }
                     } else {
-                        // Brak wyniku zapytania z poprzedniej klatki - traktujemy jako widoczne
                         data.isVisible = true;
                     }
 
@@ -459,7 +454,6 @@ public:
                     }
                 }
             } else {
-                // Jeśli occlusion culling jest wyłączone, renderujemy wszystkie małe obiekty
                 visibleSubjects = subjects;
             }
 
