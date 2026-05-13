@@ -69,8 +69,6 @@ void main() {
     float contrast = 1.5;
     playerColor = (playerColor - 0.5) * contrast + 0.5;
 
-    //depth of field
-
     //Lines
     float scanline = sin(TexCoords.y * 800.0) * 0.04;
     playerColor -= scanline;
