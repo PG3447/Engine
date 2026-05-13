@@ -1119,9 +1119,9 @@ int main(int, char**)
 
     }
 
-    sound->release();
+  /*  sound->release();
     system->close();
-    system->release();
+    system->release();*/
 
     // Cleanup
     glDeleteVertexArrays(1, &VAO);
