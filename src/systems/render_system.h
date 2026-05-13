@@ -30,12 +30,13 @@ private:
         bool isVisible = true;
         bool queryActive = false;
         int    hiddenFrames = 0;
-        static constexpr int HIDE_THRESHOLD = 10;
+        static constexpr int HIDE_THRESHOLD = 3;
     };
     std::unordered_map<size_t, OcclusionData> occlusionMap;
-    float occluderThreshold = 5.0f;
-
+    float occluderThreshold = 3.0f;
+public:
     Query<TransformComponent, RenderComponent>* renderQuery;
+    private:
     Query<TransformComponent, LightComponent>* lightQuery;
     Query<TransformComponent, CameraComponent>* cameraQuery;
 
@@ -81,7 +82,6 @@ public:
         glDepthMask(GL_FALSE);
 
         glBeginQuery(GL_ANY_SAMPLES_PASSED, data.queryId);
-        // Teraz worldMin/worldMax są w world space, vp = projection*view bez modelMatrix
         DebugDrawSystem::DrawAABBSolid(worldMin, worldMax, projection * view);
         glEndQuery(GL_ANY_SAMPLES_PASSED);
 
@@ -114,7 +114,6 @@ public:
             int prev = current;
             current = (current + 1) % 2;
 
-            // Wymuś odczyt — może lekko stallować ale zawsze aktualny
             GLuint64 time = 0;
             glGetQueryObjectui64v(queries[prev], GL_QUERY_RESULT, &time);
             lastResult = time / 1000000.0f;
@@ -131,14 +130,15 @@ public:
         int renderedObjects = 0;
         int triangles = 0;
         int stateChanges = 0;
-        int culledByFrustum = 0;
-        int culledByOcclusion = 0;
+        std::unordered_set<size_t> frustumCulledSet;
+        std::unordered_set<size_t> occlusionCulledSet;
         float cullingTimeMs = 0.0f;
         float drawSubmitTimeMs = 0.0f;
 
         void Reset() {
             drawCalls = renderedObjects = triangles = stateChanges = 0;
-            culledByFrustum = culledByOcclusion = 0;
+           frustumCulledSet.clear();
+            occlusionCulledSet.clear();
             cullingTimeMs = drawSubmitTimeMs = 0.0f;
         }
     };
@@ -382,7 +382,7 @@ public:
         auto& lights = std::get<1>(lightQuery->componentsVectors);
 
 
-        std::vector<std::pair<size_t, AABB>> allSubjects;
+        std::unordered_map<size_t, AABB> allSubjects; // entityIdx -> local AABB, do debugowania occlusion culling
 
         for (auto& [key, indices] : instancedGroups) {
             RenderMesh* model = std::get<0>(key);
@@ -399,9 +399,11 @@ public:
             auto cullStart = std::chrono::high_resolution_clock::now();
             for (size_t i : indices) {
                 AABB localAABB = GetLocalAABB(renderers[i]->meshes);
-                if (frustumCullingEnabled && !AABBInFrustum(frustum, localAABB, transforms[i]->modelMatrix)) {
-                    stats.culledByFrustum++;
-                    stats.drawCalls++; // (opcjonalnie statystyka frustum)
+
+                if (!AABBInFrustum(frustum, localAABB, transforms[i]->modelMatrix)) {
+                    if (frustumCullingEnabled) {
+                        stats.frustumCulledSet.insert(i);
+                    }
                     continue;
                 }
 
@@ -415,7 +417,7 @@ public:
                     occluders.push_back(i);
                 } else {
                     subjects.push_back(i);
-                    allSubjects.push_back({i, localAABB});
+                    allSubjects.emplace(i, localAABB);
                 }
             }
             auto cullEnd = std::chrono::high_resolution_clock::now();
@@ -434,6 +436,7 @@ public:
                         if (available) {
                             GLuint anyPassed = 0;
                             glGetQueryObjectuiv(data.queryId, GL_QUERY_RESULT, &anyPassed);
+                            //printf("Entity %zu: anyPassed = %u\n", i, anyPassed);
                             if (anyPassed > 0) {
                                 data.isVisible = true;
                                 data.hiddenFrames = 0; // reset licznika
@@ -452,7 +455,7 @@ public:
                     if (data.isVisible) {
                         visibleSubjects.push_back(i);
                     } else {
-                        stats.culledByOcclusion++;
+                        stats.occlusionCulledSet.insert(i);
                     }
                 }
             } else {
