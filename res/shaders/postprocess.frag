@@ -77,6 +77,8 @@ void main() {
     float noise = fract(sin(dot(TexCoords + time * 0.1, vec2(12.9898,78.233))) * 43758.5453);
     playerColor += noise * 0.1;
 
+    playerColor = pow(playerColor, vec3(1.0 / gamma));//gamma
+
     //Vignette
     vec2 center;
     if(TexCoords.x < 0.5)
@@ -95,8 +97,6 @@ void main() {
     float divider = smoothstep(0.001, 0.005, abs(TexCoords.x - 0.5));
     playerColor *= divider;
 
+    FragColor = vec4(playerColor, 1.0);
 
-    vec3 finalColor = pow(playerColor, vec3(1.0 / gamma));//gamma
-
-    FragColor = vec4(finalColor, 1.0);
 }
