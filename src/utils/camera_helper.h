@@ -4,6 +4,7 @@
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include "transform_helper.h"
 
 constexpr float YAW = -90.0f;
 constexpr float PITCH = 0.0f;
