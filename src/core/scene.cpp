@@ -1,6 +1,7 @@
 ﻿#include "scene.h"
 #include <spdlog/spdlog.h>
 
+#include "systems/AudioSystem.h"
 #include "systems/PostProcessingSystem.h"
 #include "systems/raycastSystem.h"
 
@@ -50,6 +51,9 @@ void Scene::Update(float deltaTime) {
 
     if (auto* ss = ecs.GetSystem<SpriteSystem>())
         ss->Update(ecs, deltaTime);
+
+    if (auto* as = ecs.GetSystem<AudioSystem>())
+        as->Update(ecs, deltaTime);
 
 }
 //

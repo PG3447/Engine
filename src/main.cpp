@@ -43,6 +43,7 @@
 #include <systems/animation_system.h>
 #include <systems/SpriteSystem.h>
 #include <systems/raycastSystem.h>
+#include <systems/AudioSystem.h>
 
 #include "diagnostics/cpu_timer.h"
 #include "systems/PostProcessingSystem.h"
@@ -356,6 +357,7 @@ int main(int, char**)
     ecs.AddSystem<PostProcessingSystem>(ecs, window);
     ecs.AddSystem<SpriteSystem>(ecs, window);
     ecs.AddSystem<RaycastSystem>(ecs);
+    ecs.AddSystem<AudioSystem>(ecs);
 
     ourShader = std::make_unique<Shader>("res/shaders/basic.vert", "res/shaders/basic.frag");
     ourShader->use();
@@ -985,16 +987,11 @@ int main(int, char**)
     rigidBodyCamera2->useGravity = true;
 
     //FMOD
-
-    FMOD::System* system = nullptr;
     FMOD::Sound* sound = nullptr;
-    FMOD::Channel* channel = nullptr;
 
-    FMOD::System_Create(&system);
+    ecs.GetSystem<AudioSystem>()->createSound("res/sound/test_sound.mp3", sound);
 
-    system->init(512, FMOD_INIT_NORMAL, nullptr);
 
-    system->createSound("res/sound/test_sound.mp3", FMOD_DEFAULT, nullptr, &sound);
 
     //XDDD
 
@@ -1037,6 +1034,10 @@ int main(int, char**)
         }
         if (ecs.GetSystem<HID>()->is_action_just_pressed("gamma_down")) {
             postProcessingSystem->set_gamma(postProcessingSystem->get_gamma() - 0.1f);
+        }
+
+        if (ecs.GetSystem<HID>()->is_action_just_pressed("play_sound")) {
+            ecs.GetSystem<AudioSystem>()->playSound(sound);
         }
 
         // testy animacji
@@ -1122,8 +1123,6 @@ int main(int, char**)
     }
 
     sound->release();
-    system->close();
-    system->release();
 
     // Cleanup
     glDeleteVertexArrays(1, &VAO);
