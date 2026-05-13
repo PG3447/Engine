@@ -20,6 +20,7 @@ void DebugDrawSystem::Init()
         "res/shaders/debug_line.vert",
         "res/shaders/debug_line.frag"
     );
+    InitSolid();
 
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
@@ -130,34 +131,59 @@ void DebugDrawSystem::DrawAABBImmediate(const glm::vec3& min,
 
     glBindVertexArray(0);
 }
+unsigned int DebugDrawSystem::solidVAO = 0;
+unsigned int DebugDrawSystem::solidVBO = 0;
+unsigned int DebugDrawSystem::solidEBO = 0;
+
+void DebugDrawSystem::InitSolid() {
+    static const unsigned int indices[36] = {
+        0,1,2, 1,3,2,  // dół
+        4,6,5, 5,6,7,  // góra
+        0,2,4, 4,2,6,  // lewo
+        1,5,3, 3,5,7,  // prawo
+        0,4,1, 1,4,5,  // przód
+        2,3,6, 6,3,7   // tył
+    };
+
+    glGenVertexArrays(1, &solidVAO);
+    glGenBuffers(1, &solidVBO);
+    glGenBuffers(1, &solidEBO);
+
+    glBindVertexArray(solidVAO);
+
+    // VBO — 8 wierzchołków, dynamic bo nadpisujemy per-query
+    glBindBuffer(GL_ARRAY_BUFFER, solidVBO);
+    glBufferData(GL_ARRAY_BUFFER, 8 * sizeof(glm::vec3), nullptr, GL_DYNAMIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
+
+    // EBO — stały
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, solidEBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+    glBindVertexArray(0);
+}
+
 void DebugDrawSystem::DrawAABBSolid(const glm::vec3& min, const glm::vec3& max, const glm::mat4& vp)
 {
     if (!debugShader) return;
 
-    // 8 wierzchołków kostki
-    glm::vec3 c[8] = {
+    glm::vec3 corners[8] = {
         {min.x, min.y, min.z}, {max.x, min.y, min.z},
         {min.x, max.y, min.z}, {max.x, max.y, min.z},
         {min.x, min.y, max.z}, {max.x, min.y, max.z},
         {min.x, max.y, max.z}, {max.x, max.y, max.z}
     };
 
-    static const unsigned int indices[36] = {
-        0, 1, 2, 1, 3, 2, // dół
-        4, 6, 5, 5, 6, 7, // góra
-        0, 2, 4, 4, 2, 6, // lewo
-        1, 5, 3, 3, 5, 7, // prawo
-        0, 4, 1, 1, 4, 5, // przód
-        2, 3, 6, 6, 3, 7  // tył
-    };
+    glBindBuffer(GL_ARRAY_BUFFER, solidVBO);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, 8 * sizeof(glm::vec3), corners);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     debugShader->use();
     debugShader->setMat4("uVP", vp);
-    debugShader->setVec4("uColor", glm::vec4(1.0f));
+    debugShader->setVec4("uColor", glm::vec4(0.0f));
 
-    glBegin(GL_TRIANGLES);
-    for(int i=0; i<36; i++) {
-        glVertex3fv(&c[indices[i]].x);
-    }
-    glEnd();
+    glBindVertexArray(solidVAO);
+    glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
 }

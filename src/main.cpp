@@ -503,7 +503,6 @@ int main(int, char**)
     //GameObject* model2 = bed2Model->Instantiate(*scena1, nullptr, ourShader.get());
     //GameObject* model3 = bed3Model->Instantiate(*scena1, nullptr, ourShader.get());
     //GameObject* model4 = corkBoardModel->Instantiate(*scena1, nullptr, ourShader.get());
-    //GameObject* model5 = cupModel      ->Instantiate(*scena1, nullptr, ourShader.get());
     //GameObject* model6 = deskModel     ->Instantiate(*scena1, nullptr, ourShader.get());
     //GameObject* model7 = doorsModel    ->Instantiate(*scena1, nullptr, ourShader.get());
     //GameObject* model8 = folderModel   ->Instantiate(*scena1, nullptr, ourShader.get());
@@ -585,6 +584,11 @@ int main(int, char**)
             glm::vec3(1.0f)
         );
         */
+
+    GameObject * model5 = cupModel      ->Instantiate(*scena1, nullptr, ourShader.get());
+    model5->GetComponent<TransformComponent>()->position.x = 0.0f;
+    model5->GetComponent<TransformComponent>()->position.y = 2.0f;
+    model5->GetComponent<TransformComponent>()->position.z = 20.0f;
 
 
 
@@ -950,9 +954,14 @@ int main(int, char**)
             focused = !focused;
             updateFocus();
         }
-        if (ecs.GetSystem<HID>()->is_action_just_pressed("toggle_culling")) {
+        if (ecs.GetSystem<HID>()->is_action_just_pressed("toggle_frustum_culling")) {
             renderSystem->frustumCullingEnabled = !renderSystem->frustumCullingEnabled;
             spdlog::info("Frustum culling: {}",
+                renderSystem->frustumCullingEnabled ? "ON" : "OFF");
+        }
+        if (ecs.GetSystem<HID>()->is_action_just_pressed("toggle_oclussion_culling")) {
+            renderSystem->occlusionCullingEnabled = !renderSystem->occlusionCullingEnabled;
+            spdlog::info("Oclussion culling: {}",
                 renderSystem->frustumCullingEnabled ? "ON" : "OFF");
         }
 
@@ -1246,9 +1255,10 @@ void imgui_render()
         ImGui::Text("State changes:%d", renderSystem->stats.stateChanges);
     }
     if (ImGui::CollapsingHeader("Culling")) {
+        ImGui::Checkbox("Frustum culling",   &renderSystem->frustumCullingEnabled);
+        ImGui::Checkbox("Occlusion culling", &renderSystem->occlusionCullingEnabled);
         ImGui::Text("Frustum culled:   %d", renderSystem->stats.culledByFrustum);
         ImGui::Text("Occlusion culled: %d", renderSystem->stats.culledByOcclusion);
-        ImGui::Text("Culling Time:     %.3f ms", renderSystem->stats.cullingTimeMs);
     }
     ImGui::PlotLines("Frame time", frameTimes, MAX_SAMPLES, index,
                  nullptr, 0.0f, 1.0f, ImVec2(0, 60));

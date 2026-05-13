@@ -6,6 +6,7 @@
 #include <string>
 #include "../unused/camera.h"
 
+class GameObject;
 class MeshNode;
 class Shader;
 class Material;
@@ -173,6 +174,9 @@ struct ColliderComponent : Component {
     glm::vec3 halfSize{ 0.5f, 0.5f, 0.5f };
 
     bool isTrigger = false;
+
+    bool affectsNavMesh = true;
+    bool isWalkable = true;
 };
 enum LightType {
     Directional = 0,
@@ -235,6 +239,8 @@ struct RaycastHit {
     glm::vec3 point = {}; //punkt trafienia
     glm::vec3 normal = {}; //normalna od trafionej sciany AABB
     size_t hitObjectID = SIZE_MAX; //id trafionego GameObjectu (Size max to brak)
+    GameObject* hitObject = nullptr;
+    std::string hitTag = "";
 };
 
 struct RaycastComponent : Component {

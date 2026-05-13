@@ -60,6 +60,8 @@ void RaycastSystem::Update(ECS&, float)
                     best.point = origin + dir * dist;
                     best.normal = aabbNormal(best.point, tgt.min, tgt.max);
                     best.hitObjectID = tgt.go->id;
+                    best.hitObject = tgt.go;
+                    best.hitTag = tgt.go->name;
                 }
             }
 

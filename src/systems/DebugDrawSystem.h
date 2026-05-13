@@ -28,11 +28,12 @@ public:
 
     static void DrawAABBImmediate(const glm::vec3& min, const glm::vec3& max, const glm::mat4& vp);
     static void DrawAABBSolid(const glm::vec3& min, const glm::vec3& max, const glm::mat4& vp);
-
 private:
     static std::vector<DebugLine> lines;
     static unsigned int VAO, VBO;
     static Shader* debugShader;
+    static unsigned int solidVAO, solidVBO, solidEBO;
+    static void InitSolid();
 };
 
 

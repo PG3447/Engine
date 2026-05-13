@@ -29,6 +29,8 @@ private:
         GLuint queryId = 0;
         bool isVisible = true;
         bool queryActive = false;
+        int    hiddenFrames = 0;
+        static constexpr int HIDE_THRESHOLD = 10;
     };
     std::unordered_map<size_t, OcclusionData> occlusionMap;
     float occluderThreshold = 5.0f;
@@ -56,15 +58,31 @@ public:
         OcclusionData& data = occlusionMap[entityIdx];
         if (data.queryId == 0) glGenQueries(1, &data.queryId);
 
-        // Wyłączamy zapisywanie kolorów i głębi - chcemy tylko testu
+        // Transformuj rogi lokalnego AABB na world space — identycznie jak AABBInFrustum
+        const glm::vec3 localCorners[8] = {
+            {localAABB.min.x, localAABB.min.y, localAABB.min.z},
+            {localAABB.max.x, localAABB.min.y, localAABB.min.z},
+            {localAABB.min.x, localAABB.max.y, localAABB.min.z},
+            {localAABB.max.x, localAABB.max.y, localAABB.min.z},
+            {localAABB.min.x, localAABB.min.y, localAABB.max.z},
+            {localAABB.max.x, localAABB.min.y, localAABB.max.z},
+            {localAABB.min.x, localAABB.max.y, localAABB.max.z},
+            {localAABB.max.x, localAABB.max.y, localAABB.max.z},
+        };
+
+        glm::vec3 worldMin(FLT_MAX), worldMax(-FLT_MAX);
+        for (const auto& c : localCorners) {
+            glm::vec3 w = glm::vec3(modelMatrix * glm::vec4(c, 1.0f));
+            worldMin = glm::min(worldMin, w);
+            worldMax = glm::max(worldMax, w);
+        }
+
         glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
         glDepthMask(GL_FALSE);
 
         glBeginQuery(GL_ANY_SAMPLES_PASSED, data.queryId);
-
-        // Rysujemy AABB obiektu jako uproszczony kształt testowy
-        DebugDrawSystem::DrawAABBSolid(localAABB.min, localAABB.max, projection * view * modelMatrix);
-
+        // Teraz worldMin/worldMax są w world space, vp = projection*view bez modelMatrix
+        DebugDrawSystem::DrawAABBSolid(worldMin, worldMax, projection * view);
         glEndQuery(GL_ANY_SAMPLES_PASSED);
 
         glDepthMask(GL_TRUE);
@@ -73,6 +91,7 @@ public:
     }
 
     bool frustumCullingEnabled = true;
+    bool occlusionCullingEnabled = true;
     struct Plane {
         glm::vec3 normal;
         float d;
@@ -362,6 +381,9 @@ public:
         auto& transformsLights = std::get<0>(lightQuery->componentsVectors);
         auto& lights = std::get<1>(lightQuery->componentsVectors);
 
+
+        std::vector<std::pair<size_t, AABB>> allSubjects;
+
         for (auto& [key, indices] : instancedGroups) {
             RenderMesh* model = std::get<0>(key);
             Material* overrideMat = std::get<1>(key);
@@ -385,10 +407,15 @@ public:
 
                 // Decyzja: czy obiekt jest na tyle duży, by sam zasłaniał inne?
                 glm::vec3 size = localAABB.max - localAABB.min;
+
+                float dims[3] = { size.x, size.y, size.z };
+                std::sort(dims, dims + 3);
+
                 if (size.x * size.y * size.z > occluderThreshold) {
                     occluders.push_back(i);
                 } else {
                     subjects.push_back(i);
+                    allSubjects.push_back({i, localAABB});
                 }
             }
             auto cullEnd = std::chrono::high_resolution_clock::now();
@@ -396,22 +423,41 @@ public:
 
             std::vector<size_t> visibleSubjects;
 
-            for (size_t i : subjects) {
-                OcclusionData& data = occlusionMap[i];
+            if (occlusionCullingEnabled) {
+                for (size_t i : subjects) {
+                    OcclusionData& data = occlusionMap[i];
 
-                // Pobieramy wynik z poprzedniej klatki
-                if (data.queryId != 0 && data.queryActive) {
-                    GLuint anyPassed;
-                    glGetQueryObjectuiv(data.queryId, GL_QUERY_RESULT, &anyPassed);
-                    data.isVisible = (anyPassed > 0);
-                }
+                    // Pobieramy wynik z poprzedniej klatki
+                    if (data.queryId != 0 && data.queryActive) {
+                        GLuint available = 0;
+                        glGetQueryObjectuiv(data.queryId, GL_QUERY_RESULT_AVAILABLE, &available);
+                        if (available) {
+                            GLuint anyPassed = 0;
+                            glGetQueryObjectuiv(data.queryId, GL_QUERY_RESULT, &anyPassed);
+                            if (anyPassed > 0) {
+                                data.isVisible = true;
+                                data.hiddenFrames = 0; // reset licznika
+                            } else {
+                                data.hiddenFrames++;
+                                if (data.hiddenFrames >= OcclusionData::HIDE_THRESHOLD)
+                                    data.isVisible = false; // ukryj dopiero po N klatkach
+                            }
+                            data.queryActive = false;
+                        }
+                    } else {
+                        // Brak wyniku zapytania z poprzedniej klatki - traktujemy jako widoczne
+                        data.isVisible = true;
+                    }
 
-                if (data.isVisible) {
-                    visibleSubjects.push_back(i);
+                    if (data.isVisible) {
+                        visibleSubjects.push_back(i);
+                    } else {
+                        stats.culledByOcclusion++;
+                    }
                 }
-                else {
-                    stats.culledByOcclusion++;
-                }
+            } else {
+                // Jeśli occlusion culling jest wyłączone, renderujemy wszystkie małe obiekty
+                visibleSubjects = subjects;
             }
 
             std::vector<size_t> finalToRender = occluders;
@@ -422,7 +468,6 @@ public:
             shader->use();
             shader->setMat4("projection", projection);
             shader->setMat4("view", view);
-
             shader->setVec3("viewPos", currentCameraPos);
 
             // light
@@ -517,11 +562,12 @@ public:
                     stats.drawSubmitTimeMs += std::chrono::duration<float, std::milli>(drawEnd - drawStart).count();
                 }
             }
-            for (size_t i : subjects) {
-                IssueOcclusionQuery(i, transforms[i]->modelMatrix, GetLocalAABB(renderers[i]->meshes));
+        }
+        if (occlusionCullingEnabled) {
+            for (auto& [i, localAABB] : allSubjects) {
+                IssueOcclusionQuery(i, transforms[i]->modelMatrix, localAABB);
             }
         }
-
     }
 
     void RenderInstanced(RenderMesh* model, std::vector<size_t>& indices, Material* overrideMat)

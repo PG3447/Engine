@@ -34,7 +34,6 @@ private:
     ECS& ecs_;
     Query<TransformComponent, RaycastComponent>*  shooterQuery_;
     Query<TransformComponent, ColliderComponent>* targetQuery_;
-
     static glm::vec3 rotateY(const glm::vec3& dir, float angleDeg) {
         float r = glm::radians(angleDeg);
         float c = glm::cos(r);
