@@ -981,6 +981,9 @@ int main(int, char**)
     blueObject->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 30.0f, 0.0f);
     greenObject->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 30.0f, -50.0f);
 
+    rigidBodyCamera1->useGravity = true;
+    rigidBodyCamera2->useGravity = true;
+
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
@@ -989,15 +992,8 @@ int main(int, char**)
         lastFrame = currentFrame;
         updateFPS(deltaTime);
 
-        //light2->direction = camCompLeft->state.Front;
-
-        rigidBodyCamera1->useGravity = true;
-        rigidBodyCamera2->useGravity = true;
-
         test_score++;
         sprite_4->text = "score: " + std::to_string(test_score);
-
-
 
         CpuTimer cpuTimer;
         cpuTimer.start();
