@@ -984,6 +984,19 @@ int main(int, char**)
     rigidBodyCamera1->useGravity = true;
     rigidBodyCamera2->useGravity = true;
 
+    //FMOD
+
+    FMOD::System* system = nullptr;
+    FMOD::Sound* sound = nullptr;
+    FMOD::Channel* channel = nullptr;
+
+    FMOD::System_Create(&system);
+
+    system->init(512, FMOD_INIT_NORMAL, nullptr);
+
+    system->createSound("res/sound/test_sound.mp3", FMOD_DEFAULT, nullptr, &sound);
+
+
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
@@ -1105,6 +1118,10 @@ int main(int, char**)
         end_frame();
 
     }
+
+    sound->release();
+    system->close();
+    system->release();
 
     // Cleanup
     glDeleteVertexArrays(1, &VAO);
