@@ -5,6 +5,7 @@
 #include <memory>
 #include <string>
 #include "../unused/camera.h"
+#include "yaml_config.h"
 
 class GameObject;
 class MeshNode;
@@ -29,6 +30,11 @@ struct NodeAnimCache {
 
 struct Component {
     virtual ~Component() {}
+
+    virtual const char* GetTypeName() const { return "Component"; }
+
+    virtual void Serialize(YAML::Node& node) {}
+    virtual void Deserialize(const YAML::Node& node) {}
 };
 
 
@@ -42,6 +48,29 @@ struct TransformComponent : Component {
     glm::mat4 modelMatrix{ 1.0f };
 
     bool isDirty = true;
+
+    const char* GetTypeName() const override { return "Transform"; }
+
+    void Serialize(YAML::Node& node) override
+    {
+        node["position"] = position;
+        node["rotation"] = rotation;
+        node["scale"] = scale;
+    }
+
+    void Deserialize(const YAML::Node& node) override
+    {
+        if (node["position"])
+            position = node["position"].as<glm::vec3>();
+
+        if (node["rotation"])
+            rotation = node["rotation"].as<glm::vec3>();
+
+        if (node["scale"])
+            scale = node["scale"].as<glm::vec3>();
+
+        isDirty = true;
+    }
 };
 
 //struct ModelNode
@@ -114,8 +143,8 @@ struct CameraComponent : Component {
 
     //TransformComponent transform;
 
-    float yaw = -90.0f;
-    float pitch = 0.0f;
+  /*  float yaw = -90.0f;
+    float pitch = 0.0f;*/
 
     float fov = 45.0f;
     float nearPlane = 0.1f;
@@ -178,7 +207,29 @@ struct ColliderComponent : Component {
 
     bool affectsNavMesh = true;
     bool isWalkable = true;
+    
+    const char* GetTypeName() const override { return "Collider"; }
+
+    void Serialize(YAML::Node& node) override
+    {
+        node["offset"] = offset;
+        node["halfSize"] = halfSize;
+        node["isTrigger"] = isTrigger;
+    }
+
+    void Deserialize(const YAML::Node& node) override
+    {
+        if (node["offset"])
+            offset = node["offset"].as<glm::vec3>();
+
+        if (node["halfSize"])
+            halfSize = node["halfSize"].as<glm::vec3>();
+
+        if (node["isTrigger"])
+            isTrigger = node["isTrigger"].as<bool>();
+    }
 };
+
 enum LightType {
     Directional = 0,
     Point = 1,
@@ -187,8 +238,6 @@ enum LightType {
 
 struct LightComponent : Component {
     static constexpr uint64_t ComponentBit = 1ull << 6;
-
-
 
     // wspólne
     int index = 0;
@@ -211,6 +260,72 @@ struct LightComponent : Component {
     float cutOff = glm::cos(glm::radians(12.5f));
     float outerCutOff = glm::cos(glm::radians(17.5f));
 
+    const char* GetTypeName() const override { return "Light"; }
+
+    void Serialize(YAML::Node& node) override
+    {
+        node["type"] = "Light";
+
+        node["index"] = index;
+        node["isOn"] = isOn;
+
+        node["lightType"] = static_cast<int>(type);
+
+        node["ambient"] = ambient;
+        node["diffuse"] = diffuse;
+        node["specular"] = specular;
+
+        node["direction"] = direction;
+
+        node["constant"] = constant;
+        node["linear"] = linear;
+        node["quadratic"] = quadratic;
+
+        node["cutOff"] = cutOff;
+        node["outerCutOff"] = outerCutOff;
+    }
+
+
+    void Deserialize(const YAML::Node& node) override
+    {
+        if (node["index"])
+            index = node["index"].as<int>();
+
+        if (node["isOn"])
+            isOn = node["isOn"].as<bool>();
+
+        if (node["lightType"])
+            type = static_cast<LightType>(
+                node["lightType"].as<int>()
+                );
+
+        if (node["ambient"])
+            ambient = node["ambient"].as<glm::vec3>();
+
+        if (node["diffuse"])
+            diffuse = node["diffuse"].as<glm::vec3>();
+
+        if (node["specular"])
+            specular = node["specular"].as<glm::vec3>();
+
+        if (node["direction"])
+            direction = node["direction"].as<glm::vec3>();
+
+        if (node["constant"])
+            constant = node["constant"].as<float>();
+
+        if (node["linear"])
+            linear = node["linear"].as<float>();
+
+        if (node["quadratic"])
+            quadratic = node["quadratic"].as<float>();
+
+        if (node["cutOff"])
+            cutOff = node["cutOff"].as<float>();
+
+        if (node["outerCutOff"])
+            outerCutOff = node["outerCutOff"].as<float>();
+    }
 };
 
 struct AnimatorComponent : Component {

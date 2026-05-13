@@ -130,6 +130,19 @@ public:
         return result;
     }
 
+    std::vector<Component*> GetAllComponents()
+    {
+        std::vector<Component*> result;
+
+        for (auto& [type, vec] : componentMap)
+        {
+            for (Component* c : vec)
+                result.push_back(c);
+        }
+
+        return result;
+    }
+
     void AddChild(GameObject* child) {
         if (!child || child == this) return;
 

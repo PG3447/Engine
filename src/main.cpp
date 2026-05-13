@@ -87,7 +87,7 @@ void processCameraGamepad(ECS& ecs,
 
 
 void imgui_begin();
-void imgui_render(Scene& scene);
+void imgui_render(SceneManager& sceneManager);
 void imgui_end();
 
 void end_frame();
@@ -1098,7 +1098,7 @@ int main(int, char**)
 
         // Draw ImGui
         imgui_begin();
-        imgui_render(*scena1); // edit this function to add your own ImGui controls
+        imgui_render(sceneManager); // edit this function to add your own ImGui controls
         imgui_end(); // this call effectively renders ImGui
 
         // --- CPU WORK END ---
@@ -1499,7 +1499,7 @@ void ShowLightEditor(LightComponent& light)
     }
 }
 
-void imgui_render(Scene& scene)
+void imgui_render(SceneManager& sceneManager)
 {
     if (show_demo_window)
     {
@@ -1518,7 +1518,7 @@ void imgui_render(Scene& scene)
     ImGui::Separator();
     ImGui::Text("Hierarchy");
     //entityFilter.Draw("Search", 200);
-    ShowGameObjectTree(scene.GetRoot());
+    ShowGameObjectTree(sceneManager.GetActiveScene()->GetRoot());
 
     if (selectedGameObject)
     {
@@ -1532,6 +1532,11 @@ void imgui_render(Scene& scene)
         {
             ShowLightEditor(*light);
         }
+    }
+
+    if (ImGui::Button("Zapisz"))
+    {
+        sceneManager.Save();
     }
 
     ImGui::End();

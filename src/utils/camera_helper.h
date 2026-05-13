@@ -16,8 +16,8 @@ public:
     static void InitialCamera(CameraComponent& cam, TransformComponent& transform, glm::vec3 up, float yaw, float pitch, Viewport vp)
     {
         cam.state.WorldUp = up;
-        cam.yaw = yaw;
-        cam.pitch = pitch;
+        //cam.yaw = yaw;
+        //cam.pitch = pitch;
         cam.viewport = vp;
 
         updateCameraVectors(cam, transform);
