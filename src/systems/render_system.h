@@ -6,6 +6,8 @@
 #include <model.h>
 #include <imgui.h>
 #include <GLFW/glfw3.h>
+
+#include "DebugDrawSystem.h"
 #include "skybox_renderer.h"
 #include "../utils/camera_helper.h"
 #include "../utils/light_helper.h"
@@ -22,6 +24,16 @@ private:
                 (std::hash<Material*>()(std::get<1>(k)) << 1);
         }
     };
+
+    struct OcclusionData {
+        GLuint queryId = 0;
+        bool isVisible = true;
+        bool queryActive = false;
+        int    hiddenFrames = 0;
+        static constexpr int HIDE_THRESHOLD = 10;
+    };
+    std::unordered_map<size_t, OcclusionData> occlusionMap;
+    float occluderThreshold = 5.0f;
 
     Query<TransformComponent, RenderComponent>* renderQuery;
     Query<TransformComponent, LightComponent>* lightQuery;
@@ -42,7 +54,44 @@ private:
     glm::vec3 currentCameraPos;
 
 public:
+    void IssueOcclusionQuery(size_t entityIdx, const glm::mat4& modelMatrix, const AABB& localAABB) {
+        OcclusionData& data = occlusionMap[entityIdx];
+        if (data.queryId == 0) glGenQueries(1, &data.queryId);
+
+        // Transformuj rogi lokalnego AABB na world space — identycznie jak AABBInFrustum
+        const glm::vec3 localCorners[8] = {
+            {localAABB.min.x, localAABB.min.y, localAABB.min.z},
+            {localAABB.max.x, localAABB.min.y, localAABB.min.z},
+            {localAABB.min.x, localAABB.max.y, localAABB.min.z},
+            {localAABB.max.x, localAABB.max.y, localAABB.min.z},
+            {localAABB.min.x, localAABB.min.y, localAABB.max.z},
+            {localAABB.max.x, localAABB.min.y, localAABB.max.z},
+            {localAABB.min.x, localAABB.max.y, localAABB.max.z},
+            {localAABB.max.x, localAABB.max.y, localAABB.max.z},
+        };
+
+        glm::vec3 worldMin(FLT_MAX), worldMax(-FLT_MAX);
+        for (const auto& c : localCorners) {
+            glm::vec3 w = glm::vec3(modelMatrix * glm::vec4(c, 1.0f));
+            worldMin = glm::min(worldMin, w);
+            worldMax = glm::max(worldMax, w);
+        }
+
+        glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+        glDepthMask(GL_FALSE);
+
+        glBeginQuery(GL_ANY_SAMPLES_PASSED, data.queryId);
+        // Teraz worldMin/worldMax są w world space, vp = projection*view bez modelMatrix
+        DebugDrawSystem::DrawAABBSolid(worldMin, worldMax, projection * view);
+        glEndQuery(GL_ANY_SAMPLES_PASSED);
+
+        glDepthMask(GL_TRUE);
+        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+        data.queryActive = true;
+    }
+
     bool frustumCullingEnabled = true;
+    bool occlusionCullingEnabled = true;
     struct Plane {
         glm::vec3 normal;
         float d;
@@ -82,11 +131,14 @@ public:
         int renderedObjects = 0;
         int triangles = 0;
         int stateChanges = 0;
+        int culledByFrustum = 0;
+        int culledByOcclusion = 0;
         float cullingTimeMs = 0.0f;
         float drawSubmitTimeMs = 0.0f;
 
         void Reset() {
             drawCalls = renderedObjects = triangles = stateChanges = 0;
+            culledByFrustum = culledByOcclusion = 0;
             cullingTimeMs = drawSubmitTimeMs = 0.0f;
         }
     };
@@ -190,6 +242,7 @@ public:
         cameraQuery = ecs.CreateQuery<TransformComponent, CameraComponent>();
 
         Init();
+        DebugDrawSystem::Init();
     }
 
     void Init() {
@@ -223,7 +276,7 @@ public:
         groupsDirty = true;
     }
 
-    void Update(ECS& ecs) override {
+    void Update(ECS& ecs, float dt) override {
         stats.Reset();
         gpuQuery.begin();
 
@@ -276,6 +329,9 @@ public:
         currentCameraPos = transform.position;
         RenderGroups(frustum);
 
+        DebugDrawSystem::Flush(vp);
+
+
         glBindVertexArray(0);
 
         skybox.Render(view, projection);
@@ -321,55 +377,97 @@ public:
 
     void RenderGroups(const Frustum& frustum) {
         auto& transforms = std::get<0>(renderQuery->componentsVectors);
-
+        auto& renderers = std::get<1>(renderQuery->componentsVectors);
         auto& transformsLights = std::get<0>(lightQuery->componentsVectors);
         auto& lights = std::get<1>(lightQuery->componentsVectors);
 
+
+        std::vector<std::pair<size_t, AABB>> allSubjects;
 
         for (auto& [key, indices] : instancedGroups) {
             RenderMesh* model = std::get<0>(key);
             Material* overrideMat = std::get<1>(key);
             Shader* shader = overrideMat->shader;
 
-            if (shader == nullptr) 
+            if (shader == nullptr)
                 continue;
-            
 
-            std::vector<size_t> visible;
+
+            std::vector<size_t> occluders; // Duże obiekty - rysujemy zawsze
+            std::vector<size_t> subjects;  // Małe obiekty - testujemy occlusion
             // Culling
             auto cullStart = std::chrono::high_resolution_clock::now();
-            for (size_t i : indices)
-            {
-
-                if (!frustumCullingEnabled) {
-                    visible.push_back(i);
+            for (size_t i : indices) {
+                AABB localAABB = GetLocalAABB(renderers[i]->meshes);
+                if (frustumCullingEnabled && !AABBInFrustum(frustum, localAABB, transforms[i]->modelMatrix)) {
+                    stats.culledByFrustum++;
+                    stats.drawCalls++; // (opcjonalnie statystyka frustum)
                     continue;
                 }
 
-                /*glm::vec3 pos = glm::vec3(transforms[i]->modelMatrix[3]);
-                float radius = 1.0f; // na start
+                // Decyzja: czy obiekt jest na tyle duży, by sam zasłaniał inne?
+                glm::vec3 size = localAABB.max - localAABB.min;
 
-                if (SphereInFrustum(frustum, pos, radius))
-                {
-                    visible.push_back(i);
-                }*/
-                auto* renderComp = std::get<1>(renderQuery->componentsVectors)[i];
-                AABB localAABB = GetLocalAABB(renderComp->meshes);
+                float dims[3] = { size.x, size.y, size.z };
+                std::sort(dims, dims + 3);
 
-                if (AABBInFrustum(frustum, localAABB, transforms[i]->modelMatrix))
-                    visible.push_back(i);
+                if (size.x * size.y * size.z > occluderThreshold) {
+                    occluders.push_back(i);
+                } else {
+                    subjects.push_back(i);
+                    allSubjects.push_back({i, localAABB});
+                }
             }
             auto cullEnd = std::chrono::high_resolution_clock::now();
             stats.cullingTimeMs += std::chrono::duration<float, std::milli>(cullEnd - cullStart).count();
 
+            std::vector<size_t> visibleSubjects;
 
-            if (visible.empty())
-                continue;
+            if (occlusionCullingEnabled) {
+                for (size_t i : subjects) {
+                    OcclusionData& data = occlusionMap[i];
+
+                    // Pobieramy wynik z poprzedniej klatki
+                    if (data.queryId != 0 && data.queryActive) {
+                        GLuint available = 0;
+                        glGetQueryObjectuiv(data.queryId, GL_QUERY_RESULT_AVAILABLE, &available);
+                        if (available) {
+                            GLuint anyPassed = 0;
+                            glGetQueryObjectuiv(data.queryId, GL_QUERY_RESULT, &anyPassed);
+                            if (anyPassed > 0) {
+                                data.isVisible = true;
+                                data.hiddenFrames = 0; // reset licznika
+                            } else {
+                                data.hiddenFrames++;
+                                if (data.hiddenFrames >= OcclusionData::HIDE_THRESHOLD)
+                                    data.isVisible = false; // ukryj dopiero po N klatkach
+                            }
+                            data.queryActive = false;
+                        }
+                    } else {
+                        // Brak wyniku zapytania z poprzedniej klatki - traktujemy jako widoczne
+                        data.isVisible = true;
+                    }
+
+                    if (data.isVisible) {
+                        visibleSubjects.push_back(i);
+                    } else {
+                        stats.culledByOcclusion++;
+                    }
+                }
+            } else {
+                // Jeśli occlusion culling jest wyłączone, renderujemy wszystkie małe obiekty
+                visibleSubjects = subjects;
+            }
+
+            std::vector<size_t> finalToRender = occluders;
+            finalToRender.insert(finalToRender.end(), visibleSubjects.begin(), visibleSubjects.end());
+
+            if (finalToRender.empty()) continue;
 
             shader->use();
             shader->setMat4("projection", projection);
             shader->setMat4("view", view);
-
             shader->setVec3("viewPos", currentCameraPos);
             
             int numPointLight = 0;
@@ -404,27 +502,17 @@ public:
             std::vector<size_t> standardVisible;
             std::vector<size_t> animatedVisible;
 
-            for (size_t i : visible) {
+            for (size_t i : finalToRender) {
                 auto* go = renderQuery->gameobjects[i];
-                auto* renderComp = std::get<1>(renderQuery->componentsVectors)[i];
-
                 AnimatorComponent* animator = go->template GetComponent<AnimatorComponent>();
-
                 GameObject* current = go->GetParent();
                 while (animator == nullptr && current != nullptr) {
                     animator = current->template GetComponent<AnimatorComponent>();
                     current = current->GetParent();
                 }
-                //if (!animator && renderComp->rootAnimator) {
-                //    animator = renderComp->rootAnimator;
-                //}
 
-                if (animator != nullptr) {
-                    animatedVisible.push_back(i);
-                }
-                else {
-                    standardVisible.push_back(i);
-                }
+                if (animator) animatedVisible.push_back(i);
+                else          standardVisible.push_back(i);
             }
 
             if (!standardVisible.empty()) {
@@ -493,6 +581,11 @@ public:
                 }
             }
         }
+        if (occlusionCullingEnabled) {
+            for (auto& [i, localAABB] : allSubjects) {
+                IssueOcclusionQuery(i, transforms[i]->modelMatrix, localAABB);
+            }
+        }
     }
 
     void RenderInstanced(RenderMesh* model, std::vector<size_t>& indices, Material* overrideMat)
@@ -529,9 +622,9 @@ public:
     int GetTriangleCount(RenderMesh* mesh) const
     {
         int total = 0;
-      
+
         total += mesh->indicesCount / 3;
-        
+
 
         return total;
     }

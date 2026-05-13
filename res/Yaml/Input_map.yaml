@@ -8,8 +8,9 @@ input:
     move_left1: [GLFW_KEY_LEFT]
     move_up1: [GLFW_KEY_UP]
     move_down1: [GLFW_KEY_DOWN]
-    toggle_culling: [GLFW_KEY_C]
-
+    toggle_frustum_culling: [GLFW_KEY_F]
+    toggle_oclussion_culling: [GLFW_KEY_O]
+    raycast_debug: [GLFW_KEY_R]
     anim_play_dying: [GLFW_KEY_1]
     anim_play_jump: [GLFW_KEY_2]
     anim_slow_mo: [GLFW_KEY_3]

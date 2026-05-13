@@ -42,6 +42,7 @@
 #include <systems/transform_system.h>
 #include <systems/animation_system.h>
 #include <systems/SpriteSystem.h>
+#include <systems/raycastSystem.h>
 
 #include "diagnostics/cpu_timer.h"
 #include "utils/render_helper.h"
@@ -177,6 +178,7 @@ std::unique_ptr<Prefab> toiletModel;
 std::unique_ptr<Prefab> wozekModel;
 std::unique_ptr<Prefab> zaslonaModel;
 std::unique_ptr<Prefab> roomModel;
+std::unique_ptr<Prefab> placeholderModel;
 
 //AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 std::unique_ptr<Prefab> floorModel;
@@ -235,7 +237,6 @@ void updateFPS(float deltaTime) {
     float avg = sum / MAX_SAMPLES;
     float fps = 1.0f / avg;
 
-    spdlog::info("FPS: {}", fps);
 }
 
 void updateFocus() {
@@ -246,6 +247,34 @@ void updateFocus() {
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     }
 
+}
+
+GameObject* CreateRaycastTestObject(
+    Scene& scene,
+    Prefab& prefab,
+    Shader* shader,
+    const glm::vec3& position,
+    const glm::vec3& scale = glm::vec3(1.0f)
+) {
+    GameObject* go = prefab.Instantiate(scene, nullptr, shader);
+
+    auto* tr = go->GetComponent<TransformComponent>();
+    tr->position = position;
+    tr->scale    = scale;
+    tr->isDirty  = true;
+
+    auto* col = go->AddComponent<ColliderComponent>();
+    col->halfSize = glm::vec3(1.0f);
+    col->offset   = glm::vec3(0.0f);
+
+    auto* rc = go->AddComponent<RaycastComponent>();
+    rc->range        = 5000.0f;
+    rc->fovRayCount  = 200;
+    rc->fovAngle     = 200.0f;
+    rc->originOffset = glm::vec3(0.0f, 0.5f, 0.0f);
+    rc->debugDraw    = true;
+
+    return go;
 }
 
 
@@ -316,6 +345,7 @@ int main(int, char**)
     ecs.AddSystem<RenderSystem>(ecs, window);
     ecs.AddSystem<HID>(ecs, window);
     ecs.AddSystem<SpriteSystem>(ecs, window);
+    ecs.AddSystem<RaycastSystem>(ecs);
 
     ourShader = std::make_unique<Shader>("res/shaders/basic.vert", "res/shaders/basic.frag");
     ourShader->use();
@@ -471,6 +501,9 @@ int main(int, char**)
     bed3Model      = std::make_unique<Prefab>("res/models/bed3.glb");
     corkBoardModel = std::make_unique<Prefab>("res/models/cork_board.glb");
     cupModel       = std::make_unique<Prefab>("res/models/cup.glb");
+  
+    placeholderModel = std::make_unique<Prefab>("res/models/placeholder.glb");
+
     //deskModel      = std::make_unique<Prefab>("res/models/desk.glb");
     //doorsModel     = std::make_unique<Prefab>("res/models/doors.glb");
     //folderModel    = std::make_unique<Prefab>("res/models/folder.glb");
@@ -508,7 +541,6 @@ int main(int, char**)
     //GameObject* model2 = bed2Model->Instantiate(*scena1, nullptr, ourShader.get());
     //GameObject* model3 = bed3Model->Instantiate(*scena1, nullptr, ourShader.get());
     //GameObject* model4 = corkBoardModel->Instantiate(*scena1, nullptr, ourShader.get());
-    //GameObject* model5 = cupModel      ->Instantiate(*scena1, nullptr, ourShader.get());
     //GameObject* model6 = deskModel     ->Instantiate(*scena1, nullptr, ourShader.get());
     //GameObject* model7 = doorsModel    ->Instantiate(*scena1, nullptr, ourShader.get());
     //GameObject* model8 = folderModel   ->Instantiate(*scena1, nullptr, ourShader.get());
@@ -570,99 +602,37 @@ int main(int, char**)
     //model1->GetComponent<TransformComponent>()->position.y = 150;
     //RenderHelper::SetMaterial(model29, brickMat);
 
-    //model1  ->GetComponent<TransformComponent>()->position.x = placeholderThing;
+    GameObject* raycastTarget = placeholderModel->Instantiate(*scena1, nullptr, ourShader.get());
 
-    //model1->AddComponent<RigidbodyComponent>();
-    //model1->AddComponent<ColliderComponent>();
-    
-    //model1->GetComponent<RigidbodyComponent>()->useGravity = true;
-    //model1->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 1, 1 };
-    //model1->GetComponent<TransformComponent>()->position.y = 150;
+    auto* targetTr = raycastTarget->GetComponent<TransformComponent>();
+    targetTr->position = glm::vec3(0.0f, 8.0f, -30.0f); // 30 jednostek przed placeholderem
+    targetTr->scale = glm::vec3(3.0f);
+    targetTr->isDirty = true;
 
-    //placeholderThing += 10;
-    //model2  ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    //placeholderThing += 10;
-    //model3  ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    //placeholderThing += 10;
-    //model4  ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    //placeholderThing += 10;
-    //model5  ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    //placeholderThing += 10;
-    //model6  ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    //placeholderThing += 10;
-    //model7  ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    //placeholderThing += 10;
-    //model8  ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    //placeholderThing += 10;
-    //model9  ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    //placeholderThing += 10;
-    //model10 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    //placeholderThing += 10;
-    //model11 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    //placeholderThing += 10;
-    //model12 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    //placeholderThing += 10;
-    //model13 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    //placeholderThing += 10;
-    //model14 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    //placeholderThing += 10;
-    //model15 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    //placeholderThing += 10;
-    //model16 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    //placeholderThing += 10;
-    //model17 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    //placeholderThing += 10;
-    //model18 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    //placeholderThing += 10;
-    //model19 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    //placeholderThing += 10;
-    //model20 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    //placeholderThing += 10;
-    //model21 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    //placeholderThing += 10;
-    //model22 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    //placeholderThing += 10;
-    //model23 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    //placeholderThing += 10;
-    //model24 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    //placeholderThing += 10;
-    //model25 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    //placeholderThing += 10;
-    //model26 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    //placeholderThing += 10;
-    //model27 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    //placeholderThing += 10;
-    //model28 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    //placeholderThing += 10;
-    //model29 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    //placeholderThing += 10;
-    //model30 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    //placeholderThing += 10;
-    //model31 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    //placeholderThing += 10;
-    //model32 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    //placeholderThing += 10;
-    //model33 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    //placeholderThing += 10;
-    //model34 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    //placeholderThing += 10;
-    //model35 ->GetComponent<TransformComponent>()->position.x = placeholderThing;
-    //placeholderThing += 10;
+    auto* targetCol = raycastTarget->AddComponent<ColliderComponent>();
+    targetCol->halfSize = glm::vec3(3.0f);
+    targetCol->offset   = glm::vec3(0.0f);
 
-    //CameraComponent* cam = obj2->AddComponent<CameraComponent>();
-    //cam->camera.Position = glm::vec3(0, 50, 15);
-    //cam->camera.Yaw = -90.0f;
-    //cam->camera.Pitch = -10.0f;
-    //cam->camera.updateCameraVectors();
+    /*GameObject* RaycastSource =
+        CreateRaycastTestObject(
+            *scena1,
+            *placeholderModel,
+            ourShader.get(),
+            glm::vec3(0.0f, 5.0f, 0.0f),
+            glm::vec3(1.0f)
+        );
+        */
+
+    GameObject * model5 = cupModel      ->Instantiate(*scena1, nullptr, ourShader.get());
+    model5->GetComponent<TransformComponent>()->position.x = 0.0f;
+    model5->GetComponent<TransformComponent>()->position.y = 2.0f;
+    model5->GetComponent<TransformComponent>()->position.z = 20.0f;
+
+
 
     sceneManager.Update(16);
 
     spdlog::info("Scena git.");
-    //compileShader();
-
-    //createHouse();
-    //startGroupInstanced(root.get());
-
 
     focused = true;
     updateFocus();
@@ -1014,9 +984,14 @@ int main(int, char**)
             focused = !focused;
             updateFocus();
         }
-        if (ecs.GetSystem<HID>()->is_action_just_pressed("toggle_culling")) {
+        if (ecs.GetSystem<HID>()->is_action_just_pressed("toggle_frustum_culling")) {
             renderSystem->frustumCullingEnabled = !renderSystem->frustumCullingEnabled;
             spdlog::info("Frustum culling: {}",
+                renderSystem->frustumCullingEnabled ? "ON" : "OFF");
+        }
+        if (ecs.GetSystem<HID>()->is_action_just_pressed("toggle_oclussion_culling")) {
+            renderSystem->occlusionCullingEnabled = !renderSystem->occlusionCullingEnabled;
+            spdlog::info("Oclussion culling: {}",
                 renderSystem->frustumCullingEnabled ? "ON" : "OFF");
         }
 
@@ -1212,24 +1187,6 @@ void input()
     {
         glfwSetWindowShouldClose(window, true);
     }
-/*
-    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_2) == GLFW_PRESS) {
-        if (!mouseMove) {
-            firstMouse = true;
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        }
-        mouseMove = true;
-    }
-
-    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_2) == GLFW_RELEASE) {
-        if (mouseMove) {
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        }
-        mouseMove = false;
-    }
-    */
-
-//OLD INPUT ENDS HERE
 }
 
 
@@ -1301,6 +1258,7 @@ void imgui_render()
         glPolygonMode(GL_FRONT_AND_BACK,
             wireframeMode ? GL_LINE : GL_FILL);
     }
+    ImGui::End();
 
     ImGui::Begin("Performance");
 
@@ -1327,31 +1285,20 @@ void imgui_render()
         ImGui::Text("Triangles:    %d", renderSystem->stats.triangles);
         ImGui::Text("State changes:%d", renderSystem->stats.stateChanges);
     }
+    if (ImGui::CollapsingHeader("Culling")) {
+        ImGui::Checkbox("Frustum culling",   &renderSystem->frustumCullingEnabled);
+        ImGui::Checkbox("Occlusion culling", &renderSystem->occlusionCullingEnabled);
+        ImGui::Text("Frustum culled:   %d", renderSystem->stats.culledByFrustum);
+        ImGui::Text("Occlusion culled: %d", renderSystem->stats.culledByOcclusion);
+    }
     ImGui::PlotLines("Frame time", frameTimes, MAX_SAMPLES, index,
                  nullptr, 0.0f, 1.0f, ImVec2(0, 60));
 
     ImGui::End();
 
-    ImGui::SliderFloat("rotation X", &rotationX, -480.0f, 480.0f);
+    /*ImGui::SliderFloat("rotation X", &rotationX, -480.0f, 480.0f);
     ImGui::SliderFloat("rotation Y", &rotationY, -480.0f, 480.0f);
-    ImGui::SliderFloat("Camera Distance", &cameraDistance, 5.0f, 1000.0f);
-
-    ImGui::Text("This is some useful text.");
-    ImGui::Checkbox("Demo Window", &show_demo_window);
-    ImGui::Checkbox("Another Window", &show_another_window);
-
-    ImGui::ColorEdit3("clear color", (float*)&clear_color);
-
-    ImGui::End(); // 🔥 MUSI BYĆ
-
-    if (show_another_window)
-    {
-        ImGui::Begin("Another Window", &show_another_window);
-        ImGui::Text("Hello from another window!");
-        if (ImGui::Button("Close Me"))
-            show_another_window = false;
-        ImGui::End();
-    }
+    ImGui::SliderFloat("Camera Distance", &cameraDistance, 5.0f, 1000.0f);*/
 }
 
 void imgui_end()
@@ -1379,48 +1326,6 @@ void end_frame()
     glfwSwapBuffers(window);
 }
 
-/*
-// loads a cubemap texture from 6 individual texture faces
-// order:
-// +X (right)
-// -X (left)
-// +Y (top)
-// -Y (bottom)
-// +Z (front) 
-// -Z (back)
-// -------------------------------------------------------
-unsigned int loadCubemap(vector<std::string> faces)
-{
-    unsigned int textureID;
-    glGenTextures(1, &textureID);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
-
-    int width, height, nrChannels;
-    for (unsigned int i = 0; i < faces.size(); i++)
-    {
-        unsigned char* data = stbi_load(faces[i].c_str(), &width, &height, &nrChannels, 0);
-        if (data)
-        {
-            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-            stbi_image_free(data);
-        }
-        else
-        {
-            std::cout << "Cubemap texture failed to load at path: " << faces[i] << std::endl;
-            stbi_image_free(data);
-        }
-    }
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
-    return textureID;
-}
-
-
-*/
 void processCameraGamepad(ECS &ecs, CameraComponent &cam, TransformComponent &transform, int gamepad_id) {
     const auto& hid = ecs.GetSystem<HID>();
 
@@ -1457,76 +1362,3 @@ void processCameraGamepad(ECS &ecs, CameraComponent &cam, TransformComponent &tr
         ry * sensitivity * deltaTime
     );
 }
-
-
-//
-//void render()
-//{
-////OLD RENDER FUNCION STARTS HERE
-//    
-//    //float time = glfwGetTime();
-//    //float radius = 10.0f;         
-//    //float speed = 2.0f;        
-//
-//
-//    //pointLight->position.x = radius * cos(speed * time);
-//    //pointLight->position.y = 1.0f; 
-//    //pointLight->position.z = radius * sin(speed * time);
-//
-//    if (!mouseMove)
-//    {
-//        updateFollowCamera();
-//    }
-//
-//    // OpenGL Rendering code goes here
-//    glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
-//    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-//
-//    //bind texture
-//    glActiveTexture(GL_TEXTURE0);
-//    glBindTexture(GL_TEXTURE_2D, texture);
-//
-//    //activating program object
-//    ourShader->use();
-//   
-//
-//    int display_w, display_h;
-//    glfwGetFramebufferSize(window, &display_w, &display_h);
-//    glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)display_w / (float)display_h, 0.1f, 10000.0f);
-//    glm::mat4 view = glm::mat4(1.0f);
-//    view = camera.GetViewMatrix();
-//
-//
-//    // render the loaded modeld
-//    root->updateSelfAndChild();
-//    glm::mat4 systemRotationX = glm::rotate(glm::mat4(1.0f), glm::radians(rotationX), glm::vec3(1, 0, 0));
-//    glm::mat4 systemRotationY = glm::rotate(glm::mat4(1.0f), glm::radians(rotationY), glm::vec3(0, 1, 0));
-//    glm::mat4 systemModel = systemRotationY * systemRotationX;
-//    renderGroup(projection, view, systemModel);
-//    //ourEntity->drawSelfAndChild(*ourShader, projection, view, sphereRadius, sphereRings, sphereSectors, systemModel);
-//
-//
-//    //glDrawElements(GL_TRIANGLES, 12, GL_UNSIGNED_INT, 0);
-//    glBindVertexArray(0);
-//
-//    // draw skybox as last
-//    glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
-////    skyboxShader->use();
-//    view = glm::mat4(glm::mat3(camera.GetViewMatrix())); // remove translation from the view matrix
-////    skyboxShader->setMat4("view", view);
-////    skyboxShader->setMat4("projection", projection);
-//    // skybox cube
-////    glBindVertexArray(skyboxVAO);
-////    glActiveTexture(GL_TEXTURE0);
-////    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
-////    glDrawArrays(GL_TRIANGLES, 0, 36);
-////    glBindVertexArray(0);
-/////    glDepthFunc(GL_LESS); // set depth function back to default*/
-////OLD RENDER FUNCTION ENDS HERE
-//
-//    triangleShader->use();
-//    glBindVertexArray(triangleVAO);
-//    glDrawArrays(GL_TRIANGLES, 0, 3);
-//    glBindVertexArray(0);
-//
-//}

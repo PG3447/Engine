@@ -43,7 +43,7 @@ public:
         init(win);
     }
 
-    void Update(ECS &ecs) override;
+    void Update(ECS &ecs, float dt) override;
 
     void init(GLFWwindow* window);
 

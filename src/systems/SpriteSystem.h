@@ -86,14 +86,14 @@ public:
         SetupTextQuad();
     }
 
-    void Update(ECS& ecs) override
+    void Update(ECS& ecs, float dt) override
     {
         auto& sprites = std::get<0>(spriteQuery->componentsVectors);
 
         int display_w, display_h;
         glfwGetFramebufferSize(window, &display_w, &display_h);
 
-        float dt = static_cast<float>(glfwGetTime());
+        dt = static_cast<float>(glfwGetTime());
         static float lastTime = dt;
         float deltaTime = dt - lastTime;
         lastTime = dt;

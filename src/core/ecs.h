@@ -65,37 +65,4 @@ public:
     ~ECS();
 };
 
-
-//#include "GameObject.tpp"
-
-
 #endif
-
-
-//std::unordered_map<std::type_index, std::unique_ptr<ComponentStorageBase>> componentStores;
-
-
-/*
-struct ComponentStorageBase {
-    virtual ~ComponentStorageBase() = default;
-};
-
-template<typename T>
-struct ComponentStorage : ComponentStorageBase {
-    std::vector<T> components; // wszystkie komponenty typu T w jednym wektorze
-};
-*/
-
-/*
-template<typename T, typename... Args>
-T* AddSystemSingleton() {
-    // sprawdzamy, czy system ju¿ istnieje
-    for (auto& s : systems) {
-        if (dynamic_cast<T*>(s.get())) return static_cast<T*>(s.get());
-    }
-
-    // tworzymy nowy
-    T* sys = new T(std::forward<Args>(args)...);
-    systems.emplace_back(sys);
-    return sys;
-}*/
