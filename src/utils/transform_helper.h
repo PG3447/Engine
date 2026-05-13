@@ -52,21 +52,21 @@ public:
 	}
 
 	// Ustawianie pozycji
-	void setLocalPosition(TransformComponent& comp, const glm::vec3& newPosition)
+	static void setLocalPosition(TransformComponent& comp, const glm::vec3& newPosition)
 	{
 		comp.position = newPosition;
 		comp.isDirty = true;
 	}
 
 	// Ustawianie rotacji
-	void setLocalRotation(TransformComponent& comp, const glm::vec3& newRotation)
+	static void setLocalRotation(TransformComponent& comp, const glm::vec3& newRotation)
 	{
 		comp.rotation = newRotation;
 		comp.isDirty = true;
 	}
 
 	// Ustawianie skali
-	void setLocalScale(TransformComponent& comp, const glm::vec3& newScale)
+	static void setLocalScale(TransformComponent& comp, const glm::vec3& newScale)
 	{
 		comp.scale = newScale;
 		comp.isDirty = true;
@@ -98,17 +98,17 @@ public:
 		comp.isDirty = true;
 	}
 
-	const glm::vec3& getLocalPosition(const TransformComponent& comp) const
+	static const glm::vec3& getLocalPosition(const TransformComponent& comp)
 	{
 		return comp.position;
 	}
 
-	const glm::vec3& getLocalRotation(const TransformComponent& comp) const
+	static const glm::vec3& getLocalRotation(const TransformComponent& comp)
 	{
 		return comp.rotation;
 	}
 
-	const glm::vec3& getLocalScale(const TransformComponent& comp) const
+	static const glm::vec3& getLocalScale(const TransformComponent& comp)
 	{
 		return comp.scale;
 	}

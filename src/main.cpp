@@ -87,7 +87,7 @@ void processCameraGamepad(ECS& ecs,
 
 
 void imgui_begin();
-void imgui_render();
+void imgui_render(Scene& scene);
 void imgui_end();
 
 void end_frame();
@@ -1098,7 +1098,7 @@ int main(int, char**)
 
         // Draw ImGui
         imgui_begin();
-        imgui_render(); // edit this function to add your own ImGui controls
+        imgui_render(*scena1); // edit this function to add your own ImGui controls
         imgui_end(); // this call effectively renders ImGui
 
         // --- CPU WORK END ---
@@ -1289,7 +1289,127 @@ void imgui_begin()
     ImGui::NewFrame();
 }
 
-void imgui_render()
+GameObject* selectedGameObject = nullptr;
+
+void ShowGameObjectTree(GameObject* obj)
+{
+    if (!obj)
+        return;
+
+    ImGuiTreeNodeFlags flags =
+        ImGuiTreeNodeFlags_OpenOnArrow |
+        ImGuiTreeNodeFlags_OpenOnDoubleClick |
+        ((obj == selectedGameObject) ? ImGuiTreeNodeFlags_Selected : 0);
+
+    const char* displayName = obj->name.empty() ? "GameObject" : obj->name.c_str();
+
+    // jeśli brak dzieci -> leaf
+    if (!obj->HasChildren())
+        flags |= ImGuiTreeNodeFlags_Leaf;
+
+    bool opened = ImGui::TreeNodeEx((void*)obj, flags, "%s", displayName);
+
+    if (ImGui::IsItemClicked())
+        selectedGameObject = obj;
+
+    if (opened)
+    {
+        for (GameObject* child : obj->GetChildren())
+        {
+            ShowGameObjectTree(child);
+        }
+
+        ImGui::TreePop();
+    }
+}
+
+void ShowTransformEditor(TransformComponent& transform)
+{
+    glm::vec3 pos = TransformHelper::getLocalPosition(transform);
+    glm::vec3 rot = TransformHelper::getLocalRotation(transform);
+    glm::vec3 scale = TransformHelper::getLocalScale(transform);
+
+    if (ImGui::DragFloat3("Position", &pos.x, 0.01f))
+    {
+        TransformHelper::setLocalPosition(transform, pos);
+    }
+
+    if (ImGui::DragFloat3("Rotation", &rot.x, 0.1f))
+    {
+        TransformHelper::setLocalRotation(transform, rot);
+    }
+
+    if (ImGui::DragFloat3("Scale", &scale.x, 0.01f, 0.01f))
+    {
+        TransformHelper::setLocalScale(transform, scale);
+    }
+}
+
+void ShowLightEditor(LightComponent& light)
+{
+    // enable
+    ImGui::Checkbox("Enabled", &light.isOn);
+
+    // type
+    const char* lightTypes[] =
+    {
+        "Directional",
+        "Point",
+        "Spot"
+    };
+
+    int currentType = static_cast<int>(light.type);
+
+    if (ImGui::Combo("Type", &currentType, lightTypes, IM_ARRAYSIZE(lightTypes)))
+    {
+        light.type = static_cast<LightType>(currentType);
+    }
+
+    ImGui::Separator();
+
+    ImGui::ColorEdit3("Ambient", &light.ambient.x);
+    ImGui::ColorEdit3("Diffuse", &light.diffuse.x);
+    ImGui::ColorEdit3("Specular", &light.specular.x);
+
+    ImGui::Separator();
+
+    // direction
+    //if (light.type == Directional || light.type == Spot)
+    //{
+    //    ImGui::DragFloat3("Direction", &light.direction.x, 0.01f);
+    //}
+
+    // attenuation
+    if (light.type == Point || light.type == Spot)
+    {
+        ImGui::Text("Attenuation");
+        ImGui::DragFloat("Constant", &light.constant, 0.001f, 0.0f, 10.0f);
+        ImGui::DragFloat("Linear", &light.linear, 0.001f, 0.0f, 10.0f);
+        ImGui::DragFloat("Quadratic", &light.quadratic, 0.001f, 0.0f, 10.0f);
+    }
+
+    // spotlight
+    if (light.type == Spot)
+    {
+        ImGui::Separator();
+        ImGui::Text("Spotlight");
+
+        float innerAngle =glm::degrees(glm::acos(light.cutOff));
+        float outerAngle = glm::degrees(glm::acos(light.outerCutOff));
+
+        if (ImGui::DragFloat("Inner Cutoff", &innerAngle, 0.1f, 0.0f, 90.0f))
+        {
+            light.cutOff = glm::cos(glm::radians(innerAngle));
+        }
+
+        if (ImGui::DragFloat("Outer Cutoff", &outerAngle, 0.1f, 0.0f, 90.0f))
+        {
+            light.outerCutOff = glm::cos(glm::radians(outerAngle));
+        }
+    }
+}
+
+void imgui_render(Scene& scene)
 {
     if (show_demo_window)
     {
@@ -1304,6 +1424,26 @@ void imgui_render()
         glPolygonMode(GL_FRONT_AND_BACK,
             wireframeMode ? GL_LINE : GL_FILL);
     }
+
+    ImGui::Separator();
+    ImGui::Text("Hierarchy");
+    //entityFilter.Draw("Search", 200);
+    ShowGameObjectTree(scene.GetRoot());
+
+    if (selectedGameObject)
+    {
+        ImGui::Separator();
+        ImGui::Text("Selected Entity: %s", selectedGameObject->name.c_str());
+        ShowTransformEditor(*selectedGameObject->GetComponent<TransformComponent>());
+
+        LightComponent* light = selectedGameObject->GetComponent<LightComponent>();
+
+        if (light != nullptr)
+        {
+            ShowLightEditor(*light);
+        }
+    }
+
     ImGui::End();
 
     ImGui::Begin("Performance");
@@ -1408,3 +1548,9 @@ void processCameraGamepad(ECS &ecs, CameraComponent &cam, TransformComponent &tr
         ry * sensitivity * deltaTime
     );
 }
+
+
+
+
+
+

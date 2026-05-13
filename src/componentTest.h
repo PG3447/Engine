@@ -1,3 +1,324 @@
+//
+//
+//
+//
+//
+//
+//
+//
+//void imgui_begin()
+//{
+//    // Start the Dear ImGui frame
+//    ImGui_ImplOpenGL3_NewFrame();
+//    ImGui_ImplGlfw_NewFrame();
+//    ImGui::NewFrame();
+//}
+////
+//////Wszystko ponizej to imgui
+////static Entity* selectedEntity = nullptr;
+////
+////void showLightEditor(Light& light)
+////{
+////    ImGui::Checkbox("Light Enabled", &light.isOn);
+////
+////    const char* lightTypes[] = { "Directional", "Point", "Spot" };
+////    int type = static_cast<int>(light.type);
+////    if (ImGui::Combo("Light Type", &type, lightTypes, IM_ARRAYSIZE(lightTypes)))
+////    {
+////        light.type = static_cast<Light::LightType>(type);
+////    }
+////
+////    ImGui::Separator();
+////    ImGui::Text("Colors");
+////
+////    ImGui::ColorEdit3("Ambient", &light.ambient.x);
+////    ImGui::ColorEdit3("Diffuse", &light.diffuse.x);
+////    ImGui::ColorEdit3("Specular", &light.specular.x);
+////
+////    ImGui::Separator();
+////
+////    if (light.type != Light::Directional)
+////    {
+////        ImGui::DragFloat3("Position", &light.position.x, 0.05f);
+////    }
+////
+////    if (light.type == Light::Directional || light.type == Light::Spot)
+////    {
+////        ImGui::DragFloat3("Direction", &light.direction.x, 0.05f);
+////    }
+////
+////    if (light.type == Light::Point || light.type == Light::Spot)
+////    {
+////        ImGui::Separator();
+////        ImGui::Text("Attenuation");
+////
+////        ImGui::DragFloat("Constant", &light.constant, 0.01f, 0.0f, 2.0f);
+////        ImGui::DragFloat("Linear", &light.linear, 0.001f, 0.0f, 1.0f);
+////        ImGui::DragFloat("Quadratic", &light.quadratic, 0.001f, 0.0f, 1.0f);
+////    }
+////
+////    if (light.type == Light::Spot)
+////    {
+////        ImGui::Separator();
+////        ImGui::Text("Spotlight Angles");
+////
+////        float inner = glm::degrees(acos(light.cutOff));
+////        float outer = glm::degrees(acos(light.outerCutOff));
+////
+////        if (ImGui::SliderFloat("Inner CutOff", &inner, 0.0f, 90.0f))
+////            light.cutOff = glm::cos(glm::radians(inner));
+////
+////        if (ImGui::SliderFloat("Outer CutOff", &outer, inner, 90.0f))
+////            light.outerCutOff = glm::cos(glm::radians(outer));
+////    }
+////}
+////
+////
+////void showTransformEditor(Transform& transform)
+////{
+////    glm::vec3 pos = transform.getLocalPosition();
+////    glm::vec3 rot = transform.getLocalRotation();
+////    glm::vec3 scale = transform.getLocalScale();
+////
+////    if (ImGui::DragFloat3("Position", &pos.x, 0.01f))
+////    {
+////        change = true;
+////        transform.setLocalPosition(pos);
+////    }
+////
+////    if (ImGui::DragFloat3("Rotation", &rot.x, 0.1f))
+////    {
+////        change = true;
+////        transform.setLocalRotation(rot);
+////    }
+////
+////    if (ImGui::DragFloat3("Scale", &scale.x, 0.01f, 0.01f))
+////    {
+////        change = true;
+////        transform.setLocalScale(scale);
+////    }
+////}
+////static ImGuiTextFilter entityFilter;
+////
+////bool entityMatchesFilter(Entity* entity)
+////{
+////    if (entityFilter.PassFilter(entity->name.c_str()))
+////        return true;
+////
+////    for (auto& child : entity->children)
+////    {
+////        if (entityMatchesFilter(child.get()))
+////            return true;
+////    }
+////    return false;
+////}
+////
+////
+////void showEntityTree(Entity* entity)
+////{
+////    if (!entity) return;
+////
+////    if (!entityMatchesFilter(entity))
+////        return;
+////
+////    ImGuiTreeNodeFlags flags =
+////        ImGuiTreeNodeFlags_OpenOnArrow |
+////        ImGuiTreeNodeFlags_OpenOnDoubleClick |
+////        ((entity == selectedEntity) ? ImGuiTreeNodeFlags_Selected : 0);
+////
+////    bool nodeOpen = ImGui::TreeNodeEx(
+////        (void*)entity,
+////        flags,
+////        "%s",
+////        entity->name.c_str()
+////    );
+////
+////    if (ImGui::IsItemClicked())
+////        selectedEntity = entity;
+////
+////    if (nodeOpen)
+////    {
+////        for (auto& child : entity->children)
+////            showEntityTree(child.get());
+////
+////        ImGui::TreePop();
+////    }
+////}
+////
+//
+//void imgui_render()
+//{
+//    if (show_demo_window)
+//    {
+//        //ImGui::ShowDemoWindow(&show_demo_window);
+//    }
+//
+//    ImGui::Begin("Hello, world!");
+//
+//    if (ImGui::Button(wireframeMode ? "Switch to Fill Mode" : "Switch to Wireframe"))
+//    {
+//        wireframeMode = !wireframeMode;
+//        glPolygonMode(GL_FRONT_AND_BACK,
+//            wireframeMode ? GL_LINE : GL_FILL);
+//    }
+//
+//    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+//    ImGui::SliderFloat("rotation X", &rotationX, -480.0f, 480.0f);
+//    ImGui::SliderFloat("rotation Y", &rotationY, -480.0f, 480.0f);
+//    ImGui::SliderFloat("Camera Distance", &cameraDistance, 5.0f, 1000.0f);
+//
+//    ImGui::Text("This is some useful text.");
+//    ImGui::Checkbox("Demo Window", &show_demo_window);
+//    ImGui::Checkbox("Another Window", &show_another_window);
+//
+//    ImGui::ColorEdit3("clear color", (float*)&clear_color);
+//
+//    ImGui::End(); // 🔥 MUSI BYĆ
+//
+//    if (show_another_window)
+//    {
+//        ImGui::Begin("Another Window", &show_another_window);
+//        ImGui::Text("Hello from another window!");
+//        if (ImGui::Button("Close Me"))
+//            show_another_window = false;
+//        ImGui::End();
+//    }
+//}
+////
+////void imgui_render()
+////{
+////    /// Add new ImGui controls here
+////    // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
+////    if (show_demo_window)
+////
+////        //ImGui::ShowDemoWindow(&show_demo_window);
+////
+////    // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
+////
+////    {
+////        ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
+////
+////
+////        if (ImGui::Button(wireframeMode ? "Switch to Fill Mode" : "Switch to Wireframe"))
+////        {
+////            wireframeMode = !wireframeMode;
+////            if (wireframeMode)
+////                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // włącz wireframe
+////            else
+////                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // normalny render
+////        }
+////
+////        ImGui::SliderFloat("rotation X", &rotationX, -480.0f, 480.0f);
+////        ImGui::SliderFloat("rotation Y", &rotationY, -480.0f, 480.0f);
+////        ImGui::SliderFloat("Camera Distance", &cameraDistance, 5.0f, 1000.0f);
+////
+////
+////        ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
+////        ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
+////        ImGui::Checkbox("Another Window", &show_another_window);
+////
+////        ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
+////    }
+////    //    if (ImGui::Button("Auto rotation"))
+////    //        autoRotation = !autoRotation;
+////    //    ImGui::SameLine();
+////    //    ImGui::Text(" = %s", autoRotation ? "true" : "false");
+////
+////    //    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+////    //    
+////    //   if (root) // główny obiekt sceny
+////    //   {
+////    //       ImGui::Separator();
+////    //       ImGui::Text("Hierarchy");
+////    //       entityFilter.Draw("Search", 200);
+////    //       ImGui::Separator();
+////
+////    //       showEntityTree(root.get());
+////
+////    //   
+////    //       if (selectedEntity)
+////    //       {
+////    //           ImGui::Separator();
+////    //           ImGui::Text("Selected Entity: %s", selectedEntity->name.c_str());
+////    //           showTransformEditor(selectedEntity->transform);
+////    //       }
+////
+////
+////    //       ImGui::Separator();
+////    //       ImGui::Text("Lighting");
+////
+////    //       if (ImGui::CollapsingHeader("Directional Light"))
+////    //       {
+////    //           ImGui::PushID("Directional");
+////    //           showLightEditor(*dircetLight);
+////    //           ImGui::PopID();
+////    //       }
+////
+////    //       //if (ImGui::CollapsingHeader("Point Lights"))
+////    //       //{
+////    //       //    ImGui::PushID("pointLight");
+////    //       //    showLightEditor(*pointLight);
+////    //       //    ImGui::PopID();
+////    //       //}
+////
+////    //       //if (ImGui::CollapsingHeader("Spot Light"))
+////    //       //{
+////    //       //    ImGui::PushID("spotLight");
+////    //       //    showLightEditor(*spotLight);
+////    //       //    ImGui::PopID();
+////    //       //}
+////
+////    //       //if (ImGui::CollapsingHeader("Spot Light2"))
+////    //       //{
+////    //       //    ImGui::PushID("spotLight2");
+////    //       //    showLightEditor(*spotLight2);
+////    //       //    ImGui::PopID();
+////    //       //}
+////    //   }
+////    //   
+////    //    
+////    //    ImGui::End();
+////    //}
+////
+////    // 3. Show another simple window.
+////    if (show_another_window)
+////    {
+////        ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
+////        ImGui::Text("Hello from another window!");
+////        if (ImGui::Button("Close Me"))
+////            show_another_window = false;
+////        ImGui::End();
+////    }
+////}
+//
+//void imgui_end()
+//{
+//    ImGui::Render();
+//    int display_w, display_h;
+//    glfwMakeContextCurrent(window);
+//    glfwGetFramebufferSize(window, &display_w, &display_h);
+//
+//    glViewport(0, 0, display_w, display_h);
+//
+//
+//    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+//}
+//
+//
+//
+//
+
+
+
+
+
+
+
+
+
+
+
+
 //#include <iostream>
 //#include <vector>
 //#include <unordered_map>
