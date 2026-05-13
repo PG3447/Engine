@@ -945,8 +945,8 @@ int main(int, char**)
             "move_up_2", "move_down_2", "move_left_2", "move_right_2");
 
         processCameraMouse(ecs, *camCompLeft);
-        processCameraGamepad(ecs, *camCompLeft, *t0, 1);
-        processCameraGamepad(ecs, *camCompRight, *t1, 0);
+        processCameraGamepad(ecs, *camCompLeft, *t0, 0);
+        processCameraGamepad(ecs, *camCompRight, *t1, 1);
         test_score++;
         sprite_4->text = "score: " + std::to_string(test_score);
 

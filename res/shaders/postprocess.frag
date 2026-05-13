@@ -13,7 +13,7 @@ void main() {
 
     vec3 playerColor;
 
-    //green camera
+    //color efects
     if(TexCoords.x < 0.5){
         float R = color.r;
         float G = color.g;
@@ -36,9 +36,30 @@ void main() {
 
         playerColor =  mix(vec3(dotProduct) ,color, GIGAWYNIK);
     } else {
-        playerColor =  color;
+        float R = color.r;
+        float G = color.g;
+        float B = color.b;
+
+        float s1 = R - G;
+        float s2 = R - B;
+        float s3 = B - R;
+        float s4 = B - G;
+
+        float m1 = max(s1, s2);
+        float m2 = max(s3, s4);
+
+        float ss1 = smoothstep(0.08, 0.15, m1);
+        float ss2 = smoothstep(0.08, 0.15, m2);
+
+        float GIGAWYNIK = max(m1, m2);
+
+        float dotProduct = dot(color, vec3(0.25, 0.0, 0.11));
+
+        vec3 tempColor =  mix(vec3(dotProduct) ,color, GIGAWYNIK);
+
+        playerColor = pow(tempColor, vec3(1.0 / 1.8));//dont worry about it
     }
-    //green camera end
+    //color efects
 
     vec3 finalColor = pow(playerColor, vec3(1.0 / gamma));//gamma
 
