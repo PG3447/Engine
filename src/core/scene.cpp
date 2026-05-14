@@ -1,6 +1,7 @@
 ﻿#include "scene.h"
 #include <spdlog/spdlog.h>
 
+#include "systems/NavMeshSystem.h"
 #include "systems/raycastSystem.h"
 
 
@@ -43,7 +44,9 @@ void Scene::Update(float deltaTime) {
 
     if (auto* render = ecs.GetSystem<RenderSystem>())
         render->Update(ecs, deltaTime);
-
+    if (auto* obj = ecs.GetSystem<NavMeshSystem>()) {
+        obj->Update(ecs, deltaTime);
+    }
     if (auto* ss = ecs.GetSystem<SpriteSystem>())
         ss->Update(ecs, deltaTime);
 }

@@ -152,7 +152,7 @@ NavMeshSystem::CollectWalkableSurfaces(Scene& scene) {
         glm::vec3 scale    = tr->scale;
 
         // Rzeczywisty polrozmar w przestrzeni swiata
-        glm::vec3 half = col->halfSize * scale;
+        glm::vec3 half = col->halfSize;
         glm::vec3 center = worldPos + col->offset;
 
         WalkableSurface surf;
@@ -234,7 +234,7 @@ NavMeshSystem::CollectObstacles(Scene& scene) {
 
         glm::vec3 worldPos = glm::vec3(tr->modelMatrix[3]);
         glm::vec3 scale    = tr->scale;
-        glm::vec3 half     = col->halfSize * scale;
+        glm::vec3 half     = col->halfSize;
         glm::vec3 center   = worldPos + col->offset;
 
         Obstacle obs;

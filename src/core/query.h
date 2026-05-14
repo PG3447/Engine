@@ -4,7 +4,7 @@
 #include <vector>
 #include <tuple>
 #include <algorithm>
-
+#include <unordered_map>
 
 class QueryBase {
 public:
@@ -19,7 +19,7 @@ public:
     // Struktura SoA
     std::vector<GameObject*> gameobjects;
     std::tuple<std::vector<Components*>...> componentsVectors;
-    std::unordered_map<size_t, size_t> indexMap; // id -> index w gameobjects
+    std::unordered_map<size_t, size_t> indexMap;
     uint64_t requiredMask = 0;
 
     Query() : requiredMask((Components::ComponentBit | ...)) {}
@@ -38,7 +38,7 @@ public:
                 gameobjects.push_back(e);
                 indexMap[e->id] = newIndex;
 
-                (..., (std::get<std::vector<Components*>>(componentsVectors).push_back(e->GetComponent<Components>())));
+                (..., (std::get<std::vector<Components*>>(componentsVectors).push_back(e->template GetComponent<Components>())));
             }
         }
         else if (currentIndex != size_t(-1)) {

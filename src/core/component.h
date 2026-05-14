@@ -175,8 +175,8 @@ struct ColliderComponent : Component {
 
     bool isTrigger = false;
 
-    bool affectsNavMesh = true;
-    bool isWalkable = true;
+    bool affectsNavMesh = false;
+    bool isWalkable = false;
 };
 enum LightType {
     Directional = 0,
@@ -324,7 +324,7 @@ struct NavMeshComponent : Component {
     // Parametry bake
     float agentRadius   = 0.5f;   // Promien agenta (margines przy przeszkodach)
     float agentHeight   = 2.0f;   // Wysokosc agenta
-    float voxelSize     = 1.0f;   // Rozmiar voksela dla siatki punktow probkowania
+    float voxelSize     = 5.0f;   // Rozmiar voksela dla siatki punktow probkowania
     float maxSlopeAngle = 45.0f;  // Max kat nachylenia (w stopniach) - powyzej = niechodzalne
 
     // Debug
