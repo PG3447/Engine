@@ -45,6 +45,7 @@
 #include <systems/raycastSystem.h>
 #include <systems/NavMeshSystem.h>
 #include "diagnostics/cpu_timer.h"
+#include "systems/NavPathSystem.h"
 #include "utils/render_helper.h"
 #include "utils/animation_helper.h"
 
@@ -266,7 +267,7 @@ GameObject* CreateRaycastTestObject(
     rc->fovRayCount  = 200;
     rc->fovAngle     = 200.0f;
     rc->originOffset = glm::vec3(0.0f, 0.5f, 0.0f);
-    rc->debugDraw    = true;
+    rc->debugDraw    = false;
 
     return go;
 }
@@ -335,6 +336,7 @@ int main(int, char**)
     ecs.AddSystem<SpriteSystem>(ecs, window);
     ecs.AddSystem<RaycastSystem>(ecs);
     ecs.AddSystem<NavMeshSystem>(ecs);
+    ecs.AddSystem<NavPathSystem>(ecs);
 
     ourShader = std::make_unique<Shader>("res/shaders/basic.vert", "res/shaders/basic.frag");
     ourShader->use();
@@ -568,7 +570,7 @@ int main(int, char**)
     GameObject* raycastTarget = placeholderModel->Instantiate(*scena1, nullptr, ourShader.get());
 
     auto* targetTr = raycastTarget->GetComponent<TransformComponent>();
-    targetTr->position = glm::vec3(0.0f, 8.0f, -30.0f); // 30 jednostek przed placeholderem
+    targetTr->position = glm::vec3(0.0f, 1.0f, -30.0f); // 30 jednostek przed placeholderem
     targetTr->scale = glm::vec3(3.0f);
     targetTr->isDirty = true;
 
@@ -576,7 +578,7 @@ int main(int, char**)
     targetCol->halfSize = glm::vec3(3.0f);
     targetCol->offset   = glm::vec3(0.0f);
 
-    /*GameObject* RaycastSource =
+    GameObject* RaycastSource =
         CreateRaycastTestObject(
             *scena1,
             *placeholderModel,
@@ -584,7 +586,9 @@ int main(int, char**)
             glm::vec3(0.0f, 5.0f, 0.0f),
             glm::vec3(1.0f)
         );
-        */
+    NavPathComponent* sourceAgent = RaycastSource->AddComponent<NavPathComponent>();
+    sourceAgent->moveSpeed = 6.0f;
+    sourceAgent->debugDraw = true;
 
     GameObject * model5 = cupModel      ->Instantiate(*scena1, nullptr, ourShader.get());
     model5->GetComponent<TransformComponent>()->position.x = 0.0f;

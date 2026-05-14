@@ -276,7 +276,7 @@ struct RaycastComponent : Component {
     }
 
     //debug
-    bool debugDraw = true;
+    bool debugDraw = false;
     glm::vec4 colorMiss = {0.0f, 1.0f, 0.0f, 1.0f}; // zielony  = brak trafienia
     glm::vec4 colorHit  = {1.0f, 0.3f, 0.0f, 1.0f}; // pomarańczowy = trafienie
 
@@ -339,5 +339,38 @@ struct NavMeshComponent : Component {
     // Czy punkt jest na navmeshu
     bool IsPointWalkable(const glm::vec3& worldPos) const;
 };
+enum class NavAgentState {
+    Idle,
+    RequestingPath,
+    Moving,
+    Arrived,
+};
 
+struct NavPathComponent : Component {
+    static constexpr uint64_t ComponentBit = 1ull << 11;
+
+    // --- Cel i sciezka ---
+    glm::vec3 goalPosition{ 0.0f };
+    std::vector<glm::vec3> path;   // Punkty wygladzonej sciezki (wynik funnela)
+    int currentWaypoint = 0;       // Indeks aktualnego punktu docelowego w path
+
+    // --- Parametry ruchu ---
+    float moveSpeed        = 5.0f;
+    float waypointRadius   = 0.5f; // Jak blisko punktu zeby uznac ze dotarl
+    float arrivalRadius    = 1.0f; // Jak blisko celu zeby uznac ze dotarl do konca
+
+    // --- Czas oczekiwania po dotarciu ---
+    float idleTimeMin  = 0.5f;
+    float idleTimeMax  = 2.0f;
+    float idleTimer    = 0.0f;
+
+    // --- Stan ---
+    NavAgentState state = NavAgentState::Idle;
+
+    // --- Debug ---
+    bool debugDraw = true;
+    glm::vec4 colorPath    = glm::vec4(1.0f, 1.0f, 0.0f, 1.0f); // zolty
+    glm::vec4 colorGoal    = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f); // czerwony
+    glm::vec4 colorWaypoint= glm::vec4(0.0f, 0.5f, 1.0f, 1.0f); // niebieski
+};
 #endif

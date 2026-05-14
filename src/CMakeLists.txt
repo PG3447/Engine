@@ -29,7 +29,9 @@ add_executable(${PROJECT_NAME} ${HEADER_FILES} ${SOURCE_FILES} ${ASSETS_FILES} "
 		systems/DebugDrawSystem.cpp
 		diagnostics/cpu_timer.h "animation/bone_info.h" "animation/animation_clip.h" "animation/skeleton.h" "systems/animation_system.h" "systems/animation_system.cpp" "utils/animation_helper.h"
 		systems/NavMeshSystem.cpp
-		systems/NavMeshSystem.h)
+		systems/NavMeshSystem.h
+		systems/NavPathSystem.cpp
+		systems/NavPathSystem.h)
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE GLFW_INCLUDE_NONE)
 target_compile_definitions(${PROJECT_NAME} PRIVATE LIBRARY_SUFFIX="")
