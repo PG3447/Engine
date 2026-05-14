@@ -1612,16 +1612,6 @@ void imgui_render(SceneManager& sceneManager)
     ImGui::Separator();
 
     Scene& scene = *sceneManager.GetActiveScene();
-    ImGui::Text("Models size: %zu", ResourceManager::Models.size());
-
-    ImGui::Text("BEGIN LIST");
-
-    for (auto& [name, weakModel] : ResourceManager::Models)
-    {
-        ImGui::Text("ITEM: %s", name.c_str());
-    }
-
-    ImGui::Text("END LIST");
 
     for (auto& [name, weakModel] : ResourceManager::Models)
     {
