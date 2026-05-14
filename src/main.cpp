@@ -1664,6 +1664,17 @@ void imgui_render(SceneManager& sceneManager)
     }
 
 
+    if (ImGui::Button("Load asset"))
+    {
+        std::string path = "assets.yaml";
+        ResourceManager::LoadAssets(path);
+    }
+
+    if (ImGui::Button("Zapisz asset"))
+    {
+        ResourceManager::SaveAsset();
+    }
+
     ImGui::Separator();
 
 

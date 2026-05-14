@@ -26,6 +26,10 @@ public:
 
     static GLuint CreateTextureFromColor(const std::string& name, const glm::vec3& color);
 
+    static void SaveAsset();
+
+    static void LoadAssets(std::string& path);
+
 private:
     static unsigned int loadTextureFromFile(const std::string& path, const std::string& directory, const aiTexture* aiTex);
 

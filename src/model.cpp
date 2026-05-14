@@ -105,7 +105,7 @@ void Model::loadModel(string const& path)
     }
 
     directory = path.substr(0, path.find_last_of('/'));
-    name = path;
+    fullPath = path;
 
     std::shared_ptr<ModelNode> rootNode = processNode(scene->mRootNode, scene);
     this->rootNode = std::move(rootNode);

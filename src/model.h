@@ -81,8 +81,8 @@ public:
     //std::vector<MeshNode> nodes;
     //Transform transform;
     //vector<std::unique_ptr<Model>> children;
-    string name;
     string directory;
+    string fullPath;
     bool gammaCorrection;
     //bool instancingPrepared = false;
     //unsigned int instanceVBO = 0;

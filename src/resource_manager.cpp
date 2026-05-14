@@ -1,4 +1,4 @@
-#include "resource_manager.h"
+﻿#include "resource_manager.h"
 #include <stb_image.h>
 #include <iostream>
 
@@ -166,6 +166,55 @@ GLuint ResourceManager::CreateTextureFromColor(const std::string& name, const gl
     spdlog::info("ResourceManager: Created color texture {}", name);
 
     return tex;
+}
+
+/*
+#include <functional>
+
+std::string id = relPath.string();
+size_t hashID = std::hash<std::string>{}(id);
+*/
+
+void ResourceManager::SaveAsset()
+{
+    YamlConfig cfg;
+
+    YAML::Node assetsNode;
+
+    int i = 0;
+
+    for (auto& [modelPath, model] : ResourceManager::Models)
+    {
+        if (!model)
+            continue;
+
+        YAML::Node modelNode;
+        modelNode["path"] = modelPath;
+
+        assetsNode["Assets"]["Models"][i++] = modelNode;
+    }
+
+    cfg.getRoot() = assetsNode;
+    cfg.save("assets.yaml");
+}
+
+void ResourceManager::LoadAssets(std::string& path)
+{
+    YamlConfig cfg;
+
+    cfg.load(path);
+
+    YAML::Node root = cfg.getRoot();
+
+    if (!root["Assets"]["Models"])
+        return;
+
+    for (auto node : root["Assets"]["Models"])
+    {
+        std::string modelPath = node["path"].as<std::string>();
+
+        ResourceManager::LoadModel(modelPath);
+    }
 }
 
 void ResourceManager::Clear()
