@@ -204,7 +204,6 @@ struct ColliderComponent : Component {
     glm::vec3 halfSize{ 0.5f, 0.5f, 0.5f };
 
     bool isTrigger = false;
-
     bool affectsNavMesh = true;
     bool isWalkable = true;
     
@@ -228,6 +227,7 @@ struct ColliderComponent : Component {
         if (node["isTrigger"])
             isTrigger = node["isTrigger"].as<bool>();
     }
+
 };
 
 enum LightType {
@@ -392,9 +392,101 @@ struct RaycastComponent : Component {
     }
 
     //debug
-    bool debugDraw = true;
+    bool debugDraw = false;
     glm::vec4 colorMiss = {0.0f, 1.0f, 0.0f, 1.0f}; // zielony  = brak trafienia
     glm::vec4 colorHit  = {1.0f, 0.3f, 0.0f, 1.0f}; // pomarańczowy = trafienie
 
+};
+struct NavVertex {
+    glm::vec3 position;
+};
+
+// Trojkat siatki nawigacyjnej
+struct NavTriangle {
+    int v[3];
+    int neighbors[3];
+
+    glm::vec3 centroid;
+    bool walkable = true;
+
+    NavTriangle() {
+        v[0] = v[1] = v[2] = -1;
+        neighbors[0] = neighbors[1] = neighbors[2] = -1;
+        centroid = glm::vec3(0.0f);
+    }
+    NavTriangle(int a, int b, int c) {
+        v[0] = a; v[1] = b; v[2] = c;
+        neighbors[0] = neighbors[1] = neighbors[2] = -1;
+        centroid = glm::vec3(0.0f);
+    }
+};
+// Zbior danych wynikowych po bake
+struct NavMeshData {
+    std::vector<NavVertex>   vertices;
+    std::vector<NavTriangle> triangles;
+    bool isBaked = false;
+
+    void Clear() {
+        vertices.clear();
+        triangles.clear();
+        isBaked = false;
+    }
+};
+struct NavMeshComponent : Component {
+    static constexpr uint64_t ComponentBit = 1ull << 10;
+
+    NavMeshData data;
+
+    // Parametry bake
+    float agentRadius   = 0.5f;   // Promien agenta (margines przy przeszkodach)
+    float agentHeight   = 2.0f;   // Wysokosc agenta
+    float voxelSize     = 5.0f;   // Rozmiar voksela dla siatki punktow probkowania
+    float maxSlopeAngle = 45.0f;  // Max kat nachylenia (w stopniach) - powyzej = niechodzalne
+
+    // Debug
+    bool debugDraw = true;
+    glm::vec4 colorWalkable    = glm::vec4(0.0f, 0.8f, 0.2f, 0.4f); // zielony
+    glm::vec4 colorUnwalkable  = glm::vec4(0.8f, 0.1f, 0.1f, 0.4f); // czerwony
+    glm::vec4 colorEdge        = glm::vec4(0.0f, 1.0f, 0.5f, 1.0f); // jasny zielony
+
+    // Znajdz trojkat zawierajacy punkt (XZ), zwraca indeks lub -1
+    int FindTriangle(const glm::vec3& worldPos) const;
+
+    // Czy punkt jest na navmeshu
+    bool IsPointWalkable(const glm::vec3& worldPos) const;
+};
+enum class NavAgentState {
+    Idle,
+    RequestingPath,
+    Moving,
+    Arrived,
+};
+
+struct NavPathComponent : Component {
+    static constexpr uint64_t ComponentBit = 1ull << 11;
+
+    // --- Cel i sciezka ---
+    glm::vec3 goalPosition{ 0.0f };
+    std::vector<glm::vec3> path;   // Punkty wygladzonej sciezki (wynik funnela)
+    int currentWaypoint = 0;       // Indeks aktualnego punktu docelowego w path
+
+    // --- Parametry ruchu ---
+    float moveSpeed        = 5.0f;
+    float waypointRadius   = 0.5f; // Jak blisko punktu zeby uznac ze dotarl
+    float arrivalRadius    = 1.0f; // Jak blisko celu zeby uznac ze dotarl do konca
+
+    // --- Czas oczekiwania po dotarciu ---
+    float idleTimeMin  = 0.5f;
+    float idleTimeMax  = 2.0f;
+    float idleTimer    = 0.0f;
+
+    // --- Stan ---
+    NavAgentState state = NavAgentState::Idle;
+
+    // --- Debug ---
+    bool debugDraw = true;
+    glm::vec4 colorPath    = glm::vec4(1.0f, 1.0f, 0.0f, 1.0f); // zolty
+    glm::vec4 colorGoal    = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f); // czerwony
+    glm::vec4 colorWaypoint= glm::vec4(0.0f, 0.5f, 1.0f, 1.0f); // niebieski
 };
 #endif

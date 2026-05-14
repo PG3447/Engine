@@ -45,9 +45,11 @@
 #include <systems/animation_system.h>
 #include <systems/SpriteSystem.h>
 #include <systems/raycastSystem.h>
-
+#include <systems/NavMeshSystem.h>
 #include "diagnostics/cpu_timer.h"
+
 #include "systems/PostProcessingSystem.h"
+#include "systems/NavPathSystem.h"
 #include "utils/render_helper.h"
 #include "utils/animation_helper.h"
 
@@ -283,7 +285,7 @@ GameObject* CreateRaycastTestObject(
     rc->fovRayCount  = 200;
     rc->fovAngle     = 200.0f;
     rc->originOffset = glm::vec3(0.0f, 0.5f, 0.0f);
-    rc->debugDraw    = true;
+    rc->debugDraw    = false;
 
     return go;
 }
@@ -358,6 +360,8 @@ int main(int, char**)
     ecs.AddSystem<PostProcessingSystem>(ecs, window);
     ecs.AddSystem<SpriteSystem>(ecs, window);
     ecs.AddSystem<RaycastSystem>(ecs);
+    ecs.AddSystem<NavMeshSystem>(ecs);
+    ecs.AddSystem<NavPathSystem>(ecs);
 
     ourShader = std::make_unique<Shader>("res/shaders/basic.vert", "res/shaders/basic.frag");
     ourShader->use();
@@ -617,7 +621,7 @@ int main(int, char**)
     GameObject* raycastTarget = placeholderModel->Instantiate(*scena1, nullptr, ourShader.get());
 
     auto* targetTr = raycastTarget->GetComponent<TransformComponent>();
-    targetTr->position = glm::vec3(0.0f, 8.0f, -30.0f); // 30 jednostek przed placeholderem
+    targetTr->position = glm::vec3(0.0f, 1.0f, -30.0f); // 30 jednostek przed placeholderem
     targetTr->scale = glm::vec3(3.0f);
     targetTr->isDirty = true;
 
@@ -625,7 +629,7 @@ int main(int, char**)
     targetCol->halfSize = glm::vec3(3.0f);
     targetCol->offset   = glm::vec3(0.0f);
 
-    /*GameObject* RaycastSource =
+    GameObject* RaycastSource =
         CreateRaycastTestObject(
             *scena1,
             *placeholderModel,
@@ -633,7 +637,9 @@ int main(int, char**)
             glm::vec3(0.0f, 5.0f, 0.0f),
             glm::vec3(1.0f)
         );
-        */
+    NavPathComponent* sourceAgent = RaycastSource->AddComponent<NavPathComponent>();
+    sourceAgent->moveSpeed = 6.0f;
+    sourceAgent->debugDraw = true;
 
     GameObject * model5 = cupModel      ->Instantiate(*scena1, nullptr, ourShader.get());
     model5->GetComponent<TransformComponent>()->position.x = 0.0f;
@@ -672,6 +678,7 @@ int main(int, char**)
     groundObject->GetComponent<RigidbodyComponent>()->isStatic = true;
 
     groundObject->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 1, 100 };
+    //groundObject->GetComponent<ColliderComponent>()->isWalkable = true;
 
     GameObject* groundObject2 = floorModel->Instantiate(*scena1, nullptr, ourShader.get());
     groundObject2->GetComponent<TransformComponent>()->scale.x = 100;
@@ -685,6 +692,9 @@ int main(int, char**)
     groundObject2->GetComponent<RigidbodyComponent>()->isStatic = true;
 
     groundObject2->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 1, 100 };
+    groundObject2->GetComponent<ColliderComponent>()->isWalkable = true;
+    groundObject2->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+
     groundObject2->GetComponent<TransformComponent>()->position.x = 0;
     groundObject2->GetComponent<TransformComponent>()->position.y = 0;
     groundObject2->GetComponent<TransformComponent>()->position.z = -200;
@@ -704,6 +714,8 @@ int main(int, char**)
     groundObject3->GetComponent<TransformComponent>()->position.y = 40;
 
     groundObject3->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 1, 100 };
+    //groundObject3->GetComponent<ColliderComponent>()->isWalkable = true;
+
 
     GameObject* groundObject4 = floorModel->Instantiate(*scena1, nullptr, ourShader.get());
     groundObject4->GetComponent<TransformComponent>()->scale.x = 100;
@@ -717,6 +729,8 @@ int main(int, char**)
     groundObject4->GetComponent<RigidbodyComponent>()->isStatic = true;
 
     groundObject4->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 1, 100 };
+    //groundObject4->GetComponent<ColliderComponent>()->isWalkable = true;
+
     groundObject4->GetComponent<TransformComponent>()->position.x = 0;
     groundObject4->GetComponent<TransformComponent>()->position.y = 40;
     groundObject4->GetComponent<TransformComponent>()->position.z = -200;
@@ -829,6 +843,7 @@ int main(int, char**)
     wallObject6->GetComponent<RigidbodyComponent>()->isStatic = true;
 
     wallObject6->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 100, 100 };
+    wallObject6->GetComponent<ColliderComponent>()->affectsNavMesh = true;;
 
     wallObject6->GetComponent<TransformComponent>()->position.x = -100;
     wallObject6->GetComponent<TransformComponent>()->position.y = 0;
@@ -847,6 +862,8 @@ int main(int, char**)
     wallObject7->GetComponent<RigidbodyComponent>()->isStatic = true;
 
     wallObject7->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 100, 1 };
+    wallObject7->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+
 
     wallObject7->GetComponent<TransformComponent>()->position.x = 110;
     wallObject7->GetComponent<TransformComponent>()->position.y = 0;
@@ -864,6 +881,7 @@ int main(int, char**)
     wallObject8->GetComponent<RigidbodyComponent>()->isStatic = true;
 
     wallObject8->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 100, 1 };
+    wallObject8->GetComponent<ColliderComponent>()->affectsNavMesh = true;
 
     wallObject8->GetComponent<TransformComponent>()->position.x = -110;
     wallObject8->GetComponent<TransformComponent>()->position.y = 0;
@@ -881,6 +899,8 @@ int main(int, char**)
     wallObject9->GetComponent<RigidbodyComponent>()->isStatic = true;
 
     wallObject9->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 10, 44, 1 };
+    wallObject9->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+
 
     wallObject9->GetComponent<TransformComponent>()->position.x = 0;
     wallObject9->GetComponent<TransformComponent>()->position.y = 70;
@@ -899,6 +919,7 @@ int main(int, char**)
     wallObject10->GetComponent<RigidbodyComponent>()->isStatic = true;
 
     wallObject10->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 11, 11, 33 };
+    wallObject10->GetComponent<ColliderComponent>()->affectsNavMesh = true;
 
     wallObject10->GetComponent<TransformComponent>()->position.x = 30;
     wallObject10->GetComponent<TransformComponent>()->position.y = 0;
@@ -916,6 +937,8 @@ int main(int, char**)
     wallObject11->GetComponent<RigidbodyComponent>()->isStatic = true;
 
     wallObject11->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 11, 11, 33 };
+    wallObject11->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+
 
     wallObject11->GetComponent<TransformComponent>()->position.x = -30;
     wallObject11->GetComponent<TransformComponent>()->position.y = 0;
@@ -933,6 +956,7 @@ int main(int, char**)
     wallObject12->GetComponent<RigidbodyComponent>()->isStatic = true;
 
     wallObject12->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 11, 11, 33 };
+    wallObject12->GetComponent<ColliderComponent>()->affectsNavMesh = true;
 
     wallObject12->GetComponent<TransformComponent>()->position.x = 30;
     wallObject12->GetComponent<TransformComponent>()->position.y = 0;
@@ -950,11 +974,15 @@ int main(int, char**)
     wallObject13->GetComponent<RigidbodyComponent>()->isStatic = true;
 
     wallObject13->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 11, 11, 33 };
+    wallObject13->GetComponent<ColliderComponent>()->affectsNavMesh = true;
 
     wallObject13->GetComponent<TransformComponent>()->position.x = -30;
     wallObject13->GetComponent<TransformComponent>()->position.y = 0;
     wallObject13->GetComponent<TransformComponent>()->position.z = -200;
 
+    //NAVMESH
+    ecs.GetSystem<NavMeshSystem>()->Bake(*scena1);
+    //END NAVMESH
 
     // aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 
@@ -1636,8 +1664,8 @@ void imgui_render(SceneManager& sceneManager)
     if (ImGui::CollapsingHeader("Culling")) {
         ImGui::Checkbox("Frustum culling",   &renderSystem->frustumCullingEnabled);
         ImGui::Checkbox("Occlusion culling", &renderSystem->occlusionCullingEnabled);
-        ImGui::Text("Frustum culled:   %d", renderSystem->stats.culledByFrustum);
-        ImGui::Text("Occlusion culled: %d", renderSystem->stats.culledByOcclusion);
+        ImGui::Text("Frustum culled:   %d", renderSystem->stats.frustumCulledSet.size());
+        ImGui::Text("Occlusion culled: %d", renderSystem->stats.occlusionCulledSet.size());
     }
     ImGui::PlotLines("Frame time", frameTimes, MAX_SAMPLES, index,
                  nullptr, 0.0f, 1.0f, ImVec2(0, 60));

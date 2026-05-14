@@ -30,12 +30,13 @@ private:
         bool isVisible = true;
         bool queryActive = false;
         int    hiddenFrames = 0;
-        static constexpr int HIDE_THRESHOLD = 10;
+        static constexpr int HIDE_THRESHOLD = 3;
     };
     std::unordered_map<size_t, OcclusionData> occlusionMap;
-    float occluderThreshold = 5.0f;
-
+    float occluderThreshold = 3.0f;
+public:
     Query<TransformComponent, RenderComponent>* renderQuery;
+    private:
     Query<TransformComponent, LightComponent>* lightQuery;
     Query<TransformComponent, CameraComponent>* cameraQuery;
 
@@ -63,7 +64,6 @@ public:
         OcclusionData& data = occlusionMap[entityIdx];
         if (data.queryId == 0) glGenQueries(1, &data.queryId);
 
-        // Transformuj rogi lokalnego AABB na world space — identycznie jak AABBInFrustum
         const glm::vec3 localCorners[8] = {
             {localAABB.min.x, localAABB.min.y, localAABB.min.z},
             {localAABB.max.x, localAABB.min.y, localAABB.min.z},
@@ -86,7 +86,6 @@ public:
         glDepthMask(GL_FALSE);
 
         glBeginQuery(GL_ANY_SAMPLES_PASSED, data.queryId);
-        // Teraz worldMin/worldMax są w world space, vp = projection*view bez modelMatrix
         DebugDrawSystem::DrawAABBSolid(worldMin, worldMax, projection * view);
         glEndQuery(GL_ANY_SAMPLES_PASSED);
 
@@ -119,7 +118,6 @@ public:
             int prev = current;
             current = (current + 1) % 2;
 
-            // Wymuś odczyt — może lekko stallować ale zawsze aktualny
             GLuint64 time = 0;
             glGetQueryObjectui64v(queries[prev], GL_QUERY_RESULT, &time);
             lastResult = time / 1000000.0f;
@@ -136,14 +134,15 @@ public:
         int renderedObjects = 0;
         int triangles = 0;
         int stateChanges = 0;
-        int culledByFrustum = 0;
-        int culledByOcclusion = 0;
+        std::unordered_set<size_t> frustumCulledSet;
+        std::unordered_set<size_t> occlusionCulledSet;
         float cullingTimeMs = 0.0f;
         float drawSubmitTimeMs = 0.0f;
 
         void Reset() {
             drawCalls = renderedObjects = triangles = stateChanges = 0;
-            culledByFrustum = culledByOcclusion = 0;
+           frustumCulledSet.clear();
+            occlusionCulledSet.clear();
             cullingTimeMs = drawSubmitTimeMs = 0.0f;
         }
     };
@@ -392,7 +391,7 @@ public:
         auto& lights = std::get<1>(lightQuery->componentsVectors);
 
 
-        std::vector<std::pair<size_t, AABB>> allSubjects;
+        std::unordered_map<size_t, AABB> allSubjects; // entityIdx -> local AABB, do debugowania occlusion culling
 
         for (auto& [key, indices] : instancedGroups) {
             RenderMesh* model = std::get<0>(key);
@@ -403,19 +402,20 @@ public:
                 continue;
 
 
-            std::vector<size_t> occluders; // Duże obiekty - rysujemy zawsze
-            std::vector<size_t> subjects;  // Małe obiekty - testujemy occlusion
+            std::vector<size_t> occluders;
+            std::vector<size_t> subjects;
             // Culling
             auto cullStart = std::chrono::high_resolution_clock::now();
             for (size_t i : indices) {
                 AABB localAABB = GetLocalAABB(renderers[i]->meshes);
-                if (frustumCullingEnabled && !AABBInFrustum(frustum, localAABB, transforms[i]->modelMatrix)) {
-                    stats.culledByFrustum++;
-                    stats.drawCalls++; // (opcjonalnie statystyka frustum)
+
+                if (!AABBInFrustum(frustum, localAABB, transforms[i]->modelMatrix)) {
+                    if (frustumCullingEnabled) {
+                        stats.frustumCulledSet.insert(i);
+                    }
                     continue;
                 }
 
-                // Decyzja: czy obiekt jest na tyle duży, by sam zasłaniał inne?
                 glm::vec3 size = localAABB.max - localAABB.min;
 
                 float dims[3] = { size.x, size.y, size.z };
@@ -425,7 +425,7 @@ public:
                     occluders.push_back(i);
                 } else {
                     subjects.push_back(i);
-                    allSubjects.push_back({i, localAABB});
+                    allSubjects.emplace(i, localAABB);
                 }
             }
             auto cullEnd = std::chrono::high_resolution_clock::now();
@@ -437,7 +437,6 @@ public:
                 for (size_t i : subjects) {
                     OcclusionData& data = occlusionMap[i];
 
-                    // Pobieramy wynik z poprzedniej klatki
                     if (data.queryId != 0 && data.queryActive) {
                         GLuint available = 0;
                         glGetQueryObjectuiv(data.queryId, GL_QUERY_RESULT_AVAILABLE, &available);
@@ -455,18 +454,16 @@ public:
                             data.queryActive = false;
                         }
                     } else {
-                        // Brak wyniku zapytania z poprzedniej klatki - traktujemy jako widoczne
                         data.isVisible = true;
                     }
 
                     if (data.isVisible) {
                         visibleSubjects.push_back(i);
                     } else {
-                        stats.culledByOcclusion++;
+                        stats.occlusionCulledSet.insert(i);
                     }
                 }
             } else {
-                // Jeśli occlusion culling jest wyłączone, renderujemy wszystkie małe obiekty
                 visibleSubjects = subjects;
             }
 

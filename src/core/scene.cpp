@@ -2,6 +2,8 @@
 #include <spdlog/spdlog.h>
 
 #include "systems/PostProcessingSystem.h"
+#include "systems/NavMeshSystem.h"
+#include "systems/NavPathSystem.h"
 #include "systems/raycastSystem.h"
 
 
@@ -44,6 +46,13 @@ void Scene::Update(float deltaTime) {
 
     if (auto* render = ecs.GetSystem<RenderSystem>())
         render->Update(ecs, deltaTime);
+
+    if (auto* obj = ecs.GetSystem<NavMeshSystem>()) {
+        obj->Update(ecs, deltaTime);
+    }
+    if (auto* obj = ecs.GetSystem<NavPathSystem>()) {
+        obj->Update(ecs, deltaTime);
+    }
 
     if (auto* pps = ecs.GetSystem<PostProcessingSystem>())
         pps->Update(ecs, deltaTime);
