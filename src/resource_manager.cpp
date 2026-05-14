@@ -12,6 +12,7 @@
 #endif
 
 std::unordered_map<std::string, GLuint> ResourceManager::Textures;
+std::unordered_map<std::string, std::weak_ptr<Model>> ResourceManager::Models;
 
 GLuint ResourceManager::LoadTexture(const std::string& path, const std::string& directory, const aiTexture* aiTex)
 {
@@ -38,7 +39,6 @@ GLuint ResourceManager::LoadTexture(const std::string& path, const std::string& 
     return textureID;
 }
 
-std::unordered_map<std::string, std::weak_ptr<Model>> ResourceManager::Models;
 
 std::shared_ptr<Model> ResourceManager::LoadModel(const std::string& path)
 {

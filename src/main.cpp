@@ -6,6 +6,8 @@
 #include "imgui_impl/imgui_impl_glfw.h"
 #include "imgui_impl/imgui_impl_opengl3.h"
 #include <stdio.h>
+#include <windows.h>
+#include <commdlg.h>
 
 #define IMGUI_IMPL_OPENGL_LOADER_GLAD
 
@@ -1435,6 +1437,8 @@ void ShowColliderEditor(ColliderComponent& collider)
 //    ImGui::PopID();
 //}
 
+
+
 void ShowLightEditor(LightComponent& light)
 {
     // enable
@@ -1499,6 +1503,45 @@ void ShowLightEditor(LightComponent& light)
     }
 }
 
+std::string OpenFileDialog()
+{
+    char filename[MAX_PATH] = "";
+
+    OPENFILENAMEA ofn = {};
+    ofn.lStructSize = sizeof(OPENFILENAMEA);
+    ofn.lpstrFile = filename;
+    ofn.nMaxFile = MAX_PATH;
+
+    ofn.lpstrInitialDir = "res";
+
+    ofn.lpstrFilter =
+        "Model Files\0*.obj;*.fbx;*.glb;*.gltf\0"
+        "All Files\0*.*\0";
+
+    ofn.Flags =
+        OFN_PATHMUSTEXIST |
+        OFN_FILEMUSTEXIST;
+
+    if (GetOpenFileNameA(&ofn))
+    {
+        std::filesystem::path fullPath = filename;
+
+        std::filesystem::path projectRoot =
+            std::filesystem::absolute("./");
+
+        std::filesystem::path relative =
+            std::filesystem::relative(fullPath, projectRoot);
+
+        std::string result = relative.string();
+
+        std::replace(result.begin(), result.end(), '\\', '/');
+
+        return result;
+    }
+
+    return "";
+}
+
 void imgui_render(SceneManager& sceneManager)
 {
     if (show_demo_window)
@@ -1537,6 +1580,30 @@ void imgui_render(SceneManager& sceneManager)
     if (ImGui::Button("Zapisz"))
     {
         sceneManager.Save();
+    }
+
+    ImGui::End();
+
+    ImGui::Begin("Loaded Models");
+
+
+    if (ImGui::Button("Load Model"))
+    {
+        std::string path = OpenFileDialog();
+
+        if (!path.empty())
+        {
+            ResourceManager::LoadModel(path);
+        }
+    }
+
+
+    ImGui::Separator();
+
+
+    for (const auto& [name, weakModel] : ResourceManager::Models)
+    {
+        ImGui::Text("%s", name.c_str());
     }
 
     ImGui::End();
