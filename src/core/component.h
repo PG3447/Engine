@@ -484,7 +484,7 @@ struct NavPathComponent : Component {
     NavAgentState state = NavAgentState::Idle;
 
     // --- Debug ---
-    bool debugDraw = true;
+    bool debugDraw = false;
     glm::vec4 colorPath    = glm::vec4(1.0f, 1.0f, 0.0f, 1.0f); // zolty
     glm::vec4 colorGoal    = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f); // czerwony
     glm::vec4 colorWaypoint= glm::vec4(0.0f, 0.5f, 1.0f, 1.0f); // niebieski
