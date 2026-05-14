@@ -22,6 +22,9 @@ public:
         }
     }
 
+    Prefab(const std::shared_ptr<Model>& model) : rootModel(model)
+    {
+    }
 
     //Entity* getEntitiesCreate(Shader* shader, Light* light = nullptr)
     //{

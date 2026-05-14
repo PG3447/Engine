@@ -14,6 +14,7 @@
 #include <algorithm>
 
 #include <iostream>
+#include <filesystem>
 
 #include "resource_manager.h"
 

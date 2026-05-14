@@ -1546,16 +1546,13 @@ std::string OpenFileDialog()
         "Model Files\0*.obj;*.fbx;*.glb;*.gltf\0"
         "All Files\0*.*\0";
 
-    ofn.Flags =
-        OFN_PATHMUSTEXIST |
-        OFN_FILEMUSTEXIST;
+    ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
 
     if (GetOpenFileNameA(&ofn))
     {
         std::filesystem::path fullPath = filename;
 
-        std::filesystem::path projectRoot =
-            std::filesystem::absolute("./");
+        std::filesystem::path projectRoot = std::filesystem::absolute("../../");
 
         std::filesystem::path relative =
             std::filesystem::relative(fullPath, projectRoot);
@@ -1569,6 +1566,8 @@ std::string OpenFileDialog()
 
     return "";
 }
+
+static std::unordered_map<std::string, Prefab> prefabs;
 
 void imgui_render(SceneManager& sceneManager)
 {
@@ -1610,10 +1609,59 @@ void imgui_render(SceneManager& sceneManager)
         sceneManager.Save();
     }
 
+    ImGui::Separator();
+
+    Scene& scene = *sceneManager.GetActiveScene();
+    ImGui::Text("Models size: %zu", ResourceManager::Models.size());
+
+    ImGui::Text("BEGIN LIST");
+
+    for (auto& [name, weakModel] : ResourceManager::Models)
+    {
+        ImGui::Text("ITEM: %s", name.c_str());
+    }
+
+    ImGui::Text("END LIST");
+
+    for (auto& [name, weakModel] : ResourceManager::Models)
+    {
+        ImGui::PushID(name.c_str());
+
+        std::shared_ptr<Model> model = weakModel.lock();
+
+        ImGui::Text("%s", name.c_str());
+        ImGui::SameLine();
+
+        if (!model)
+        {
+            ImGui::TextDisabled("[loading]");
+        }
+        else
+        {
+            if (!prefabs.contains(name))
+            {
+                prefabs.emplace(name, Prefab(model));
+            }
+
+            if (ImGui::Button("Instantiate"))
+            {
+                Prefab& prefab = prefabs.at(name);
+
+                GameObject* obj =
+                    prefab.Instantiate(scene, nullptr, ourShader.get());
+
+                if (obj)
+                    obj->name = name;
+            }
+        }
+
+        ImGui::PopID();
+    }
+
+
     ImGui::End();
 
     ImGui::Begin("Loaded Models");
-
 
     if (ImGui::Button("Load Model"))
     {

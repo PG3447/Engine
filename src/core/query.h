@@ -5,6 +5,7 @@
 #include <tuple>
 #include <algorithm>
 #include <unordered_map>
+#include "gameobject.h"
 
 class QueryBase {
 public:
