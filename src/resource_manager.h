@@ -16,7 +16,7 @@ class ResourceManager
 public:
     static std::unordered_map<std::string, GLuint> Textures;
 
-    static std::unordered_map<std::string, std::weak_ptr<Model>> Models;
+    static std::unordered_map<std::string, std::shared_ptr<Model>> Models;
 
     static GLuint LoadTexture(const std::string& path, const std::string& directory = "", const aiTexture* aiTex = nullptr);
 

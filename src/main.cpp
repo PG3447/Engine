@@ -1627,7 +1627,7 @@ void imgui_render(SceneManager& sceneManager)
     {
         ImGui::PushID(name.c_str());
 
-        std::shared_ptr<Model> model = weakModel.lock();
+        std::shared_ptr<Model> model = weakModel;
 
         ImGui::Text("%s", name.c_str());
         ImGui::SameLine();

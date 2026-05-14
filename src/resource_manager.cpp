@@ -12,7 +12,7 @@
 #endif
 
 std::unordered_map<std::string, GLuint> ResourceManager::Textures;
-std::unordered_map<std::string, std::weak_ptr<Model>> ResourceManager::Models;
+std::unordered_map<std::string, std::shared_ptr<Model>> ResourceManager::Models;
 
 GLuint ResourceManager::LoadTexture(const std::string& path, const std::string& directory, const aiTexture* aiTex)
 {
@@ -45,7 +45,7 @@ std::shared_ptr<Model> ResourceManager::LoadModel(const std::string& path)
     auto it = Models.find(path);
     if (it != Models.end())
     {
-        if (std::shared_ptr<Model> sharedModel = it->second.lock())
+        if (std::shared_ptr<Model> sharedModel = it->second)
         {
             return sharedModel;
         }
