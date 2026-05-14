@@ -868,6 +868,7 @@ int main(int, char**)
 
     wallObject10->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 11, 11, 33 };
     wallObject10->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+    wallObject10->GetComponent<ColliderComponent>()->isWalkable = false;
 
     wallObject10->GetComponent<TransformComponent>()->position.x = 30;
     wallObject10->GetComponent<TransformComponent>()->position.y = 0;
@@ -886,6 +887,7 @@ int main(int, char**)
 
     wallObject11->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 11, 11, 33 };
     wallObject11->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+    wallObject11->GetComponent<ColliderComponent>()->isWalkable = false;
 
 
     wallObject11->GetComponent<TransformComponent>()->position.x = -30;
@@ -905,6 +907,8 @@ int main(int, char**)
 
     wallObject12->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 11, 11, 33 };
     wallObject12->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+    wallObject12->GetComponent<ColliderComponent>()->isWalkable = false;
+
 
     wallObject12->GetComponent<TransformComponent>()->position.x = 30;
     wallObject12->GetComponent<TransformComponent>()->position.y = 0;
@@ -923,6 +927,8 @@ int main(int, char**)
 
     wallObject13->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 11, 11, 33 };
     wallObject13->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+    wallObject13->GetComponent<ColliderComponent>()->isWalkable = false;
+
 
     wallObject13->GetComponent<TransformComponent>()->position.x = -30;
     wallObject13->GetComponent<TransformComponent>()->position.y = 0;
