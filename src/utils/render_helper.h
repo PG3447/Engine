@@ -45,7 +45,7 @@ public:
                 {
                     if (mesh.material)
                     {
-                        mesh.material->diffuseColor = color;
+                        mesh.material->baseColor = glm::vec4(color.r, color.g, color.b, 1.0f);
                     }
                 }
             };

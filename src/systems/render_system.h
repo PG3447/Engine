@@ -194,6 +194,9 @@ public:
 
     void Init() {
         glEnable(GL_DEPTH_TEST);
+        glEnable(GL_BLEND);
+        //glDepthMask(GL_FALSE);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         skybox.Init();
 
         glGenQueries(2, gpuQuery.queries);
@@ -317,97 +320,270 @@ public:
     //GroupKey key = { r->model, r->materialOverride.get() };
     //instancedGroups[key].push_back(i);
     //    }
-
-
-    void RenderGroups(const Frustum& frustum) {
+    void RenderGroups(const Frustum& frustum)
+    {
         auto& transforms = std::get<0>(renderQuery->componentsVectors);
 
         auto& transformsLights = std::get<0>(lightQuery->componentsVectors);
         auto& lights = std::get<1>(lightQuery->componentsVectors);
 
+        struct TransparentDraw
+        {
+            float distance;
+            RenderMesh* model;
+            Material* material;
+            size_t objectIndex;
+        };
 
-        for (auto& [key, indices] : instancedGroups) {
+        std::vector<TransparentDraw> transparentObjects;
+
+        // =========================================================
+        // PASS 1 - OPAQUE
+        // =========================================================
+
+        glDepthMask(GL_TRUE);
+
+        for (auto& [key, indices] : instancedGroups)
+        {
             RenderMesh* model = std::get<0>(key);
-            Material* overrideMat = std::get<1>(key);
-            Shader* shader = overrideMat->shader;
+            Material* material = std::get<1>(key);
 
-            if (shader == nullptr) 
+            if (!material || !material->shader)
                 continue;
-            
+
+            // transparent pomijamy
+            if (material->transparent)
+                continue;
+
+            Shader* shader = material->shader;
 
             std::vector<size_t> visible;
-            // Culling
+
+            // =====================
+            // FRUSTUM CULLING
+            // =====================
+
             auto cullStart = std::chrono::high_resolution_clock::now();
+
             for (size_t i : indices)
             {
-
-                if (!frustumCullingEnabled) {
+                if (!frustumCullingEnabled)
+                {
                     visible.push_back(i);
                     continue;
                 }
 
-                /*glm::vec3 pos = glm::vec3(transforms[i]->modelMatrix[3]);
-                float radius = 1.0f; // na start
+                auto* renderComp =
+                    std::get<1>(renderQuery->componentsVectors)[i];
 
-                if (SphereInFrustum(frustum, pos, radius))
+                AABB localAABB =
+                    GetLocalAABB(renderComp->meshes);
+
+                if (AABBInFrustum(
+                    frustum,
+                    localAABB,
+                    transforms[i]->modelMatrix))
                 {
                     visible.push_back(i);
-                }*/
-                auto* renderComp = std::get<1>(renderQuery->componentsVectors)[i];
-                AABB localAABB = GetLocalAABB(renderComp->meshes);
-
-                if (AABBInFrustum(frustum, localAABB, transforms[i]->modelMatrix))
-                    visible.push_back(i);
+                }
             }
-            auto cullEnd = std::chrono::high_resolution_clock::now();
-            stats.cullingTimeMs += std::chrono::duration<float, std::milli>(cullEnd - cullStart).count();
 
+            auto cullEnd = std::chrono::high_resolution_clock::now();
+
+            stats.cullingTimeMs +=
+                std::chrono::duration<float, std::milli>(
+                    cullEnd - cullStart).count();
 
             if (visible.empty())
                 continue;
 
+            // =====================
+            // SHADER
+            // =====================
+
             shader->use();
+
             shader->setMat4("projection", projection);
             shader->setMat4("view", view);
-
             shader->setVec3("viewPos", currentCameraPos);
-            
-            // light
+
+            // lights
             for (size_t i = 0; i < lightQuery->gameobjects.size(); i++)
             {
-                LightHelper::Apply(*transforms[i], *lights[i], *shader);
+                LightHelper::Apply(
+                    *transformsLights[i],
+                    *lights[i],
+                    *shader);
             }
 
-            //shader->setVec3("dirLight.direction", glm::vec3(-0.2f, -1.0f, -0.3f));
-            //shader->setVec3("dirLight.ambient", glm::vec3(0.2f, 0.2f, 0.2f));
-            //shader->setVec3("dirLight.diffuse", glm::vec3(0.8f, 0.8f, 0.8f));
-            //shader->setVec3("dirLight.specular", glm::vec3(1.0f, 1.0f, 1.0f));
+            // =====================
+            // DRAW
+            // =====================
 
-            if (visible.size() == 1) {
-                shader->setBool("useInstance", false);
-                shader->setMat4("model", transforms[visible[0]]->modelMatrix);
-                auto drawStart = std::chrono::high_resolution_clock::now();
-                overrideMat->Apply();
-                model->Draw(0);
-                stats.drawCalls++;
-                stats.renderedObjects += visible.size();
-                stats.stateChanges++;
-                stats.triangles += GetTriangleCount(model) * visible.size();
-                auto drawEnd = std::chrono::high_resolution_clock::now();
-                stats.drawSubmitTimeMs += std::chrono::duration<float, std::milli>(drawEnd - drawStart).count();
-            }
-            else {
+            // opaque może być instanced
+            if (visible.size() > 1)
+            {
                 shader->setBool("useInstance", true);
-                auto drawStart = std::chrono::high_resolution_clock::now();
-                RenderInstanced(model, visible, overrideMat);
-                auto drawEnd = std::chrono::high_resolution_clock::now();
-                stats.drawSubmitTimeMs += std::chrono::duration<float, std::milli>(drawEnd - drawStart).count(); // ← dodaj
+
+                auto drawStart =
+                    std::chrono::high_resolution_clock::now();
+
+                RenderInstanced(model, visible, material);
+
+                auto drawEnd =
+                    std::chrono::high_resolution_clock::now();
+
+                stats.drawSubmitTimeMs +=
+                    std::chrono::duration<float, std::milli>(
+                        drawEnd - drawStart).count();
+
                 stats.drawCalls++;
                 stats.renderedObjects += (int)visible.size();
                 stats.stateChanges++;
-                stats.triangles += GetTriangleCount(model) * (int)visible.size();
+                stats.triangles +=
+                    GetTriangleCount(model) * (int)visible.size();
+            }
+            else
+            {
+                shader->setBool("useInstance", false);
+
+                shader->setMat4(
+                    "model",
+                    transforms[visible[0]]->modelMatrix);
+
+                auto drawStart =
+                    std::chrono::high_resolution_clock::now();
+
+                material->Apply();
+
+                model->Draw(0);
+
+                auto drawEnd =
+                    std::chrono::high_resolution_clock::now();
+
+                stats.drawSubmitTimeMs +=
+                    std::chrono::duration<float, std::milli>(
+                        drawEnd - drawStart).count();
+
+                stats.drawCalls++;
+                stats.renderedObjects++;
+                stats.stateChanges++;
+                stats.triangles += GetTriangleCount(model);
             }
         }
+
+        // =========================================================
+        // PASS 2 - COLLECT TRANSPARENT
+        // =========================================================
+
+        for (auto& [key, indices] : instancedGroups)
+        {
+            RenderMesh* model = std::get<0>(key);
+            Material* material = std::get<1>(key);
+
+            if (!material || !material->transparent)
+                continue;
+
+            for (size_t i : indices)
+            {
+                bool visible = true;
+
+                if (frustumCullingEnabled)
+                {
+                    auto* renderComp =
+                        std::get<1>(renderQuery->componentsVectors)[i];
+
+                    AABB localAABB =
+                        GetLocalAABB(renderComp->meshes);
+
+                    visible = AABBInFrustum(
+                        frustum,
+                        localAABB,
+                        transforms[i]->modelMatrix);
+                }
+
+                if (!visible)
+                    continue;
+
+                glm::vec3 worldPos =
+                    glm::vec3(transforms[i]->modelMatrix[3]);
+
+                float distance =
+                    glm::length(currentCameraPos - worldPos);
+
+                transparentObjects.push_back({
+                    distance,
+                    model,
+                    material,
+                    i
+                    });
+            }
+        }
+
+        // =========================================================
+        // SORT BACK TO FRONT
+        // =========================================================
+
+        std::sort(
+            transparentObjects.begin(),
+            transparentObjects.end(),
+            [](const TransparentDraw& a,
+                const TransparentDraw& b)
+            {
+                return a.distance > b.distance;
+            });
+
+        // =========================================================
+        // PASS 3 - TRANSPARENT
+        // =========================================================
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glDepthMask(GL_FALSE);
+
+        for (auto& obj : transparentObjects)
+        {
+
+            spdlog::error("Render");
+            Shader* shader = obj.material->shader;
+
+            if (!shader)
+                continue;
+
+            shader->use();
+
+            shader->setMat4("projection", projection);
+            shader->setMat4("view", view);
+            shader->setVec3("viewPos", currentCameraPos);
+
+            for (size_t i = 0; i < lightQuery->gameobjects.size(); i++)
+            {
+                LightHelper::Apply(
+                    *transformsLights[i],
+                    *lights[i],
+                    *shader);
+            }
+
+            shader->setBool("useInstance", false);
+
+            shader->setMat4(
+                "model",
+                transforms[obj.objectIndex]->modelMatrix);
+
+            obj.material->Apply();
+
+            obj.model->Draw(0);
+
+            stats.drawCalls++;
+            stats.renderedObjects++;
+            stats.stateChanges++;
+            stats.triangles += GetTriangleCount(obj.model);
+        }
+
+        // =========================================================
+        // RESTORE
+        // =========================================================
+
+        glDepthMask(GL_TRUE);
     }
 
     void RenderInstanced(RenderMesh* model, std::vector<size_t>& indices, Material* overrideMat)

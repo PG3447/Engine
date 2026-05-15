@@ -13,7 +13,7 @@
 
 std::unordered_map<std::string, GLuint> ResourceManager::Textures;
 
-GLuint ResourceManager::LoadTexture(const std::string& path, const std::string& directory, const aiTexture* aiTex)
+LoadedTexture ResourceManager::LoadTexture(const std::string& path, const std::string& directory, const aiTexture* aiTex)
 {
     std::string fullPath = path;
     if (!directory.empty() && !aiTex) {
@@ -24,15 +24,15 @@ GLuint ResourceManager::LoadTexture(const std::string& path, const std::string& 
     }
 
     auto it = Textures.find(fullPath);
-    if (it != Textures.end())
-    {
-        return it->second;
-    }
+    //if (it != Textures.end())
+    //{
+    //    return it->second;
+    //}
 
-    GLuint textureID = loadTextureFromFile(path, directory, aiTex);
+    LoadedTexture textureID = loadTextureFromFile(path, directory, aiTex);
 
-    if (textureID != 0) {
-        Textures[fullPath] = textureID;
+    if (textureID.id != 0) {
+        Textures[fullPath] = textureID.id;
     }
 
     return textureID;
@@ -65,9 +65,11 @@ std::shared_ptr<ModelNode> ResourceManager::LoadModel(const std::string& path)
     return model->rootNode;
 }
 
-unsigned int ResourceManager::loadTextureFromFile(const std::string& path, const std::string& directory, const aiTexture* aiTex)
+LoadedTexture ResourceManager::loadTextureFromFile(const std::string& path, const std::string& directory, const aiTexture* aiTex)
 {
-    unsigned int textureID = 0;
+    //unsigned int textureID = 0;
+    LoadedTexture textureID;
+    textureID.id = 0;
 
     int width, height, nrComponents;
     unsigned char* data = nullptr;
@@ -95,14 +97,17 @@ unsigned int ResourceManager::loadTextureFromFile(const std::string& path, const
 
     if (data)
     {
-        glGenTextures(1, &textureID);
+        glGenTextures(1, &textureID.id);
 
         GLenum format = GL_RED;
         if (nrComponents == 1) format = GL_RED;
         else if (nrComponents == 3) format = GL_RGB;
         else if (nrComponents == 4) format = GL_RGBA;
 
-        glBindTexture(GL_TEXTURE_2D, textureID);
+        textureID.hasAlpha = (nrComponents == 4);
+        spdlog::error(textureID.hasAlpha);
+
+        glBindTexture(GL_TEXTURE_2D, textureID.id);
         glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
 
@@ -127,7 +132,7 @@ unsigned int ResourceManager::loadTextureFromFile(const std::string& path, const
     {
         spdlog::error("ResourceManager: BLAD ladowania tekstury {}", path);
         if (data) stbi_image_free(data);
-        return 0;
+        return {};
     }
 
     return textureID;

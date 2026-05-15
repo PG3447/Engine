@@ -211,6 +211,7 @@ MeshNode Model::processMesh(aiMesh* mesh, const aiScene* scene)
     aiMaterial* aiMat = scene->mMaterials[mesh->mMaterialIndex];
     std::shared_ptr<Material> myMaterial = std::make_shared<Material>();
 
+    spdlog::info("Ladowanie materialow");
     // diffuse
     vector<Texture> diffuseMaps = loadMaterialTextures(aiMat, aiTextureType_DIFFUSE, "texture_diffuse", scene);
     if (diffuseMaps.empty()) {
@@ -218,15 +219,26 @@ MeshNode Model::processMesh(aiMesh* mesh, const aiScene* scene)
     }
     if (!diffuseMaps.empty()) {
         myMaterial->diffuseMap = diffuseMaps[0].id;
+
+        if (diffuseMaps[0].hasAlpha)
+            myMaterial->transparent = true;
     }
     else {
         aiColor4D color(1.0f, 1.0f, 1.0f, 1.0f);
-        if (aiGetMaterialColor(aiMat, AI_MATKEY_BASE_COLOR, &color) == AI_SUCCESS ||
-            aiGetMaterialColor(aiMat, AI_MATKEY_COLOR_DIFFUSE, &color) == AI_SUCCESS)
+        if (aiGetMaterialColor(aiMat, AI_MATKEY_BASE_COLOR, &color) == AI_SUCCESS || aiGetMaterialColor(aiMat, AI_MATKEY_COLOR_DIFFUSE, &color) == AI_SUCCESS)
         {
-            myMaterial->diffuseColor = glm::vec3(color.r, color.g, color.b);
+            myMaterial->baseColor = glm::vec4(color.r, color.g, color.b, color.a);
         }
     }
+
+    float opacity = 1.0f;
+    aiGetMaterialFloat(aiMat, AI_MATKEY_OPACITY, &opacity);
+
+    int blendMode = aiBlendMode_Default;
+    aiGetMaterialInteger(aiMat, AI_MATKEY_BLEND_FUNC, &blendMode);
+
+    myMaterial->transparent = (!diffuseMaps.empty() && diffuseMaps[0].hasAlpha) || (opacity < 1.0f) || (blendMode != aiBlendMode_Default);
+
 
     // specular
     vector<Texture> specularMaps = loadMaterialTextures(aiMat, aiTextureType_SPECULAR, "texture_specular", scene);
@@ -299,25 +311,36 @@ void Model::SetShaderRecursive(ModelNode* node, Shader* shader)
 vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType type, string typeName, const aiScene* scene)
 {
     vector<Texture> textures;
-    textures.reserve(mat->GetTextureCount(type));
-    for (unsigned int i = 0; i < mat->GetTextureCount(type); i++)
+
+    unsigned int count = mat->GetTextureCount(type);
+    textures.reserve(count);
+    spdlog::error("Material");
+    spdlog::info(count);
+    for (unsigned int i = 0; i < count; i++)
     {
         aiString str;
+
         mat->GetTexture(type, i, &str);
 
         Texture texture;
 
         const aiTexture* embeddedTexture = scene->GetEmbeddedTexture(str.C_Str());
+      
+        LoadedTexture loaded;
 
         if (embeddedTexture)
         {
-            texture.id = ResourceManager::LoadTexture(str.C_Str(), "", embeddedTexture);
+            loaded = ResourceManager::LoadTexture(str.C_Str(), "", embeddedTexture);
         }
         else
         {
-            texture.id = ResourceManager::LoadTexture(str.C_Str(), this->directory);
+            loaded = ResourceManager::LoadTexture(str.C_Str(), "", nullptr);
         }
 
+        texture.id = loaded.id;
+        texture.hasAlpha = loaded.hasAlpha;
+
+        spdlog::error(texture.hasAlpha);
         texture.type = typeName;
         texture.path = str.C_Str();
         textures.push_back(texture);

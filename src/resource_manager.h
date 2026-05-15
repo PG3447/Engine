@@ -11,6 +11,12 @@
 
 class Model;
 
+struct LoadedTexture
+{
+    GLuint id = 0;
+    bool hasAlpha = false;
+};
+
 class ResourceManager
 {
 public:
@@ -18,7 +24,7 @@ public:
 
     static std::unordered_map<std::string, std::weak_ptr<Model>> Models;
 
-    static GLuint LoadTexture(const std::string& path, const std::string& directory = "", const aiTexture* aiTex = nullptr);
+    static LoadedTexture LoadTexture(const std::string& path, const std::string& directory = "", const aiTexture* aiTex = nullptr);
 
     static std::shared_ptr<ModelNode> LoadModel(const std::string& path);
 
@@ -27,7 +33,7 @@ public:
     static GLuint CreateTextureFromColor(const std::string& name, const glm::vec3& color);
 
 private:
-    static unsigned int loadTextureFromFile(const std::string& path, const std::string& directory, const aiTexture* aiTex);
+    static LoadedTexture loadTextureFromFile(const std::string& path, const std::string& directory, const aiTexture* aiTex);
 
 };
 

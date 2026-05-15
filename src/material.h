@@ -13,8 +13,9 @@ public:
     GLuint diffuseMap = 0;
     GLuint specularMap = 0;
     GLuint normalMap = 0;
+    bool transparent = false;
 
-    glm::vec3 diffuseColor = glm::vec3(1.0f, 1.0f, 1.0f);
+    glm::vec4 baseColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
     float shininess = 32.0f;
 
     Material() = default;
@@ -43,7 +44,7 @@ public:
             activeShader->setBool("material.hasDiffuseMap", false);
         }
 
-        activeShader->setVec3("material.diffuseColor", diffuseColor);
+        activeShader->setVec4("material.diffuseColor", baseColor);
 
         glActiveTexture(GL_TEXTURE1);
         activeShader->setInt("material.specular1", 1);

@@ -7,7 +7,7 @@ struct Material {
     sampler2D normalMap;
     bool hasNormalMap;
     bool hasDiffuseMap;
-    vec3 diffuseColor;
+    vec4 diffuseColor;
     
     float shininess;
 };
@@ -85,20 +85,21 @@ void main()
     vec3 viewDir = normalize(viewPos - FragPos);
 
     vec3 result = CalcDirLight(dirLight, norm, viewDir);
-    
-    for(int i = 0; i < numPointLights; i++)
-    {
-        result += CalcPointLight(pointLights[i], norm, FragPos, viewDir);
-    }
+//    
+//    for(int i = 0; i < numPointLights; i++)
+//    {
+//        result += CalcPointLight(pointLights[i], norm, FragPos, viewDir);
+//    }
+//
+//        
+//    for(int i = 0; i < numSpotLights; i++)
+//    {
+//        result += CalcPointLight(pointLights[i], norm, FragPos, viewDir);
+//    }
+//
+    float alpha = material.hasDiffuseMap ? texture(material.diffuse1, TexCoords).a : material.diffuseColor.a;
 
-        
-    for(int i = 0; i < numSpotLights; i++)
-    {
-        result += CalcPointLight(pointLights[i], norm, FragPos, viewDir);
-    }
-
-
-    FragColor = vec4(result, 1.0);
+    FragColor = vec4(result, alpha);
 }
 
 vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir)
@@ -110,7 +111,7 @@ vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir)
     vec3 halfDir = normalize(lightDir + viewDir);
     float spec = pow(max(dot(normal, halfDir), 0.0), material.shininess);
     // combine results
-    vec3 objColor = material.hasDiffuseMap ? vec3(texture(material.diffuse1, TexCoords)) : material.diffuseColor;
+    vec3 objColor = material.hasDiffuseMap ? vec3(texture(material.diffuse1, TexCoords)) : material.diffuseColor.rgb;
     vec3 ambient = light.ambient * objColor;
     vec3 diffuse = light.diffuse * diff * objColor;
     vec3 specular = light.specular * spec * vec3(texture(material.specular1, TexCoords));
@@ -129,7 +130,7 @@ vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
     float distance = length(light.position - fragPos);
     float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));    
     // combine results
-    vec3 objColor = material.hasDiffuseMap ? vec3(texture(material.diffuse1, TexCoords)) : material.diffuseColor;
+    vec3 objColor = material.hasDiffuseMap ? vec3(texture(material.diffuse1, TexCoords)) : material.diffuseColor.rgb;
     vec3 ambient = light.ambient * objColor;
     vec3 diffuse = light.diffuse * diff * objColor;
     vec3 specular = light.specular * spec * vec3(texture(material.specular1, TexCoords));
@@ -155,7 +156,7 @@ vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
     float epsilon = light.cutOff - light.outerCutOff;
     float intensity = clamp((theta - light.outerCutOff) / epsilon, 0.0, 1.0);
     // combine results
-    vec3 objColor = material.hasDiffuseMap ? vec3(texture(material.diffuse1, TexCoords)) : material.diffuseColor;
+    vec3 objColor = material.hasDiffuseMap ? vec3(texture(material.diffuse1, TexCoords)) : material.diffuseColor.rgb;
     vec3 ambient = light.ambient * objColor;
     vec3 diffuse = light.diffuse * diff * objColor;
     vec3 specular = light.specular * spec * vec3(texture(material.specular1, TexCoords));

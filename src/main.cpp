@@ -330,12 +330,14 @@ int main(int, char**)
     obb3->AddComponent<RigidbodyComponent>()->useGravity = false;
     obb3->AddComponent<ColliderComponent>()->halfSize = glm::vec3{ 25, 25, 25 };
 
-    GLuint diff = ResourceManager::LoadTexture("diffuse_brick.png", "res/textures/");
-    GLuint spec = ResourceManager::LoadTexture("specular_brick.png", "res/textures/");
-    GLuint norm = ResourceManager::LoadTexture("normal_brick.png", "res/textures/");
+    LoadedTexture diffl = ResourceManager::LoadTexture("diffuse_brick.png", "res/textures/");
+    LoadedTexture specl = ResourceManager::LoadTexture("specular_brick.png", "res/textures/");
+    LoadedTexture norml = ResourceManager::LoadTexture("normal_brick.png", "res/textures/");
 
 
-
+    GLuint diff = diffl.id;
+    GLuint spec = specl.id;
+    GLuint norm = norml.id;
 
     auto brickMat = std::make_shared<Material>();
     brickMat->shader = ourShader.get();
@@ -383,7 +385,7 @@ int main(int, char**)
     SpriteComponent* sprite_1 = obj_Sprite_1->AddComponent<SpriteComponent>();
 
     sprite_1->sprites.push_back(
-        ResourceManager::LoadTexture("sigma.png", "res/textures/PGK_placeholders")
+        ResourceManager::LoadTexture("sigma.png", "res/textures/PGK_placeholders").id
     );
     sprite_1->screenPosition = glm::vec2(0.0f, 0.0f);
     sprite_1->size = glm::vec2(128.0f, 128.0f);
@@ -395,13 +397,13 @@ int main(int, char**)
     sprite_2->isAnimating = true;
     sprite_2->loop = true;
     sprite_2->sprites.push_back(
-        ResourceManager::LoadTexture("Face_1.png", "res/textures/PGK_placeholders")
+        ResourceManager::LoadTexture("Face_1.png", "res/textures/PGK_placeholders").id
     );
     sprite_2->sprites.push_back(
-        ResourceManager::LoadTexture("Face_2.png", "res/textures/PGK_placeholders")
+        ResourceManager::LoadTexture("Face_2.png", "res/textures/PGK_placeholders").id
     );
     sprite_2->sprites.push_back(
-        ResourceManager::LoadTexture("Face_3.png", "res/textures/PGK_placeholders")
+        ResourceManager::LoadTexture("Face_3.png", "res/textures/PGK_placeholders").id
     );
     sprite_2->screenPosition = glm::vec2(0.0f, 128.0f);
     sprite_2->size = glm::vec2(128.0f, 128.0f);
