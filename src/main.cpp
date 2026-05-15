@@ -253,10 +253,12 @@ void updateFPS(float deltaTime) {
 }
 
 void updateFocus() {
-    if (focused) {
+    if (focused)
+    {
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     }
-    if (!focused) {
+    else
+    {
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     }
 
@@ -1101,18 +1103,21 @@ int main(int, char**)
 
         // Process I/O operations here
         input();
+        
+        if (focused)
+        {
+            processCameraInput(ecs, *camCompLeft, *t0,
+                "move_up", "move_down", "move_left", "move_right");
 
-        processCameraInput(ecs, *camCompLeft, *t0,
-            "move_up", "move_down", "move_left", "move_right");
-
-        processCameraInput(ecs, *camCompRight, *t1,
-            "move_up_2", "move_down_2", "move_left_2", "move_right_2");
+            processCameraInput(ecs, *camCompRight, *t1,
+                "move_up_2", "move_down_2", "move_left_2", "move_right_2");
 
 
-        processCameraMouse(ecs, *camCompLeft, *camTransform1);
-        processCameraGamepad(ecs, *camCompLeft, *t0, 0);
-        processCameraGamepad(ecs, *camCompRight, *t1, 1);
-
+            processCameraMouse(ecs, *camCompLeft, *camTransform1);
+            processCameraGamepad(ecs, *camCompLeft, *t0, 0);
+            processCameraGamepad(ecs, *camCompRight, *t1, 1);
+        }
+        
         auto inputEnd = std::chrono::high_resolution_clock::now();
 
 
@@ -1172,6 +1177,7 @@ int main(int, char**)
 
     return 0;
 }
+
 bool init()
 {
     // Setup window
