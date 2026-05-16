@@ -120,7 +120,7 @@ public:
         glDepthMask(GL_FALSE);
 
         glBeginQuery(GL_ANY_SAMPLES_PASSED, data.queryId);
-        DebugDrawSystem::DrawAABBSolid(worldMin, worldMax, projection * view);
+        //DebugDrawSystem::DrawAABBSolid(worldMin, worldMax, projection * view);
         glEndQuery(GL_ANY_SAMPLES_PASSED);
 
         glDepthMask(GL_TRUE);
