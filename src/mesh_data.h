@@ -15,6 +15,7 @@ struct Vertex {
 };
 
 struct AABB {
+    glm::vec3 centerLocal;
     glm::vec3 min{ FLT_MAX };
     glm::vec3 max{ -FLT_MAX };
 };
@@ -22,6 +23,7 @@ struct AABB {
 struct MeshData {
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
+    AABB aabb;
 };
 
 #endif

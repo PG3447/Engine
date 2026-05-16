@@ -11,8 +11,11 @@ void main() {
     //vec2 uv = TexCoords;
     //uv.y += sin(uv.x * 20.0 + time) * 0.02;
     //vec3 color = texture(screenTexture, uv).rgb;
-
+    vec4 texColor = texture(screenTexture, TexCoords);
     vec3 color = texture(screenTexture, TexCoords).rgb;
+
+    float alpha = texColor.a;
+
     //vec3 negative = 1.0 - color;
     //FragColor = vec4(negative, 1.0);
 
@@ -65,38 +68,38 @@ void main() {
         playerColor = pow(tempColor, vec3(1.0 / 1.8));//dont worry about it
     }
 
-    //Contrast
-    float contrast = 1.5;
-    playerColor = (playerColor - 0.5) * contrast + 0.5;
-
-    //Lines
-    float scanline = sin(TexCoords.y * 800.0) * 0.04;
-    playerColor -= scanline;
-
-    //Grain
-    float noise = fract(sin(dot(TexCoords + time * 0.1, vec2(12.9898,78.233))) * 43758.5453);
-    playerColor += noise * 0.1;
-
-    playerColor = pow(playerColor, vec3(1.0 / gamma));//gamma
-
-    //Vignette
-    vec2 center;
-    if(TexCoords.x < 0.5)
-    {
-        center = vec2(0.25, 0.5);
-    }
-    else
-    {
-        center = vec2(0.75, 0.5);
-    }
-    float dist = distance(TexCoords, center);
-    float vignette = smoothstep(0.7, 0.2, dist);
-    playerColor *= vignette;
+//    //Contrast
+//    float contrast = 1.5;
+//    playerColor = (playerColor - 0.5) * contrast + 0.5;
+//
+//    //Lines
+//    float scanline = sin(TexCoords.y * 800.0) * 0.04;
+//    playerColor -= scanline;
+//
+//    //Grain
+//    float noise = fract(sin(dot(TexCoords + time * 0.1, vec2(12.9898,78.233))) * 43758.5453);
+//    playerColor += noise * 0.1;
+//
+//    playerColor = pow(playerColor, vec3(1.0 / gamma));//gamma
+//
+//    //Vignette
+//    vec2 center;
+//    if(TexCoords.x < 0.5)
+//    {
+//        center = vec2(0.25, 0.5);
+//    }
+//    else
+//    {
+//        center = vec2(0.75, 0.5);
+//    }
+//    float dist = distance(TexCoords, center);
+//    float vignette = smoothstep(0.7, 0.2, dist);
+//    playerColor *= vignette;
 
     //divider
     float divider = smoothstep(0.001, 0.005, abs(TexCoords.x - 0.5));
     playerColor *= divider;
 
-    FragColor = vec4(playerColor, 1.0);
+    FragColor = vec4(color, alpha);
 
 }

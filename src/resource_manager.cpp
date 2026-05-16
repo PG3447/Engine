@@ -17,6 +17,7 @@ std::unordered_map<std::string, std::shared_ptr<Model>> ResourceManager::Models;
 GLuint ResourceManager::LoadTexture(const std::string& path, const std::string& directory, const aiTexture* aiTex)
 {
     std::string fullPath = path;
+
     if (!directory.empty() && !aiTex) {
         fullPath = directory + '/' + path;
     }
@@ -32,9 +33,19 @@ GLuint ResourceManager::LoadTexture(const std::string& path, const std::string& 
 
     GLuint textureID = loadTextureFromFile(path, directory, aiTex);
 
+    spdlog::info("==== TEXTURE CACHE DUMP ====");
+    spdlog::info("Total textures: {}", Textures.size());
+
+    for (const auto& [path, id] : Textures)
+    {
+        spdlog::info("Texture: {} | ID: {}", path, id);
+    }
+
+    spdlog::info("============================");
     if (textureID != 0) {
         Textures[fullPath] = textureID;
     }
+
 
     return textureID;
 }

@@ -4,10 +4,23 @@
 #include "../core/gameobject.h"
 #include "../core/component.h"
 #include "../material.h"
+#include "mesh_data.h"
 #include <memory>
 
 class RenderHelper {
 public:
+
+    static AABB GetLocalAABB(vector<MeshNode> meshes)
+    {
+        AABB result;
+        for (auto& node : meshes) {
+            result.min = glm::min(result.min, node.cpuData->aabb.min);
+            result.max = glm::max(result.max, node.cpuData->aabb.max);
+        }
+        return result;
+    }
+
+
     static void SetMaterial(GameObject* root, std::shared_ptr<Material> newMaterial, bool includeChildren = true) {
         if (!root) return;
 

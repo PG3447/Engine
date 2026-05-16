@@ -359,7 +359,7 @@ int main(int, char**)
     ecs.AddSystem<AnimationSystem>(ecs);
     ecs.AddSystem<RenderSystem>(ecs, window);
     ecs.AddSystem<HID>(ecs, window);
-    ecs.AddSystem<PostProcessingSystem>(ecs, window);
+    //ecs.AddSystem<PostProcessingSystem>(ecs, window);
     ecs.AddSystem<SpriteSystem>(ecs, window);
     ecs.AddSystem<RaycastSystem>(ecs);
     ecs.AddSystem<NavMeshSystem>(ecs);
@@ -372,7 +372,7 @@ int main(int, char**)
     sunModel = std::make_unique<Prefab>("res/models/Sun.glb");
     //GameObject* obb = groundModel->Instantiate(*scena1, nullptr, ourShader.get());
     //GameObject* obb2 = sunModel->Instantiate(*scena1, nullptr, ourShader.get());
- 
+
 
     //obb->GetComponent<TransformComponent>()->scale.x = 10;
     //obb->GetComponent<TransformComponent>()->scale.y = 1;
@@ -420,7 +420,7 @@ int main(int, char**)
     CameraComponent* camCompLeft = camera1->AddComponent<CameraComponent>();
     ColliderComponent* camera1collider = camera1->AddComponent<ColliderComponent>();
     RigidbodyComponent* rigidBodyCamera1 = camera1->AddComponent<RigidbodyComponent>();
-    
+
 
     camera1->AddComponent<LightComponent>();
     LightComponent* light2 = camera1->GetComponent<LightComponent>();
@@ -456,11 +456,11 @@ int main(int, char**)
     TransformComponent* camTransform1 = camera1->GetComponent<TransformComponent>();
     camTransform1->position = glm::vec3(0.0f, 20.0f, 0.0f);
     CameraHelper::InitialCamera(*camCompLeft, *camTransform1,
-         glm::vec3(0.0f, 1.0f, 0.0f),
-         YAW,
-         PITCH,
-         Viewport{ 0.0f, 0.0f, 0.5f, 1.0f }
-     );
+        glm::vec3(0.0f, 1.0f, 0.0f),
+        YAW,
+        PITCH,
+        Viewport{ 0.0f, 0.0f, 0.5f, 1.0f }
+    );
 
     camCompLeft->isActive = true;
 
@@ -514,12 +514,12 @@ int main(int, char**)
 
     int placeholderThing = 0;
 
-    bed1Model = std::make_unique<Prefab>("res/models/samochod.glb");
-    bed2Model      = std::make_unique<Prefab>("res/models/bed2.glb");
-    bed3Model      = std::make_unique<Prefab>("res/models/bed3.glb");
+    bed1Model = std::make_unique<Prefab>("res/models/szklo.glb");
+    bed2Model = std::make_unique<Prefab>("res/models/bed2.glb");
+    bed3Model = std::make_unique<Prefab>("res/models/bed3.glb");
     corkBoardModel = std::make_unique<Prefab>("res/models/cork_board.glb");
-    cupModel       = std::make_unique<Prefab>("res/models/cup.glb");
-  
+    cupModel = std::make_unique<Prefab>("res/models/cup.glb");
+
     placeholderModel = std::make_unique<Prefab>("res/models/placeholder.glb");
 
     //deskModel      = std::make_unique<Prefab>("res/models/desk.glb");
@@ -629,7 +629,7 @@ int main(int, char**)
 
     auto* targetCol = raycastTarget->AddComponent<ColliderComponent>();
     targetCol->halfSize = glm::vec3(3.0f);
-    targetCol->offset   = glm::vec3(0.0f);
+    targetCol->offset = glm::vec3(0.0f);
 
     GameObject* RaycastSource =
         CreateRaycastTestObject(
@@ -643,7 +643,7 @@ int main(int, char**)
     sourceAgent->moveSpeed = 6.0f;
     sourceAgent->debugDraw = true;
 
-    GameObject * model5 = cupModel      ->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* model5 = cupModel->Instantiate(*scena1, nullptr, ourShader.get());
     model5->GetComponent<TransformComponent>()->position.x = 0.0f;
     model5->GetComponent<TransformComponent>()->position.y = 2.0f;
     model5->GetComponent<TransformComponent>()->position.z = 20.0f;

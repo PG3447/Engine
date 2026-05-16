@@ -54,8 +54,8 @@ void Scene::Update(float deltaTime) {
         obj->Update(ecs, deltaTime);
     }
 
-    if (auto* pps = ecs.GetSystem<PostProcessingSystem>())
-        pps->Update(ecs, deltaTime);
+    //if (auto* pps = ecs.GetSystem<PostProcessingSystem>())
+    //    pps->Update(ecs, deltaTime);
 
     if (auto* ss = ecs.GetSystem<SpriteSystem>())
         ss->Update(ecs, deltaTime);

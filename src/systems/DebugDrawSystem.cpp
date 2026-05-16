@@ -14,6 +14,11 @@ unsigned int DebugDrawSystem::VBO = 0;
 
 Shader* DebugDrawSystem::debugShader = nullptr;
 
+struct DebugVertex {
+    glm::vec3 pos;
+    glm::vec4 color;
+};
+
 void DebugDrawSystem::Init()
 {
     debugShader = new Shader(
@@ -27,16 +32,30 @@ void DebugDrawSystem::Init()
 
     glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER,
-        sizeof(glm::vec3) * 2,
-        nullptr,
-        GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * 2, nullptr, GL_DYNAMIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
-        sizeof(glm::vec3), (void*)0);
+    // pozycja
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(DebugVertex), (void*)0);
     glEnableVertexAttribArray(0);
 
+    // kolor
+    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(DebugVertex), (void*)sizeof(glm::vec3));
+    glEnableVertexAttribArray(1);
+
     glBindVertexArray(0);
+
+    //glBindVertexArray(VAO);
+    //glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    //glBufferData(GL_ARRAY_BUFFER,
+    //    sizeof(glm::vec3) * 2,
+    //    nullptr,
+    //    GL_DYNAMIC_DRAW);
+
+    //glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
+    //    sizeof(glm::vec3), (void*)0);
+    //glEnableVertexAttribArray(0);
+
+    //glBindVertexArray(0);
 }
 void DebugDrawSystem::AddLine(const glm::vec3& a,
                              const glm::vec3& b,
@@ -49,6 +68,15 @@ void DebugDrawSystem::Flush(const glm::mat4& vp)
 {
     if (lines.empty()) return;
 
+    // bufor wszystkich wierzchołków
+    std::vector<DebugVertex> vertices;
+    vertices.reserve(lines.size() * 2);
+
+    for (const auto& l : lines) {
+        vertices.push_back({ l.a, l.color });
+        vertices.push_back({ l.b, l.color });
+    }
+
     glDisable(GL_DEPTH_TEST);
     glLineWidth(1.0f);
 
@@ -58,16 +86,19 @@ void DebugDrawSystem::Flush(const glm::mat4& vp)
     glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
-    for (const auto& l : lines) {
-        debugShader->setVec4("uColor", l.color);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(DebugVertex), vertices.data(), GL_DYNAMIC_DRAW);
 
-        glm::vec3 data[2] = { l.a, l.b };
-        glBufferSubData(
-            GL_ARRAY_BUFFER, 0,
-            sizeof(data), data
-        );
-        glDrawArrays(GL_LINES, 0, 2);
-    }
+    glDrawArrays(GL_LINES, 0, (GLsizei)vertices.size());
+    //for (const auto& l : lines) {
+    //    debugShader->setVec4("uColor", l.color);
+
+    //    glm::vec3 data[2] = { l.a, l.b };
+    //    glBufferSubData(
+    //        GL_ARRAY_BUFFER, 0,
+    //        sizeof(data), data
+    //    );
+    //    glDrawArrays(GL_LINES, 0, 2);
+    //}
 
     glBindVertexArray(0);
     glEnable(GL_DEPTH_TEST);
@@ -97,9 +128,7 @@ void DebugDrawSystem::AddAABB(const glm::vec3& min, const glm::vec3& max, const 
     AddLine(corners[2], corners[6], color);
     AddLine(corners[3], corners[7], color);
 }
-void DebugDrawSystem::DrawAABBImmediate(const glm::vec3& min,
-                                        const glm::vec3& max,
-                                        const glm::mat4& vp)
+void DebugDrawSystem::DrawAABBImmediate(const glm::vec3& min, const glm::vec3& max, const glm::mat4& vp)
 {
     if (!debugShader) return;
 
