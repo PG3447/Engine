@@ -1,4 +1,4 @@
-﻿#ifndef GPUDRIVEN_RENDERER_H
+#ifndef GPUDRIVEN_RENDERER_H
 #define GPUDRIVEN_RENDERER_H
 
 #include <glad/glad.h>
@@ -49,6 +49,30 @@ struct GPUMaterial
     glm::vec4 diffuseColorAndShininess;
 };
 
+
+struct GPULight
+{
+    glm::vec4 position;   // xyz + type
+    glm::vec4 direction;  // xyz + intensity
+
+    glm::vec4 ambient;
+    glm::vec4 diffuse;
+    glm::vec4 specular;
+
+    glm::vec4 params1;
+    // x = constant
+    // y = linear
+    // z = quadratic
+    // w = range
+
+    glm::vec4 params2;
+    // x = cutOff
+    // y = outerCutOff
+    // z = enabled
+    // w = unused
+};
+
+
 struct GPUMeshMeta {
     uint32_t instanceOffset;
     uint32_t instanceCount;
@@ -73,9 +97,11 @@ private:
     //rejestr
     std::vector<GPUMeshData> meshesData;
     std::vector<GPUMaterial> materials;
+    std::vector<GPULight> gpuLights;
     std::vector<GPUMeshMeta> meshMetaCPU;
 
     std::unordered_map<Material*, uint32_t> materialRegistry;
+    std::unordered_map<LightComponent*, uint32_t> lightRegistry;
     std::unordered_map<GLuint, GLuint64> handleCacheTextures;
 
     uint32_t instanceBufferCapacity = 64;
@@ -136,6 +162,7 @@ public:
     GLuint drawCountSSBO = 0; // bind 5
     GLuint meshDataSSBO = 0; // bind 6
     GLuint materialSSBO = 0; /// bind 7
+    GLuint lightsSSBO = 0;
 
     uint32_t* totalVisibleMapped = nullptr;
 
@@ -222,6 +249,8 @@ public:
         glGenBuffers(1, &drawCountSSBO);
         glGenBuffers(1, &meshDataSSBO);
         glGenBuffers(1, &materialSSBO);
+        glGenBuffers(1, &lightsSSBO);
+
         glGenBuffers(1, &totalVisibleSSBO);
 
 
@@ -302,6 +331,35 @@ public:
         return id; //materialID
     }
 
+    uint32_t RegisterLight(LightComponent* light, TransformComponent* transform)
+    {
+        auto it = lightRegistry.find(light);
+        if (it != lightRegistry.end()) return it->second;
+
+        GPULight g{};
+        g.position = glm::vec4(transform->position, (float)light->type);
+        if (glm::dot(light->direction, light->direction) < 0.0001f)
+        {
+            g.direction = glm::vec4(TransformHelper::getForward(*transform), 0.0f);
+        }
+        else
+        {
+            g.direction = glm::vec4(light->direction, 0.0f);
+        }
+
+        g.ambient = glm::vec4(light->isOn ? light->ambient : glm::vec3(0), 0);
+        g.diffuse = glm::vec4(light->isOn ? light->diffuse : glm::vec3(0), 0);
+        g.specular = glm::vec4(light->isOn ? light->specular : glm::vec3(0), 0);
+        g.params1 = glm::vec4(light->constant, light->linear, light->quadratic, 0);
+        g.params2 = glm::vec4(light->cutOff, light->outerCutOff, light->isOn ? 1.0f : 0.0f, 0);
+
+        uint32_t id = (uint32_t)gpuLights.size();
+        gpuLights.push_back(g);
+        lightRegistry[light] = id;
+
+        return id;
+    }
+
 
     void UploadObjects(const std::vector<RenderData>& objects)
     {
@@ -354,6 +412,92 @@ public:
     {
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, materialSSBO);
         glBufferData(GL_SHADER_STORAGE_BUFFER, materials.size() * sizeof(GPUMaterial), materials.data(), GL_STATIC_DRAW);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    }
+
+    size_t prevSizeLights = 0;
+
+    void UpdateAndUploadLights(std::vector<LightComponent*>& lights, std::vector<TransformComponent*>& transforms)
+    {
+        if (lights.empty()) return;
+
+        gpuLights.resize(lights.size());
+
+        for (size_t i = 0; i < lights.size(); i++)
+        {
+            LightComponent* light = lights[i];
+            TransformComponent* transform = transforms[i];
+            if (!light || !transform) continue;
+
+            GPULight& g = gpuLights[i];
+
+            const bool on = light->isOn;
+
+            g.position = glm::vec4(transform->position, (float)light->type);
+            g.direction = (glm::length2(light->direction) < 0.0001f) ? glm::vec4(TransformHelper::getForward(*transform), 0.0f) : glm::vec4(light->direction, 0.0f);
+
+            const glm::vec3& zero = glm::vec3(0.0f);
+            g.ambient = glm::vec4(on ? light->ambient : zero, 0.0f);
+            g.diffuse = glm::vec4(on ? light->diffuse : zero, 0.0f);
+            g.specular = glm::vec4(on ? light->specular : zero, 0.0f);
+            g.params1 = glm::vec4(light->constant, light->linear, light->quadratic, 0.0f);
+            g.params2 = glm::vec4(light->cutOff, light->outerCutOff, on ? 1.0f : 0.0f, 0.0f);
+        }
+
+        if (prevSizeLights == gpuLights.size())
+        {
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightsSSBO);
+            glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, gpuLights.size() * sizeof(GPULight), gpuLights.data());
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+        }
+        else
+        {
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightsSSBO);
+            glBufferData(GL_SHADER_STORAGE_BUFFER, gpuLights.size() * sizeof(GPULight), gpuLights.data(), GL_DYNAMIC_DRAW);
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+        }
+
+        prevSizeLights = gpuLights.size();
+    }
+
+    void UpdateLight(LightComponent* light, TransformComponent* transform)
+    {
+        auto it = lightRegistry.find(light);
+        if (it == lightRegistry.end()) return;
+
+        uint32_t id = it->second;
+        GPULight& g = gpuLights[id];
+        g.position = glm::vec4(transform->position, (float)light->type);
+
+        if (glm::dot(light->direction, light->direction) < 0.0001f)
+        {
+            g.direction = glm::vec4(TransformHelper::getForward(*transform), 0.0f);
+        }
+        else
+        {
+            g.direction = glm::vec4(light->direction, 0.0f);
+        }
+
+        g.ambient = glm::vec4(light->isOn ? light->ambient : glm::vec3(0), 0);
+        g.diffuse = glm::vec4(light->isOn ? light->diffuse : glm::vec3(0), 0);
+        g.specular = glm::vec4(light->isOn ? light->specular : glm::vec3(0), 0);
+        g.params1 = glm::vec4(light->constant, light->linear, light->quadratic, 0);
+        g.params2 = glm::vec4(light->cutOff, light->outerCutOff, light->isOn ? 1.0f : 0.0f, 0);
+    }
+
+    void AllocateLightsBuffer()
+    {
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightsSSBO);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, gpuLights.size() * sizeof(GPULight), gpuLights.data(), GL_DYNAMIC_DRAW);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    }
+
+    void UploadLights()
+    {
+        if (gpuLights.empty()) return;
+
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightsSSBO);
+        glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, gpuLights.size() * sizeof(GPULight), gpuLights.data());
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     }
 
@@ -509,6 +653,7 @@ public:
     void BindForDraw() {
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, instanceSSBO); // vertex shader
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, materialSSBO);   // fragment shader
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 8, lightsSSBO);   // fragment shader
     }
 
     uint32_t ReadDrawCount() {
@@ -538,6 +683,7 @@ public:
 
         // 0. Aktualizuj obiekty na GPU
         UploadObjects(objects);
+        //UploadLights();
 
         // 1. Zbuduj HiZ z depth poprzedniej klatki
   /*      CopyDepthToHiZ(depthTexturePrevFrame);
@@ -554,7 +700,7 @@ public:
         DispatchPrefixSum();
         // wewnątrz: glGetNamedBufferSubData + wysyłka MeshMeta + ewentualny resize
 
-        // 5. WRITE PASS: ten sam culling + zapis instancji
+        // 5. WRITE PASS: zapis instancji
         DispatchWritePass(viewProj, objCount);
         // barrier wewnątrz DispatchWritePass
 
@@ -566,6 +712,7 @@ public:
         shaderRender->setMat4("viewProjection", viewProj);
         shaderRender->setVec3("viewPos", currentCameraPos);
         shaderRender->setBool("isAnimated", false);
+        shaderRender->setInt("numLights", (int)gpuLights.size());
 
         // 7. Rysuj
         Draw();

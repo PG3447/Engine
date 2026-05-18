@@ -1,4 +1,4 @@
-﻿#ifndef RENDER_SYSTEM_H
+#ifndef RENDER_SYSTEM_H
 #define RENDER_SYSTEM_H
 
 #include "core/ecs.h"
@@ -424,6 +424,18 @@ public:
         gpuRenderer.UploadMeshes();
         gpuRenderer.UploadMaterials();
 
+        //auto& lightTransforms = std::get<0>(lightQuery->componentsVectors);
+        //auto& lights = std::get<1>(lightQuery->componentsVectors);
+
+        //for (size_t i = 0; i < lights.size(); i++)
+        //{
+        //    if (!lights[i] || !lightTransforms[i]) continue;
+        //    gpuRenderer.RegisterLight(lights[i], lightTransforms[i]);
+        //}
+        //gpuRenderer.AllocateLightsBuffer();
+        //gpuRenderer.UploadLights();
+        
+
         // Depth texture — tworzona TYLKO RAZ
         if (depthTexturePrev == 0) {
             glGenTextures(1, &depthTexturePrev);
@@ -435,9 +447,6 @@ public:
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
             glBindTexture(GL_TEXTURE_2D, 0);
         }
-
-        gpuRenderer.UploadMeshes();
-        gpuRenderer.UploadMaterials();
 
         gpuRendererReady = true;
     }
@@ -509,6 +518,12 @@ public:
         currentCameraPos = transform.position;
 
         if (gpuRendererReady) {
+
+            auto& lightTransforms = std::get<0>(lightQuery->componentsVectors);
+            auto& lights = std::get<1>(lightQuery->componentsVectors);
+
+            gpuRenderer.UpdateAndUploadLights(lights, lightTransforms);
+
             std::vector<RenderData> objects = CollectRenderData();
 
         /*    gpuRenderer.shaderRender->use();
