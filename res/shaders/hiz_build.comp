@@ -26,7 +26,7 @@ void main()
     float d2 = texture(prevMip, uv + vec2(-texelSize.x,  texelSize.y)).r; // lewy dolny piksel
     float d3 = texture(prevMip, uv + vec2( texelSize.x,  texelSize.y)).r; // prawy dolny piksel
 
-	// max depth - najdalsza g³êbokoœci 
+	// max depth - najdalsza gÅ‚Ä™bokoÅ›ci 
 	float maxDepth = max(max(d0, d1), max(d2, d3));
 
 	imageStore(currentMip, texelCoord, vec4(maxDepth));

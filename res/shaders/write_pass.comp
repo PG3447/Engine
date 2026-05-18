@@ -1,7 +1,7 @@
 // ============================================================
 // PRZEBIEG 3: write_pass.comp
 // Ten sam culling co count_pass, ale teraz ZAPISUJE instancje
-// instanceOffset jest juø wyliczony przez prefix-sum (CPU)
+// instanceOffset jest ju≈º wyliczony przez prefix-sum (CPU)
 // ============================================================
 #version 460 core
 layout(local_size_x = 64) in;
@@ -28,8 +28,8 @@ struct InstanceData {
 };
 
 struct MeshMeta {
-    uint instanceOffset; // wype≥niony przez prefix-sum na CPU
-    uint instanceCount;  // atomic ó ile juø zapisano (reset przed tym przebiegiem)
+    uint instanceOffset; // wype≈Çniony przez prefix-sum na CPU
+    uint instanceCount;  // atomic ‚Äî ile ju≈º zapisano (reset przed tym przebiegiem)
     uint pad0;
     uint pad1;
 };
@@ -63,7 +63,7 @@ void main()
 
     RenderData obj = objects[objID];
     uint meshID  = obj.meshID;
-    // Zarezerwuj slot ó instanceOffset juø ustawiony przez CPU prefix-sum
+    // Zarezerwuj slot ‚Äî instanceOffset ju≈º ustawiony przez CPU prefix-sum
     uint slot     = atomicAdd(meshMeta[meshID].instanceCount, 1u);
     uint writeIdx = meshMeta[meshID].instanceOffset + slot;
 

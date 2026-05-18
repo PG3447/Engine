@@ -37,7 +37,7 @@ void main()
     uint instCount = meshMeta[meshID].instanceCount;
 
     if (instCount == 0u) {
-        // Zerujemy command ¿eby GPU nie rysowa³
+        // Zerujemy command Å¼eby GPU nie rysowaÅ‚
         commands[meshID].instanceCount = 0u;
         commands[meshID].count         = 0u;
         return;
@@ -49,6 +49,6 @@ void main()
     commands[meshID].instanceCount = instCount;
     commands[meshID].baseInstance  = meshMeta[meshID].instanceOffset;
 
-    // Zlicz ile draw calls naprawdê idzie do GPU (opcjonalne)
+    // Zlicz ile draw calls naprawdÄ™ idzie do GPU (opcjonalne)
     atomicAdd(drawCount, 1u);
 }
