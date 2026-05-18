@@ -110,7 +110,7 @@ private:
     GLuint64 GetOrCreateHandle(GLuint texID) {
         if (texID == 0) return 0;
         auto it = handleCacheTextures.find(texID);
-        if (it != handleCacheTextures.end()) return it->second;
+        if (it != handleCacheTextures.end()) return  it->second;
 
         GLuint64 handle = glGetTextureHandleARB(texID);
         glMakeTextureHandleResidentARB(handle);

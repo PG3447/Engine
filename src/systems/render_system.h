@@ -345,7 +345,7 @@ public:
         glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        BuildGroups();
+        //BuildGroups();
         RenderAllCameras();
 
         //glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -376,7 +376,12 @@ public:
             InitGPUDrivenRenderer(display_w, display_h);
             gpuRendererInitialized = true;
         }
+        if (gpuRendererReady) {
+            auto& lightTransforms = std::get<0>(lightQuery->componentsVectors);
+            auto& lights = std::get<1>(lightQuery->componentsVectors);
 
+            gpuRenderer.UpdateAndUploadLights(lights, lightTransforms);
+        }
         for (size_t i = 0; i < cameras.size(); i++) {
             if (!cameras[i]->isActive)
                 continue;
@@ -519,10 +524,7 @@ public:
 
         if (gpuRendererReady) {
 
-            auto& lightTransforms = std::get<0>(lightQuery->componentsVectors);
-            auto& lights = std::get<1>(lightQuery->componentsVectors);
 
-            gpuRenderer.UpdateAndUploadLights(lights, lightTransforms);
 
             std::vector<RenderData> objects = CollectRenderData();
 
