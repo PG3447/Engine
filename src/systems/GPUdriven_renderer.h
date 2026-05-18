@@ -129,6 +129,7 @@ public:
     GLuint meshCountersSSBO = 0; // bind 0
     GLuint meshMetaSSBO = 0; // bind 1
     GLuint visibleFlagsSSBO = 0; // bind 2
+    GLuint totalVisibleSSBO = 0; // bind 2
     //build command
     GLuint instanceSSBO = 0; // bind 3
     GLuint drawCmdSSBO = 0; // bind 4
@@ -136,11 +137,14 @@ public:
     GLuint meshDataSSBO = 0; // bind 6
     GLuint materialSSBO = 0; /// bind 7
 
+    uint32_t* totalVisibleMapped = nullptr;
+
     GLuint hizTexture = 0;
     int hizMipLevels = 0;
     int screenWidth = 0, screenHeight = 0;
 
     ComputeShader* shaderHizCullCount = nullptr;
+    ComputeShader* shaderPrefixSum = nullptr;
     ComputeShader* shaderHizWritePass = nullptr;
     ComputeShader* shaderBuildCmds = nullptr;
     ComputeShader* shaderHizDownsample = nullptr;
@@ -150,6 +154,13 @@ public:
 	GPUDrivenRenderer() = default; 
 
     ~GPUDrivenRenderer() {
+        if (totalVisibleMapped) {
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, totalVisibleSSBO);
+            glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+            totalVisibleMapped = nullptr;
+        }
+
         glDeleteVertexArrays(1, &VAO);
         glDeleteBuffers(1, &VBO);
         glDeleteBuffers(1, &EBO);
@@ -157,6 +168,7 @@ public:
         glDeleteBuffers(1, &meshCountersSSBO);
         glDeleteBuffers(1, &meshMetaSSBO);
         glDeleteBuffers(1, &visibleFlagsSSBO);
+        glDeleteBuffers(1, &totalVisibleSSBO);
         glDeleteBuffers(1, &instanceSSBO);
         glDeleteBuffers(1, &drawCmdSSBO);
         glDeleteBuffers(1, &drawCountSSBO);
@@ -210,6 +222,8 @@ public:
         glGenBuffers(1, &drawCountSSBO);
         glGenBuffers(1, &meshDataSSBO);
         glGenBuffers(1, &materialSSBO);
+        glGenBuffers(1, &totalVisibleSSBO);
+
 
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, instanceSSBO);
         glBufferData(GL_SHADER_STORAGE_BUFFER, instanceBufferCapacity * sizeof(GPUInstanceData), nullptr, GL_DYNAMIC_DRAW);
@@ -217,7 +231,11 @@ public:
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, drawCountSSBO);
         glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(uint32_t), nullptr, GL_DYNAMIC_DRAW);
 
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+        
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, totalVisibleSSBO);
+        glBufferStorage(GL_SHADER_STORAGE_BUFFER, sizeof(uint32_t), nullptr, GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
+        totalVisibleMapped = (uint32_t*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(uint32_t), GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
+
 
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, renderDataSSBO);
         glBufferData(GL_SHADER_STORAGE_BUFFER, maxRenderObjects * sizeof(RenderData), nullptr, GL_DYNAMIC_DRAW);
@@ -366,30 +384,47 @@ public:
         glDispatchCompute((objectCount + 63) / 64, 1, 1);
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     }
-
-    void ComputePrefixSum()
+    
+    void DispatchPrefixSum()
     {
+        shaderPrefixSum->use();
+
         uint32_t meshCount = (uint32_t)meshesData.size();
+        glUniform1ui(glGetUniformLocation(shaderPrefixSum->ID, "meshCount"), meshCount);
 
-        // Odczytaj liczniki z GPU
-        std::vector<uint32_t> counts(meshCount);
-        glGetNamedBufferSubData(meshCountersSSBO, 0, meshCount * sizeof(uint32_t), counts.data());
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, meshCountersSSBO);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, meshMetaSSBO);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, totalVisibleSSBO); // totalVisible
 
-        // Prefix-sum: instanceOffset[i] = sum(counts[0..i-1])
-        uint32_t offset = 0; // offset = łączna liczba widocznych instancji w tej klatce
-        for (uint32_t i = 0; i < meshCount; i++) {
-            meshMetaCPU[i].instanceOffset = offset;
-            meshMetaCPU[i].instanceCount = 0;   // reset przed write_pass
-            offset += counts[i];
-        }
+        glDispatchCompute(1, 1, 1);
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
 
-        // Wyślij MeshMeta z powrotem na GPU
-        glNamedBufferSubData(meshMetaSSBO, 0, meshCount * sizeof(GPUMeshMeta), meshMetaCPU.data());
-
-
-        // Resize instanceSSBO jeśli potrzeba
-        ResizeInstanceBufferIfNeeded(offset);
+        ResizeInstanceBufferIfNeeded(*totalVisibleMapped);
     }
+
+    //void ComputePrefixSum()
+    //{
+    //    uint32_t meshCount = (uint32_t)meshesData.size();
+
+    //    // Odczytaj liczniki z GPU
+    //    std::vector<uint32_t> counts(meshCount);
+    //    glGetNamedBufferSubData(meshCountersSSBO, 0, meshCount * sizeof(uint32_t), counts.data());
+
+    //    // Prefix-sum: instanceOffset[i] = sum(counts[0..i-1])
+    //    uint32_t offset = 0; // offset = łączna liczba widocznych instancji w tej klatce
+    //    for (uint32_t i = 0; i < meshCount; i++) {
+    //        meshMetaCPU[i].instanceOffset = offset;
+    //        meshMetaCPU[i].instanceCount = 0;   // reset przed write_pass
+    //        offset += counts[i];
+    //    }
+
+    //    // Wyślij MeshMeta z powrotem na GPU
+    //    glNamedBufferSubData(meshMetaSSBO, 0, meshCount * sizeof(GPUMeshMeta), meshMetaCPU.data());
+
+
+    //    // Resize instanceSSBO jeśli potrzeba
+    //    ResizeInstanceBufferIfNeeded(offset);
+    //}
 
     void DispatchWritePass(const glm::mat4& viewProj, uint32_t objectCount)
     {
@@ -516,7 +551,7 @@ public:
         // barrier wewnątrz DispatchCountPass
 
         // 4. PREFIX-SUM na CPU (czyta tylko meshCount uint32!)
-        ComputePrefixSum();
+        DispatchPrefixSum();
         // wewnątrz: glGetNamedBufferSubData + wysyłka MeshMeta + ewentualny resize
 
         // 5. WRITE PASS: ten sam culling + zapis instancji
