@@ -1,0 +1,33 @@
+#version 460 core
+
+layout (local_size_x = 8, local_size_y = 8) in;
+
+// poprzedni mip poziom - do odczytu
+layout(binding = 0) uniform sampler2D prevMip;
+
+// aktualny mip poziom - do zapisu
+layout(r32f, binding = 1) uniform image2D currentMip;
+
+void main()
+{
+	ivec2 texelCoord = ivec2(gl_GlobalInvocationID.xy);
+	ivec2 size = imageSize(currentMip);
+
+	if (texelCoord.x >= size.x || texelCoord.y >= size.y)
+	{
+		return;
+	}
+
+	vec2 uv = (vec2(texelCoord) + 0.5) / vec2(size); //Znajdujemy srodek UV 2x2 na teksturze
+	vec2 texelSize = 1.0 / vec2(textureSize(prevMip, 0)); //Ustalamy wielkosc texel-a
+
+	float d0 = texture(prevMip, uv + vec2(-texelSize.x, -texelSize.y)).r; // lewy gorny piksel
+    float d1 = texture(prevMip, uv + vec2( texelSize.x, -texelSize.y)).r; // prawy gorny piksel
+    float d2 = texture(prevMip, uv + vec2(-texelSize.x,  texelSize.y)).r; // lewy dolny piksel
+    float d3 = texture(prevMip, uv + vec2( texelSize.x,  texelSize.y)).r; // prawy dolny piksel
+
+	// max depth - najdalsza g³êbokoœci 
+	float maxDepth = max(max(d0, d1), max(d2, d3));
+
+	imageStore(currentMip, texelCoord, vec4(maxDepth));
+}

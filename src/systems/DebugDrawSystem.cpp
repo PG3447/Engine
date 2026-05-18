@@ -32,7 +32,7 @@ void DebugDrawSystem::Init()
 
     glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * 2, nullptr, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(DebugVertex) * 2, nullptr, GL_DYNAMIC_DRAW);
 
     // pozycja
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(DebugVertex), (void*)0);
@@ -82,6 +82,7 @@ void DebugDrawSystem::Flush(const glm::mat4& vp)
 
     debugShader->use();
     debugShader->setMat4("uVP", vp);
+    debugShader->setBool("uUseUniformColor", false);
 
     glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -166,12 +167,18 @@ unsigned int DebugDrawSystem::solidEBO = 0;
 
 void DebugDrawSystem::InitSolid() {
     static const unsigned int indices[36] = {
-        0,1,2, 1,3,2,  // dół
-        4,6,5, 5,6,7,  // góra
-        0,2,4, 4,2,6,  // lewo
-        1,5,3, 3,5,7,  // prawo
-        0,4,1, 1,4,5,  // przód
-        2,3,6, 6,3,7   // tył
+        // przód (z = min)
+        0, 2, 1,  1, 2, 3,
+        // tył (z = max)
+        5, 7, 4,  4, 7, 6,
+        // lewo (x = min)
+        4, 6, 0,  0, 6, 2,
+        // prawo (x = max)
+        1, 3, 5,  5, 3, 7,
+        // dół (y = min)
+        4, 0, 5,  5, 0, 1,
+        // góra (y = max)
+        2, 6, 3,  3, 6, 7,
     };
 
     glGenVertexArrays(1, &solidVAO);
@@ -210,9 +217,12 @@ void DebugDrawSystem::DrawAABBSolid(const glm::vec3& min, const glm::vec3& max, 
 
     debugShader->use();
     debugShader->setMat4("uVP", vp);
-    debugShader->setVec4("uColor", glm::vec4(0.0f));
+    debugShader->setBool("uUseUniformColor", true);
+    debugShader->setVec4("uColor", glm::vec4(1.0f, 1.0f, 0.0f, 1.0f));
 
     glBindVertexArray(solidVAO);
+    glDisableVertexAttribArray(1);
     glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+    glEnableVertexAttribArray(1);
     glBindVertexArray(0);
 }

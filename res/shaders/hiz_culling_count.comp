@@ -1,0 +1,252 @@
+﻿#version 460 core
+
+layout(local_size_x = 64) in;
+
+// Hi-Z tekstura
+layout(binding = 0) uniform sampler2D hizCullingTexture;
+
+uniform mat4 viewProjection;
+uniform int  hizMipLevels;
+uniform uint objectCount;
+uniform vec2 screenSize;
+
+struct RenderData {
+    mat4 model;
+    vec4 aabbMin;
+    vec4 aabbMax;
+    uint meshID;
+    uint materialID;
+    uint skeletonID;
+    uint padding;
+};
+
+
+layout(std430, binding = 1) readonly buffer Objects
+{
+    RenderData objects[];
+};
+
+layout(std430, binding = 2)  buffer MeshCounters
+{
+    uint meshInstanceCount[];
+}; 
+
+layout(std430, binding = 3) writeonly buffer VisibleFlags
+{
+    uint visibleFlags[]; // 1 = widoczny, 0 = odrzucony
+};
+
+bool frustumCull(vec3 aabbMin, vec3 aabbMax, mat4 mvp)
+{
+    // Testujemy 8 narożników AABB
+    vec4 corners[8];
+    for (int i = 0; i < 8; i++) {
+        vec3 c = vec3(
+            (i & 1) != 0 ? aabbMax.x : aabbMin.x,
+            (i & 2) != 0 ? aabbMax.y : aabbMin.y,
+            (i & 4) != 0 ? aabbMax.z : aabbMin.z
+        );
+        corners[i] = mvp * vec4(c, 1.0);
+    }
+    // Jeśli wszystkie narożniki po tej samej stronie płaszczyzny → odrzuć
+    for (int plane = 0; plane < 3; plane++) {
+        bool allOut_pos = true, allOut_neg = true;
+        for (int i = 0; i < 8; i++) {
+            float w = corners[i].w;
+            float v = corners[i][plane];
+            if ( v <= +w) allOut_pos = false;
+            if ( v >= -w) allOut_neg = false;
+        }
+        if (allOut_pos || allOut_neg) return true; // culled
+    }
+    return false;
+}
+
+// HiZ occlusion culling
+// Rzutujemy AABB na ekran i sprawdzamy teksturę
+// -----------------------------------------------
+bool hizCull(vec3 aabbMin, vec3 aabbMax, mat4 mvp)
+{
+    // Oblicz screen-space AABB (NDC)
+    vec2 sMin = vec2( 1.0),  sMax = vec2(-1.0);
+    float zMin = 1.0;
+
+    for (int i = 0; i < 8; i++) {
+        vec3 c = vec3(
+            (i & 1) != 0 ? aabbMax.x : aabbMin.x,
+            (i & 2) != 0 ? aabbMax.y : aabbMin.y,
+            (i & 4) != 0 ? aabbMax.z : aabbMin.z
+        );
+        vec4 p = mvp * vec4(c, 1.0);
+        if (p.w <= 0.0) return false; // za kamerą → nie culluj bezpiecznie
+        vec3 ndc = p.xyz / p.w;
+        sMin = min(sMin, ndc.xy);
+        sMax = max(sMax, ndc.xy);
+        zMin = min(zMin, ndc.z * 0.5 + 0.5); // depth w [0,1]
+    }
+
+    // UV tekstury HiZ
+    vec2 uvMin = sMin * 0.5 + 0.5;
+    vec2 uvMax = sMax * 0.5 + 0.5;
+
+    // Wybierz odpowiedni mip na podstawie rozmiaru footprintu
+    vec2 size   = (uvMax - uvMin) * screenSize;
+    float mip   = ceil(log2(max(size.x, size.y)));
+    mip         = clamp(mip, 0.0, float(hizMipLevels - 1));
+
+    // Próbkuj HiZ (przechowuje MAX depth w mipie)
+    vec2  uvCenter  = (uvMin + uvMax) * 0.5;
+    float hizDepth  = textureLod(hizCullingTexture, uvCenter, mip).r;
+
+
+    // Obiekt jest za czymś innym → odrzuć
+    return zMin > hizDepth;
+}
+
+
+void main()
+{
+    uint objID = gl_GlobalInvocationID.x;
+    if (objID >= objectCount) return;
+    
+    RenderData obj = objects[objID];
+    uint meshID = obj.meshID;
+
+//    mat4 mvp = viewProjection * obj.model;
+//    vec3 aabbMin = obj.aabbMin.xyz;
+//    vec3 aabbMax = obj.aabbMax.xyz;
+//
+//    if (frustumCull(aabbMin, aabbMax, mvp) || hizCull(aabbMin, aabbMax, mvp))
+//    {
+//        visibleFlags[objID] = 0u; // odrzucony
+//        return;
+//    }
+
+    visibleFlags[objID] = 1u;
+    atomicAdd(meshInstanceCount[meshID], 1u);
+}
+
+
+
+
+//
+//// hiz_cull.comp
+//#version 430 core
+//
+//layout(local_size_x = 64) in;
+//
+//struct ObjectData {
+//    vec4 aabbMin;   // xyz = min, w = unused
+//    vec4 aabbMax;   // xyz = max, w = unused
+//};
+//
+//struct DrawCommand {
+//    uint count;
+//    uint instanceCount;
+//    uint firstIndex;
+//    uint baseVertex;
+//    uint baseInstance;
+//};
+//
+//// Dane wejściowe
+//layout(std430, binding = 0) readonly buffer Objects {
+//    ObjectData objects[];
+//};
+//
+//// Wynik — indirect draw commands
+//layout(std430, binding = 1) writeonly buffer DrawCommands {
+//    DrawCommand commands[];
+//};
+//
+//// Licznik widocznych
+//layout(std430, binding = 2) buffer Counter {
+//    uint visibleCount;
+//};
+//
+//// Hi-Z tekstura
+//layout(binding = 0) uniform sampler2D hizTexture;
+//
+//uniform mat4 viewProjection;
+//uniform int  objectCount;
+//uniform int  hizMipLevels;
+//uniform vec2 screenSize;
+//
+//// Transformuj punkt do NDC
+//vec4 toNDC(vec3 p) {
+//    vec4 clip = viewProjection * vec4(p, 1.0);
+//    clip /= clip.w;
+//    return clip;
+//}
+//
+//bool isVisible(uint idx) {
+//    ObjectData obj = objects[idx];
+//    vec3 aabbMin   = obj.aabbMin.xyz;
+//    vec3 aabbMax   = obj.aabbMax.xyz;
+//
+//    // 8 narożników AABB
+//    vec3 corners[8] = vec3[8](
+//        vec3(aabbMin.x, aabbMin.y, aabbMin.z),
+//        vec3(aabbMax.x, aabbMin.y, aabbMin.z),
+//        vec3(aabbMin.x, aabbMax.y, aabbMin.z),
+//        vec3(aabbMax.x, aabbMax.y, aabbMin.z),
+//        vec3(aabbMin.x, aabbMin.y, aabbMax.z),
+//        vec3(aabbMax.x, aabbMin.y, aabbMax.z),
+//        vec3(aabbMin.x, aabbMax.y, aabbMax.z),
+//        vec3(aabbMax.x, aabbMax.y, aabbMax.z)
+//    );
+//
+//    // Oblicz bounding rect w NDC
+//    vec2 ndcMin = vec2( 1e9);
+//    vec2 ndcMax = vec2(-1e9);
+//    float ndcDepth = -1e9;
+//
+//    for (int i = 0; i < 8; i++) {
+//        vec4 ndc = toNDC(corners[i]);
+//
+//        // Za kamerą — zawsze widoczny (konserwatywnie)
+//        if (ndc.w < 0.0) return true;
+//
+//        ndcMin  = min(ndcMin,  ndc.xy);
+//        ndcMax  = max(ndcMax,  ndc.xy);
+//        ndcDepth = max(ndcDepth, ndc.z); // najdalszy depth
+//    }
+//
+//    // Clip — poza frustumem
+//    if (ndcMax.x < -1.0 || ndcMin.x > 1.0 ||
+//        ndcMax.y < -1.0 || ndcMin.y > 1.0)
+//        return false;
+//
+//    // UV w screen space
+//    vec2 uvMin = ndcMin * 0.5 + 0.5;
+//    vec2 uvMax = ndcMax * 0.5 + 0.5;
+//
+//    // Wybierz mip poziom na podstawie rozmiaru AABB na ekranie
+//    vec2 size   = (uvMax - uvMin) * screenSize;
+//    float mip   = ceil(log2(max(size.x, size.y)));
+//    mip         = clamp(mip, 0.0, float(hizMipLevels - 1));
+//
+//    // Próbkuj Hi-Z — środek AABB
+//    vec2  uvCenter  = (uvMin + uvMax) * 0.5;
+//    float hizDepth  = texture(hizTexture, uvCenter, mip).r;
+//
+//    // Depth konwersja z [-1,1] do [0,1]
+//    float objDepth = ndcDepth * 0.5 + 0.5;
+//
+//    // Obiekt za Hi-Z → zasłonięty
+//    return objDepth <= hizDepth;
+//}
+//
+//void main() {
+//    uint idx = gl_GlobalInvocationID.x;
+//    if (idx >= uint(objectCount)) return;
+//
+//    if (isVisible(idx)) {
+//        uint slot = atomicAdd(visibleCount, 1);
+//        // Wpisz draw command dla widocznego obiektu
+//        commands[slot].count         = objects[idx].aabbMin.w; // index count
+//        commands[slot].instanceCount = 1;
+//        commands[slot].firstIndex    = 0;
+//        commands[slot].baseVertex    = 0;
+//        commands[slot].baseInstance  = idx; // żeby shader wiedział który obiekt
+//    }
+//}

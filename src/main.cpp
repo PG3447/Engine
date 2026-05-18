@@ -346,6 +346,8 @@ int main(int, char**)
     init_imgui();
     spdlog::info("Initialized ImGui.");
 
+
+
     ECS ecs;
     SceneManager sceneManager;
 

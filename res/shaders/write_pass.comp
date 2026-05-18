@@ -1,0 +1,74 @@
+// ============================================================
+// PRZEBIEG 3: write_pass.comp
+// Ten sam culling co count_pass, ale teraz ZAPISUJE instancje
+// instanceOffset jest ju¿ wyliczony przez prefix-sum (CPU)
+// ============================================================
+#version 460 core
+layout(local_size_x = 64) in;
+
+layout(binding = 0) uniform sampler2D hizCullingTexture;
+
+uniform uint  objectCount;
+
+struct RenderData {
+    mat4  model;
+    vec4  aabbMin;
+    vec4  aabbMax;
+    uint  meshID;
+    uint  materialID;
+    uint  skeletonID;
+    uint  padding;
+};
+
+struct InstanceData {
+    mat4  model;
+    uint  materialID;
+    uint  objectID;
+    vec2  pad;
+};
+
+struct MeshMeta {
+    uint instanceOffset; // wype³niony przez prefix-sum na CPU
+    uint instanceCount;  // atomic — ile ju¿ zapisano (reset przed tym przebiegiem)
+    uint pad0;
+    uint pad1;
+};
+
+layout(std430, binding = 0) readonly buffer Objects
+{
+    RenderData objects[];
+};
+
+layout(std430, binding = 1) buffer MeshMeta_buf
+{
+    MeshMeta meshMeta[];
+};
+
+layout(std430, binding = 2) buffer Instances
+{
+    InstanceData instances[];
+};
+
+layout(std430, binding = 3) readonly buffer VisibleFlags
+{
+    uint visibleFlags[];
+};
+
+void main()
+{
+    uint objID = gl_GlobalInvocationID.x;
+    if (objID >= objectCount) return;
+    
+    if (visibleFlags[objID] == 0u) return;
+
+    RenderData obj = objects[objID];
+    uint meshID  = obj.meshID;
+    // Zarezerwuj slot — instanceOffset ju¿ ustawiony przez CPU prefix-sum
+    uint slot     = atomicAdd(meshMeta[meshID].instanceCount, 1u);
+    uint writeIdx = meshMeta[meshID].instanceOffset + slot;
+
+    instances[writeIdx].model      = obj.model;
+    instances[writeIdx].materialID = obj.materialID;
+    instances[writeIdx].objectID   = objID;
+    instances[writeIdx].pad        = vec2(0.0);
+}

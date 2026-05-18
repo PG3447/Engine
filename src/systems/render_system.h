@@ -13,7 +13,8 @@
 #include "../utils/light_helper.h"
 #include "../utils/render_helper.h"
 #include <glm/gtc/type_ptr.hpp>
-
+#include "../compute_shader.h"
+#include "GPUdriven_renderer.h"
 
 class RenderSystem : public System {
 private:
@@ -120,12 +121,17 @@ public:
         glDepthMask(GL_FALSE);
 
         glBeginQuery(GL_ANY_SAMPLES_PASSED, data.queryId);
-        //DebugDrawSystem::DrawAABBSolid(worldMin, worldMax, projection * view);
+        DebugDrawSystem::DrawAABBSolid(worldMin, worldMax, projection * view);
         glEndQuery(GL_ANY_SAMPLES_PASSED);
 
         glDepthMask(GL_TRUE);
         glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
         data.queryActive = true;
+
+        glm::vec4 color = data.isVisible
+            ? glm::vec4(0, 1, 0, 1)  // zielony = widoczny
+            : glm::vec4(1, 0, 0, 1); // czerwony = culled
+        DebugDrawSystem::AddAABB(worldMin, worldMax, color);
     }
 
     bool frustumCullingEnabled = true;
@@ -285,6 +291,13 @@ public:
     }
 
     void Init() {
+        gpuRenderer = GPUDrivenRenderer();
+        gpuRenderer.shaderHizCullCount = new ComputeShader("res/shaders/hiz_culling_count.comp");
+        gpuRenderer.shaderHizWritePass = new ComputeShader("res/shaders/write_pass.comp");
+        gpuRenderer.shaderBuildCmds = new ComputeShader("res/shaders/build_commands.comp");
+        gpuRenderer.shaderHizDownsample = new ComputeShader("res/shaders/hiz_build.comp");
+        gpuRenderer.shaderRender = new Shader("res/shaders/gpu_driven.vert", "res/shaders/gpu_driven.frag");
+
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -349,6 +362,7 @@ public:
             (GLsizei)(vp.height * h)
         );
     }
+    bool gpuRendererInitialized = false;
 
     void RenderAllCameras() {
         auto& transforms = std::get<0>(cameraQuery->componentsVectors);
@@ -357,13 +371,166 @@ public:
         int display_w, display_h;
         glfwGetFramebufferSize(window, &display_w, &display_h);
 
+        if (!gpuRendererInitialized && renderQuery->gameobjects.size() > 50) {
+            InitGPUDrivenRenderer(display_w, display_h);
+            gpuRendererInitialized = true;
+        }
+
         for (size_t i = 0; i < cameras.size(); i++) {
             if (!cameras[i]->isActive)
                 continue;
-
-            RenderCamera(*cameras[i], *transforms[i], display_w, display_h);
+            RenderCameraGPUDriven(*cameras[i], *transforms[i], display_w, display_h);
+            //RenderCamera(*cameras[i], *transforms[i], display_w, display_h);
         }
     }
+
+    GPUDrivenRenderer gpuRenderer;
+    bool gpuRendererReady = false;
+    GLuint depthTexturePrev = 0;
+    GLuint depthFBO = 0;
+
+    std::unordered_map<RenderMesh*, uint32_t>  meshIDMap;
+    std::unordered_map<Material*, uint32_t>  materialIDMap;
+
+    void InitGPUDrivenRenderer(int width, int height)
+    {
+        auto& renderers = std::get<1>(renderQuery->componentsVectors);
+        gpuRenderer.Init(width, height);
+
+        for (size_t i = 0; i < renderers.size(); i++) {
+            RenderComponent* r = renderers[i];
+            if (!r) continue;
+
+            for (auto& mesh : r->meshes) {
+                if (!mesh.gpuMesh || !mesh.material || !mesh.cpuData) continue;
+
+                RenderMesh* rm = mesh.gpuMesh.get();
+                Material* mat = mesh.material.get();
+
+                if (meshIDMap.find(rm) == meshIDMap.end()) {
+                    MeshData data;
+                    data.vertices = mesh.cpuData->vertices;
+                    data.indices = mesh.cpuData->indices;
+                    meshIDMap[rm] = gpuRenderer.RegisterMesh(data);
+                }
+
+                if (materialIDMap.find(mat) == materialIDMap.end()) {
+                    materialIDMap[mat] = gpuRenderer.RegisterMaterial(mat);
+                }
+            }
+        }
+
+        gpuRenderer.UploadMeshes();
+        gpuRenderer.UploadMaterials();
+
+        // Depth texture — tworzona TYLKO RAZ
+        if (depthTexturePrev == 0) {
+            glGenTextures(1, &depthTexturePrev);
+            glBindTexture(GL_TEXTURE_2D, depthTexturePrev);
+            glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32F, width, height);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
+
+        gpuRenderer.UploadMeshes();
+        gpuRenderer.UploadMaterials();
+
+        gpuRendererReady = true;
+    }
+    std::vector<RenderData> renderDataCache;
+
+    std::vector<RenderData>& CollectRenderData()
+    {
+        auto& transforms = std::get<0>(renderQuery->componentsVectors);
+        auto& renderers = std::get<1>(renderQuery->componentsVectors);
+
+        renderDataCache.clear();
+        renderDataCache.reserve(renderQuery->gameobjects.size());
+
+        const size_t objectCount = renderQuery->gameobjects.size();
+
+        for (size_t i = 0; i < objectCount; ++i)
+        {
+            const TransformComponent* t = transforms[i];
+            const RenderComponent* r = renderers[i];
+
+            if (!t || !r)
+                continue;
+
+            const glm::mat4 model = t->modelMatrix;
+
+            const auto& meshes = r->meshes;
+
+            for (const auto& mesh : meshes)
+            {
+                auto* gpuMesh = mesh.gpuMesh.get();
+                auto* material = mesh.material.get();
+
+                if (!gpuMesh || !material || !mesh.cpuData)
+                    continue;
+
+                auto meshIt = meshIDMap.find(gpuMesh);
+                if (meshIt == meshIDMap.end())
+                    continue;
+
+                auto matIt = materialIDMap.find(material);
+                if (matIt == materialIDMap.end())
+                    continue;
+
+                const auto& aabb = mesh.cpuData->aabb;
+
+                renderDataCache.emplace_back(RenderData{
+                    .modelMatrix = model,
+                    .aabbMin = glm::vec4(aabb.min, 0.0f),
+                    .aabbMax = glm::vec4(aabb.max, 0.0f),
+                    .meshID = meshIt->second,
+                    .materialID = matIt->second,
+                    .skeletonID = 0,
+                    .padding = 0
+                    });
+            }
+        }
+
+        return renderDataCache;
+    }
+
+    void RenderCameraGPUDriven(CameraComponent& cam, TransformComponent& transform, int width, int height)
+    {
+        ApplyViewport(cam.viewport, width, height);
+
+        view = CameraHelper::getViewMatrix(cam, transform);
+        projection = CameraHelper::getProjectionMatrix(cam, width, height);
+
+        glm::mat4 vp = projection * view;
+        currentCameraPos = transform.position;
+
+        if (gpuRendererReady) {
+            std::vector<RenderData> objects = CollectRenderData();
+
+        /*    gpuRenderer.shaderRender->use();
+            gpuRenderer.shaderRender->setMat4("viewProjection", vp);
+            gpuRenderer.shaderRender->setVec3("viewPos", currentCameraPos);
+            gpuRenderer.shaderRender->setBool("isAnimated", false);*/
+            // + światła jak w starym kodzie...
+
+            gpuRenderer.RenderFrame(vp, objects, depthTexturePrev, currentCameraPos);
+
+            // Skopiuj depth bieżącej klatki do depthTexturePrev dla następnej
+       /*     std::vector<float> zeros(width * height, 0.0f);
+            glTextureSubImage2D(depthTexturePrev, 0, 0, 0, width, height,
+                GL_DEPTH_COMPONENT, GL_FLOAT, zeros.data());*/
+        }
+
+        DebugDrawSystem::Flush(vp);
+
+        glBindVertexArray(0);
+        
+        skybox.Render(view, projection);
+    }
+
 
     void RenderCamera(CameraComponent& cam, TransformComponent& transform, int width, int height) {
         ApplyViewport(cam.viewport, width, height);
@@ -701,11 +868,156 @@ public:
 
     //GLuint GetSceneTexture() const { return sceneColorTexture; }
 
+  
+
 };
 
 #endif
+//
+//
+//struct HiZBuffer {
+//    GLuint fbo = 0;
+//    GLuint depthTex = 0;
+//    int    width = 0;
+//    int    height = 0;
+//    int    mipLevels = 0;
+//
+//    void Init(int w, int h) {
+//        width = w;
+//        height = h;
+//        mipLevels = (int)std::floor(std::log2(std::max(w, h))) + 1;
+//
+//        // Tekstura depth z mipmapy
+//        glGenTextures(1, &depthTex);
+//        glBindTexture(GL_TEXTURE_2D, depthTex);
+//        glTexStorage2D(GL_TEXTURE_2D, mipLevels, GL_DEPTH_COMPONENT32F, w, h);
+//
+//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+//
+//        // FBO dla mip 0
+//        glGenFramebuffers(1, &fbo);
+//        glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+//        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+//            GL_TEXTURE_2D, depthTex, 0);
+//        glDrawBuffer(GL_NONE);
+//        glReadBuffer(GL_NONE);
+//        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+//    }
+//};
 
 
+//class HiZOcclusionCuller {
+//public:
+//    HiZBuffer hiz;
+//    GLuint  hizBuildShader = 0;
+//    GLuint  hizCullShader = 0;
+//
+//    GLuint objectSSBO = 0; // dane AABB obiektów
+//    GLuint drawCmdSSBO = 0; // indirect draw commands
+//    GLuint counterSSBO = 0; // licznik widocznych
+//
+//    void Init(int w, int h) {
+//        hiz.Init(w, h);
+//        hizBuildShader = ComputeShader("res/shaders/hiz_build.comp").ID;
+//        hizCullShader = ComputeShader("res/shaders/hiz_culling.comp").ID;
+//    }
+//
+//    // Krok 1 — skopiuj depth z głównego FBO do Hi-Z
+//    void CopyDepth(GLuint mainDepthTex) {
+//        glCopyImageSubData(mainDepthTex, GL_TEXTURE_2D, 0, 0, 0, 0, hiz.depthTex, GL_TEXTURE_2D, 0, 0, 0, 0, hiz.width, hiz.height, 1);
+//    }
+//
+//    // Krok 2 — zbuduj mipmapy Hi-Z
+//    void BuildMips() {
+//        glUseProgram(hizBuildShader); // compute_shader->use
+//
+//        for (int mip = 1; mip < hiz.mipLevels; mip++) {
+//            int mipW = std::max(1, hiz.width >> mip);
+//            int mipH = std::max(1, hiz.height >> mip);
+//
+//            // Czytaj z poprzedniego mipa
+//            glActiveTexture(GL_TEXTURE0);
+//            glBindTexture(GL_TEXTURE_2D, hiz.depthTex);
+//            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, mip - 1);
+//            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, mip - 1);
+//
+//            // Pisz do aktualnego mipa
+//            glBindImageTexture(1, hiz.depthTex, mip, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
+//
+//            glDispatchCompute(
+//                (mipW + 7) / 8,
+//                (mipH + 7) / 8,
+//                1
+//            );
+//            glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+//        }
+//
+//        // Przywróć pełny zakres mipów
+//        glBindTexture(GL_TEXTURE_2D, hiz.depthTex);
+//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, hiz.mipLevels - 1);
+//    }
+//
+//    // Krok 3 — culling na GPU
+//    void Cull(const glm::mat4& vp, int objectCount) {
+//        // Zeruj licznik
+//        uint32_t zero = 0;
+//        glBindBuffer(GL_SHADER_STORAGE_BUFFER, counterSSBO);
+//        glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(uint32_t), &zero);
+//
+//        glUseProgram(hizCullShader);  // compute_shader->use
+//        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(vp));
+//        glUniform1i(1, objectCount);
+//        glUniform1i(2, hiz.mipLevels);
+//        glUniform2f(3, (float)hiz.width, (float)hiz.height);
+//
+//        glActiveTexture(GL_TEXTURE0);
+//        glBindTexture(GL_TEXTURE_2D, hiz.depthTex);
+//
+//        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, objectSSBO);
+//        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, drawCmdSSBO);
+//        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, counterSSBO);
+//
+//        glDispatchCompute((objectCount + 63) / 64, 1, 1);
+//        glMemoryBarrier(GL_COMMAND_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
+//    }
+//
+//    // Krok 4 — rysuj indirect
+//    void DrawIndirect(GLuint VAO, GLuint EBO) {
+//        glBindVertexArray(VAO);
+//        glBindBuffer(GL_DRAW_INDIRECT_BUFFER, drawCmdSSBO);
+//        glBindBuffer(GL_SHADER_STORAGE_BUFFER, counterSSBO);
+//
+//        // Odczytaj liczbę widocznych
+//        uint32_t visibleCount = 0;
+//        glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(uint32_t), &visibleCount);
+//
+//        glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, visibleCount, 0);
+//    }
+//};
+//
+//
+//void RenderCamera(...) {
+//    // === Klatka N ===
+//
+//    // 1. Render sceny do głównego FBO (używa Hi-Z z klatki N-1)
+//    glBindFramebuffer(GL_FRAMEBUFFER, mainFBO);
+//    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+//
+//    culler.Cull(projection * view, objectCount); // GPU culling
+//    culler.DrawIndirect(VAO, EBO);               // indirect draw
+//
+//    // 2. Skopiuj depth → zbuduj Hi-Z dla klatki N+1
+//    culler.CopyDepth(mainDepthTex);
+//    culler.BuildMips();
+//
+//    // 3. Wyświetl
+//    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+//    // blit mainFBO → ekran
+//}
 
 ////sort transparent
 //for (auto& [key, vectorMesh] : instancedGroupsTransparent)
