@@ -469,6 +469,7 @@ int main(int, char**)
 
     camCompRight->isActive = true;
 
+    /*
     GameObject* obj_Sprite_1 = scena1->CreateGameObject(nullptr);
     SpriteComponent* sprite_1 = obj_Sprite_1->AddComponent<SpriteComponent>();
 
@@ -505,6 +506,7 @@ int main(int, char**)
     sprite_1->layer = 1;
     sprite_2->layer = 1;
     sprite_4->layer = 1;
+    */
 
     int placeholderThing = 0;
 
@@ -1004,8 +1006,8 @@ int main(int, char**)
         lastFrame = currentFrame;
         updateFPS(deltaTime);
 
-        test_score++;
-        sprite_4->text = "score: " + std::to_string(test_score);
+        //test_score++;
+        //sprite_4->text = "score: " + std::to_string(test_score);
 
         CpuTimer cpuTimer;
         cpuTimer.start();
