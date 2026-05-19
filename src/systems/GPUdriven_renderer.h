@@ -710,8 +710,8 @@ public:
 
         shaderRender->use();
         shaderRender->setMat4("viewProjection", viewProj);
+        //shaderRender->setBool("isAnimated", false);
         shaderRender->setVec3("viewPos", currentCameraPos);
-        shaderRender->setBool("isAnimated", false);
         shaderRender->setInt("numLights", (int)gpuLights.size());
 
         // 7. Rysuj
