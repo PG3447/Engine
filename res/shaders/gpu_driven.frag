@@ -61,9 +61,9 @@ void main()
 {
     MaterialGPU mat = materials[materialID];
 
-    sampler2D diffuseSampler  = sampler2D(mat.diffuseHandle);
-    sampler2D specularSampler = sampler2D(mat.specularHandle);
-    sampler2D normalSampler   = sampler2D(mat.normalHandle);
+    sampler2D diffuseSampler;// = sampler2D(mat.diffuseHandle);
+    sampler2D specularSampler;//= sampler2D(mat.specularHandle);
+    sampler2D normalSampler;//  = sampler2D(mat.normalHandle);
 
     vec3 diffuseColor = unpackUnorm4x8(mat.packedColor).rgb;
     float shininess = mat.shininess;
