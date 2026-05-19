@@ -540,7 +540,7 @@ public:
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, meshMetaSSBO);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, totalVisibleSSBO); // totalVisible
 
-        glDispatchCompute(1, 1, 1);
+        glDispatchCompute((meshCount + 63) / 64, 1, 1);
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
 
         ResizeInstanceBufferIfNeeded(*totalVisibleMapped);
@@ -581,7 +581,7 @@ public:
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, instanceSSBO);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, visibleFlagsSSBO);
 
-        glDispatchCompute((objectCount + 63) / 64, 1, 1);
+        glDispatchCompute((objectCount + 127) / 128, 1, 1);
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     }
 

@@ -4,7 +4,7 @@
 // instanceOffset jest już wyliczony przez prefix-sum (CPU)
 // ============================================================
 #version 460 core
-layout(local_size_x = 64) in;
+layout(local_size_x = 128) in;
 
 layout(binding = 0) uniform sampler2D hizCullingTexture;
 
@@ -58,7 +58,6 @@ void main()
 {
     uint objID = gl_GlobalInvocationID.x;
     if (objID >= objectCount) return;
-    
     if (visibleFlags[objID] == 0u) return;
 
     RenderData obj = objects[objID];
@@ -70,5 +69,4 @@ void main()
     instances[writeIdx].model      = obj.model;
     instances[writeIdx].materialID = obj.materialID;
     instances[writeIdx].objectID   = objID;
-    instances[writeIdx].pad        = vec2(0.0);
 }
