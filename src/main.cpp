@@ -1072,6 +1072,43 @@ int main(int, char**)
 
 		// testy animacji
 
+        //sigma
+        if (ecs.GetSystem<HID>()->is_action_just_pressed("effect1")) {
+            auto* post = ecs.GetSystem<PostProcessingSystem>();
+            post->effect1 = !post->effect1;
+        }
+
+        if (ecs.GetSystem<HID>()->is_action_just_pressed("effect2")) {
+            auto* post = ecs.GetSystem<PostProcessingSystem>();
+            post->effect2 = !post->effect2;
+        }
+
+        if (ecs.GetSystem<HID>()->is_action_just_pressed("effect3")) {
+            auto* post = ecs.GetSystem<PostProcessingSystem>();
+            post->effect3 = !post->effect3;
+        }
+
+        if (ecs.GetSystem<HID>()->is_action_just_pressed("effect4")) {
+            auto* post = ecs.GetSystem<PostProcessingSystem>();
+            post->effect4 = !post->effect4;
+        }
+
+        if (ecs.GetSystem<HID>()->is_action_just_pressed("effect5")) {
+            auto* post = ecs.GetSystem<PostProcessingSystem>();
+            post->effect5 = !post->effect5;
+        }
+
+        if (ecs.GetSystem<HID>()->is_action_just_pressed("effect6")) {
+            auto* post = ecs.GetSystem<PostProcessingSystem>();
+            post->effect6 = !post->effect6;
+        }
+
+        if (ecs.GetSystem<HID>()->is_action_just_pressed("effect7")) {
+            auto* post = ecs.GetSystem<PostProcessingSystem>();
+            post->effect7 = !post->effect7;
+        }
+
+
         // Process I/O operations here
         input();
 
@@ -1084,7 +1121,7 @@ int main(int, char**)
 
         processCameraMouse(ecs, *camCompLeft, *camTransform1);
         processCameraGamepad(ecs, *camCompLeft, *t0, 0);
-        processCameraGamepad(ecs, *camCompRight, *t1, 1);
+        processCameraGamepad(ecs, *camCompRight, *t1, 0);
 
         auto inputEnd = std::chrono::high_resolution_clock::now();
 

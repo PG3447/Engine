@@ -21,6 +21,7 @@ private:
     float gamma = 1.0f;
     float time = 0.0f;
 
+
     void InitQuad() {
         // Fullscreen quad — dwa trójkąty pokrywające NDC [-1,1]
         float vertices[] = {
@@ -51,6 +52,14 @@ private:
     }
 
 public:
+    bool effect1 = false;
+    bool effect2 = false;
+    bool effect3 = false;
+    bool effect4 = false;
+    bool effect5 = false;
+    bool effect6 = false;
+    bool effect7 = false;
+
     PostProcessingSystem(ECS& ecs, GLFWwindow* win)
     {
         renderSystem = ecs.GetSystem<RenderSystem>();
@@ -85,6 +94,13 @@ public:
         postShader->setInt("screenTexture", 0);
         postShader->setFloat("gamma", gamma);
         postShader->setFloat("time", time);
+        postShader->setBool("effect1", effect1);
+        postShader->setBool("effect2", effect2);
+        postShader->setBool("effect3", effect3);
+        postShader->setBool("effect4", effect4);
+        postShader->setBool("effect5", effect5);
+        postShader->setBool("effect6", effect6);
+        postShader->setBool("effect7", effect7);
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, renderSystem->GetSceneTexture());
