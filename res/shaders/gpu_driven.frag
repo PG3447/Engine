@@ -37,12 +37,12 @@ struct GPULight {
 //};
 
 #define MAX_LIGHTS 512
-layout(std140, binding = 1) uniform Lights
+layout(std140, binding = 0) uniform Lights
 {
     GPULight lights[MAX_LIGHTS];
 };
 
-layout(std430, binding = 7) readonly buffer Materials
+layout(std430, binding = 7) readonly restrict buffer Materials
 {
     MaterialGPU materials[];
 };
@@ -65,16 +65,19 @@ void main()
 
     vec3  diffuseColor = mat.diffuseColorAndShininess.rgb;
     float shininess    = mat.diffuseColorAndShininess.w;
+    //vec3  diffuseColor = vec3(0.5); //mat.diffuseColorAndShininess.rgb;
+    //float shininess    = 32.0f;// mat.diffuseColorAndShininess.w;
 
     // Diffuse
     vec4 texColor = (mat.diffuseHandle != uvec2(0)) ? texture(diffuseSampler, TexCoords) : vec4(diffuseColor, 1.0);
+    //vec4 texColor = vec4(diffuseColor, 1.0); //(mat.diffuseHandle != uvec2(0)) ? texture(diffuseSampler, TexCoords) : vec4(diffuseColor, 1.0);
 
     // Specular
-    //vec3 specTex = (mat.specularHandle != uvec2(0)) ? texture(specularSampler, TexCoords).rgb : vec3(0.0);
-    vec3 specTex = texture(specularSampler, TexCoords).rgb;
+    vec3 specTex = (mat.specularHandle != uvec2(0)) ? texture(specularSampler, TexCoords).rgb : vec3(0.0);
+    //vec3 specTex = vec3(0.0);// texture(specularSampler, TexCoords).rgb;
 
     // Normal
-    vec3 norm;
+    vec3 norm;// = normalize(Normal);
     if (mat.normalHandle != uvec2(0)) {
         vec3 n = texture(normalSampler, TexCoords).rgb * 2.0 - 1.0;
         norm = normalize(TBN * n);
@@ -93,12 +96,18 @@ void main()
         if (lights[i].params2.z < 0.5) continue; // wyłączone
 
         int type = int(lights[i].position.w);
-        if (type == 0)
-            result += CalcDirLight  (lights[i], norm, viewDir, diffTex, specTex, shininess);
-        else if (type == 1)
-            result += CalcPointLight (lights[i], norm, viewDir, diffTex, specTex, shininess);
-        else if (type == 2)
-            result += CalcSpotLight  (lights[i], norm, FragPos, viewDir, diffTex, specTex, shininess);
+        switch (type)
+        {
+            case 0:
+                result += CalcDirLight(lights[i], norm, viewDir, diffTex, specTex, shininess);
+                break;
+            case 1:
+                result += CalcPointLight(lights[i], norm, viewDir, diffTex, specTex, shininess);
+                break;
+            case 2:
+                result += CalcSpotLight(lights[i], norm, FragPos, viewDir, diffTex, specTex, shininess);
+                break;
+        }
     }
 
     FragColor = vec4(result, texColor.a);
@@ -132,20 +141,20 @@ vec3 CalcDirLight(in GPULight light, vec3 normal, vec3 viewDir, vec3 diffTex, ve
 //         + light.specular.rgb * spec * specTex;
 //}
 
-//vec3 CalcPointLight(in GPULight light, vec3 norm, vec3 viewDir, vec3 diffTex, vec3 specTex, float shininess)
-//{
-//    vec3  toLight     = light.position.xyz - FragPos;
-//    float distance    = length(toLight);
-//    vec3  lightDir    = toLight / distance;
-//    float diff        = max(dot(norm, lightDir), 0.0);
-//    vec3  halfDir     = normalize(lightDir + viewDir);
-//    float spec        = pow(max(dot(norm, halfDir), 0.0), shininess);
-//    float attenuation = 1.0 / (light.params1.x + light.params1.y * distance + light.params1.z * distance * distance);
-//
-//    return (light.ambient.rgb * diffTex
-//          + light.diffuse.rgb * diff * diffTex
-//          + light.specular.rgb * spec * specTex) * attenuation;
-//}
+vec3 CalcPointLight(in GPULight light, vec3 norm, vec3 viewDir, vec3 diffTex, vec3 specTex, float shininess)
+{
+    vec3  toLight     = light.position.xyz - FragPos;
+    float distance    = length(toLight);
+    vec3  lightDir    = toLight / distance;
+    float diff        = max(dot(norm, lightDir), 0.0);
+    vec3  halfDir     = normalize(lightDir + viewDir);
+    float spec        = pow(max(dot(norm, halfDir), 0.0), shininess);
+    float attenuation = 1.0 / (light.params1.x + light.params1.y * distance + light.params1.z * distance * distance);
+
+    return (light.ambient.rgb * diffTex
+          + light.diffuse.rgb * diff * diffTex
+          + light.specular.rgb * spec * specTex) * attenuation;
+}
 
 
 vec3 CalcSpotLight(in GPULight light, vec3 normal, vec3 fragPos, vec3 viewDir, vec3 diffTex, vec3 specTex, float shininess)

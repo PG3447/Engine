@@ -300,11 +300,11 @@ public:
         //glBufferData(GL_UNIFORM_BUFFER, sizeof(FrameUBO), nullptr, GL_DYNAMIC_DRAW);
         //glBindBufferBase(GL_UNIFORM_BUFFER, 0, frameUBO);
 
-        // UBO — światła (binding = 1)
+        // UBO — światła (binding = 0)
         glGenBuffers(1, &lightsUBO);
         glBindBuffer(GL_UNIFORM_BUFFER, lightsUBO);
         glBufferData(GL_UNIFORM_BUFFER, sizeof(LightsUBO), nullptr, GL_DYNAMIC_DRAW);
-        glBindBufferBase(GL_UNIFORM_BUFFER, 1, lightsUBO);
+        glBindBufferBase(GL_UNIFORM_BUFFER, 0, lightsUBO);
 
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
