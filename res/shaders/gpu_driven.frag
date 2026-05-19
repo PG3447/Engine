@@ -15,9 +15,11 @@ struct MaterialGPU
     uvec2 diffuseHandle;
     uvec2 specularHandle;
     uvec2 normalHandle;
-    uint  padding;
-    uint  padding2;
-    vec4  diffuseColorAndShininess;
+    uint packedColor;
+    float shininess;
+//    uint  padding;
+//    uint  padding2;
+//    vec4  diffuseColorAndShininess;
 };
 
 struct GPULight {
@@ -63,18 +65,14 @@ void main()
     sampler2D specularSampler = sampler2D(mat.specularHandle);
     sampler2D normalSampler   = sampler2D(mat.normalHandle);
 
-    vec3  diffuseColor = mat.diffuseColorAndShininess.rgb;
-    float shininess    = mat.diffuseColorAndShininess.w;
-    //vec3  diffuseColor = vec3(0.5); //mat.diffuseColorAndShininess.rgb;
-    //float shininess    = 32.0f;// mat.diffuseColorAndShininess.w;
+    vec3 diffuseColor = unpackUnorm4x8(mat.packedColor).rgb;
+    float shininess = mat.shininess;
 
     // Diffuse
     vec4 texColor = (mat.diffuseHandle != uvec2(0)) ? texture(diffuseSampler, TexCoords) : vec4(diffuseColor, 1.0);
-    //vec4 texColor = vec4(diffuseColor, 1.0); //(mat.diffuseHandle != uvec2(0)) ? texture(diffuseSampler, TexCoords) : vec4(diffuseColor, 1.0);
 
     // Specular
     vec3 specTex = (mat.specularHandle != uvec2(0)) ? texture(specularSampler, TexCoords).rgb : vec3(0.0);
-    //vec3 specTex = vec3(0.0);// texture(specularSampler, TexCoords).rgb;
 
     // Normal
     vec3 norm;// = normalize(Normal);
@@ -88,9 +86,7 @@ void main()
     vec3 viewDir = normalize(viewPos - FragPos);
     vec3 diffTex = texColor.rgb;
     vec3 result = vec3(0.0);
-//    vec3 result  = CalcDirLight  (lights[1], norm, viewDir, diffTex, specTex, shininess);
-//    result += CalcSpotLight  (lights[0], norm, FragPos, viewDir, diffTex, specTex, shininess);
-//
+
     for (int i = 0; i < numLights; i++)
     {
         if (lights[i].params2.z < 0.5) continue; // wyłączone

@@ -44,9 +44,11 @@ struct GPUMaterial
     GLuint64 diffuseHandle;
     GLuint64 specularHandle;
     GLuint64 normalHandle;
-    uint32_t padding;
-    uint32_t padding2;
-    glm::vec4 diffuseColorAndShininess;
+    uint32_t packedColor;
+    float shininess;
+    //uint32_t padding;
+    //uint32_t padding2;
+    //glm::vec4 diffuseColorAndShininess;
 };
 
 
@@ -356,9 +358,8 @@ public:
         gpu.diffuseHandle = GetOrCreateHandle(mat->diffuseMap);
         gpu.specularHandle = GetOrCreateHandle(mat->specularMap);
         gpu.normalHandle = GetOrCreateHandle(mat->normalMap);
-        gpu.padding = 0;
-        gpu.padding2 = 0;
-        gpu.diffuseColorAndShininess = glm::vec4(mat->diffuseColor, mat->shininess);
+        gpu.packedColor = packUnorm4x8(glm::vec4(mat->diffuseColor, 1.0f));
+        gpu.shininess = mat->shininess;
 
         uint32_t id = (uint32_t)materials.size();
         materials.push_back(gpu);
