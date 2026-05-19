@@ -64,7 +64,8 @@ void main()
     vec4 texColor = (mat.diffuseHandle != uvec2(0)) ? texture(diffuseSampler, TexCoords) : vec4(diffuseColor, 1.0);
 
     // Specular
-    vec3 specTex = (mat.specularHandle != uvec2(0)) ? texture(specularSampler, TexCoords).rgb : vec3(0.0);
+    //vec3 specTex = (mat.specularHandle != uvec2(0)) ? texture(specularSampler, TexCoords).rgb : vec3(0.0);
+    vec3 specTex = texture(specularSampler, TexCoords).rgb;
 
     // Normal
     vec3 norm;
