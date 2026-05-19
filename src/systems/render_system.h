@@ -456,6 +456,9 @@ public:
         gpuRendererReady = true;
     }
     std::vector<RenderData> renderDataCache;
+    std::vector<RenderData> sortTemp;
+    std::vector<uint32_t>   sortCounts;
+    std::vector<uint32_t>   sortOffsets;
 
     std::vector<RenderData>& CollectRenderData()
     {
@@ -508,6 +511,26 @@ public:
                     });
             }
         }
+
+        const uint32_t bucketCount = static_cast<uint32_t>(materialIDMap.size());
+        if (bucketCount == 0 || renderDataCache.empty())
+            return renderDataCache;
+
+        sortCounts.assign(bucketCount, 0);
+        for (const auto& rd : renderDataCache)
+            ++sortCounts[rd.materialID];
+
+        sortOffsets.resize(bucketCount);
+        sortOffsets[0] = 0;
+        for (uint32_t i = 1; i < bucketCount; ++i)
+            sortOffsets[i] = sortOffsets[i - 1] + sortCounts[i - 1];
+
+        sortTemp.resize(renderDataCache.size());
+        for (const auto& rd : renderDataCache)
+            sortTemp[sortOffsets[rd.materialID]++] = rd;
+
+        std::swap(renderDataCache, sortTemp);
+
 
         return renderDataCache;
     }
