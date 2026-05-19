@@ -1,5 +1,6 @@
 #version 460 core
 #extension GL_ARB_bindless_texture : require
+#extension GL_KHR_shader_subgroup  : enable
 
 out vec4 FragColor;
 
@@ -59,6 +60,8 @@ vec3 CalcSpotLight(in GPULight light, vec3 normal, vec3 fragPos, vec3 viewDir, v
 
 void main()
 {
+    //bool uniformMat = subgroupAllEqual(materialID);
+
     MaterialGPU mat = materials[materialID];
 
     sampler2D diffuseSampler = sampler2D(mat.diffuseHandle);
