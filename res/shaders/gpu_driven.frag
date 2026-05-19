@@ -77,21 +77,22 @@ void main()
 
     vec3 viewDir = normalize(viewPos - FragPos);
     vec3 diffTex = texColor.rgb;
-    vec3 result  = vec3(0.0);
+    vec3 result  = CalcDirLight  (lights[1], norm, viewDir, diffTex, specTex, shininess);
+    result += CalcSpotLight  (lights[0], norm, viewDir, diffTex, specTex, shininess);
 
-    for (int i = 0; i < numLights; i++)
-    {
-        if (lights[i].params2.z < 0.5) continue; // wyłączone
-
-        int type = int(lights[i].position.w);
-        if (type == 0)
-            result += CalcDirLight  (lights[i], norm, viewDir, diffTex, specTex, shininess);
-        else if (type == 1)
-            result += CalcPointLight (lights[i], norm, viewDir, diffTex, specTex, shininess);
-        else if (type == 2)
-            result += CalcSpotLight  (lights[i], norm, viewDir, diffTex, specTex, shininess);
-    }
-
+//    for (int i = 0; i < numLights; i++)
+//    {
+//        if (lights[i].params2.z < 0.5) continue; // wyłączone
+//
+//        int type = int(lights[i].position.w);
+//        if (type == 0)
+//            result += CalcDirLight  (lights[i], norm, viewDir, diffTex, specTex, shininess);
+//        else if (type == 1)
+//            result += CalcPointLight (lights[i], norm, viewDir, diffTex, specTex, shininess);
+//        else if (type == 2)
+//            result += CalcSpotLight  (lights[i], norm, viewDir, diffTex, specTex, shininess);
+//    }
+//
     FragColor = vec4(result, texColor.a);
 }
 
