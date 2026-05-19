@@ -44,10 +44,9 @@ uniform int  numLights;
 uniform vec3 viewPos;
 
 
-vec3 CalcDirLight  (in GPULight light, vec3 norm, vec3 viewDir, vec3 diffTex, vec3 specTex, float shininess);
+vec3 CalcDirLight  (in GPULight light, vec3 normal, vec3 viewDir, vec3 diffTex, vec3 specTex, float shininess);
 vec3 CalcPointLight(in GPULight light, vec3 norm, vec3 viewDir, vec3 diffTex, vec3 specTex, float shininess);
-vec3 CalcSpotLight (in GPULight light, vec3 norm, vec3 viewDir, vec3 diffTex, vec3 specTex, float shininess);
-
+vec3 CalcSpotLight(in GPULight light, vec3 normal, vec3 fragPos, vec3 viewDir, vec3 diffTex, vec3 specTex, float shininess);
 
 void main()
 {
@@ -79,7 +78,7 @@ void main()
     vec3 viewDir = normalize(viewPos - FragPos);
     vec3 diffTex = texColor.rgb;
     vec3 result  = CalcDirLight  (lights[1], norm, viewDir, diffTex, specTex, shininess);
-    result += CalcSpotLight  (lights[0], norm, viewDir, diffTex, specTex, shininess);
+    result += CalcSpotLight  (lights[0], norm, FragPos, viewDir, diffTex, specTex, shininess);
 
 //    for (int i = 0; i < numLights; i++)
 //    {
@@ -140,20 +139,47 @@ vec3 CalcPointLight(in GPULight light, vec3 norm, vec3 viewDir, vec3 diffTex, ve
           + light.specular.rgb * spec * specTex) * attenuation;
 }
 
-vec3 CalcSpotLight(in GPULight light, vec3 norm, vec3 viewDir, vec3 diffTex, vec3 specTex, float shininess)
-{
-    vec3  toLight     = light.position.xyz - FragPos;
-    float distance    = length(toLight);
-    vec3  lightDir    = toLight / distance;
-    float diff        = max(dot(norm, lightDir), 0.0);
-    vec3  halfDir     = normalize(lightDir + viewDir);
-    float spec        = pow(max(dot(norm, halfDir), 0.0), shininess);
-    float attenuation = 1.0 / (light.params1.x + light.params1.y * distance + light.params1.z * distance * distance);
-    float theta       = dot(lightDir, normalize(-light.direction.xyz));
-    float epsilon     = light.params2.x - light.params2.y;
-    float intensity   = clamp((theta - light.params2.y) / epsilon, 0.0, 1.0);
 
-    return (light.ambient.rgb * diffTex
-          + light.diffuse.rgb * diff * diffTex
-          + light.specular.rgb * spec * specTex) * attenuation * intensity;
+vec3 CalcSpotLight(in GPULight light, vec3 normal, vec3 fragPos, vec3 viewDir, vec3 diffTex, vec3 specTex, float shininess)
+{
+    vec3 lightDir = normalize(light.position.xyz - fragPos);
+    // diffuse shading
+    float diff = max(dot(normal, lightDir), 0.0);
+    // specular shading
+    vec3 halfDir = normalize(lightDir + viewDir);
+    float spec = pow(max(dot(normal, halfDir), 0.0), shininess);
+    // attenuation
+    float distance = length(light.position.xyz - fragPos);
+    float attenuation = 1.0 / (light.params1.x + light.params1.y * distance + light.params1.z * (distance * distance));    
+    // spotlight intensity
+    float theta = dot(lightDir, normalize(-light.direction.xyz)); 
+    float epsilon = light.params2.x - light.params2.y;
+    float intensity = clamp((theta - light.params2.y) / epsilon, 0.0, 1.0);
+    // combine results
+    vec3 ambient = light.ambient.rgb * diffTex;
+    vec3 diffuse = light.diffuse.rgb * diff * diffTex;
+    vec3 specular = light.specular.rgb * spec * specTex;
+    ambient *= attenuation * intensity;
+    diffuse *= attenuation * intensity;
+    specular *= attenuation * intensity;
+    return (ambient + diffuse + specular);
 }
+//
+//
+//vec3 CalcSpotLight(in GPULight light, vec3 norm,  vec3 viewDir, vec3 diffTex, vec3 specTex, float shininess)
+//{
+//    vec3  toLight     = light.position.xyz - FragPos;
+//    float distance    = length(toLight);
+//    vec3  lightDir    = toLight / distance;
+//    float diff        = max(dot(norm, lightDir), 0.0);
+//    vec3  halfDir     = normalize(lightDir + viewDir);
+//    float spec        = pow(max(dot(norm, halfDir), 0.0), shininess);
+//    float attenuation = 1.0 / (light.params1.x + light.params1.y * distance +  light.params1.z * distance * distance);
+//    float theta       = dot(lightDir, normalize(-light.direction.xyz));
+//    float epsilon     = light.params2.x - light.params2.y;
+//    float intensity   = clamp((theta - light.params2.y) / epsilon, 0.0, 1.0);
+//
+//    return (light.ambient.rgb * diffTex
+//          + light.diffuse.rgb * diff * diffTex
+//          + light.specular.rgb * spec * specTex) * attenuation * intensity;
+//}
