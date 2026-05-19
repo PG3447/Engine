@@ -86,6 +86,25 @@ struct GPUInstanceData {
     uint32_t  objectID;
     glm::vec2 padding;
 };
+//
+//// UBO per-frame — jeden transfer na klatkę
+//struct FrameUBO {
+//    glm::mat4 viewProjection;
+//    glm::mat4 view;
+//    glm::vec4 viewPos;      // xyz = pozycja, w = unused
+//    glm::float32_t zNear;
+//    glm::float32_t zFar;
+//    glm::int32_t   numLights;
+//    glm::int32_t   _pad;
+//    glm::vec2      screenSize;
+//    glm::vec2      _pad2;
+//};
+
+// UBO świateł
+static constexpr int MAX_UBO_LIGHTS = 512;
+struct LightsUBO {
+    GPULight lights[MAX_UBO_LIGHTS];
+};
 
 
 class GPUDrivenRenderer {
@@ -164,6 +183,9 @@ public:
     GLuint materialSSBO = 0; /// bind 7
     GLuint lightsSSBO = 0;
 
+    GLuint frameUBO = 0;  // bind = 0
+    GLuint lightsUBO = 0;  // bind = 1
+    
     uint32_t* totalVisibleMapped = nullptr;
 
     GLuint hizTexture = 0;
@@ -201,6 +223,8 @@ public:
         //glDeleteBuffers(1, &drawCountSSBO);
         glDeleteBuffers(1, &meshDataSSBO);
         glDeleteBuffers(1, &materialSSBO);
+        glDeleteBuffers(1, &frameUBO);
+        glDeleteBuffers(1, &lightsUBO);
         if (hizTexture) glDeleteTextures(1, &hizTexture);
     }
 
@@ -269,6 +293,20 @@ public:
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, renderDataSSBO);
         glBufferData(GL_SHADER_STORAGE_BUFFER, maxRenderObjects * sizeof(RenderData), nullptr, GL_DYNAMIC_DRAW);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+        // UBO — frame data (binding = 0)
+        //glGenBuffers(1, &frameUBO);
+        //glBindBuffer(GL_UNIFORM_BUFFER, frameUBO);
+        //glBufferData(GL_UNIFORM_BUFFER, sizeof(FrameUBO), nullptr, GL_DYNAMIC_DRAW);
+        //glBindBufferBase(GL_UNIFORM_BUFFER, 0, frameUBO);
+
+        // UBO — światła (binding = 1)
+        glGenBuffers(1, &lightsUBO);
+        glBindBuffer(GL_UNIFORM_BUFFER, lightsUBO);
+        glBufferData(GL_UNIFORM_BUFFER, sizeof(LightsUBO), nullptr, GL_DYNAMIC_DRAW);
+        glBindBufferBase(GL_UNIFORM_BUFFER, 1, lightsUBO);
+
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
         InitHiZ(width, height);
     }
@@ -421,9 +459,10 @@ public:
     {
         if (lights.empty()) return;
 
-        gpuLights.resize(lights.size());
+        uint32_t count = std::min((uint32_t)lights.size(), (uint32_t)MAX_UBO_LIGHTS);
+        gpuLights.resize(count);
 
-        for (size_t i = 0; i < lights.size(); i++)
+        for (size_t i = 0; i < count; i++)
         {
             LightComponent* light = lights[i];
             TransformComponent* transform = transforms[i];
@@ -444,20 +483,25 @@ public:
             g.params2 = glm::vec4(light->cutOff, light->outerCutOff, on ? 1.0f : 0.0f, 0.0f);
         }
 
-        if (prevSizeLights == gpuLights.size())
-        {
-            glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightsSSBO);
-            glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, gpuLights.size() * sizeof(GPULight), gpuLights.data());
-            glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-        }
-        else
-        {
-            glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightsSSBO);
-            glBufferData(GL_SHADER_STORAGE_BUFFER, gpuLights.size() * sizeof(GPULight), gpuLights.data(), GL_DYNAMIC_DRAW);
-            glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-        }
 
-        prevSizeLights = gpuLights.size();
+        glBindBuffer(GL_UNIFORM_BUFFER, lightsUBO);
+        glBufferSubData(GL_UNIFORM_BUFFER, 0, count * sizeof(GPULight), gpuLights.data());
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+        //if (prevSizeLights == gpuLights.size())
+        //{
+        //    glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightsSSBO);
+        //    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, gpuLights.size() * sizeof(GPULight), gpuLights.data());
+        //    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+        //}
+        //else
+        //{
+        //    glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightsSSBO);
+        //    glBufferData(GL_SHADER_STORAGE_BUFFER, gpuLights.size() * sizeof(GPULight), gpuLights.data(), GL_DYNAMIC_DRAW);
+        //    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+        //}
+
+        prevSizeLights = count;
     }
 
     void UpdateLight(LightComponent* light, TransformComponent* transform)
@@ -653,7 +697,7 @@ public:
     void BindForDraw() {
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, instanceSSBO); // vertex shader
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, materialSSBO);   // fragment shader
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 8, lightsSSBO);   // fragment shader
+        //glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 8, lightsSSBO);   // fragment shader
     }
 
     //uint32_t ReadDrawCount() {
