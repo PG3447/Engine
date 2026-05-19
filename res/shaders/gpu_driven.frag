@@ -64,7 +64,7 @@ void main()
     vec4 texColor = (mat.diffuseHandle != uvec2(0)) ? texture(diffuseSampler, TexCoords) : vec4(diffuseColor, 1.0);
 
     // Specular
-    vec3 specTex = (mat.specularHandle != uvec2(0)) ? texture(specularSampler, TexCoords).rgb : vec3(0.5);
+    vec3 specTex = (mat.specularHandle != uvec2(0)) ? texture(specularSampler, TexCoords).rgb : vec3(0.0);
 
     // Normal
     vec3 norm;
@@ -77,36 +77,51 @@ void main()
 
     vec3 viewDir = normalize(viewPos - FragPos);
     vec3 diffTex = texColor.rgb;
-    vec3 result  = vec3(0.0);
+    vec3 result  =  CalcDirLight  (lights[1], norm, viewDir, diffTex, specTex, shininess);
 
-    for (int i = 0; i < numLights; i++)
-    {
-        if (lights[i].params2.z < 0.5) continue; // wyłączone
-
-        int type = int(lights[i].position.w);
-        if (type == 0)
-            result += CalcDirLight  (lights[i], norm, viewDir, diffTex, specTex, shininess);
-        else if (type == 1)
-            result += CalcPointLight (lights[i], norm, viewDir, diffTex, specTex, shininess);
-        else if (type == 2)
-            result += CalcSpotLight  (lights[i], norm, viewDir, diffTex, specTex, shininess);
-    }
+//    for (int i = 0; i < numLights; i++)
+//    {
+//        if (lights[i].params2.z < 0.5) continue; // wyłączone
+//
+//        int type = int(lights[i].position.w);
+//        if (type == 0)
+//            result += CalcDirLight  (lights[i], norm, viewDir, diffTex, specTex, shininess);
+//        else if (type == 1)
+//            result += CalcPointLight (lights[i], norm, viewDir, diffTex, specTex, shininess);
+//        else if (type == 2)
+//            result += CalcSpotLight  (lights[i], norm, viewDir, diffTex, specTex, shininess);
+//    }
 
     FragColor = vec4(result, texColor.a);
 }
 
-
-vec3 CalcDirLight(in GPULight light, vec3 norm, vec3 viewDir, vec3 diffTex, vec3 specTex, float shininess)
+vec3 CalcDirLight(in GPULight light, vec3 normal, vec3 viewDir, vec3 diffTex, vec3 specTex, float shininess)
 {
-    vec3  lightDir = normalize(-light.direction.xyz);
-    float diff     = max(dot(norm, lightDir), 0.0);
-    vec3  halfDir  = normalize(lightDir + viewDir);
-    float spec     = pow(max(dot(norm, halfDir), 0.0), shininess);
-
-    return light.ambient.rgb * diffTex
-         + light.diffuse.rgb * diff * diffTex
-         + light.specular.rgb * spec * specTex;
+    vec3 lightDir = normalize(-light.direction.xyz);
+    // diffuse shading
+    float diff = max(dot(normal, lightDir), 0.0);
+    // specular shading
+    vec3 halfDir = normalize(lightDir + viewDir);
+    float spec = pow(max(dot(normal, halfDir), 0.0), shininess);
+    // combine results
+    vec3 ambient = light.ambient.rgb * diffTex;
+    vec3 diffuse = light.diffuse.rgb * diff * diffTex;
+    vec3 specular = light.specular.rgb * spec * specTex;
+    return (ambient + diffuse + specular);
 }
+
+//
+//vec3 CalcDirLight(in GPULight light, vec3 norm, vec3 viewDir, vec3 diffTex, vec3 specTex, float shininess)
+//{
+//    vec3  lightDir = normalize(-light.direction.xyz);
+//    float diff     = max(dot(norm, lightDir), 0.0);
+//    vec3  halfDir  = normalize(lightDir + viewDir);
+//    float spec     = pow(max(dot(norm, halfDir), 0.0), shininess);
+//
+//    return light.ambient.rgb * diffTex
+//         + light.diffuse.rgb * diff * diffTex
+//         + light.specular.rgb * spec * specTex;
+//}
 
 vec3 CalcPointLight(in GPULight light, vec3 norm, vec3 viewDir, vec3 diffTex, vec3 specTex, float shininess)
 {

@@ -671,6 +671,7 @@ int main(int, char**)
     //pokoj bedzie tu
     floorModel = std::make_unique<Prefab>("res/models/number_floor.glb");
     GameObject* groundObject = floorModel->Instantiate(*scena1, nullptr, ourShader.get());
+    groundObject->name = "Ground1";
     groundObject->GetComponent<TransformComponent>()->scale.x = 100;
     groundObject->GetComponent<TransformComponent>()->scale.y = 1;
     groundObject->GetComponent<TransformComponent>()->scale.z = 100;
@@ -684,7 +685,32 @@ int main(int, char**)
     groundObject->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 1, 100 };
     //groundObject->GetComponent<ColliderComponent>()->isWalkable = true;
 
+    GLuint texID = groundObject->GetComponent<RenderComponent>()->meshes[0].material->specularMap;
+
+    spdlog::error("specularMap ID = {}", texID);  // czy w ogóle != 0?
+
+    glBindTexture(GL_TEXTURE_2D, texID);
+
+    GLint width = 0, height = 0;
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
+
+    spdlog::error("rozmiar tekstury: {}x{}", width, height);  // jeśli 0x0 - tekstura pusta
+
+    if (width == 0 || height == 0) {
+        spdlog::error("tekstura jest pusta lub nie zaladowana!");
+    }
+
+    std::vector<unsigned char> pixels(width * height * 4);
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+
+    for (int i = 0; i < std::min(10, width * height); i++) {
+        spdlog::error("pixel[{}] R={} G={} B={} A={}", i,
+            pixels[i * 4 + 0], pixels[i * 4 + 1], pixels[i * 4 + 2], pixels[i * 4 + 3]);
+    }
+
     GameObject* groundObject2 = floorModel->Instantiate(*scena1, nullptr, ourShader.get());
+    groundObject2->name = "Ground2";
     groundObject2->GetComponent<TransformComponent>()->scale.x = 100;
     groundObject2->GetComponent<TransformComponent>()->scale.y = 1;
     groundObject2->GetComponent<TransformComponent>()->scale.z = 100;
@@ -705,6 +731,7 @@ int main(int, char**)
 
 
     GameObject* groundObject3 = floorModel->Instantiate(*scena1, nullptr, ourShader.get());
+    groundObject3->name = "Ground3";
     groundObject3->GetComponent<TransformComponent>()->scale.x = 100;
     groundObject3->GetComponent<TransformComponent>()->scale.y = 1;
     groundObject3->GetComponent<TransformComponent>()->scale.z = 100;
@@ -722,6 +749,7 @@ int main(int, char**)
 
 
     GameObject* groundObject4 = floorModel->Instantiate(*scena1, nullptr, ourShader.get());
+    groundObject4->name = "Ground4";
     groundObject4->GetComponent<TransformComponent>()->scale.x = 100;
     groundObject4->GetComponent<TransformComponent>()->scale.y = 1;
     groundObject4->GetComponent<TransformComponent>()->scale.z = 100;

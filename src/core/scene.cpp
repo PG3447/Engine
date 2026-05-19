@@ -59,7 +59,6 @@ void Scene::Update(float deltaTime) {
 
     if (auto* ss = ecs.GetSystem<SpriteSystem>())
         ss->Update(ecs, deltaTime);
-
 }
 //
 //std::vector<GameObject*> Scene::GetGameObjects() {
