@@ -159,7 +159,7 @@ public:
     //build command
     GLuint instanceSSBO = 0; // bind 3
     GLuint drawCmdSSBO = 0; // bind 4
-    GLuint drawCountSSBO = 0; // bind 5
+    //GLuint drawCountSSBO = 0; // bind 5
     GLuint meshDataSSBO = 0; // bind 6
     GLuint materialSSBO = 0; /// bind 7
     GLuint lightsSSBO = 0;
@@ -198,7 +198,7 @@ public:
         glDeleteBuffers(1, &totalVisibleSSBO);
         glDeleteBuffers(1, &instanceSSBO);
         glDeleteBuffers(1, &drawCmdSSBO);
-        glDeleteBuffers(1, &drawCountSSBO);
+        //glDeleteBuffers(1, &drawCountSSBO);
         glDeleteBuffers(1, &meshDataSSBO);
         glDeleteBuffers(1, &materialSSBO);
         if (hizTexture) glDeleteTextures(1, &hizTexture);
@@ -246,7 +246,7 @@ public:
         // Indirect draw commands
         glGenBuffers(1, &drawCmdSSBO);
         // licznik draw calls
-        glGenBuffers(1, &drawCountSSBO);
+     /*   glGenBuffers(1, &drawCountSSBO);*/
         glGenBuffers(1, &meshDataSSBO);
         glGenBuffers(1, &materialSSBO);
         glGenBuffers(1, &lightsSSBO);
@@ -257,8 +257,8 @@ public:
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, instanceSSBO);
         glBufferData(GL_SHADER_STORAGE_BUFFER, instanceBufferCapacity * sizeof(GPUInstanceData), nullptr, GL_DYNAMIC_DRAW);
        
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, drawCountSSBO);
-        glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(uint32_t), nullptr, GL_DYNAMIC_DRAW);
+        //glBindBuffer(GL_SHADER_STORAGE_BUFFER, drawCountSSBO);
+        //glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(uint32_t), nullptr, GL_DYNAMIC_DRAW);
 
         
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, totalVisibleSSBO);
@@ -636,12 +636,12 @@ public:
     }
 
 
-    void ResetDrawCount() {
-        uint32_t zero = 0;
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, drawCountSSBO);
-        glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(uint32_t), &zero);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-    }
+    //void ResetDrawCount() {
+    //    uint32_t zero = 0;
+    //    glBindBuffer(GL_SHADER_STORAGE_BUFFER, drawCountSSBO);
+    //    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(uint32_t), &zero);
+    //    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    //}
 
     //void BindForCompute() {
     //    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, renderDataSSBO);
@@ -656,13 +656,13 @@ public:
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 8, lightsSSBO);   // fragment shader
     }
 
-    uint32_t ReadDrawCount() {
-        uint32_t count = 0;
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, drawCountSSBO);
-        glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(uint32_t), &count);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-        return count;
-    }
+    //uint32_t ReadDrawCount() {
+    //    uint32_t count = 0;
+    //    glBindBuffer(GL_SHADER_STORAGE_BUFFER, drawCountSSBO);
+    //    glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(uint32_t), &count);
+    //    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    //    return count;
+    //}
 
     void Draw()
     {
