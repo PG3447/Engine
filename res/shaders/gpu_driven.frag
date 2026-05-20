@@ -60,7 +60,7 @@ vec3 CalcSpotLight(in GPULight light, vec3 normal, vec3 fragPos, vec3 viewDir, v
 
 void main()
 {
-    uint x = subgroupElect() ? 1u : 0u;
+    //uint x = subgroupElect() ? 1u : 0u;
     //bool uniformMat = subgroupAllEqual(materialID);
 
     MaterialGPU mat = materials[materialID];
