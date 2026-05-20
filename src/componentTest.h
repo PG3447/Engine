@@ -1,3 +1,342 @@
+
+#version 460 core
+layout(local_size_x = 64) in;
+
+layout(binding = 0) uniform sampler2D hizCullingTexture;
+
+uniform mat4 viewProjection;
+uniform int  hizMipLevels;
+uniform uint objectCount;
+uniform vec2 screenSize;
+
+struct RenderData {
+    mat4 model;
+    vec4 aabbMin;
+    vec4 aabbMax;
+    uint meshID;
+    uint materialID;
+    uint skeletonID;
+    uint padding;
+};
+
+layout(std430, binding = 1) readonly buffer Objects {
+    RenderData objects[];
+};
+
+layout(std430, binding = 2) buffer VisibleFlags {
+    uint visibleFlags[];
+};
+
+layout(std430, binding = 3) buffer UniqueHashTable {
+    uint hashTable[];   // (mesh, material) → objectID
+};
+
+layout(std430, binding = 4) buffer UniqueKeys {
+    uvec2 keys[];       // compact list (meshID, materialID)
+};
+
+layout(std430, binding = 5) buffer UniqueCounter {
+    uint uniqueCount;
+};
+
+#define TABLE_SIZE 1048576u
+#define EMPTY 0xFFFFFFFFu
+
+uint hashKey(uint mesh, uint mat)
+{
+    return (mesh * 73856093u) ^ (mat * 19349663u);
+}
+
+bool frustumCull(vec4 clip[8])
+{
+    for (int p = 0; p < 3; p++)
+    {
+        bool outP = true, outN = true;
+
+        for (int i = 0; i < 8; i++)
+        {
+            float v = clip[i][p];
+            float w = clip[i].w;
+
+            if (v <= w)  outP = false;
+            if (v >= -w) outN = false;
+        }
+
+        if (outP || outN) return true;
+    }
+    return false;
+}
+
+bool hizCull(vec3 aabbMin, vec3 aabbMax, mat4 mvp)
+{
+    vec2 sMin = vec2(1.0);
+    vec2 sMax = vec2(-1.0);
+    float zMin = 1.0;
+
+    for (int i = 0; i < 8; i++)
+    {
+        vec3 c = vec3(
+            (i & 1) != 0 ? aabbMax.x : aabbMin.x,
+            (i & 2) != 0 ? aabbMax.y : aabbMin.y,
+            (i & 4) != 0 ? aabbMax.z : aabbMin.z
+        );
+
+        vec4 p = mvp * vec4(c, 1.0);
+        if (p.w <= 0.0) return false;
+
+        vec3 ndc = p.xyz / p.w;
+
+        sMin = min(sMin, ndc.xy);
+        sMax = max(sMax, ndc.xy);
+        zMin = min(zMin, ndc.z * 0.5 + 0.5);
+    }
+
+    vec2 uvMin = sMin * 0.5 + 0.5;
+    vec2 uvMax = sMax * 0.5 + 0.5;
+
+    vec2 size = (uvMax - uvMin) * screenSize;
+    float mip = clamp(ceil(log2(max(size.x, size.y))), 0.0, float(hizMipLevels - 1));
+
+    vec2 uv = (uvMin + uvMax) * 0.5;
+    float hizDepth = textureLod(hizCullingTexture, uv, mip).r;
+
+    return zMin > hizDepth;
+}
+
+void main()
+{
+    uint id = gl_GlobalInvocationID.x;
+    if (id >= objectCount) return;
+
+    RenderData obj = objects[id];
+
+    mat4 mvp = viewProjection * obj.model;
+
+    vec4 clip[8];
+
+    for (int i = 0; i < 8; i++)
+    {
+        vec3 c = vec3(
+            (i & 1) != 0 ? obj.aabbMax.x : obj.aabbMin.x,
+            (i & 2) != 0 ? obj.aabbMax.y : obj.aabbMin.y,
+            (i & 4) != 0 ? obj.aabbMax.z : obj.aabbMin.z
+        );
+
+        clip[i] = mvp * vec4(c, 1.0);
+    }
+
+    if (frustumCull(clip) || hizCull(obj.aabbMin.xyz, obj.aabbMax.xyz, mvp))
+    {
+        visibleFlags[id] = 0u;
+        return;
+    }
+
+    visibleFlags[id] = 1u;
+
+    // ===== UNIQUE KEY PACKING =====
+    uint mesh = obj.meshID;
+    uint mat = obj.materialID;
+
+    uint key = hashKey(mesh, mat) % TABLE_SIZE;
+
+    while (true)
+    {
+        uint prev = atomicCompSwap(hashTable[key], EMPTY, id);
+
+        if (prev == EMPTY)
+        {
+            uint idx = atomicAdd(uniqueCount, 1u);
+            keys[idx] = uvec2(mesh, mat);
+            break;
+        }
+
+        if (prev == id) break;
+
+        key = (key + 1u) % TABLE_SIZE;
+    }
+}
+
+#version 460 core
+
+layout(local_size_x = 64) in;
+
+
+#define TABLE_SIZE 1048576u
+
+
+layout(std430, binding = 0) readonly buffer UniqueKeys {
+
+    uvec2 keys[];
+
+};
+
+
+layout(std430, binding = 1) buffer CompactMap {
+
+    uint compactID[];
+
+};
+
+
+layout(std430, binding = 2) buffer UniqueCounter {
+
+    uint uniqueCount;
+
+};
+
+
+uint hashKey(uint mesh, uint mat)
+
+{
+
+    return (mesh * 73856093u) ^ (mat * 19349663u);
+
+}
+
+
+void main()
+
+{
+
+    uint i = gl_GlobalInvocationID.x;
+
+    if (i >= uniqueCount) return;
+
+
+    uvec2 k = keys[i];
+
+
+    uint h = hashKey(k.x, k.y) % TABLE_SIZE;
+
+
+    while (true)
+
+    {
+
+        uint v = compactID[h];
+
+
+        if (v == 0xFFFFFFFFu)
+
+        {
+
+            compactID[h] = i;
+
+            break;
+
+        }
+
+
+        h = (h + 1u) % TABLE_SIZE;
+
+    }
+
+}
+
+#version 460 core
+layout(local_size_x = 128) in;
+
+struct InstanceData {
+    mat4 model;
+    uint materialID;
+    uint objectID;
+    vec2 pad;
+};
+
+
+layout(std430, binding = 0) readonly buffer Objects {
+    RenderData objects[];
+};
+
+layout(std430, binding = 1) readonly buffer VisibleFlags {
+    uint visibleFlags[];
+};
+
+layout(std430, binding = 2) readonly buffer CompactMap {
+    uint compactID[];
+};
+
+layout(std430, binding = 3) buffer InstanceCounters {
+    uint instanceCount[];
+};
+
+layout(std430, binding = 4) buffer InstanceOffsets {
+    uint instanceOffset[];
+};
+
+layout(std430, binding = 5) buffer Instances {
+    InstanceData instances[];
+};
+
+uniform uint objectCount;
+
+uint hashKey(uint mesh, uint mat)
+{
+    return (mesh * 73856093u) ^ (mat * 19349663u);
+}
+
+void main()
+{
+    uint id = gl_GlobalInvocationID.x;
+    if (id >= objectCount) return;
+    if (visibleFlags[id] == 0u) return;
+
+    RenderData obj = objects[id];
+
+    uint h = hashKey(obj.meshID, obj.materialID) % 1048576u;
+    uint compact = compactID[h];
+
+    uint slot = atomicAdd(instanceCount[compact], 1u);
+    uint writeIdx = instanceOffset[compact] + slot;
+
+    instances[writeIdx] = InstanceData(
+        obj.model,
+        obj.materialID,
+        id,
+        vec2(0.0)
+    );
+}
+
+#version 460 core
+layout(local_size_x = 64) in;
+
+struct DrawCommand {
+    uint indexCount;
+    uint instanceCount;
+    uint firstIndex;
+    uint baseVertex;
+    uint baseInstance;
+};
+
+layout(std430, binding = 0) readonly buffer Meshes {
+    uint indexCount[];
+};
+
+layout(std430, binding = 1) readonly buffer Keys {
+    uvec2 keys[];
+};
+
+layout(std430, binding = 2) readonly buffer InstanceCount {
+    uint instanceCount[];
+};
+
+layout(std430, binding = 3) buffer DrawCmds {
+    DrawCommand cmds[];
+};
+
+uniform uint uniqueCount;
+
+void main()
+{
+    uint id = gl_GlobalInvocationID.x;
+    if (id >= uniqueCount) return;
+
+    uint count = instanceCount[id];
+
+    cmds[id].indexCount = indexCount[keys[id].x];
+    cmds[id].instanceCount = count;
+    cmds[id].baseInstance = 0;
+}
 //
 //
 //
