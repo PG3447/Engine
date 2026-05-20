@@ -1231,12 +1231,12 @@ public:
         // 7a. Odczytaj totalGroups z GPU — synchronizujemy przez glGetBufferSubData
         //     które jest bezpieczne po GL_SHADER_STORAGE_BARRIER_BIT z DispatchWritePass.
         //     Bariera gwarantuje że prefix_sum.comp skończył atomicAdd do totalGroupsSSBO.
-        uint32_t totalGroups = 18;
-        //glBindBuffer(GL_SHADER_STORAGE_BUFFER, totalGroupsSSBO);
-        //glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(uint32_t), &totalGroups);
-        //glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+        uint32_t totalGroups = 0;
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, totalGroupsSSBO);
+        glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(uint32_t), &totalGroups);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
-        //if (totalGroups == 0) return;
+        if (totalGroups == 0) return;
         //spdlog::info(totalGroups);
         // 7b. Zbuduj komendy DrawIndirect (build_commands)
         DispatchBuildCommands(visibleCount, totalGroups);
