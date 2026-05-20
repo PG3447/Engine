@@ -36,7 +36,7 @@ layout(std430, binding = 3) writeonly buffer VisibleFlags
     uint visibleFlags[]; // 1 = widoczny, 0 = odrzucony
 };
 
-layout(std430, binding = 3) buffer SortKeys
+layout(std430, binding = 4) buffer SortKeys
 {
     uint sortKeys[];      // zakodowany klucz sortowania: high bits = materialID, low bits = meshID
 };
@@ -130,8 +130,10 @@ void main()
 
     visibleFlags[objID] = 1u;
     atomicAdd(meshInstanceCount[meshID], 1u);
-    sortKeys[objID] = (obj.materialID << 16u) | (obj.meshID & 0xFFFFu);
+    sortKeys[objID] = (obj.meshID << 16u) | (obj.materialID & 0xFFFFu);
+    //sortKeys[objID] = (obj.materialID << 16u) | (obj.meshID & 0xFFFFu);
 }
+
 
 
 

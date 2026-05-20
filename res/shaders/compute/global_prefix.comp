@@ -1,0 +1,55 @@
+#version 460 core
+layout(local_size_x = 256) in;
+
+// ============================================================
+// global_prefix.comp  (nowy kernel — zastępuje krok CPU-side)
+// Uruchamiaj z dokładnie 1 workgroup (256 wątków = 256 bucketów).
+// Wejście:  histogram[groupCount * 256] — wypełniony przez histogram.comp
+// Wyjście:  globalPrefix[256]           — exclusive prefix sum po bucketach
+//
+// Dispatch: glDispatchCompute(1, 1, 1) po histogram.comp
+// ============================================================
+
+layout(std430, binding = 0) readonly buffer Histogram {
+    // [groupID * 256 + bucket] — per-group histogramy z histogram.comp
+    uint histogram[];
+};
+
+layout(std430, binding = 1) buffer GlobalPrefix {
+    uint globalPrefix[256];
+};
+
+uniform uint groupCount; // gl_NumWorkGroups.x z poprzedniego dispatcha histogram.comp
+
+shared uint bucketTotal[256]; // suma po wszystkich grupach dla każdego bucketu
+shared uint prefixScan[256];  // exclusive prefix sum
+
+void main()
+{
+    uint bucket = gl_LocalInvocationID.x; // 0..255
+
+    // Krok 1: zsumuj histogram wszystkich grup dla tego bucketu
+    uint total = 0u;
+    for (uint g = 0u; g < groupCount; g++)
+        total += histogram[g * 256u + bucket];
+    bucketTotal[bucket] = total;
+
+    barrier();
+
+    // Krok 2: exclusive prefix sum (Hillis-Steele / up-sweep w shared memory)
+    // Działa poprawnie dla dokładnie 256 wątków.
+    prefixScan[bucket] = bucketTotal[bucket];
+    barrier();
+
+    for (uint stride = 1u; stride < 256u; stride <<= 1u)
+    {
+        uint val = (bucket >= stride) ? prefixScan[bucket - stride] : 0u;
+        barrier();
+        prefixScan[bucket] += val;
+        barrier();
+    }
+
+    // Zamień inclusive → exclusive (przesunięcie o 1)
+    uint exclusive = (bucket == 0u) ? 0u : prefixScan[bucket - 1u];
+    globalPrefix[bucket] = exclusive;
+}

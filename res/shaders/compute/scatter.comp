@@ -43,11 +43,10 @@ void main()
     uint groupID = gl_WorkGroupID.x;
     uint groupCount = gl_NumWorkGroups.x;
 
-    // Buduj globalny prefix sum histogramu (tylko grupa 0)
-    // W praktyce ten krok robi siê osobnym ma³ym kernelem lub na CPU — uproszczenie:
-    // zak³adamy ¿e globalPrefix[] jest ju¿ wype³niony przez CPU przed wywo³aniem tej fazy.
+    // globalPrefix[] jest wypelniony przez global_prefix.comp przed tym dispatchem
+    // (1 workgroup, 256 watkow -- exclusive prefix sum po wszystkich bucketach).
 
-    // Scatter: ka¿dy w¹tek przenosi swój element do w³aœciwej pozycji
+    // Scatter: kazdy watek przenosi swoj element do wlasciwej pozycji
     if (gid < elementCount)
     {
         uint key = keysIn[gid];

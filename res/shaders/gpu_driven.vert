@@ -19,10 +19,11 @@ flat out uint materialID;
 // =======================
 
 struct InstanceData {
-    mat4  model;
-    uint  materialID;
-    uint  objectID;
-    vec2  padding;
+    mat4 model;
+    uint materialID;
+    uint objectID;
+    uint pad0;
+    uint pad1;
 };
 
 layout(std430, binding = 3) readonly buffer Instances
@@ -39,7 +40,7 @@ uniform mat4 viewProjection;
 void main()
 {
     // gl_BaseInstance = instanceOffset z DrawCommand (offset w instanceSSBO)
-    // gl_InstanceID   = który to egzemplarz w tej instancji (0..instanceCount-1)
+    // gl_InstanceID   = ktÃ³ry to egzemplarz w tej instancji (0..instanceCount-1)
     InstanceData inst = instances[gl_BaseInstance + gl_InstanceID];
 
     materialID = inst.materialID;

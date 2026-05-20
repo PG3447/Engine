@@ -1,6 +1,13 @@
 #version 460 core
 layout(local_size_x = 64) in;
 
+// ============================================================
+// write_pass.comp
+// Iteruje po sortedIndices[] (wynik radix sort) i przepisuje
+// dane do instances[] w kolejności posortowanej po (materialID|meshID).
+// Sąsiednie wątki piszą do sąsiednich adresów → pełna koalescencja.
+// ============================================================
+
 struct RenderData {
     mat4 model;
     vec4 aabbMin;
@@ -11,37 +18,41 @@ struct RenderData {
     uint padding;
 };
 
-struct MeshMeta {
-    uint instanceOffset; // wypełniony przez prefix-sum na CPU
-    uint instanceCount;  // atomic — ile już zapisano (reset przed tym przebiegiem)
+//struct MeshMeta {
+//    uint instanceOffset; // wypełniony przez prefix-sum na CPU
+//    uint instanceCount;  // atomic — ile już zapisano (reset przed tym przebiegiem)
+//    uint pad0;
+//    uint pad1;
+//};
+
+struct InstanceData {
+    mat4 model;
+    uint materialID;
+    uint objectID;
     uint pad0;
     uint pad1;
 };
 
-struct InstanceData {
-    mat4  model;
-    uint  materialID;
-    uint  objectID;
-    float pad[2];
-};
-
+// binding = 0 : źródłowe dane obiektów
 layout(std430, binding = 0) readonly buffer Objects {
     RenderData objects[];
 };
+
+// binding = 1 : wynik radix sort — indeksy w kolejności posortowanej
 layout(std430, binding = 1) readonly buffer SortedIndices {
     uint sortedIndices[];
 };
-layout(std430, binding = 2) buffer Instances {
+
+// binding = 2 : wyjściowy bufor instancji dla GPU (indirect draw)
+layout(std430, binding = 2) writeonly buffer Instances {
     InstanceData instances[];
 };
 
-
-layout(std430, binding = 1) buffer MeshMeta_buf
-{
-    MeshMeta meshMeta[];
-};
-
-
+//// binding = 3 : metadane meshy — atomicAdd zlicza instancje per mesh
+//layout(std430, binding = 3) buffer MeshMeta_buf {
+//    MeshMeta meshMeta[];
+//};
+//
 uniform uint visibleCount;
 
 void main()
@@ -52,13 +63,13 @@ void main()
     uint objID = sortedIndices[i];
     RenderData obj = objects[objID];
 
-    // Zapis jest sekwencyjny — indeks i odpowiada pozycji w tablicy instancji.
+    // Zapis sekwencyjny — i odpowiada pozycji w tablicy instancji.
     // Wątki sąsiednie piszą do sąsiednich adresów → pełna koalescencja zapisu.
-    instances[i].model = obj.model;
+    instances[i].model      = obj.model;
     instances[i].materialID = obj.materialID;
-    instances[i].objectID = objID;
+    instances[i].objectID   = objID;
 
-    atomicAdd(meshMeta[obj.meshID].instanceCount, 1u);
+//    atomicAdd(meshMeta[obj.meshID].instanceCount, 1u);
 }
 
 

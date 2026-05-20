@@ -292,11 +292,14 @@ public:
 
     void Init() {
         gpuRenderer = GPUDrivenRenderer();
-        gpuRenderer.shaderHizCullCount = new ComputeShader("res/shaders/hiz_culling_count.comp");
-        gpuRenderer.shaderPrefixSum = new ComputeShader("res/shaders/prefix_sum.comp");
-        gpuRenderer.shaderHizWritePass = new ComputeShader("res/shaders/write_pass.comp");
-        gpuRenderer.shaderBuildCmds = new ComputeShader("res/shaders/build_commands.comp");
-        gpuRenderer.shaderHizDownsample = new ComputeShader("res/shaders/hiz_build.comp");
+        gpuRenderer.shaderHizCullCount = new ComputeShader("res/shaders/compute/hiz_culling_count.comp");
+        gpuRenderer.shaderHistogram = new ComputeShader("res/shaders/compute/histogram.comp");
+        gpuRenderer.shaderGlobalPrefix = new ComputeShader("res/shaders/compute/global_prefix.comp");
+        gpuRenderer.shaderScatter = new ComputeShader("res/shaders/compute/scatter.comp");
+        gpuRenderer.shaderPrefixSum = new ComputeShader("res/shaders/compute/prefix_sum.comp");
+        gpuRenderer.shaderWritePass = new ComputeShader("res/shaders/compute/write_pass.comp");
+        gpuRenderer.shaderBuildCmds = new ComputeShader("res/shaders/compute/build_commands.comp");
+        gpuRenderer.shaderHizDownsample = new ComputeShader("res/shaders/compute/hiz_build.comp");
         gpuRenderer.shaderRender = new Shader("res/shaders/gpu_driven.vert", "res/shaders/gpu_driven.frag");
 
         glEnable(GL_DEPTH_TEST);
@@ -313,9 +316,7 @@ public:
 
         GLuint available = 0;
         while (!available) {
-            glGetQueryObjectuiv(gpuQuery.queries[0],
-                               GL_QUERY_RESULT_AVAILABLE,
-                               &available);
+            glGetQueryObjectuiv(gpuQuery.queries[0], GL_QUERY_RESULT_AVAILABLE, &available);
         }
     }
 
@@ -420,9 +421,8 @@ public:
                     meshIDMap[rm] = gpuRenderer.RegisterMesh(data);
                 }
 
-                if (materialIDMap.find(mat) == materialIDMap.end()) {
+                if (materialIDMap.find(mat) == materialIDMap.end())
                     materialIDMap[mat] = gpuRenderer.RegisterMaterial(mat);
-                }
             }
         }
 
@@ -456,9 +456,9 @@ public:
         gpuRendererReady = true;
     }
     std::vector<RenderData> renderDataCache;
-    std::vector<RenderData> sortTemp;
-    std::vector<uint32_t>   sortCounts;
-    std::vector<uint32_t>   sortOffsets;
+    //std::vector<RenderData> sortTemp;
+    //std::vector<uint32_t>   sortCounts;
+    //std::vector<uint32_t>   sortOffsets;
 
     std::vector<RenderData>& CollectRenderData()
     {
@@ -512,7 +512,7 @@ public:
             }
         }
 
-        const uint32_t bucketCount = static_cast<uint32_t>(materialIDMap.size());
+    /*    const uint32_t bucketCount = static_cast<uint32_t>(materialIDMap.size());
         if (bucketCount == 0 || renderDataCache.empty())
             return renderDataCache;
 
@@ -530,7 +530,7 @@ public:
             sortTemp[sortOffsets[rd.materialID]++] = rd;
 
         std::swap(renderDataCache, sortTemp);
-
+*/
 
         return renderDataCache;
     }

@@ -1,7 +1,12 @@
 #version 460 core
 layout(local_size_x = 64) in;
 
-uniform uint meshCount;
+// ============================================================
+// build_commands.comp
+// Jeden wątek na grupę (meshID, materialID).
+// Buduje DrawCommand dla każdej unikalnej pary.
+// Wymaga: totalGroups, groupStart[], sortedKeys[], meshes[]
+// ============================================================
 
 struct MeshData {
     uint indexCount;
@@ -10,12 +15,6 @@ struct MeshData {
     uint pad;
 };
 
-//struct MeshMeta {
-//    uint instanceOffset;
-//    uint instanceCount;
-//    uint pad0, pad1;
-//};
-//
 struct DrawCommand {
     uint count;
     uint instanceCount;
@@ -24,21 +23,32 @@ struct DrawCommand {
     uint baseInstance;
 };
 
-layout(std430, binding = 0) readonly buffer Meshes    { MeshData    meshes[]; };
-//layout(std430, binding = 1) readonly buffer MeshMeta_buf { MeshMeta meshMeta[]; };
-//
+// binding = 0 : geometria meshy (indexCount, firstIndex, baseVertex)
+layout(std430, binding = 0) readonly buffer Meshes {
+    MeshData meshes[];
+};
+
+// binding = 1 : posortowane klucze (meshID<<16|materialID) — wynik radix sort
 layout(std430, binding = 1) readonly buffer SortedKeys {
-    uint sortedKeys[];       // posortowane klucze
+    uint sortedKeys[];
 };
+
+// binding = 2 : indeksy startu każdej grupy w tablicy instancji
 layout(std430, binding = 2) readonly buffer GroupStart {
-    uint groupStart[];       // start każdej grupy w tablicy instancji
+    uint groupStart[];
 };
+
+// binding = 3 : liczba unikalnych grup (meshID, materialID) — wynik prefix_sum
 layout(std430, binding = 3) readonly buffer DrawGroupCounter {
     uint totalGroups;
 };
 
-layout(std430, binding = 2) writeonly buffer DrawCmds { DrawCommand commands[]; };
-//layout(std430, binding = 3) buffer Counter            { uint drawCount; };
+// binding = 4 : wyjściowe komendy indirect draw
+layout(std430, binding = 4) writeonly buffer DrawCmds {
+    DrawCommand commands[];
+};
+
+uniform uint visibleCount; // łączna liczba widocznych instancji (koniec ostatniej grupy)
 
 void main()
 {
@@ -46,19 +56,19 @@ void main()
     if (id >= totalGroups) return;
 
     uint start = groupStart[id];
-    uint end = (id + 1u < totalGroups) ? groupStart[id + 1u] : /* visibleCount */ groupStart[0];
-    // Uwaga: visibleCount przekaż jako uniform lub jako pierwszy element osobnego bufora
-    // groupStart[0] powyżej to placeholder — patrz komentarz niżej
+    // Koniec grupy: start następnej grupy lub visibleCount dla ostatniej
+    uint end = (id + 1u < totalGroups) ? groupStart[id + 1u] : visibleCount;
 
-    uint key = sortedKeys[start];
+    uint key    = sortedKeys[start];
     uint meshID = key >> 16u;
-
-    commands[id].count = meshes[meshID].indexCount;
-    commands[id].instanceCount = end - start;          // liczba instancji w tej grupie
-    commands[id].firstIndex = meshes[meshID].firstIndex;
-    commands[id].baseVertex = meshes[meshID].baseVertex;
-    commands[id].baseInstance = start;                // GPU czyta instancje od tego offsetu
+    //uint meshID = key & 0xFFFFu;
+    commands[id].count         = meshes[meshID].indexCount;
+    commands[id].instanceCount = end - start;
+    commands[id].firstIndex    = meshes[meshID].firstIndex;
+    commands[id].baseVertex    = meshes[meshID].baseVertex;
+    commands[id].baseInstance  = start; // GPU czyta instancje od tego offsetu
 }
+
 
 
 
