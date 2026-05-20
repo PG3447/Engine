@@ -1,0 +1,59 @@
+#version 460 core
+layout(local_size_x = 256) in;
+
+uniform uint elementCount;
+uniform uint bitShift;
+
+layout(std430, binding = 0) readonly buffer KeysIn
+{
+    uint keysIn[];
+};
+
+layout(std430, binding = 1) readonly buffer ValuesIn
+{
+    uint valuesIn[];    // indeksy obiektów (0..N-1)
+};
+
+layout(std430, binding = 2) readonly buffer Histogram
+{
+    uint histogram[];
+};
+
+layout(std430, binding = 3) buffer GlobalPrefixSum
+{
+    uint globalPrefix[256];  // globalne offsety dla ka¿dego bucketu
+};
+
+layout(std430, binding = 4) buffer KeysOut
+{
+    uint keysOut[];
+};
+
+layout(std430, binding = 5) buffer ValuesOut
+{
+    uint valuesOut[];
+};
+
+shared uint localPrefix[256];
+
+void main()
+{
+    uint lid = gl_LocalInvocationID.x;
+    uint gid = gl_GlobalInvocationID.x;
+    uint groupID = gl_WorkGroupID.x;
+    uint groupCount = gl_NumWorkGroups.x;
+
+    // Buduj globalny prefix sum histogramu (tylko grupa 0)
+    // W praktyce ten krok robi siê osobnym ma³ym kernelem lub na CPU — uproszczenie:
+    // zak³adamy ¿e globalPrefix[] jest ju¿ wype³niony przez CPU przed wywo³aniem tej fazy.
+
+    // Scatter: ka¿dy w¹tek przenosi swój element do w³aœciwej pozycji
+    if (gid < elementCount)
+    {
+        uint key = keysIn[gid];
+        uint bucket = (key >> bitShift) & 0xFFu;
+        uint pos = atomicAdd(globalPrefix[bucket], 1u);
+        keysOut[pos] = key;
+        valuesOut[pos] = valuesIn[gid];
+    }
+}

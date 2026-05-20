@@ -1,0 +1,92 @@
+#version 460 core
+layout(local_size_x = 64) in;
+
+struct RenderData {
+    mat4 model;
+    vec4 aabbMin;
+    vec4 aabbMax;
+    uint meshID;
+    uint materialID;
+    uint skeletonID;
+    uint padding;
+};
+
+layout(std430, binding = 0) readonly buffer Objects {
+    RenderData objects[];
+};
+layout(std430, binding = 1) readonly buffer SortedIndices {
+    uint sortedIndices[];    // wynik radix sort — indeksy obiektów w posortowanej kolejnoœci
+};
+layout(std430, binding = 2) readonly buffer SortedKeys {
+    uint sortedKeys[];       // posortowane klucze (meshID<<16|materialID)
+};
+layout(std430, binding = 3) buffer GroupBoundaries {
+    uint groupStart[];       // indeks startu ka¿dej grupy (mesh,mat) w sortedIndices
+    uint groupCount[];       // liczba instancji w grupie
+};
+layout(std430, binding = 4) buffer DrawGroupCounter {
+    uint totalGroups;        // ³¹czna liczba unikalnych par (mesh,mat)
+};
+
+uniform uint visibleCount;   // liczba widocznych obiektów (po culling'u)
+
+void main()
+{
+    uint i = gl_GlobalInvocationID.x;
+    if (i >= visibleCount) return;
+
+    // Czy to pierwsza granica grupy?
+    // W¹tek 0 zawsze zaczyna grupê.
+    // Pozosta³e — gdy klucz ró¿ni siê od poprzedniego.
+    bool isGroupStart = (i == 0u) ||
+        (sortedKeys[i] != sortedKeys[i - 1u]);
+
+    if (isGroupStart)
+    {
+        uint groupIdx = atomicAdd(totalGroups, 1u);
+        groupStart[groupIdx] = i;
+
+        // Liczba instancji: do nastêpnej granicy lub do koñca.
+        // Uzupe³niane w fazie B — tu wpisujemy tymczasowo 0.
+        groupCount[groupIdx] = 0u;
+    }
+}
+
+/*
+
+#version 460 core
+layout(local_size_x = 64) in;
+
+layout(std430, binding = 0) readonly buffer Counters
+{
+    uint meshCounters[];
+};
+
+layout(std430, binding = 1) buffer MeshMeta
+{
+    uvec4 meshMeta[];
+};
+
+layout(std430, binding = 2) writeonly buffer Total
+{
+    uint totalVisible;
+};
+
+uniform uint meshCount;
+
+void main()
+{
+    if (gl_GlobalInvocationID.x != 0)
+        return;
+
+    uint offset = 0u;
+
+    for (uint i = 0u; i < meshCount; i++) {
+        meshMeta[i].x = offset;
+        meshMeta[i].y = 0u;
+        offset += meshCounters[i];
+    }
+
+    totalVisible = offset;
+}
+*/

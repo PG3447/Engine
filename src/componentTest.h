@@ -1,343 +1,367 @@
-
-#version 460 core
-layout(local_size_x = 64) in;
-
-layout(binding = 0) uniform sampler2D hizCullingTexture;
-
-uniform mat4 viewProjection;
-uniform int  hizMipLevels;
-uniform uint objectCount;
-uniform vec2 screenSize;
-
-struct RenderData {
-    mat4 model;
-    vec4 aabbMin;
-    vec4 aabbMax;
-    uint meshID;
-    uint materialID;
-    uint skeletonID;
-    uint padding;
-};
-
-layout(std430, binding = 1) readonly buffer Objects {
-    RenderData objects[];
-};
-
-layout(std430, binding = 2) buffer VisibleFlags {
-    uint visibleFlags[];
-};
-
-layout(std430, binding = 3) buffer UniqueHashTable {
-    uint hashTable[];   // (mesh, material) → objectID
-};
-
-layout(std430, binding = 4) buffer UniqueKeys {
-    uvec2 keys[];       // compact list (meshID, materialID)
-};
-
-layout(std430, binding = 5) buffer UniqueCounter {
-    uint uniqueCount;
-};
-
-#define TABLE_SIZE 1048576u
-#define EMPTY 0xFFFFFFFFu
-
-uint hashKey(uint mesh, uint mat)
-{
-    return (mesh * 73856093u) ^ (mat * 19349663u);
-}
-
-bool frustumCull(vec4 clip[8])
-{
-    for (int p = 0; p < 3; p++)
-    {
-        bool outP = true, outN = true;
-
-        for (int i = 0; i < 8; i++)
-        {
-            float v = clip[i][p];
-            float w = clip[i].w;
-
-            if (v <= w)  outP = false;
-            if (v >= -w) outN = false;
-        }
-
-        if (outP || outN) return true;
-    }
-    return false;
-}
-
-bool hizCull(vec3 aabbMin, vec3 aabbMax, mat4 mvp)
-{
-    vec2 sMin = vec2(1.0);
-    vec2 sMax = vec2(-1.0);
-    float zMin = 1.0;
-
-    for (int i = 0; i < 8; i++)
-    {
-        vec3 c = vec3(
-            (i & 1) != 0 ? aabbMax.x : aabbMin.x,
-            (i & 2) != 0 ? aabbMax.y : aabbMin.y,
-            (i & 4) != 0 ? aabbMax.z : aabbMin.z
-        );
-
-        vec4 p = mvp * vec4(c, 1.0);
-        if (p.w <= 0.0) return false;
-
-        vec3 ndc = p.xyz / p.w;
-
-        sMin = min(sMin, ndc.xy);
-        sMax = max(sMax, ndc.xy);
-        zMin = min(zMin, ndc.z * 0.5 + 0.5);
-    }
-
-    vec2 uvMin = sMin * 0.5 + 0.5;
-    vec2 uvMax = sMax * 0.5 + 0.5;
-
-    vec2 size = (uvMax - uvMin) * screenSize;
-    float mip = clamp(ceil(log2(max(size.x, size.y))), 0.0, float(hizMipLevels - 1));
-
-    vec2 uv = (uvMin + uvMax) * 0.5;
-    float hizDepth = textureLod(hizCullingTexture, uv, mip).r;
-
-    return zMin > hizDepth;
-}
-
-void main()
-{
-    uint id = gl_GlobalInvocationID.x;
-    if (id >= objectCount) return;
-
-    RenderData obj = objects[id];
-
-    mat4 mvp = viewProjection * obj.model;
-
-    vec4 clip[8];
-
-    for (int i = 0; i < 8; i++)
-    {
-        vec3 c = vec3(
-            (i & 1) != 0 ? obj.aabbMax.x : obj.aabbMin.x,
-            (i & 2) != 0 ? obj.aabbMax.y : obj.aabbMin.y,
-            (i & 4) != 0 ? obj.aabbMax.z : obj.aabbMin.z
-        );
-
-        clip[i] = mvp * vec4(c, 1.0);
-    }
-
-    if (frustumCull(clip) || hizCull(obj.aabbMin.xyz, obj.aabbMax.xyz, mvp))
-    {
-        visibleFlags[id] = 0u;
-        return;
-    }
-
-    visibleFlags[id] = 1u;
-
-    // ===== UNIQUE KEY PACKING =====
-    uint mesh = obj.meshID;
-    uint mat = obj.materialID;
-
-    uint key = hashKey(mesh, mat) % TABLE_SIZE;
-
-    while (true)
-    {
-        uint prev = atomicCompSwap(hashTable[key], EMPTY, id);
-
-        if (prev == EMPTY)
-        {
-            uint idx = atomicAdd(uniqueCount, 1u);
-            keys[idx] = uvec2(mesh, mat);
-            break;
-        }
-
-        if (prev == id) break;
-
-        key = (key + 1u) % TABLE_SIZE;
-    }
-}
-
-#version 460 core
-
-layout(local_size_x = 64) in;
-
-
-#define TABLE_SIZE 1048576u
-
-
-layout(std430, binding = 0) readonly buffer UniqueKeys {
-
-    uvec2 keys[];
-
-};
-
-
-layout(std430, binding = 1) buffer CompactMap {
-
-    uint compactID[];
-
-};
-
-
-layout(std430, binding = 2) buffer UniqueCounter {
-
-    uint uniqueCount;
-
-};
-
-
-uint hashKey(uint mesh, uint mat)
-
-{
-
-    return (mesh * 73856093u) ^ (mat * 19349663u);
-
-}
-
-
-void main()
-
-{
-
-    uint i = gl_GlobalInvocationID.x;
-
-    if (i >= uniqueCount) return;
-
-
-    uvec2 k = keys[i];
-
-
-    uint h = hashKey(k.x, k.y) % TABLE_SIZE;
-
-
-    while (true)
-
-    {
-
-        uint v = compactID[h];
-
-
-        if (v == 0xFFFFFFFFu)
-
-        {
-
-            compactID[h] = i;
-
-            break;
-
-        }
-
-
-        h = (h + 1u) % TABLE_SIZE;
-
-    }
-
-}
-
-#version 460 core
-layout(local_size_x = 128) in;
-
-struct InstanceData {
-    mat4 model;
-    uint materialID;
-    uint objectID;
-    vec2 pad;
-};
-
-
-layout(std430, binding = 0) readonly buffer Objects {
-    RenderData objects[];
-};
-
-layout(std430, binding = 1) readonly buffer VisibleFlags {
-    uint visibleFlags[];
-};
-
-layout(std430, binding = 2) readonly buffer CompactMap {
-    uint compactID[];
-};
-
-layout(std430, binding = 3) buffer InstanceCounters {
-    uint instanceCount[];
-};
-
-layout(std430, binding = 4) buffer InstanceOffsets {
-    uint instanceOffset[];
-};
-
-layout(std430, binding = 5) buffer Instances {
-    InstanceData instances[];
-};
-
-uniform uint objectCount;
-
-uint hashKey(uint mesh, uint mat)
-{
-    return (mesh * 73856093u) ^ (mat * 19349663u);
-}
-
-void main()
-{
-    uint id = gl_GlobalInvocationID.x;
-    if (id >= objectCount) return;
-    if (visibleFlags[id] == 0u) return;
-
-    RenderData obj = objects[id];
-
-    uint h = hashKey(obj.meshID, obj.materialID) % 1048576u;
-    uint compact = compactID[h];
-
-    uint slot = atomicAdd(instanceCount[compact], 1u);
-    uint writeIdx = instanceOffset[compact] + slot;
-
-    instances[writeIdx] = InstanceData(
-        obj.model,
-        obj.materialID,
-        id,
-        vec2(0.0)
-    );
-}
-
-#version 460 core
-layout(local_size_x = 64) in;
-
-struct DrawCommand {
-    uint indexCount;
-    uint instanceCount;
-    uint firstIndex;
-    uint baseVertex;
-    uint baseInstance;
-};
-
-layout(std430, binding = 0) readonly buffer Meshes {
-    uint indexCount[];
-};
-
-layout(std430, binding = 1) readonly buffer Keys {
-    uvec2 keys[];
-};
-
-layout(std430, binding = 2) readonly buffer InstanceCount {
-    uint instanceCount[];
-};
-
-layout(std430, binding = 3) buffer DrawCmds {
-    DrawCommand cmds[];
-};
-
-uniform uint uniqueCount;
-
-void main()
-{
-    uint id = gl_GlobalInvocationID.x;
-    if (id >= uniqueCount) return;
-
-    uint count = instanceCount[id];
-
-    cmds[id].indexCount = indexCount[keys[id].x];
-    cmds[id].instanceCount = count;
-    cmds[id].baseInstance = 0;
-}
+//#version 460 core
+//layout(local_size_x = 64) in;
 //
+//layout(binding = 0) uniform sampler2D hizCullingTexture;
+//
+//uniform mat4 viewProjection;
+//uniform int  hizMipLevels;
+//uniform uint objectCount;
+//uniform vec2 screenSize;
+//
+//struct RenderData {
+//    mat4 model;
+//    vec4 aabbMin;
+//    vec4 aabbMax;
+//    uint meshID;
+//    uint materialID;
+//    uint skeletonID;
+//    uint padding;
+//};
+//
+//layout(std430, binding = 1) readonly buffer Objects {
+//    RenderData objects[];
+//};
+//
+//layout(std430, binding = 2) buffer VisibleFlags {
+//    uint visibleFlags[];  // 1 = widoczny, 0 = odrzucony
+//};
+//
+//layout(std430, binding = 3) buffer SortKeys {
+//    uint sortKeys[];      // zakodowany klucz sortowania: high bits = meshID, low bits = materialID
+//};
+//
+//bool frustumCull(vec4 clip[8])
+//{
+//    for (int p = 0; p < 3; p++)
+//    {
+//        bool outP = true, outN = true;
+//        for (int i = 0; i < 8; i++)
+//        {
+//            float v = clip[i][p];
+//            float w = clip[i].w;
+//            if (v <= w)  outP = false;
+//            if (v >= -w) outN = false;
+//        }
+//        if (outP || outN) return true;
+//    }
+//    return false;
+//}
+//
+//bool hizCull(vec3 aabbMin, vec3 aabbMax, mat4 mvp)
+//{
+//    vec2 sMin = vec2(1.0);
+//    vec2 sMax = vec2(-1.0);
+//    float zMin = 1.0;
+//
+//    for (int i = 0; i < 8; i++)
+//    {
+//        vec3 c = vec3(
+//            (i & 1) != 0 ? aabbMax.x : aabbMin.x,
+//            (i & 2) != 0 ? aabbMax.y : aabbMin.y,
+//            (i & 4) != 0 ? aabbMax.z : aabbMin.z
+//        );
+//        vec4 p = mvp * vec4(c, 1.0);
+//        if (p.w <= 0.0) return false;
+//        vec3 ndc = p.xyz / p.w;
+//        sMin = min(sMin, ndc.xy);
+//        sMax = max(sMax, ndc.xy);
+//        zMin = min(zMin, ndc.z * 0.5 + 0.5);
+//    }
+//
+//    vec2 uvMin = sMin * 0.5 + 0.5;
+//    vec2 uvMax = sMax * 0.5 + 0.5;
+//    vec2 size = (uvMax - uvMin) * screenSize;
+//    float mip = clamp(ceil(log2(max(size.x, size.y))), 0.0, float(hizMipLevels - 1));
+//    float hizDepth = textureLod(hizCullingTexture, (uvMin + uvMax) * 0.5, mip).r;
+//    return zMin > hizDepth;
+//}
+//
+//void main()
+//{
+//    uint id = gl_GlobalInvocationID.x;
+//    if (id >= objectCount) return;
+//
+//    RenderData obj = objects[id];
+//    mat4 mvp = viewProjection * obj.model;
+//
+//    vec4 clip[8];
+//    for (int i = 0; i < 8; i++)
+//    {
+//        vec3 c = vec3(
+//            (i & 1) != 0 ? obj.aabbMax.x : obj.aabbMin.x,
+//            (i & 2) != 0 ? obj.aabbMax.y : obj.aabbMin.y,
+//            (i & 4) != 0 ? obj.aabbMax.z : obj.aabbMin.z
+//        );
+//        clip[i] = mvp * vec4(c, 1.0);
+//    }
+//
+//    if (frustumCull(clip) || hizCull(obj.aabbMin.xyz, obj.aabbMax.xyz, mvp))
+//    {
+//        visibleFlags[id] = 0u;
+//        sortKeys[id] = 0xFFFFFFFFu;  // niewidoczne obiekty na koniec po sortowaniu
+//        return;
+//    }
+//
+//    visibleFlags[id] = 1u;
+//    // Klucz: meshID w górnych 16 bitach, materialID w dolnych 16 bitach
+//    // Zakłada meshID i materialID < 65536 — wystarczy dla typowych scen
+//    sortKeys[id] = (obj.materialID << 16u) | (obj.meshID & 0xFFFFu);
+//}
+//
+//
+//// ===== FAZA A: histogram =====
+//#version 460 core
+//layout(local_size_x = 256) in;
+//
+//uniform uint elementCount;
+//uniform uint bitShift;   // 0, 8, 16 lub 24
+//
+//layout(std430, binding = 0) readonly buffer Keys {
+//    uint keys[];         // sortKeys[] lub ping-pong bufor
+//};
+//
+//layout(std430, binding = 1) buffer Histogram {
+//    // [256 * groupCount] — każda grupa liczy własny histogram
+//    uint histogram[];
+//};
+//
+//shared uint localHist[256];
+//
+//void main()
+//{
+//    uint lid = gl_LocalInvocationID.x;
+//    uint gid = gl_GlobalInvocationID.x;
+//    uint groupID = gl_WorkGroupID.x;
+//
+//    localHist[lid] = 0u;
+//    barrier();
+//
+//    if (gid < elementCount)
+//    {
+//        uint bucket = (keys[gid] >> bitShift) & 0xFFu;
+//        atomicAdd(localHist[bucket], 1u);
+//    }
+//
+//    barrier();
+//
+//    // Zapisz histogram tej grupy do globalnego bufora
+//    uint groupCount = gl_NumWorkGroups.x;
+//    histogram[groupID * 256u + lid] = localHist[lid];
+//}
+//
+//
+//// ===== FAZA B: prefix scan histogramu + scatter =====
+//#version 460 core
+//layout(local_size_x = 256) in;
+//
+//uniform uint elementCount;
+//uniform uint bitShift;
+//
+//layout(std430, binding = 0) readonly buffer KeysIn {
+//    uint keysIn[];
+//};
+//layout(std430, binding = 1) readonly buffer ValuesIn {
+//    uint valuesIn[];    // indeksy obiektów (0..N-1)
+//};
+//layout(std430, binding = 2) readonly buffer Histogram {
+//    uint histogram[];
+//};
+//layout(std430, binding = 3) buffer GlobalPrefixSum {
+//    uint globalPrefix[256];  // globalne offsety dla każdego bucketu
+//};
+//layout(std430, binding = 4) buffer KeysOut {
+//    uint keysOut[];
+//};
+//layout(std430, binding = 5) buffer ValuesOut {
+//    uint valuesOut[];
+//};
+//
+//shared uint localPrefix[256];
+//
+//void main()
+//{
+//    uint lid = gl_LocalInvocationID.x;
+//    uint gid = gl_GlobalInvocationID.x;
+//    uint groupID = gl_WorkGroupID.x;
+//    uint groupCount = gl_NumWorkGroups.x;
+//
+//    // Buduj globalny prefix sum histogramu (tylko grupa 0)
+//    // W praktyce ten krok robi się osobnym małym kernelem lub na CPU — uproszczenie:
+//    // zakładamy że globalPrefix[] jest już wypełniony przez CPU przed wywołaniem tej fazy.
+//
+//    // Scatter: każdy wątek przenosi swój element do właściwej pozycji
+//    if (gid < elementCount)
+//    {
+//        uint key = keysIn[gid];
+//        uint bucket = (key >> bitShift) & 0xFFu;
+//        uint pos = atomicAdd(globalPrefix[bucket], 1u);
+//        keysOut[pos] = key;
+//        valuesOut[pos] = valuesIn[gid];
+//    }
+//}
+//
+//
+//// ===== FAZA A: wykryj granice grup i policz instancje =====
+//#version 460 core
+//layout(local_size_x = 64) in;
+//
+//struct RenderData {
+//    mat4 model;
+//    vec4 aabbMin;
+//    vec4 aabbMax;
+//    uint meshID;
+//    uint materialID;
+//    uint skeletonID;
+//    uint padding;
+//};
+//
+//layout(std430, binding = 0) readonly buffer Objects {
+//    RenderData objects[];
+//};
+//layout(std430, binding = 1) readonly buffer SortedIndices {
+//    uint sortedIndices[];    // wynik radix sort — indeksy obiektów w posortowanej kolejności
+//};
+//layout(std430, binding = 2) readonly buffer SortedKeys {
+//    uint sortedKeys[];       // posortowane klucze (meshID<<16|materialID)
+//};
+//layout(std430, binding = 3) buffer GroupBoundaries {
+//    uint groupStart[];       // indeks startu każdej grupy (mesh,mat) w sortedIndices
+//    uint groupCount[];       // liczba instancji w grupie
+//};
+//layout(std430, binding = 4) buffer DrawGroupCounter {
+//    uint totalGroups;        // łączna liczba unikalnych par (mesh,mat)
+//};
+//
+//uniform uint visibleCount;   // liczba widocznych obiektów (po culling'u)
+//
+//void main()
+//{
+//    uint i = gl_GlobalInvocationID.x;
+//    if (i >= visibleCount) return;
+//
+//    // Czy to pierwsza granica grupy?
+//    // Wątek 0 zawsze zaczyna grupę.
+//    // Pozostałe — gdy klucz różni się od poprzedniego.
+//    bool isGroupStart = (i == 0u) ||
+//        (sortedKeys[i] != sortedKeys[i - 1u]);
+//
+//    if (isGroupStart)
+//    {
+//        uint groupIdx = atomicAdd(totalGroups, 1u);
+//        groupStart[groupIdx] = i;
+//
+//        // Liczba instancji: do następnej granicy lub do końca.
+//        // Uzupełniane w fazie B — tu wpisujemy tymczasowo 0.
+//        groupCount[groupIdx] = 0u;
+//    }
+//}
+//
+//
+//// ===== FAZA B: wpisz instancje sekwencyjnie =====
+//#version 460 core
+//layout(local_size_x = 64) in;
+//
+//struct RenderData {
+//    mat4 model;
+//    vec4 aabbMin;
+//    vec4 aabbMax;
+//    uint meshID;
+//    uint materialID;
+//    uint skeletonID;
+//    uint padding;
+//};
+//
+//struct InstanceData {
+//    mat4  model;
+//    uint  materialID;
+//    uint  objectID;
+//    float pad[2];
+//};
+//
+//layout(std430, binding = 0) readonly buffer Objects {
+//    RenderData objects[];
+//};
+//layout(std430, binding = 1) readonly buffer SortedIndices {
+//    uint sortedIndices[];
+//};
+//layout(std430, binding = 2) buffer Instances {
+//    InstanceData instances[];
+//};
+//
+//uniform uint visibleCount;
+//
+//void main()
+//{
+//    uint i = gl_GlobalInvocationID.x;
+//    if (i >= visibleCount) return;
+//
+//    uint objID = sortedIndices[i];
+//    RenderData obj = objects[objID];
+//
+//    // Zapis jest sekwencyjny — indeks i odpowiada pozycji w tablicy instancji.
+//    // Wątki sąsiednie piszą do sąsiednich adresów → pełna koalescencja zapisu.
+//    instances[i].model = obj.model;
+//    instances[i].materialID = obj.materialID;
+//    instances[i].objectID = objID;
+//    instances[i].pad[0] = 0.0;
+//    instances[i].pad[1] = 0.0;
+//}
+//
+//
+//#version 460 core
+//layout(local_size_x = 64) in;
+//
+//struct DrawCommand {
+//    uint indexCount;
+//    uint instanceCount;
+//    uint firstIndex;
+//    uint baseVertex;
+//    uint baseInstance;
+//};
+//
+//struct MeshInfo {
+//    uint indexCount;
+//    uint firstIndex;   // offset w index buffer
+//    uint baseVertex;   // offset w vertex buffer
+//    uint pad;
+//};
+//
+//layout(std430, binding = 0) readonly buffer Meshes {
+//    MeshInfo meshInfo[];
+//};
+//layout(std430, binding = 1) readonly buffer SortedKeys {
+//    uint sortedKeys[];       // posortowane klucze
+//};
+//layout(std430, binding = 2) readonly buffer GroupStart {
+//    uint groupStart[];       // start każdej grupy w tablicy instancji
+//};
+//layout(std430, binding = 3) readonly buffer DrawGroupCounter {
+//    uint totalGroups;
+//};
+//layout(std430, binding = 4) buffer DrawCmds {
+//    DrawCommand cmds[];
+//};
+//
+//void main()
+//{
+//    uint id = gl_GlobalInvocationID.x;
+//    if (id >= totalGroups) return;
+//
+//    uint start = groupStart[id];
+//    uint end = (id + 1u < totalGroups) ? groupStart[id + 1u] : /* visibleCount */ groupStart[0];
+//    // Uwaga: visibleCount przekaż jako uniform lub jako pierwszy element osobnego bufora
+//    // groupStart[0] powyżej to placeholder — patrz komentarz niżej
+//
+//    uint key = sortedKeys[start];
+//    uint meshID = key >> 16u;
+//
+//    cmds[id].indexCount = meshInfo[meshID].indexCount;
+//    cmds[id].instanceCount = end - start;          // liczba instancji w tej grupie
+//    cmds[id].firstIndex = meshInfo[meshID].firstIndex;
+//    cmds[id].baseVertex = meshInfo[meshID].baseVertex;
+//    cmds[id].baseInstance = start;                // GPU czyta instancje od tego offsetu
+//}
+////
 //
 //
 //

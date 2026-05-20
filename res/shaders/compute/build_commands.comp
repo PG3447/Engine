@@ -1,0 +1,120 @@
+#version 460 core
+layout(local_size_x = 64) in;
+
+uniform uint meshCount;
+
+struct MeshData {
+    uint indexCount;
+    uint firstIndex;
+    uint baseVertex;
+    uint pad;
+};
+
+//struct MeshMeta {
+//    uint instanceOffset;
+//    uint instanceCount;
+//    uint pad0, pad1;
+//};
+//
+struct DrawCommand {
+    uint count;
+    uint instanceCount;
+    uint firstIndex;
+    uint baseVertex;
+    uint baseInstance;
+};
+
+layout(std430, binding = 0) readonly buffer Meshes    { MeshData    meshes[]; };
+//layout(std430, binding = 1) readonly buffer MeshMeta_buf { MeshMeta meshMeta[]; };
+//
+layout(std430, binding = 1) readonly buffer SortedKeys {
+    uint sortedKeys[];       // posortowane klucze
+};
+layout(std430, binding = 2) readonly buffer GroupStart {
+    uint groupStart[];       // start każdej grupy w tablicy instancji
+};
+layout(std430, binding = 3) readonly buffer DrawGroupCounter {
+    uint totalGroups;
+};
+
+layout(std430, binding = 2) writeonly buffer DrawCmds { DrawCommand commands[]; };
+//layout(std430, binding = 3) buffer Counter            { uint drawCount; };
+
+void main()
+{
+    uint id = gl_GlobalInvocationID.x;
+    if (id >= totalGroups) return;
+
+    uint start = groupStart[id];
+    uint end = (id + 1u < totalGroups) ? groupStart[id + 1u] : /* visibleCount */ groupStart[0];
+    // Uwaga: visibleCount przekaż jako uniform lub jako pierwszy element osobnego bufora
+    // groupStart[0] powyżej to placeholder — patrz komentarz niżej
+
+    uint key = sortedKeys[start];
+    uint meshID = key >> 16u;
+
+    commands[id].count = meshes[meshID].indexCount;
+    commands[id].instanceCount = end - start;          // liczba instancji w tej grupie
+    commands[id].firstIndex = meshes[meshID].firstIndex;
+    commands[id].baseVertex = meshes[meshID].baseVertex;
+    commands[id].baseInstance = start;                // GPU czyta instancje od tego offsetu
+}
+
+
+
+/*
+#version 460 core
+layout(local_size_x = 64) in;
+
+uniform uint meshCount;
+
+struct MeshData {
+    uint indexCount;
+    uint firstIndex;
+    uint baseVertex;
+    uint pad;
+};
+
+struct MeshMeta {
+    uint instanceOffset;
+    uint instanceCount;
+    uint pad0, pad1;
+};
+
+struct DrawCommand {
+    uint count;
+    uint instanceCount;
+    uint firstIndex;
+    uint baseVertex;
+    uint baseInstance;
+};
+
+layout(std430, binding = 0) readonly buffer Meshes    { MeshData    meshes[]; };
+layout(std430, binding = 1) readonly buffer MeshMeta_buf { MeshMeta meshMeta[]; };
+layout(std430, binding = 2) writeonly buffer DrawCmds { DrawCommand commands[]; };
+//layout(std430, binding = 3) buffer Counter            { uint drawCount; };
+
+void main()
+{
+    uint meshID = gl_GlobalInvocationID.x;
+    if (meshID >= meshCount) return;
+
+    uint instCount = meshMeta[meshID].instanceCount;
+
+    if (instCount == 0u) {
+        // Zerujemy command żeby GPU nie rysował
+        commands[meshID].instanceCount = 0u;
+        commands[meshID].count         = 0u;
+        return;
+    }
+
+    commands[meshID].count         = meshes[meshID].indexCount;
+    commands[meshID].firstIndex    = meshes[meshID].firstIndex;
+    commands[meshID].baseVertex    = meshes[meshID].baseVertex;
+    commands[meshID].instanceCount = instCount;
+    commands[meshID].baseInstance  = meshMeta[meshID].instanceOffset;
+//
+//    // Zlicz ile draw calls naprawdę idzie do GPU (opcjonalne)
+//    atomicAdd(drawCount, 1u);
+}
+*/

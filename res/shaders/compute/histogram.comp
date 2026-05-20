@@ -1,0 +1,39 @@
+#version 460 core
+layout(local_size_x = 256) in;
+
+uniform uint elementCount;
+uniform uint bitShift;   // 0, 8, 16 lub 24
+
+layout(std430, binding = 0) readonly buffer Keys {
+    uint keys[];         // sortKeys[] lub ping-pong bufor
+};
+
+layout(std430, binding = 1) buffer Histogram {
+    // [256 * groupCount] — ka¿da grupa liczy w³asny histogram
+    uint histogram[];
+};
+
+shared uint localHist[256];
+
+void main()
+{
+    uint lid = gl_LocalInvocationID.x;
+    uint gid = gl_GlobalInvocationID.x;
+    uint groupID = gl_WorkGroupID.x;
+
+    localHist[lid] = 0u;
+    barrier();
+
+    if (gid < elementCount)
+    {
+        uint bucket = (keys[gid] >> bitShift) & 0xFFu;
+        atomicAdd(localHist[bucket], 1u);
+    }
+
+    barrier();
+
+    // Zapisz histogram tej grupy do globalnego bufora
+    uint groupCount = gl_NumWorkGroups.x;
+    histogram[groupID * 256u + lid] = localHist[lid];
+}
+
