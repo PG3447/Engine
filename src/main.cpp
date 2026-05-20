@@ -1,4 +1,4 @@
-﻿// dear imgui: standalone example application for GLFW + OpenGL 3, using programmable pipeline
+// dear imgui: standalone example application for GLFW + OpenGL 3, using programmable pipeline
 // If you are new to dear imgui, see examples/README.txt and documentation at the top of imgui.cpp.
 // (GLFW is a cross-platform general purpose library for handling windows, inputs, OpenGL/Vulkan graphics context creation, etc.)
 
@@ -422,15 +422,15 @@ int main(int, char**)
     light2->type = Spot;
     light2->index = 0;
 
-    light2->ambient = glm::vec3(0.25f);
-    light2->diffuse = glm::vec3(1.0f);
-    light2->specular = glm::vec3(1.0f);
+    light2->ambient = glm::vec3(0.9f);
+    light2->diffuse = glm::vec3(0.9f);
+    light2->specular = glm::vec3(0.5f);
 
     light2->constant = 1.0f;
-    light2->linear = 0.10f;
-    light2->quadratic = 0.00001f;
+    light2->linear = 0.003f;
+    light2->quadratic = 0.0001f;
 
-    light2->cutOff = glm::cos(glm::radians(4.0f));
+    light2->cutOff = glm::cos(glm::radians(12.0f));
     light2->outerCutOff = glm::cos(glm::radians(16.0f));
 
     //// direction będzie z kamery
@@ -603,9 +603,9 @@ int main(int, char**)
 
     light->direction = glm::normalize(glm::vec3(-0.3f, -1.0f, -0.1f));
 
-    light->ambient = glm::vec3(0.5f);
-    light->diffuse = glm::vec3(0.3f);
-    light->specular = glm::vec3(0.9f);
+    light->ambient = glm::vec3(0.15f);
+    light->diffuse = glm::vec3(0.08f);
+    light->specular = glm::vec3(0.1f);
 
     GLuint whiteSpecular = ResourceManager::CreateTextureFromColor("white_spec", glm::vec3(1.0f));
 
