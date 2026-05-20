@@ -1342,8 +1342,8 @@ void imgui_render()
     if (ImGui::CollapsingHeader("Culling")) {
         ImGui::Checkbox("Frustum culling",   &renderSystem->frustumCullingEnabled);
         ImGui::Checkbox("Occlusion culling", &renderSystem->occlusionCullingEnabled);
-        //ImGui::Text("Frustum culled:   %d", renderSystem->stats.culledByFrustum);
-        //ImGui::Text("Occlusion culled: %d", renderSystem->stats.culledByOcclusion);
+        ImGui::Text("Frustum culled:   %d", renderSystem->stats.frustumCulledSet.size());
+        ImGui::Text("Occlusion culled: %d", renderSystem->stats.occlusionCulledSet.size());
     }
     ImGui::PlotLines("Frame time", frameTimes, MAX_SAMPLES, index,
                  nullptr, 0.0f, 1.0f, ImVec2(0, 60));
