@@ -60,30 +60,40 @@ vec3 CalcSpotLight(in GPULight light, vec3 normal, vec3 fragPos, vec3 viewDir, v
 void main()
 {
     MaterialGPU mat = materials[materialID];
-
-    sampler2D diffuseSampler = sampler2D(mat.diffuseHandle);
-    sampler2D specularSampler = sampler2D(mat.specularHandle);
-    sampler2D normalSampler = sampler2D(mat.normalHandle);
-
-    vec3 diffuseColor = unpackUnorm4x8(mat.packedColor).rgb;
+   
     float shininess = mat.shininess;
-
+    uint flags = floatBitsToUint(unpackUnorm4x8(mat.packedColor).a);
     // Diffuse
-    //vec4 texColor = (mat.diffuseHandle != uvec2(0)) ? texture(diffuseSampler, TexCoords) : vec4(diffuseColor, 1.0);
-    vec4 texColor = vec4(diffuseColor, 1.0);
+    vec4 texColor;
+    if (mat.diffuseHandle != uvec2(0))
+    {
+        texColor = texture(sampler2D(mat.diffuseHandle), TexCoords);
+    }
+    else
+    {
+         vec3 diffuseColor = unpackUnorm4x8(mat.packedColor).rgb;
+        texColor = vec4(diffuseColor, 1.0);
+    }
 
     // Specular
-    //vec3 specTex = (mat.specularHandle != uvec2(0)) ? texture(specularSampler, TexCoords).rgb : vec3(0.0);
-    vec3 specTex = vec3(0.0);
+    vec3 specTex;
+    if (mat.specularHandle != uvec2(0))
+    {
+        specTex = texture(sampler2D(mat.specularHandle), TexCoords).rgb;
+    }
+    else
+    {
+        specTex = vec3(0.0);
+    }
 
     // Normal
-    vec3 norm = normalize(Normal);
-//    if (mat.normalHandle != uvec2(0)) {
-//        vec3 n = texture(normalSampler, TexCoords).rgb * 2.0 - 1.0;
-//        norm = normalize(TBN * n);
-//    } else {
-//        norm = normalize(Normal);
-//    }
+    vec3 norm;
+    if (mat.normalHandle != uvec2(0)) {
+        vec3 n = texture(sampler2D(mat.normalHandle), TexCoords).rgb * 2.0 - 1.0;
+        norm = normalize(TBN * n);
+    } else {
+        norm = normalize(Normal);
+    }
 
     vec3 viewDir = normalize(viewPos - FragPos);
     vec3 diffTex = texColor.rgb;
