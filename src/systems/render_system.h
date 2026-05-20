@@ -300,6 +300,7 @@ public:
         gpuRenderer.shaderWritePass = new ComputeShader("res/shaders/compute/write_pass.comp");
         gpuRenderer.shaderBuildCmds = new ComputeShader("res/shaders/compute/build_commands.comp");
         gpuRenderer.shaderHizDownsample = new ComputeShader("res/shaders/compute/hiz_build.comp");
+        gpuRenderer.shaderInitIdentity = new ComputeShader("res/shaders/compute/init_identity.comp");
         gpuRenderer.shaderRender = new Shader("res/shaders/gpu_driven.vert", "res/shaders/gpu_driven.frag");
 
         glEnable(GL_DEPTH_TEST);
@@ -549,7 +550,7 @@ public:
 
 
 
-            std::vector<RenderData> objects = CollectRenderData();
+            const std::vector<RenderData>& objects = CollectRenderData();
 
         /*    gpuRenderer.shaderRender->use();
             gpuRenderer.shaderRender->setMat4("viewProjection", vp);

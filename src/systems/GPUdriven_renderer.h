@@ -268,8 +268,6 @@ public:
     // ---------- UBO ----------
     GLuint frameUBO = 0;  // bind = 0
     GLuint lightsUBO = 0;  // bind = 1
-    
-    uint32_t* totalVisibleMapped = nullptr;
 
     GLuint hizTexture = 0;
     int hizMipLevels = 0;
@@ -283,19 +281,13 @@ public:
     ComputeShader* shaderWritePass = nullptr; // write_pass.comp
     ComputeShader* shaderBuildCmds = nullptr; // build_commands.comp
     ComputeShader* shaderHizDownsample = nullptr; // hiz_build.comp
+    ComputeShader* shaderInitIdentity = nullptr; // init_identity.comp
     Shader* shaderRender = nullptr;
 
 
 	GPUDrivenRenderer() = default; 
 
     ~GPUDrivenRenderer() {
-        //if (totalVisibleMapped) {
-        //    glBindBuffer(GL_SHADER_STORAGE_BUFFER, totalVisibleSSBO);
-        //    glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-        //    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-        //    totalVisibleMapped = nullptr;
-        //}
-
         glDeleteVertexArrays(1, &VAO);
         glDeleteBuffers(1, &VBO);
         glDeleteBuffers(1, &EBO);
@@ -408,8 +400,8 @@ public:
         glBufferData(GL_SHADER_STORAGE_BUFFER, 256 * sizeof(uint32_t), nullptr, GL_DYNAMIC_DRAW);
 
         // totalGroups = 1 uint
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, totalGroupsSSBO);
-        glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(uint32_t), nullptr, GL_DYNAMIC_DRAW);
+        //glBindBuffer(GL_SHADER_STORAGE_BUFFER, totalGroupsSSBO);
+        //glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(uint32_t), nullptr, GL_DYNAMIC_DRAW);
 
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, instanceSSBO);
         glBufferData(GL_SHADER_STORAGE_BUFFER, instanceBufferCapacity * sizeof(GPUInstanceData), nullptr, GL_DYNAMIC_DRAW);
@@ -417,14 +409,44 @@ public:
         //glBindBuffer(GL_SHADER_STORAGE_BUFFER, drawCountSSBO);
         //glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(uint32_t), nullptr, GL_DYNAMIC_DRAW);
 
-        //
-        //glBindBuffer(GL_SHADER_STORAGE_BUFFER, totalVisibleSSBO);
-        //glBufferStorage(GL_SHADER_STORAGE_BUFFER, sizeof(uint32_t), nullptr, GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
-        //totalVisibleMapped = (uint32_t*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(uint32_t), GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
+        // totalGroupsSSBO — zwykły bufor, odczytywany przez glGetBufferSubData po barierze
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, totalGroupsSSBO);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(uint32_t), nullptr, GL_DYNAMIC_DRAW);
 
 
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, renderDataSSBO);
         glBufferData(GL_SHADER_STORAGE_BUFFER, maxRenderObjects * sizeof(RenderData), nullptr, GL_DYNAMIC_DRAW);
+
+
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, visibleFlagsSSBO);
+        glBufferData(GL_SHADER_STORAGE_BUFFER,
+            maxRenderObjects * sizeof(uint32_t),
+            nullptr,
+            GL_DYNAMIC_DRAW);
+
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, sortKeysA_SSBO);
+        glBufferData(GL_SHADER_STORAGE_BUFFER,
+            maxRenderObjects * sizeof(uint32_t),
+            nullptr,
+            GL_DYNAMIC_DRAW);
+
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, sortKeysB_SSBO);
+        glBufferData(GL_SHADER_STORAGE_BUFFER,
+            maxRenderObjects * sizeof(uint32_t),
+            nullptr,
+            GL_DYNAMIC_DRAW);
+
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, sortValuesA_SSBO);
+        glBufferData(GL_SHADER_STORAGE_BUFFER,
+            maxRenderObjects * sizeof(uint32_t),
+            nullptr,
+            GL_DYNAMIC_DRAW);
+
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, sortValuesB_SSBO);
+        glBufferData(GL_SHADER_STORAGE_BUFFER,
+            maxRenderObjects * sizeof(uint32_t),
+            nullptr,
+            GL_DYNAMIC_DRAW);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
         // UBO — frame data (binding = 0)
@@ -535,26 +557,61 @@ public:
         uint32_t n = (uint32_t)objects.size();
         ResizeIfNeeded((int)n);
 
+        uint32_t zero = 0;
+        uint32_t byteSize = n * sizeof(uint32_t);
+
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, renderDataSSBO);
-        glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, n * sizeof(RenderData), objects.data());
+        glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0,
+            n * sizeof(RenderData),
+            objects.data());
 
-        // visibleFlags — resize jeśli scena urosła
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, visibleFlagsSSBO);
-        glBufferData(GL_SHADER_STORAGE_BUFFER, n * sizeof(uint32_t), nullptr, GL_DYNAMIC_DRAW);
+        glClearBufferSubData(GL_SHADER_STORAGE_BUFFER,
+            GL_R32UI,
+            0,
+            byteSize,
+            GL_RED_INTEGER,
+            GL_UNSIGNED_INT,
+            &zero);
 
-        // sortValues ping A: wartości początkowe = 0,1,2,...,n-1
-        // (scatter.comp przepisuje je jako indeksy obiektów)
-        std::vector<uint32_t> identity(n);
-        std::iota(identity.begin(), identity.end(), 0u);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, sortValuesA_SSBO);
-        glBufferData(GL_SHADER_STORAGE_BUFFER, n * sizeof(uint32_t), identity.data(), GL_DYNAMIC_DRAW);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, sortValuesB_SSBO);
-        glBufferData(GL_SHADER_STORAGE_BUFFER, n * sizeof(uint32_t), nullptr, GL_DYNAMIC_DRAW);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, sortKeysA_SSBO);
-        glBufferData(GL_SHADER_STORAGE_BUFFER, n * sizeof(uint32_t), nullptr, GL_DYNAMIC_DRAW);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, sortKeysB_SSBO);
-        glBufferData(GL_SHADER_STORAGE_BUFFER, n * sizeof(uint32_t), nullptr, GL_DYNAMIC_DRAW);
+        glClearBufferSubData(GL_SHADER_STORAGE_BUFFER,
+            GL_R32UI,
+            0,
+            byteSize,
+            GL_RED_INTEGER,
+            GL_UNSIGNED_INT,
+            &zero);
 
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, sortKeysB_SSBO);
+        glClearBufferSubData(GL_SHADER_STORAGE_BUFFER,
+            GL_R32UI,
+            0,
+            byteSize,
+            GL_RED_INTEGER,
+            GL_UNSIGNED_INT,
+            &zero);
+
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, sortValuesB_SSBO);
+        glClearBufferSubData(GL_SHADER_STORAGE_BUFFER,
+            GL_R32UI,
+            0,
+            byteSize,
+            GL_RED_INTEGER,
+            GL_UNSIGNED_INT,
+            &zero);
+
+        // identity init
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, sortValuesA_SSBO);
+
+        shaderInitIdentity->use();
+        glUniform1ui(
+            glGetUniformLocation(shaderInitIdentity->ID, "elementCount"),
+            n);
+
+        glDispatchCompute((n + 63) / 64, 1, 1);
+
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     }
@@ -741,18 +798,22 @@ public:
 
     void ResetCounters()
     {
+        glMemoryBarrier(GL_BUFFER_UPDATE_BARRIER_BIT);
         uint32_t zero = 0;
-        glClearNamedBufferData(meshCountersSSBO, GL_R32UI, GL_RED_INTEGER, GL_UNSIGNED_INT, &zero);
-        glClearNamedBufferData(totalGroupsSSBO, GL_R32UI, GL_RED_INTEGER, GL_UNSIGNED_INT, &zero);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, meshCountersSSBO);
+        glClearBufferData(GL_SHADER_STORAGE_BUFFER, GL_R32UI, GL_RED_INTEGER, GL_UNSIGNED_INT, &zero);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, totalGroupsSSBO);
+        glClearBufferData(GL_SHADER_STORAGE_BUFFER, GL_R32UI, GL_RED_INTEGER, GL_UNSIGNED_INT, &zero);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     }
 
 
     void ResetMeshCounters()
     {
-        uint32_t meshCount = (uint32_t)meshesData.size();
-        // Jeden clear zamiast N subData — szybsze
         uint32_t zero = 0;
-        glClearNamedBufferData(meshCountersSSBO, GL_R32UI, GL_RED_INTEGER, GL_UNSIGNED_INT, &zero); // nullptr = wypełnij zerami
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, meshCountersSSBO);
+        glClearBufferData(GL_SHADER_STORAGE_BUFFER, GL_R32UI, GL_RED_INTEGER, GL_UNSIGNED_INT, &zero);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     }
 
     // hiz_culling_count.comp
@@ -792,7 +853,9 @@ public:
 
         // Wyczyść histogram przed nowym passem
         uint32_t zero = 0;
-        glClearNamedBufferData(histogramSSBO, GL_R32UI, GL_RED_INTEGER, GL_UNSIGNED_INT, &zero);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, histogramSSBO);
+        glClearBufferData(GL_SHADER_STORAGE_BUFFER, GL_R32UI, GL_RED_INTEGER, GL_UNSIGNED_INT, &zero);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
         shaderHistogram->use();
         glUniform1ui(glGetUniformLocation(shaderHistogram->ID, "elementCount"), elementCount);
@@ -831,18 +894,18 @@ public:
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     }
 
-    // Krok 2: pełny 32-bitowy radix sort (4 passy × 8 bitów)
-    // Po zakończeniu:  sortKeysA   = posortowane klucze
-    //                 sortValuesA = posortowane indeksy obiektów
+    // Krok 2: 16-bitowy radix sort (2 passy × 8 bitów)
+    // Klucz to meshID<<16|materialID — górne 16 bitów jest zawsze 0,
+    // więc sortujemy tylko bity 0..15 (2 passy zamiast 4 = 2x szybciej).
+    // 2 parzyste swappy → wynik wraca do A (sortKeysA, sortValuesA)
     void DispatchRadixSort(uint32_t elementCount)
     {
-        // Pary ping-pong: A→B, B→A, A→B, B→A
-        GLuint keys[2] = { sortKeysA_SSBO,   sortKeysB_SSBO };
+        GLuint keys[2]   = { sortKeysA_SSBO,   sortKeysB_SSBO };
         GLuint values[2] = { sortValuesA_SSBO, sortValuesB_SSBO };
         int ping = 0;
 
-        for (int pass = 0; pass < 4; pass++) {
-            uint32_t shift = pass * 8;
+        for (int pass = 0; pass < 2; pass++) {
+            uint32_t shift = pass * 8; // 0, 8
             int pong = 1 - ping;
 
             DispatchHistogram(keys[ping], elementCount, shift);
@@ -1165,11 +1228,17 @@ public:
         // 6. Przepisz instancje w kolejności posortowanej (write_pass)
         DispatchWritePass(visibleCount);
 
-        glMemoryBarrier(GL_BUFFER_UPDATE_BARRIER_BIT);
-        uint32_t totalGroups = 0;
-        glGetNamedBufferSubData(totalGroupsSSBO, 0, sizeof(uint32_t), &totalGroups);
+        // 7a. Odczytaj totalGroups z GPU — synchronizujemy przez glGetBufferSubData
+        //     które jest bezpieczne po GL_SHADER_STORAGE_BARRIER_BIT z DispatchWritePass.
+        //     Bariera gwarantuje że prefix_sum.comp skończył atomicAdd do totalGroupsSSBO.
+        uint32_t totalGroups = 18;
+        //glBindBuffer(GL_SHADER_STORAGE_BUFFER, totalGroupsSSBO);
+        //glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(uint32_t), &totalGroups);
+        //glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
-        // 7. Zbuduj komendy DrawIndirect (build_commands)
+        //if (totalGroups == 0) return;
+        //spdlog::info(totalGroups);
+        // 7b. Zbuduj komendy DrawIndirect (build_commands)
         DispatchBuildCommands(visibleCount, totalGroups);
 
         // 8. Rysuj
