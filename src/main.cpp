@@ -619,38 +619,29 @@ int main(int, char**)
 
     // gen
 
-    // --- NASZ GENERATOR OBIEKTÓW ---
     GameObject* generativeObj = scena1->CreateGameObject(nullptr);
 
-    // Ustawiamy go wokół pozycji samochodu (samochód jest na 0, 2, 20)
     auto* genTransform = generativeObj->AddComponent<TransformComponent>();
-    genTransform->position = glm::vec3(0.0f, 2.0f, 20.0f); // Środek naszego obszaru generowania
+    genTransform->position = glm::vec3(0.0f, 2.0f, 20.0f);
 
     auto* generativeComp = generativeObj->AddComponent<GenerativeComponent>();
     generativeComp->targetScene = scena1;
 
-    // teraz przekazujemy shared_ptr bez .get()
     generativeComp->prefabs = { cupModel.get(), corkBoardModel.get() };
 
-    // ustawienia generatora
-    generativeComp->spawnCount = 10;                     // ile obiektów próbujemy wygenerować
-    generativeComp->shape = GenerativeShape::Box;        // Box lub Circle
-    generativeComp->extents = glm::vec2(25.0f, 25.0f);   // rozmiar obszaru generowania (lokalnie)
+    generativeComp->spawnCount = 10;
+    generativeComp->shape = GenerativeShape::Box;
+    generativeComp->extents = glm::vec2(25.0f, 25.0f);
     generativeComp->randomizeYRotation = true;
 
-    // skalowanie: jeśli modele są za małe, zwiększ globalScaleMultiplier (np. 8..12)
     generativeComp->globalScaleMultiplier = 8.0f;
 
-    // minimalna odległość między wygenerowanymi obiektami (w jednostkach świata/local)
     generativeComp->minSpacing = 5.0f;
 
-    // ile prób podejmować, aby znaleźć niekolizyjną pozycję (większa wartość = więcej prób)
     generativeComp->maxPlacementAttempts = 30;
 
-    // collidery: włącz gdy chcesz kolizje; dla małych obiektów na stole zwykle false, dla obiektów na podłodze można true
     generativeComp->addColliders = false;
     generativeComp->colliderHalfSize = glm::vec3(0.25f, 0.25f, 0.25f);
-    // -------------------------------
 
     // erativ
 
