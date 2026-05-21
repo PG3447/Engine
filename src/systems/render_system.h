@@ -481,7 +481,9 @@ public:
                 animatorIDMap[r->animator] = (uint32_t)animatorIDMap.size();
         }
 
-        boneMatricesCache.assign(animatorIDMap.size() * MAX_BONES_PER_SKELETON, glm::mat4(1.0f));
+        size_t requiredSize = animatorIDMap.size() * MAX_BONES_PER_SKELETON;
+        if (boneMatricesCache.size() != requiredSize)
+            boneMatricesCache.resize(requiredSize, glm::mat4(1.0f));
 
         for (size_t i = 0; i < objectCount; ++i)
         {

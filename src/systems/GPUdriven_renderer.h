@@ -532,19 +532,6 @@ public:
         prevSizeLights = count;
     }
 
-    void UploadBoneMatrices(uint32_t skeletonID, const std::vector<glm::mat4>& finalBones)
-    {
-        if (skeletonID == NO_SKELETON) return; //|| skeletonID >= maxSkeletons
-
-        uint32_t boneCount = (uint32_t)std::min(finalBones.size(), (size_t)MAX_BONES_PER_SKELETON);
-        size_t   offset = (size_t)skeletonID * MAX_BONES_PER_SKELETON * sizeof(glm::mat4);
-        size_t   dataSize = boneCount * sizeof(glm::mat4);
-
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, boneMatricesSSBO);
-        glBufferSubData(GL_SHADER_STORAGE_BUFFER, (GLintptr)offset, (GLsizeiptr)dataSize, finalBones.data());
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-    }
-
     void UploadAllBoneMatrices(const std::vector<glm::mat4>& allBones)
     {
         if (allBones.empty()) return;
