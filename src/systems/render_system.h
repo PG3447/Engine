@@ -474,7 +474,7 @@ public:
 
         const size_t objectCount = renderQuery->gameobjects.size();
 
-        // trzeba znalezc to co ustawia animatory w RenderComponent
+        // trzeba znalezc to co ustawia animatory w RenderComponent zeby pozbyc sie tej petli i robic to raz
         // 1. najpierw zarejestruj nowe animatory
         for (size_t i = 0; i < objectCount; ++i) {
             const RenderComponent* r = renderers[i];
