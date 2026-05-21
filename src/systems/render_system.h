@@ -397,6 +397,7 @@ public:
 
     std::unordered_map<RenderMesh*, uint32_t>  meshIDMap;
     std::unordered_map<Material*, uint32_t>  materialIDMap;
+    std::unordered_map<AnimatorComponent*, uint32_t> animatorIDMap;
 
     void InitGPUDrivenRenderer(int width, int height)
     {
@@ -406,6 +407,9 @@ public:
         for (size_t i = 0; i < renderers.size(); i++) {
             RenderComponent* r = renderers[i];
             if (!r) continue;
+
+            if (r->animator && animatorIDMap.find(r->animator) == animatorIDMap.end())
+                animatorIDMap[r->animator] = (uint32_t)animatorIDMap.size();
 
             for (auto& mesh : r->meshes) {
                 if (!mesh.gpuMesh || !mesh.material || !mesh.cpuData) continue;
@@ -425,6 +429,7 @@ public:
                 }
             }
         }
+
 
         gpuRenderer.UploadMeshes();
         gpuRenderer.UploadMaterials();
@@ -456,6 +461,7 @@ public:
         gpuRendererReady = true;
     }
     std::vector<RenderData> renderDataCache;
+    std::vector<glm::mat4> boneMatricesCache;
 
     std::vector<RenderData>& CollectRenderData()
     {
@@ -466,6 +472,16 @@ public:
         renderDataCache.reserve(renderQuery->gameobjects.size());
 
         const size_t objectCount = renderQuery->gameobjects.size();
+
+        // 1. najpierw zarejestruj nowe animatory
+        for (size_t i = 0; i < objectCount; ++i) {
+            const RenderComponent* r = renderers[i];
+            if (!r || !r->animator) continue;
+            if (animatorIDMap.find(r->animator) == animatorIDMap.end())
+                animatorIDMap[r->animator] = (uint32_t)animatorIDMap.size();
+        }
+
+        boneMatricesCache.assign(animatorIDMap.size() * MAX_BONES_PER_SKELETON, glm::mat4(1.0f));
 
         for (size_t i = 0; i < objectCount; ++i)
         {
@@ -478,6 +494,16 @@ public:
             const glm::mat4 model = t->modelMatrix;
 
             const auto& meshes = r->meshes;
+            auto animator = r->animator;
+
+            auto animIt = animator ? animatorIDMap.find(animator) : animatorIDMap.end();
+            if (animIt != animatorIDMap.end() && animator->currentSkeleton)
+            {
+                uint32_t slot = animIt->second;
+                uint32_t boneCount = (uint32_t)std::min(animator->finalBoneMatrices.size(), (size_t)MAX_BONES_PER_SKELETON);
+
+                std::copy(animator->finalBoneMatrices.begin(), animator->finalBoneMatrices.begin() + boneCount, boneMatricesCache.begin() + slot * MAX_BONES_PER_SKELETON);
+            }
 
             for (const auto& mesh : meshes)
             {
@@ -494,7 +520,7 @@ public:
                 auto matIt = materialIDMap.find(material);
                 if (matIt == materialIDMap.end())
                     continue;
-
+                
                 const auto& aabb = mesh.cpuData->aabb;
 
                 renderDataCache.emplace_back(RenderData{
@@ -503,11 +529,14 @@ public:
                     .aabbMax = glm::vec4(aabb.max, 0.0f),
                     .meshID = meshIt->second,
                     .materialID = matIt->second,
-                    .skeletonID = 0,
+                    .skeletonID = animIt != animatorIDMap.end() ? animIt->second : NO_SKELETON,
                     .padding = 0
                     });
             }
         }
+        
+        gpuRenderer.ResizeBoneBufferIfNeeded((uint32_t)animatorIDMap.size());
+        gpuRenderer.UploadAllBoneMatrices(boneMatricesCache);
 
         return renderDataCache;
     }

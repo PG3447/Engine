@@ -19,22 +19,41 @@ flat out uint materialID;
 // =======================
 
 struct InstanceData {
-    mat4  model;
-    uint  materialID;
-    uint  objectID;
-    vec2  padding;
+    mat4 model;
+    uint materialID;
+    uint objectID;
+    uint skeletonID; 
+    uint padding;
 };
+
+// Jedna p³aska tablica wszystkich macierzy koœci dla WSZYSTKICH szkieletów.
+// Uk³ad: skeleton 0 zajmuje [0 .. MAX_BONES-1],
+//        skeleton 1 zajmuje [MAX_BONES .. 2*MAX_BONES-1], itd.
+const uint MAX_BONES = 200u;
 
 layout(std430, binding = 3) readonly buffer Instances
 {
     InstanceData instances[];
 };
 
+layout(std430, binding = 4) readonly buffer BoneMatrices
+{
+    mat4 boneMatrices[]; //rozmiar MAX_BONES * maxSkeletons
+};
+
 uniform mat4 viewProjection;
 
-const int MAX_BONES = 200;
-uniform mat4 finalBonesMatrices[MAX_BONES];
-uniform bool isAnimated;
+mat3 cofactorMatrix(mat4 m)
+{
+    vec3 c0 = m[0].xyz;
+    vec3 c1 = m[1].xyz;
+    vec3 c2 = m[2].xyz;
+    return mat3(
+        cross(c1, c2),
+        cross(c2, c0),
+        cross(c0, c1)
+    );
+}
 
 void main()
 {
@@ -47,15 +66,18 @@ void main()
 
     // Skinning
     mat4 boneTransform = mat4(1.0);
-    if (isAnimated)
+
+    if (inst.skeletonID != 0xFFFFFFFFu)
     {
         float totalWeight = weights[0] + weights[1] + weights[2] + weights[3];
         if (totalWeight > 0.0)
         {
-            boneTransform  = finalBonesMatrices[boneIds[0]] * weights[0];
-            boneTransform += finalBonesMatrices[boneIds[1]] * weights[1];
-            boneTransform += finalBonesMatrices[boneIds[2]] * weights[2];
-            boneTransform += finalBonesMatrices[boneIds[3]] * weights[3];
+            uint base = inst.skeletonID * MAX_BONES; // offset w BoneMatrices[]
+
+            boneTransform  = boneMatrices[base + uint(boneIds[0])] * weights[0];
+            boneTransform += boneMatrices[base + uint(boneIds[1])] * weights[1];
+            boneTransform += boneMatrices[base + uint(boneIds[2])] * weights[2];
+            boneTransform += boneMatrices[base + uint(boneIds[3])] * weights[3];
         }
     }
 
@@ -65,7 +87,7 @@ void main()
     FragPos   = worldPos.xyz;
     TexCoords = aTexCoords;
 
-    mat3 normalMatrix = mat3(transpose(inverse(finalModel)));
+    mat3 normalMatrix = mat3(transpose(inverse(finalModel))); // cofactorMatrix(finalModel);
     vec3 T = normalize(normalMatrix * aTangent);
     vec3 B = normalize(normalMatrix * aBitangent);
     vec3 N = normalize(normalMatrix * aNormal);

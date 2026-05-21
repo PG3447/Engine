@@ -86,7 +86,8 @@ struct GPUInstanceData {
     glm::mat4 model;
     uint32_t  materialID;
     uint32_t  objectID;
-    glm::vec2 padding;
+    uint32_t skeletonID;
+    uint32_t padding;
 };
 //
 //// UBO per-frame — jeden transfer na klatkę
@@ -107,6 +108,9 @@ static constexpr int MAX_UBO_LIGHTS = 512;
 struct LightsUBO {
     GPULight lights[MAX_UBO_LIGHTS];
 };
+
+static constexpr uint32_t MAX_BONES_PER_SKELETON = 200u;
+static constexpr uint32_t NO_SKELETON = 0xFFFFFFFFu;
 
 
 class GPUDrivenRenderer {
@@ -184,6 +188,7 @@ public:
     GLuint meshDataSSBO = 0; // bind 6
     GLuint materialSSBO = 0; /// bind 7
     GLuint lightsSSBO = 0;
+    GLuint boneMatricesSSBO = 0;
 
     GLuint frameUBO = 0;  // bind = 0
     GLuint lightsUBO = 0;  // bind = 1
@@ -227,7 +232,26 @@ public:
         glDeleteBuffers(1, &materialSSBO);
         glDeleteBuffers(1, &frameUBO);
         glDeleteBuffers(1, &lightsUBO);
+        glDeleteBuffers(1, &boneMatricesSSBO);
         if (hizTexture) glDeleteTextures(1, &hizTexture);
+    }
+
+    void ResizeBoneBufferIfNeeded(uint32_t skeletonCount)
+    {
+        if (skeletonCount == 0) return;
+
+        size_t required = (size_t)skeletonCount * MAX_BONES_PER_SKELETON * sizeof(glm::mat4);
+        size_t current = 0;
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, boneMatricesSSBO);
+        glGetBufferParameteri64v(GL_SHADER_STORAGE_BUFFER, GL_BUFFER_SIZE, (GLint64*)&current);
+
+        if (required > current)
+        {
+            glBufferData(GL_SHADER_STORAGE_BUFFER, required, nullptr, GL_DYNAMIC_DRAW);
+            spdlog::info("BoneMatricesSSBO resize: {} szkieletów", skeletonCount);
+        }
+
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     }
 
 	void Init(int width, int height)
@@ -276,6 +300,7 @@ public:
         glGenBuffers(1, &meshDataSSBO);
         glGenBuffers(1, &materialSSBO);
         glGenBuffers(1, &lightsSSBO);
+        glGenBuffers(1, &boneMatricesSSBO);
 
         glGenBuffers(1, &totalVisibleSSBO);
 
@@ -286,6 +311,8 @@ public:
         //glBindBuffer(GL_SHADER_STORAGE_BUFFER, drawCountSSBO);
         //glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(uint32_t), nullptr, GL_DYNAMIC_DRAW);
 
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, boneMatricesSSBO);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, MAX_BONES_PER_SKELETON * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW);
         
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, totalVisibleSSBO);
         glBufferStorage(GL_SHADER_STORAGE_BUFFER, sizeof(uint32_t), nullptr, GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
@@ -428,7 +455,7 @@ public:
 
         // MeshData SSBO
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, meshDataSSBO);
-        glBufferData(GL_SHADER_STORAGE_BUFFER, meshesData.size() * sizeof(GPUMeshData), meshesData.data(), GL_STATIC_DRAW);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, meshCount * sizeof(GPUMeshData), meshesData.data(), GL_STATIC_DRAW);
 
         //MeshCounters
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, meshCountersSSBO);
@@ -504,6 +531,28 @@ public:
 
         prevSizeLights = count;
     }
+
+    void UploadBoneMatrices(uint32_t skeletonID, const std::vector<glm::mat4>& finalBones)
+    {
+        if (skeletonID == NO_SKELETON) return; //|| skeletonID >= maxSkeletons
+
+        uint32_t boneCount = (uint32_t)std::min(finalBones.size(), (size_t)MAX_BONES_PER_SKELETON);
+        size_t   offset = (size_t)skeletonID * MAX_BONES_PER_SKELETON * sizeof(glm::mat4);
+        size_t   dataSize = boneCount * sizeof(glm::mat4);
+
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, boneMatricesSSBO);
+        glBufferSubData(GL_SHADER_STORAGE_BUFFER, (GLintptr)offset, (GLsizeiptr)dataSize, finalBones.data());
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    }
+
+    void UploadAllBoneMatrices(const std::vector<glm::mat4>& allBones)
+    {
+        if (allBones.empty()) return;
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, boneMatricesSSBO);
+        glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, allBones.size() * sizeof(glm::mat4), allBones.data());
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    }
+
 
     void UpdateLight(LightComponent* light, TransformComponent* transform)
     {
@@ -697,6 +746,7 @@ public:
 
     void BindForDraw() {
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, instanceSSBO); // vertex shader
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, boneMatricesSSBO); // vertex shader
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, materialSSBO);   // fragment shader
         //glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 8, lightsSSBO);   // fragment shader
     }

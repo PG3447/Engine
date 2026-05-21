@@ -21,10 +21,11 @@ struct RenderData {
 };
 
 struct InstanceData {
-    mat4  model;
-    uint  materialID;
-    uint  objectID;
-    vec2  pad;
+    mat4 model;
+    uint materialID;
+    uint objectID;
+    uint skeletonID;
+    uint pad;
 };
 
 struct MeshMeta {
@@ -69,4 +70,5 @@ void main()
     instances[writeIdx].model      = obj.model;
     instances[writeIdx].materialID = obj.materialID;
     instances[writeIdx].objectID   = objID;
+    instances[writeIdx].skeletonID = obj.skeletonID;
 }
