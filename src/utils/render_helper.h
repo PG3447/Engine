@@ -13,13 +13,16 @@ public:
     static AABB GetLocalAABB(vector<MeshNode> meshes)
     {
         AABB result;
+        result.min = glm::vec3(FLT_MAX);
+        result.max = glm::vec3(-FLT_MAX);
+
         for (auto& node : meshes) {
             result.min = glm::min(result.min, node.cpuData->aabb.min);
             result.max = glm::max(result.max, node.cpuData->aabb.max);
         }
         return result;
     }
-
+    
 
     static void SetMaterial(GameObject* root, std::shared_ptr<Material> newMaterial, bool includeChildren = true) {
         if (!root) return;

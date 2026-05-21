@@ -277,12 +277,14 @@ MeshNode Model::processMesh(aiMesh* mesh, const aiScene* scene)
     node.material = myMaterial;
 
     AABB aabb;
+    aabb.min = glm::vec3(FLT_MAX);
+    aabb.max = glm::vec3(-FLT_MAX);
+
     for (auto& v : cpuData->vertices) {
         aabb.min = glm::min(aabb.min, v.Position);
         aabb.max = glm::max(aabb.max, v.Position);
     }
     node.cpuData->aabb = aabb;
-
     return node;
 }
 

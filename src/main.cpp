@@ -1,4 +1,4 @@
-﻿// dear imgui: standalone example application for GLFW + OpenGL 3, using programmable pipeline
+// dear imgui: standalone example application for GLFW + OpenGL 3, using programmable pipeline
 // If you are new to dear imgui, see examples/README.txt and documentation at the top of imgui.cpp.
 // (GLFW is a cross-platform general purpose library for handling windows, inputs, OpenGL/Vulkan graphics context creation, etc.)
 
@@ -516,7 +516,7 @@ int main(int, char**)
 
     int placeholderThing = 0;
 
-    bed1Model = std::make_unique<Prefab>("res/models/szklo.glb");
+    bed1Model = std::make_unique<Prefab>("res/models/samochod.glb");
     bed2Model = std::make_unique<Prefab>("res/models/bed2.glb");
     bed3Model = std::make_unique<Prefab>("res/models/bed3.glb");
     corkBoardModel = std::make_unique<Prefab>("res/models/cork_board.glb");

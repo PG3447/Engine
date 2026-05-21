@@ -38,27 +38,95 @@ layout(std430, binding = 3) writeonly buffer VisibleFlags
 
 bool frustumCull(vec3 aabbMin, vec3 aabbMax, mat4 mvp)
 {
-    // Testujemy 8 narożników AABB
     vec4 corners[8];
-    for (int i = 0; i < 8; i++) {
+
+    for (int i = 0; i < 8; i++)
+    {
         vec3 c = vec3(
             (i & 1) != 0 ? aabbMax.x : aabbMin.x,
             (i & 2) != 0 ? aabbMax.y : aabbMin.y,
             (i & 4) != 0 ? aabbMax.z : aabbMin.z
         );
+
         corners[i] = mvp * vec4(c, 1.0);
+
+        // przecina kamerę -> nie culluj
+        if (corners[i].w <= 0.0)
+            return false;
     }
-    // Jeśli wszystkie narożniki po tej samej stronie płaszczyzny → odrzuć
-    for (int plane = 0; plane < 3; plane++) {
-        bool allOut_pos = true, allOut_neg = true;
-        for (int i = 0; i < 8; i++) {
-            float w = corners[i].w;
-            float v = corners[i][plane];
-            if ( v <= +w) allOut_pos = false;
-            if ( v >= -w) allOut_neg = false;
+
+    // LEFT
+    bool outside = true;
+    for (int i = 0; i < 8; i++)
+    {
+        if (corners[i].x >= -corners[i].w)
+        {
+            outside = false;
+            break;
         }
-        if (allOut_pos || allOut_neg) return true; // culled
     }
+    if (outside) return true;
+
+    // RIGHT
+    outside = true;
+    for (int i = 0; i < 8; i++)
+    {
+        if (corners[i].x <= corners[i].w)
+        {
+            outside = false;
+            break;
+        }
+    }
+    if (outside) return true;
+
+    // BOTTOM
+    outside = true;
+    for (int i = 0; i < 8; i++)
+    {
+        if (corners[i].y >= -corners[i].w)
+        {
+            outside = false;
+            break;
+        }
+    }
+    if (outside) return true;
+
+    // TOP
+    outside = true;
+    for (int i = 0; i < 8; i++)
+    {
+        if (corners[i].y <= corners[i].w)
+        {
+            outside = false;
+            break;
+        }
+    }
+    if (outside) return true;
+
+    // NEAR
+    outside = true;
+    for (int i = 0; i < 8; i++)
+    {
+        if (corners[i].z >= -corners[i].w)
+        {
+            outside = false;
+            break;
+        }
+    }
+    if (outside) return true;
+
+    // FAR
+    outside = true;
+    for (int i = 0; i < 8; i++)
+    {
+        if (corners[i].z <= corners[i].w)
+        {
+            outside = false;
+            break;
+        }
+    }
+    if (outside) return true;
+
     return false;
 }
 
@@ -112,15 +180,15 @@ void main()
     RenderData obj = objects[objID];
     uint meshID = obj.meshID;
 
-//    mat4 mvp = viewProjection * obj.model;
-//    vec3 aabbMin = obj.aabbMin.xyz;
-//    vec3 aabbMax = obj.aabbMax.xyz;
-//
-//    if (frustumCull(aabbMin, aabbMax, mvp) || hizCull(aabbMin, aabbMax, mvp))
-//    {
-//        visibleFlags[objID] = 0u; // odrzucony
-//        return;
-//    }
+    mat4 mvp = viewProjection * obj.model;
+    vec3 aabbMin = obj.aabbMin.xyz;
+    vec3 aabbMax = obj.aabbMax.xyz;
+
+    if (frustumCull(aabbMin, aabbMax, mvp))// || hizCull(aabbMin, aabbMax, mvp))
+    {
+        visibleFlags[objID] = 0u; // odrzucony
+        return;
+    }
 
     visibleFlags[objID] = 1u;
     atomicAdd(meshInstanceCount[meshID], 1u);

@@ -524,7 +524,7 @@ public:
                 auto matIt = materialIDMap.find(material);
                 if (matIt == materialIDMap.end())
                     continue;
-                
+
                 const auto& aabb = mesh.cpuData->aabb;
 
                 renderDataCache.emplace_back(RenderData{
@@ -535,7 +535,7 @@ public:
                     .materialID = matIt->second,
                     .skeletonID = animIt != animatorIDMap.end() ? animIt->second : NO_SKELETON,
                     .padding = 0
-                    });
+                    });            
             }
         }
         
