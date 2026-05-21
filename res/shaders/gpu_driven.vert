@@ -32,9 +32,9 @@ layout(std430, binding = 3) readonly buffer Instances
 
 uniform mat4 viewProjection;
 
-//const int MAX_BONES = 200;
-//uniform mat4 finalBonesMatrices[MAX_BONES];
-//uniform bool isAnimated;
+const int MAX_BONES = 200;
+uniform mat4 finalBonesMatrices[MAX_BONES];
+uniform bool isAnimated;
 
 void main()
 {
@@ -46,20 +46,20 @@ void main()
     mat4 model = inst.model;
 
     // Skinning
-//    mat4 boneTransform = mat4(1.0);
-//    if (isAnimated)
-//    {
-//        float totalWeight = weights[0] + weights[1] + weights[2] + weights[3];
-//        if (totalWeight > 0.0)
-//        {
-//            boneTransform  = finalBonesMatrices[boneIds[0]] * weights[0];
-//            boneTransform += finalBonesMatrices[boneIds[1]] * weights[1];
-//            boneTransform += finalBonesMatrices[boneIds[2]] * weights[2];
-//            boneTransform += finalBonesMatrices[boneIds[3]] * weights[3];
-//        }
-//    }
+    mat4 boneTransform = mat4(1.0);
+    if (isAnimated)
+    {
+        float totalWeight = weights[0] + weights[1] + weights[2] + weights[3];
+        if (totalWeight > 0.0)
+        {
+            boneTransform  = finalBonesMatrices[boneIds[0]] * weights[0];
+            boneTransform += finalBonesMatrices[boneIds[1]] * weights[1];
+            boneTransform += finalBonesMatrices[boneIds[2]] * weights[2];
+            boneTransform += finalBonesMatrices[boneIds[3]] * weights[3];
+        }
+    }
 
-    mat4 finalModel = model;// * boneTransform;
+    mat4 finalModel = model * boneTransform;
 
     vec4 worldPos = finalModel * vec4(aPos, 1.0);
     FragPos   = worldPos.xyz;
