@@ -9,6 +9,7 @@ uniform mat4 viewProjection;
 uniform int  hizMipLevels;
 uniform uint objectCount;
 uniform vec2 screenSize;
+uniform bool enableFrustumCulling;
 
 struct RenderData {
     mat4 model;
@@ -184,7 +185,7 @@ void main()
     vec3 aabbMin = obj.aabbMin.xyz;
     vec3 aabbMax = obj.aabbMax.xyz;
 
-    if (frustumCull(aabbMin, aabbMax, mvp))// || hizCull(aabbMin, aabbMax, mvp))
+    if (frustumCull(aabbMin, aabbMax, mvp) && enableFrustumCulling)// || hizCull(aabbMin, aabbMax, mvp))
     {
         visibleFlags[objID] = 0u; // odrzucony
         return;

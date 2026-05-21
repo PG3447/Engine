@@ -599,6 +599,7 @@ public:
         glUniform2f(glGetUniformLocation(shaderHizCullCount->ID, "screenSize"), (float)screenWidth, (float)screenHeight);
         glUniform1i(glGetUniformLocation(shaderHizCullCount->ID, "hizMipLevels"), hizMipLevels);
         glUniform1ui(glGetUniformLocation(shaderHizCullCount->ID, "objectCount"), objectCount);
+        glUniform1i(glGetUniformLocation(shaderHizCullCount->ID, "enableFrustumCulling"), GL_TRUE);
 
         glBindTextureUnit(0, hizTexture);
 
