@@ -33,7 +33,9 @@ add_executable(${PROJECT_NAME} ${HEADER_FILES} ${SOURCE_FILES} ${ASSETS_FILES} "
 		systems/PostProcessingSystem.cpp
 		systems/PostProcessingSystem.h
 		systems/AudioSystem.cpp
-		systems/AudioSystem.h)
+		systems/AudioSystem.h
+		systems/ProceduralDecorationSystem.h
+		systems/ProceduralDecorationSystem.cpp)
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE GLFW_INCLUDE_NONE)
 target_compile_definitions(${PROJECT_NAME} PRIVATE LIBRARY_SUFFIX="")

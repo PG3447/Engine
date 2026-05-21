@@ -47,6 +47,7 @@
 
 #include "diagnostics/cpu_timer.h"
 #include "systems/PostProcessingSystem.h"
+#include "systems/ProceduralDecorationSystem.h"
 #include "utils/render_helper.h"
 #include "utils/animation_helper.h"
 
@@ -357,7 +358,7 @@ int main(int, char**)
     ecs.AddSystem<PostProcessingSystem>(ecs, window);
     ecs.AddSystem<SpriteSystem>(ecs, window);
     ecs.AddSystem<RaycastSystem>(ecs);
-    ecs.AddSystem<AudioSystem>(ecs);
+    //ecs.AddSystem<AudioSystem>(ecs);
 
     ourShader = std::make_unique<Shader>("res/shaders/basic.vert", "res/shaders/basic.frag");
     ourShader->use();
@@ -518,37 +519,37 @@ int main(int, char**)
   
     placeholderModel = std::make_unique<Prefab>("res/models/placeholder.glb");
 
-    //deskModel      = std::make_unique<Prefab>("res/models/desk.glb");
-    //doorsModel     = std::make_unique<Prefab>("res/models/doors.glb");
-    //folderModel    = std::make_unique<Prefab>("res/models/folder.glb");
-    //krzesloModel   = std::make_unique<Prefab>("res/models/krzeslo.glb");
-    ////ksiazkaModel   = std::make_unique<Prefab>("res/models/ksiazka.glb");
-    //lampa1Model    = std::make_unique<Prefab>("res/models/lampa1.glb");
-    //lampa2Model    = std::make_unique<Prefab>("res/models/lampa2.glb");
-    //lampa3Model    = std::make_unique<Prefab>("res/models/lampa3.glb");
-    //needleModel    = std::make_unique<Prefab>("res/models/needle.glb");
-    //bad1Model      = std::make_unique<Prefab>("res/models/obiekty_bad1.glb");
-    //bad2Model      = std::make_unique<Prefab>("res/models/obiekty_bad2.glb");
-    //bad3Model      = std::make_unique<Prefab>("res/models/obiekty_bad3.glb");
-    //papersModel    = std::make_unique<Prefab>("res/models/papers.glb");
-    //bossModel      = std::make_unique<Prefab>("res/models/placeholder_boss.glb");
-    //characterModel = std::make_unique<Prefab>("res/models/placeholder_character.glb");
-    //vial1Model     = std::make_unique<Prefab>("res/models/probowka1.glb");
-    //vial2Model     = std::make_unique<Prefab>("res/models/probowka2.glb");
-    //vial3Model     = std::make_unique<Prefab>("res/models/probowka3.glb");
-    //vial4Model     = std::make_unique<Prefab>("res/models/probowka4.glb");
-    //vial5Model     = std::make_unique<Prefab>("res/models/probowka5.glb");
-    //vial61Model    = std::make_unique<Prefab>("res/models/probowka6.glb");
-    //vial7Model     = std::make_unique<Prefab>("res/models/probowka7.glb");
-    //sinkModel      = std::make_unique<Prefab>("res/models/sink.glb");
-    //szafa1Model    = std::make_unique<Prefab>("res/models/szafa1.glb");
-    //szafa2Model    = std::make_unique<Prefab>("res/models/szafa2.glb");
-    //szafa3Model    = std::make_unique<Prefab>("res/models/szafa3.glb");
-    //telephoneModel = std::make_unique<Prefab>("res/models/telephone.glb");
-    //toiletModel    = std::make_unique<Prefab>("res/models/toilet.glb");
-    //wozekModel     = std::make_unique<Prefab>("res/models/wozek.glb");
-    //zaslonaModel   = std::make_unique<Prefab>("res/models/zaslona.glb");
-    //roomModel = std::make_unique<Prefab>("res/models/room.glb");
+    deskModel      = std::make_unique<Prefab>("res/models/desk.glb");
+    doorsModel     = std::make_unique<Prefab>("res/models/doors.glb");
+    folderModel    = std::make_unique<Prefab>("res/models/folder.glb");
+    krzesloModel   = std::make_unique<Prefab>("res/models/krzeslo.glb");
+    ksiazkaModel   = std::make_unique<Prefab>("res/models/ksiazka.glb");
+    lampa1Model    = std::make_unique<Prefab>("res/models/lampa1.glb");
+    lampa2Model    = std::make_unique<Prefab>("res/models/lampa2.glb");
+    lampa3Model    = std::make_unique<Prefab>("res/models/lampa3.glb");
+    needleModel    = std::make_unique<Prefab>("res/models/needle.glb");
+    bad1Model      = std::make_unique<Prefab>("res/models/obiekty_bad1.glb");
+    bad2Model      = std::make_unique<Prefab>("res/models/obiekty_bad2.glb");
+    bad3Model      = std::make_unique<Prefab>("res/models/obiekty_bad3.glb");
+    papersModel    = std::make_unique<Prefab>("res/models/papers.glb");
+    bossModel      = std::make_unique<Prefab>("res/models/placeholder_boss.glb");
+    characterModel = std::make_unique<Prefab>("res/models/placeholder_character.glb");
+    vial1Model     = std::make_unique<Prefab>("res/models/probowka1.glb");
+    vial2Model     = std::make_unique<Prefab>("res/models/probowka2.glb");
+    vial3Model     = std::make_unique<Prefab>("res/models/probowka3.glb");
+    vial4Model     = std::make_unique<Prefab>("res/models/probowka4.glb");
+    vial5Model     = std::make_unique<Prefab>("res/models/probowka5.glb");
+    vial61Model    = std::make_unique<Prefab>("res/models/probowka6.glb");
+    vial7Model     = std::make_unique<Prefab>("res/models/probowka7.glb");
+    sinkModel      = std::make_unique<Prefab>("res/models/sink.glb");
+    szafa1Model    = std::make_unique<Prefab>("res/models/szafa1.glb");
+    szafa2Model    = std::make_unique<Prefab>("res/models/szafa2.glb");
+    szafa3Model    = std::make_unique<Prefab>("res/models/szafa3.glb");
+    telephoneModel = std::make_unique<Prefab>("res/models/telephone.glb");
+    toiletModel    = std::make_unique<Prefab>("res/models/toilet.glb");
+    wozekModel     = std::make_unique<Prefab>("res/models/wozek.glb");
+    zaslonaModel   = std::make_unique<Prefab>("res/models/zaslona.glb");
+   // roomModel = std::make_unique<Prefab>("res/models/room.glb");
 
 
     GameObject* model1 = bed1Model->Instantiate(*scena1, nullptr, ourShader.get());
@@ -888,23 +889,17 @@ int main(int, char**)
     wallObject9->GetComponent<TransformComponent>()->position.y = 70;
     wallObject9->GetComponent<TransformComponent>()->position.z = -100;
 
-
     GameObject* wallObject10 = wallModel3->Instantiate(*scena1, nullptr, ourShader.get());
-    wallObject10->GetComponent<TransformComponent>()->scale.x = 30;
-    wallObject10->GetComponent<TransformComponent>()->scale.y = 10;
-    wallObject10->GetComponent<TransformComponent>()->scale.z = 10;
-
+    wallObject10->GetComponent<TransformComponent>()->scale    = glm::vec3(30.0f, 10.0f, 10.0f);
+    wallObject10->GetComponent<TransformComponent>()->position = glm::vec3(30.0f, 0.0f, 0.0f);
+    wallObject10->GetComponent<TransformComponent>()->isDirty  = true;
     wallObject10->AddComponent<RigidbodyComponent>();
     wallObject10->AddComponent<ColliderComponent>();
-
     wallObject10->GetComponent<RigidbodyComponent>()->useGravity = false;
-    wallObject10->GetComponent<RigidbodyComponent>()->isStatic = true;
+    wallObject10->GetComponent<RigidbodyComponent>()->isStatic   = true;
+    wallObject10->GetComponent<ColliderComponent>()->halfSize     = glm::vec3(10.0f, 10.0f, 30.0f);
+    wallObject10->GetComponent<ColliderComponent>()->offset       = glm::vec3(0.0f);
 
-    wallObject10->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 11, 11, 33 };
-
-    wallObject10->GetComponent<TransformComponent>()->position.x = 30;
-    wallObject10->GetComponent<TransformComponent>()->position.y = 0;
-    wallObject10->GetComponent<TransformComponent>()->position.z = 0;
 
     GameObject* wallObject11 = wallModel3->Instantiate(*scena1, nullptr, ourShader.get());
     wallObject11->GetComponent<TransformComponent>()->scale.x = 30;
@@ -917,12 +912,12 @@ int main(int, char**)
     wallObject11->GetComponent<RigidbodyComponent>()->useGravity = false;
     wallObject11->GetComponent<RigidbodyComponent>()->isStatic = true;
 
-    wallObject11->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 11, 11, 33 };
+    wallObject11->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 10, 10, 30 };
 
     wallObject11->GetComponent<TransformComponent>()->position.x = -30;
     wallObject11->GetComponent<TransformComponent>()->position.y = 0;
     wallObject11->GetComponent<TransformComponent>()->position.z = 0;
-
+/*
     GameObject* wallObject12 = wallModel3->Instantiate(*scena1, nullptr, ourShader.get());
     wallObject12->GetComponent<TransformComponent>()->scale.x = 30;
     wallObject12->GetComponent<TransformComponent>()->scale.y = 10;
@@ -956,6 +951,7 @@ int main(int, char**)
     wallObject13->GetComponent<TransformComponent>()->position.x = -30;
     wallObject13->GetComponent<TransformComponent>()->position.y = 0;
     wallObject13->GetComponent<TransformComponent>()->position.z = -200;
+    */
 
 
     // aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
@@ -991,12 +987,69 @@ int main(int, char**)
     //FMOD
     FMOD::Sound* sound = nullptr;
 
-    ecs.GetSystem<AudioSystem>()->createSound("res/sound/test_sound.mp3", sound);
+    //ecs.GetSystem<AudioSystem>()->createSound("res/sound/test_sound.mp3", sound);
 
 
 
     //XDDD
 
+    //SystemGeneratywny XDDDDDDDDD
+    ProceduralDecorationSystem decorSystem;
+
+    /*decorSystem.AddFromSurface(wallObject10,
+    {
+        { -16.0f,  0.0f },
+        {  -8.0f,  0.0f },
+        {   0.0f,  0.0f },
+        {   8.0f,  0.0f },
+        {  16.0f,  0.0f },
+    },
+    {
+        { cupModel.get(),    3.0f },
+        { folderModel.get(), 2.0f },
+        { ksiazkaModel.get(),1.0f },
+    },
+    glm::vec3(10.0f)
+            );*/
+    std::vector<WeightedPrefab> pulaPrzedmiotow;
+
+    WeightedPrefab kubek;
+    kubek.prefab = cupModel.get();
+    kubek.weight = 10.0f;
+    kubek.rotYMin = 0.0f;   kubek.rotYMax = 360.0f;
+    kubek.scaleMin = 0.9f;  kubek.scaleMax = 1.1f;
+    pulaPrzedmiotow.push_back(kubek);
+
+    WeightedPrefab probowka;
+    probowka.prefab = vial1Model.get();
+    probowka.scaleMin = 0.02f;  probowka.scaleMax = 0.02f;
+    probowka.weight = 2.0f;
+    probowka.localOffset = glm::vec3(0.0f, 1.0f, 0.0f);
+    probowka.rotYMin = 0.0f;   probowka.rotYMax = 360.0f;
+
+    pulaPrzedmiotow.push_back(probowka);
+
+    WeightedPrefab folder;
+    folder.prefab = folderModel.get();
+    folder.weight = 1.0f;
+    folder.rotYMin = 0.0f;   folder.rotYMax = 360.0f;
+    pulaPrzedmiotow.push_back(folder);
+
+    int iloscPrzedmiotow = 200;
+    float margin = 0.30f;
+    float distanceBetweenThem = 5.0f;
+
+    decorSystem.AddRandomlyFromSurface(
+        wallObject11,
+        iloscPrzedmiotow,
+        pulaPrzedmiotow,
+        glm::vec3(15.0f),
+        margin,
+        distanceBetweenThem
+    );
+
+    int spawned = decorSystem.SpawnAll(*scena1, ourShader.get());
+    spdlog::info("Dekoracje: {} obiektów na stołach.", spawned);
 
     // Main loop
     while (!glfwWindowShouldClose(window))
@@ -1038,9 +1091,9 @@ int main(int, char**)
             postProcessingSystem->set_gamma(postProcessingSystem->get_gamma() - 0.1f);
         }
 
-        if (ecs.GetSystem<HID>()->is_action_just_pressed("play_sound")) {
+        /*if (ecs.GetSystem<HID>()->is_action_just_pressed("play_sound")) {
             ecs.GetSystem<AudioSystem>()->playSound(sound);
-        }
+        }*/
 
         // testy animacji
 
@@ -1161,7 +1214,7 @@ int main(int, char**)
 
     }
 
-    sound->release();
+//    sound->release();
 
     // Cleanup
     glDeleteVertexArrays(1, &VAO);
