@@ -462,6 +462,7 @@ public:
     }
     std::vector<RenderData> renderDataCache;
     std::vector<glm::mat4> boneMatricesCache;
+    struct AnimCache { uint32_t slot; AnimatorComponent* anim; };
 
     std::vector<RenderData>& CollectRenderData()
     {
@@ -473,6 +474,7 @@ public:
 
         const size_t objectCount = renderQuery->gameobjects.size();
 
+        // trzeba znalezc to co ustawia animatory w RenderComponent
         // 1. najpierw zarejestruj nowe animatory
         for (size_t i = 0; i < objectCount; ++i) {
             const RenderComponent* r = renderers[i];
