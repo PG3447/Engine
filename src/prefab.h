@@ -8,26 +8,17 @@
 #include "resource_manager.h"
 #include "core/scene.h"
 
-using namespace std;
-
 class Prefab
 {
 public:
     std::shared_ptr<Model> rootModel;
 
-    Prefab(string const& path)
+    Prefab(std::string const& path)
     {
         if (!path.empty()) {
             rootModel = ResourceManager::LoadModel(path); // Magia optymalizacji
         }
     }
-
-
-    //Entity* getEntitiesCreate(Shader* shader, Light* light = nullptr)
-    //{
-    //    if (!rootModel) return nullptr;
-    //    return createEntityRecursive(rootModel.get(), nullptr, shader, light);
-    //}
 
     GameObject* Instantiate(Scene& scene, GameObject* parent = nullptr, Shader* shader = nullptr)
     {
@@ -72,10 +63,12 @@ private:
 
         auto* render = go->AddComponent<RenderComponent>();
         render->meshes = model->meshes;
-        //render->rootAnimator = currentAnimator;
 
         for (auto& mesh : render->meshes) {
-            if (mesh.material) mesh.material->shader = shader;
+            // Nie nadpisuj globalnych materiałów, gdy nie przekazano shadera.
+            if (mesh.material && shader) {
+                mesh.material->shader = shader;
+            }
         }
 
         for (auto& child : model->children) {
@@ -86,8 +79,5 @@ private:
     }
 
 };
-#endif
 
-
-
-
+#endif // PREFAB_H

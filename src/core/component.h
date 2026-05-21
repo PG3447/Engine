@@ -11,6 +11,7 @@ class MeshNode;
 class Shader;
 class Material;
 class Skeleton;
+class Prefab;
 
 struct AnimatorComponent;
 struct AnimationChannel;
@@ -44,41 +45,11 @@ struct TransformComponent : Component {
     bool isDirty = true;
 };
 
-//struct ModelNode
-//{
-//    // ===== SCENE HIERARCHY =====
-//    std::string name;
-//
-//    Transform transform;
-//
-//    std::vector<std::unique_ptr<ModelNode>> children;
-//
-//    // ===== GEOMETRY =====
-//    std::vector<MeshNode> meshes;
-//};
-//
-//struct MeshNode
-//{
-//    std::shared_ptr<RenderMesh> mesh;     // GPU geometry
-//    std::shared_ptr<Material> material;   // shading data
-//};
-
 struct RenderComponent : Component {
     static constexpr uint64_t ComponentBit = 1ull << 1;
 
     std::vector<MeshNode> meshes;
-    
-    //std::vector<std::shared_ptr<Material>> materials; Fajnie jak bedzie xD
-
-    //std::shared_ptr<Model> model;
-    //
-    //
-    //std::shared_ptr<ModelNode> node;
-    //Model* model = nullptr;
-    //Shader* shader = nullptr;
-    //std::shared_ptr<Material> materialOverride = nullptr;
 };
-
 
 struct RigidbodyComponent : Component {
     static constexpr uint64_t ComponentBit = 1ull << 2;
@@ -108,11 +79,7 @@ struct CameraState {
 struct CameraComponent : Component {
     static constexpr uint64_t ComponentBit = 1ull << 3;
 
-    //Camera camera;
-
     CameraState state;
-
-    //TransformComponent transform;
 
     float yaw = -90.0f;
     float pitch = 0.0f;
@@ -121,9 +88,7 @@ struct CameraComponent : Component {
     float nearPlane = 0.1f;
     float farPlane = 10000.0f;
 
-    //Viewport
     Viewport viewport;
-
 
     bool isActive = true;
 };
@@ -188,9 +153,6 @@ enum LightType {
 struct LightComponent : Component {
     static constexpr uint64_t ComponentBit = 1ull << 6;
 
-
-
-    // wspólne
     int index = 0;
     bool isOn = true;
     LightType type;
@@ -199,18 +161,14 @@ struct LightComponent : Component {
     glm::vec3 diffuse = glm::vec3(1.0f);
     glm::vec3 specular = glm::vec3(1.0f);
 
-    //glm::vec3 position = glm::vec3(0.0f);
     glm::vec3 direction = glm::vec3(0.0f);
 
-    // attenuation (Point / Spot)
     float constant = 1.0f;
     float linear = 0.09f;
     float quadratic = 0.032f;
 
-    // Spot
     float cutOff = glm::cos(glm::radians(12.5f));
     float outerCutOff = glm::cos(glm::radians(17.5f));
-
 };
 
 struct AnimatorComponent : Component {
@@ -247,15 +205,13 @@ struct RaycastHit {
 struct RaycastComponent : Component {
     static constexpr uint64_t ComponentBit = 1ull << 8;
 
-    //wartosci domyslne
-    float range = 50.0f; // zasieg widzenia
+    float range = 50.0f;
     int fovRayCount = 1;
-    float fovAngle = 90.0f; //kat luku w stopniach
-    glm::vec3 originOffset = glm::vec3(0.0f, 0.0f, 0.0f); //przesuniece od zrodla pozycji
+    float fovAngle = 90.0f;
+    glm::vec3 originOffset = glm::vec3(0.0f, 0.0f, 0.0f);
 
     std::vector<RaycastHit> raycastHits;
 
-    //Czy w klatce promien trafil w cokolwiek
     bool anyHit() const {
         for (const auto & h : raycastHits) {
             if (h.hit) {
@@ -276,10 +232,41 @@ struct RaycastComponent : Component {
         return (bestHit.distance < 1e30f) ? bestHit : RaycastHit{};
     }
 
-    //debug
     bool debugDraw = true;
-    glm::vec4 colorMiss = {0.0f, 1.0f, 0.0f, 1.0f}; // zielony  = brak trafienia
-    glm::vec4 colorHit  = {1.0f, 0.3f, 0.0f, 1.0f}; // pomarańczowy = trafienie
+    glm::vec4 colorMiss = {0.0f, 1.0f, 0.0f, 1.0f};
+    glm::vec4 colorHit  = {1.0f, 0.3f, 0.0f, 1.0f};
+};
 
+enum class GenerativeShape { Circle, Box };
+
+struct GenerativeComponent : Component {
+    static constexpr uint64_t ComponentBit = 1ull << 9;
+
+    std::vector<Prefab*> prefabs;
+    int spawnCount = 10;
+
+    GenerativeShape shape = GenerativeShape::Circle;
+    glm::vec2 extents{ 5.0f, 5.0f };
+
+    glm::vec3 minScale{ 1.0f, 1.0f, 1.0f };
+    glm::vec3 maxScale{ 1.0f, 1.0f, 1.0f };
+
+    bool randomizeYRotation = true;
+    bool hasSpawned = false;
+
+    float globalScaleMultiplier = 1.0f;
+
+    float minSpacing = 0.5f;
+
+    int maxPlacementAttempts = 20;
+
+    bool addColliders = false;
+    glm::vec3 colliderHalfSize{ 0.5f, 0.5f, 0.5f };
+
+    class Scene* targetScene = nullptr;
+};
+
+struct GeneratedComponent : Component {
+    static constexpr uint64_t ComponentBit = 1ull << 10;
 };
 #endif

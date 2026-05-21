@@ -10,11 +10,13 @@
 #define IMGUI_IMPL_OPENGL_LOADER_GLAD
 
 #define STB_IMAGE_IMPLEMENTATION  
-//#include <stb_image.h>
 
+#include <memory>
 #include <glad/glad.h>  // Initialize with gladLoadGL()
 #include <GLFW/glfw3.h> // Include glfw3.h after our OpenGL definitions
 #include <spdlog/spdlog.h>
+
+#define STB_IMAGE_IMPLEMENTATION  
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -44,11 +46,13 @@
 #include <systems/SpriteSystem.h>
 #include <systems/raycastSystem.h>
 #include <systems/AudioSystem.h>
+#include "systems/generative_system.h"
 
 #include "diagnostics/cpu_timer.h"
 #include "systems/PostProcessingSystem.h"
 #include "utils/render_helper.h"
 #include "utils/animation_helper.h"
+#include "utils/random_helper.h"
 
 
 static void glfw_error_callback(int error, const char* description)
@@ -72,6 +76,7 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 unsigned int loadCubemap(vector<std::string> faces);
 void regenerateSphere();
+
 
 //void createHouse();
 void processCameraInput(ECS& ecs, CameraComponent& cam, TransformComponent& transform,
@@ -232,7 +237,7 @@ struct PerformanceData {
     float inputTime = 0.0f;
 };
 PerformanceData perf;
-RenderSystem * renderSystem = nullptr;
+RenderSystem* renderSystem = nullptr;
 PostProcessingSystem* postProcessingSystem = nullptr;
 
 
@@ -270,29 +275,29 @@ GameObject* CreateRaycastTestObject(
 
     auto* tr = go->GetComponent<TransformComponent>();
     tr->position = position;
-    tr->scale    = scale;
-    tr->isDirty  = true;
+    tr->scale = scale;
+    tr->isDirty = true;
 
     auto* col = go->AddComponent<ColliderComponent>();
     col->halfSize = glm::vec3(1.0f);
-    col->offset   = glm::vec3(0.0f);
+    col->offset = glm::vec3(0.0f);
 
     auto* rc = go->AddComponent<RaycastComponent>();
-    rc->range        = 5000.0f;
-    rc->fovRayCount  = 200;
-    rc->fovAngle     = 200.0f;
+    rc->range = 5000.0f;
+    rc->fovRayCount = 200;
+    rc->fovAngle = 200.0f;
     rc->originOffset = glm::vec3(0.0f, 0.5f, 0.0f);
-    rc->debugDraw    = true;
+    rc->debugDraw = true;
 
     return go;
 }
 
 
 void processCameraInput(ECS& ecs, CameraComponent& cam, TransformComponent& transform,
-                       const std::string& up,
-                       const std::string& down,
-                       const std::string& left,
-                       const std::string& right)
+    const std::string& up,
+    const std::string& down,
+    const std::string& left,
+    const std::string& right)
 {
     const auto& hid = ecs.GetSystem<HID>();
     glm::vec3 dir(0.0f);
@@ -348,6 +353,8 @@ int main(int, char**)
 
     Scene* scena1 = sceneManager.GetActiveScene();
 
+    ourShader = std::make_unique<Shader>("res/shaders/basic.vert", "res/shaders/basic.frag");
+    ourShader->use();
 
     ecs.AddSystem<TransformSystem>(ecs);
     ecs.AddSystem<PhysicsSystem>(ecs);
@@ -358,15 +365,13 @@ int main(int, char**)
     ecs.AddSystem<SpriteSystem>(ecs, window);
     ecs.AddSystem<RaycastSystem>(ecs);
     ecs.AddSystem<AudioSystem>(ecs);
-
-    ourShader = std::make_unique<Shader>("res/shaders/basic.vert", "res/shaders/basic.frag");
-    ourShader->use();
+    ecs.AddSystem<GenerativeSystem>(ecs, ourShader.get());
 
     groundModel = std::make_unique<Prefab>("res/models/podloze.glb");
     sunModel = std::make_unique<Prefab>("res/models/Sun.glb");
     //GameObject* obb = groundModel->Instantiate(*scena1, nullptr, ourShader.get());
     //GameObject* obb2 = sunModel->Instantiate(*scena1, nullptr, ourShader.get());
- 
+
 
     //obb->GetComponent<TransformComponent>()->scale.x = 10;
     //obb->GetComponent<TransformComponent>()->scale.y = 1;
@@ -400,7 +405,6 @@ int main(int, char**)
 
 
 
-
     auto brickMat = std::make_shared<Material>();
     brickMat->shader = ourShader.get();
     brickMat->diffuseMap = diff;
@@ -414,7 +418,7 @@ int main(int, char**)
     CameraComponent* camCompLeft = camera1->AddComponent<CameraComponent>();
     ColliderComponent* camera1collider = camera1->AddComponent<ColliderComponent>();
     RigidbodyComponent* rigidBodyCamera1 = camera1->AddComponent<RigidbodyComponent>();
-    
+
 
     camera1->AddComponent<LightComponent>();
     LightComponent* light2 = camera1->GetComponent<LightComponent>();
@@ -450,11 +454,11 @@ int main(int, char**)
     TransformComponent* camTransform1 = camera1->GetComponent<TransformComponent>();
     camTransform1->position = glm::vec3(0.0f, 20.0f, 0.0f);
     CameraHelper::InitialCamera(*camCompLeft, *camTransform1,
-         glm::vec3(0.0f, 1.0f, 0.0f),
-         YAW,
-         PITCH,
-         Viewport{ 0.0f, 0.0f, 0.5f, 1.0f }
-     );
+        glm::vec3(0.0f, 1.0f, 0.0f),
+        YAW,
+        PITCH,
+        Viewport{ 0.0f, 0.0f, 0.5f, 1.0f }
+    );
 
     camCompLeft->isActive = true;
 
@@ -511,11 +515,11 @@ int main(int, char**)
     int placeholderThing = 0;
 
     bed1Model = std::make_unique<Prefab>("res/models/samochod.glb");
-    bed2Model      = std::make_unique<Prefab>("res/models/bed2.glb");
-    bed3Model      = std::make_unique<Prefab>("res/models/bed3.glb");
+    bed2Model = std::make_unique<Prefab>("res/models/bed2.glb");
+    bed3Model = std::make_unique<Prefab>("res/models/bed3.glb");
     corkBoardModel = std::make_unique<Prefab>("res/models/cork_board.glb");
-    cupModel       = std::make_unique<Prefab>("res/models/cup.glb");
-  
+    cupModel = std::make_unique<Prefab>("res/models/cup.glb");
+
     placeholderModel = std::make_unique<Prefab>("res/models/placeholder.glb");
 
     //deskModel      = std::make_unique<Prefab>("res/models/desk.glb");
@@ -611,10 +615,44 @@ int main(int, char**)
 
     RenderHelper::SetSpecularTexture(model1, whiteSpecular);
 
-    //model1->GetComponent<RigidbodyComponent>()->useGravity = true;
-    // model1->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 1, 1 };
-    //model1->GetComponent<TransformComponent>()->position.y = 150;
-    //RenderHelper::SetMaterial(model29, brickMat);
+    // model1 - światło typu directional
+
+    // gen
+
+    // --- NASZ GENERATOR OBIEKTÓW ---
+    GameObject* generativeObj = scena1->CreateGameObject(nullptr);
+
+    // Ustawiamy go wokół pozycji samochodu (samochód jest na 0, 2, 20)
+    auto* genTransform = generativeObj->AddComponent<TransformComponent>();
+    genTransform->position = glm::vec3(0.0f, 2.0f, 20.0f); // Środek naszego obszaru generowania
+
+    auto* generativeComp = generativeObj->AddComponent<GenerativeComponent>();
+    generativeComp->targetScene = scena1;
+
+    // teraz przekazujemy shared_ptr bez .get()
+    generativeComp->prefabs = { cupModel.get(), corkBoardModel.get() };
+
+    // ustawienia generatora
+    generativeComp->spawnCount = 10;                     // ile obiektów próbujemy wygenerować
+    generativeComp->shape = GenerativeShape::Box;        // Box lub Circle
+    generativeComp->extents = glm::vec2(25.0f, 25.0f);   // rozmiar obszaru generowania (lokalnie)
+    generativeComp->randomizeYRotation = true;
+
+    // skalowanie: jeśli modele są za małe, zwiększ globalScaleMultiplier (np. 8..12)
+    generativeComp->globalScaleMultiplier = 8.0f;
+
+    // minimalna odległość między wygenerowanymi obiektami (w jednostkach świata/local)
+    generativeComp->minSpacing = 5.0f;
+
+    // ile prób podejmować, aby znaleźć niekolizyjną pozycję (większa wartość = więcej prób)
+    generativeComp->maxPlacementAttempts = 30;
+
+    // collidery: włącz gdy chcesz kolizje; dla małych obiektów na stole zwykle false, dla obiektów na podłodze można true
+    generativeComp->addColliders = false;
+    generativeComp->colliderHalfSize = glm::vec3(0.25f, 0.25f, 0.25f);
+    // -------------------------------
+
+    // erativ
 
     GameObject* raycastTarget = placeholderModel->Instantiate(*scena1, nullptr, ourShader.get());
 
@@ -625,7 +663,7 @@ int main(int, char**)
 
     auto* targetCol = raycastTarget->AddComponent<ColliderComponent>();
     targetCol->halfSize = glm::vec3(3.0f);
-    targetCol->offset   = glm::vec3(0.0f);
+    targetCol->offset = glm::vec3(0.0f);
 
     /*GameObject* RaycastSource =
         CreateRaycastTestObject(
@@ -637,7 +675,7 @@ int main(int, char**)
         );
         */
 
-    GameObject * model5 = cupModel      ->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* model5 = cupModel->Instantiate(*scena1, nullptr, ourShader.get());
     model5->GetComponent<TransformComponent>()->position.x = 0.0f;
     model5->GetComponent<TransformComponent>()->position.y = 2.0f;
     model5->GetComponent<TransformComponent>()->position.z = 20.0f;
@@ -1044,7 +1082,7 @@ int main(int, char**)
 
         // testy animacji
 
-		//animacja umierania (wywoływanie animacji po nazwie z pliku modelu)
+        //animacja umierania (wywoływanie animacji po nazwie z pliku modelu)
         if (ecs.GetSystem<HID>()->is_action_just_pressed("anim_play_dying")) {
             auto* clip = AnimationHelper::FindAnimation(dyingModelPrefab->rootModel->animations, "mixamo.com");
             if (clip) {
@@ -1053,7 +1091,7 @@ int main(int, char**)
             }
         }
 
-		//animacja skoku (wywoływanie animacji po indeksie - pierwsza z Jump.fbx)
+        //animacja skoku (wywoływanie animacji po indeksie - pierwsza z Jump.fbx)
         if (ecs.GetSystem<HID>()->is_action_just_pressed("anim_play_jump")) {
             auto* clip = &jumpSkeletonPrefab->rootModel->animations[0];
             if (clip) {
@@ -1072,7 +1110,7 @@ int main(int, char**)
             animator->playbackSpeed = 1.0f;
         }
 
-		// testy animacji
+        // testy animacji
 
         //sigma
         if (ecs.GetSystem<HID>()->is_action_just_pressed("effect1")) {
@@ -1211,7 +1249,7 @@ bool init()
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
-  
+
 
     bool err = !gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 
@@ -1260,15 +1298,16 @@ void compileShader()
 {
 
 
+
     spdlog::info("Success");
 
 }
 
 void input()
 {
-//OLD INPUT STARTS HERE
+    //OLD INPUT STARTS HERE
 
-    // I/O ops go here
+        // I/O ops go here
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
     {
         glfwSetWindowShouldClose(window, true);
@@ -1372,13 +1411,13 @@ void imgui_render()
         ImGui::Text("State changes:%d", renderSystem->stats.stateChanges);
     }
     if (ImGui::CollapsingHeader("Culling")) {
-        ImGui::Checkbox("Frustum culling",   &renderSystem->frustumCullingEnabled);
+        ImGui::Checkbox("Frustum culling", &renderSystem->frustumCullingEnabled);
         ImGui::Checkbox("Occlusion culling", &renderSystem->occlusionCullingEnabled);
         ImGui::Text("Frustum culled:   %d", renderSystem->stats.culledByFrustum);
         ImGui::Text("Occlusion culled: %d", renderSystem->stats.culledByOcclusion);
     }
     ImGui::PlotLines("Frame time", frameTimes, MAX_SAMPLES, index,
-                 nullptr, 0.0f, 1.0f, ImVec2(0, 60));
+        nullptr, 0.0f, 1.0f, ImVec2(0, 60));
 
     ImGui::End();
 
@@ -1412,7 +1451,7 @@ void end_frame()
     glfwSwapBuffers(window);
 }
 
-void processCameraGamepad(ECS &ecs, CameraComponent &cam, TransformComponent &transform, int gamepad_id) {
+void processCameraGamepad(ECS& ecs, CameraComponent& cam, TransformComponent& transform, int gamepad_id) {
     const auto& hid = ecs.GetSystem<HID>();
 
     // ruch

@@ -53,6 +53,8 @@ public:
 
     GameObject* CreateGameObject();
 
+    void DestroyGameObject(GameObject* e);
+
     std::vector<GameObject*> GetAllGameObjects() {
         std::vector<GameObject*> result;
         result.reserve(gameobjects.size());

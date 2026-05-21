@@ -4,6 +4,7 @@
 #include "systems/AudioSystem.h"
 #include "systems/PostProcessingSystem.h"
 #include "systems/raycastSystem.h"
+#include "systems/generative_system.h"
 
 
 //Scene::Scene(ECS& ecsRef) : ecs(ecsRef) {}
@@ -42,6 +43,9 @@ void Scene::Update(float deltaTime) {
 
     if (auto* rs = ecs.GetSystem<RaycastSystem>())
         rs->Update(ecs, deltaTime);
+
+    if (auto* gs = ecs.GetSystem<GenerativeSystem>())
+        gs->Update(ecs, deltaTime);
 
     if (auto* render = ecs.GetSystem<RenderSystem>())
         render->Update(ecs, deltaTime);
