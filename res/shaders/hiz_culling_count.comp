@@ -39,96 +39,34 @@ layout(std430, binding = 3) writeonly buffer VisibleFlags
 
 bool frustumCull(vec3 aabbMin, vec3 aabbMax, mat4 mvp)
 {
-    vec4 corners[8];
+    // Wyciągnij wiersze macierzy MVP
+    vec4 row0 = vec4(mvp[0][0], mvp[1][0], mvp[2][0], mvp[3][0]);
+    vec4 row1 = vec4(mvp[0][1], mvp[1][1], mvp[2][1], mvp[3][1]);
+    vec4 row2 = vec4(mvp[0][2], mvp[1][2], mvp[2][2], mvp[3][2]);
+    vec4 row3 = vec4(mvp[0][3], mvp[1][3], mvp[2][3], mvp[3][3]);
 
-    for (int i = 0; i < 8; i++)
+    // 6 płaszczyzn frustuma (metoda Gribbsa)
+    vec4 planes[6];
+    planes[0] = row3 + row0; // left
+    planes[1] = row3 - row0; // right
+    planes[2] = row3 + row1; // bottom
+    planes[3] = row3 - row1; // top
+    planes[4] = row3 + row2; // near
+    planes[5] = row3 - row2; // far
+
+    for (int i = 0; i < 6; i++)
     {
-        vec3 c = vec3(
-            (i & 1) != 0 ? aabbMax.x : aabbMin.x,
-            (i & 2) != 0 ? aabbMax.y : aabbMin.y,
-            (i & 4) != 0 ? aabbMax.z : aabbMin.z
-        );
+        vec3 n = planes[i].xyz;
 
-        corners[i] = mvp * vec4(c, 1.0);
+        // Positive vertex – narożnik AABB najbardziej wysunięty w stronę normalnej
+        vec3 pv = mix(aabbMin, aabbMax, greaterThan(n, vec3(0.0)));
 
-        // przecina kamerę -> nie culluj
-        if (corners[i].w <= 0.0)
-            return false;
+        // Jeśli nawet on jest na zewnątrz płaszczyzny → AABB poza frustumem
+        if (dot(n, pv) + planes[i].w < 0.0)
+            return true; // culled
     }
 
-    // LEFT
-    bool outside = true;
-    for (int i = 0; i < 8; i++)
-    {
-        if (corners[i].x >= -corners[i].w)
-        {
-            outside = false;
-            break;
-        }
-    }
-    if (outside) return true;
-
-    // RIGHT
-    outside = true;
-    for (int i = 0; i < 8; i++)
-    {
-        if (corners[i].x <= corners[i].w)
-        {
-            outside = false;
-            break;
-        }
-    }
-    if (outside) return true;
-
-    // BOTTOM
-    outside = true;
-    for (int i = 0; i < 8; i++)
-    {
-        if (corners[i].y >= -corners[i].w)
-        {
-            outside = false;
-            break;
-        }
-    }
-    if (outside) return true;
-
-    // TOP
-    outside = true;
-    for (int i = 0; i < 8; i++)
-    {
-        if (corners[i].y <= corners[i].w)
-        {
-            outside = false;
-            break;
-        }
-    }
-    if (outside) return true;
-
-    // NEAR
-    outside = true;
-    for (int i = 0; i < 8; i++)
-    {
-        if (corners[i].z >= -corners[i].w)
-        {
-            outside = false;
-            break;
-        }
-    }
-    if (outside) return true;
-
-    // FAR
-    outside = true;
-    for (int i = 0; i < 8; i++)
-    {
-        if (corners[i].z <= corners[i].w)
-        {
-            outside = false;
-            break;
-        }
-    }
-    if (outside) return true;
-
-    return false;
+    return false; // visible
 }
 
 // HiZ occlusion culling
