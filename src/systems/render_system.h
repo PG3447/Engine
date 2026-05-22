@@ -494,9 +494,9 @@ public:
 
             if (!t || !r)
                 continue;
-
             const glm::mat4 model = t->modelMatrix;
 
+            
             const auto& meshes = r->meshes;
             auto animator = r->animator;
 
@@ -525,8 +525,27 @@ public:
                 if (matIt == materialIDMap.end())
                     continue;
 
-                const auto& aabb = mesh.cpuData->aabb;
 
+                auto& aabb = mesh.cpuData->aabb;
+
+                //glm::vec3 worldMin(FLT_MAX), worldMax(-FLT_MAX);
+                //glm::vec3 corners[8] = {
+                //    {aabb.min.x, aabb.min.y, aabb.min.z},
+                //    {aabb.max.x, aabb.min.y, aabb.min.z},
+                //    {aabb.min.x, aabb.max.y, aabb.min.z},
+                //    {aabb.max.x, aabb.max.y, aabb.min.z},
+                //    {aabb.min.x, aabb.min.y, aabb.max.z},
+                //    {aabb.max.x, aabb.min.y, aabb.max.z},
+                //    {aabb.min.x, aabb.max.y, aabb.max.z},
+                //    {aabb.max.x, aabb.max.y, aabb.max.z},
+                //};
+                //for (const auto& c : corners) {
+                //    glm::vec3 w = glm::vec3(transforms[i]->modelMatrix * glm::vec4(c, 1.0f));
+                //    worldMin = glm::min(worldMin, w);
+                //    worldMax = glm::max(worldMax, w);
+                //}
+
+                //DebugDrawSystem::AddAABB(worldMin, worldMax, glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
                 renderDataCache.emplace_back(RenderData{
                     .modelMatrix = model,
                     .aabbMin = glm::vec4(aabb.min, 0.0f),

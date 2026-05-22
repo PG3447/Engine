@@ -434,6 +434,8 @@ public:
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, visibleFlagsSSBO);
         glBufferData(GL_SHADER_STORAGE_BUFFER, objects.size() * sizeof(uint32_t), nullptr, GL_DYNAMIC_DRAW);
 
+        uint32_t zero = 0;
+        glClearNamedBufferData(visibleFlagsSSBO, GL_R32UI, GL_RED_INTEGER, GL_UNSIGNED_INT, &zero);
 
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, renderDataSSBO);
         glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, objects.size() * sizeof(RenderData), objects.data());
@@ -624,7 +626,7 @@ public:
 
         glDispatchCompute((meshCount + 63) / 64, 1, 1);
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
-
+        spdlog::warn(*totalVisibleMapped);
         ResizeInstanceBufferIfNeeded(*totalVisibleMapped);
     }
 
@@ -752,7 +754,7 @@ public:
         BindForDraw();
         glBindVertexArray(VAO);
         glBindBuffer(GL_DRAW_INDIRECT_BUFFER, drawCmdSSBO);
-        
+        spdlog::info(meshesData.size());
         glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, (GLsizei)meshesData.size(), sizeof(DrawElementsIndirectCommand));
 
         glBindVertexArray(0);
