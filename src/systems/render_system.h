@@ -540,7 +540,7 @@ public:
                 //    {aabb.max.x, aabb.max.y, aabb.max.z},
                 //};
                 //for (const auto& c : corners) {
-                //    glm::vec3 w = glm::vec3(transforms[i]->modelMatrix * glm::vec4(c, 1.0f));
+                //    glm::vec3 w = glm::vec3(model * glm::vec4(c, 1.0f));
                 //    worldMin = glm::min(worldMin, w);
                 //    worldMax = glm::max(worldMax, w);
                 //}

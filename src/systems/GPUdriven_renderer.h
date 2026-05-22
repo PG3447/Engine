@@ -304,7 +304,6 @@ public:
 
         glGenBuffers(1, &totalVisibleSSBO);
 
-
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, instanceSSBO);
         glBufferData(GL_SHADER_STORAGE_BUFFER, instanceBufferCapacity * sizeof(GPUInstanceData), nullptr, GL_DYNAMIC_DRAW);
        
@@ -594,7 +593,6 @@ public:
 
     void DispatchCountPass(const glm::mat4& viewProj, uint32_t objectCount)
     {
-
         shaderHizCullCount->use();
 
         glUniformMatrix4fv(glGetUniformLocation(shaderHizCullCount->ID, "viewProjection"), 1, GL_FALSE, &viewProj[0][0]);
@@ -626,7 +624,6 @@ public:
 
         glDispatchCompute((meshCount + 63) / 64, 1, 1);
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
-        spdlog::warn(*totalVisibleMapped);
         ResizeInstanceBufferIfNeeded(*totalVisibleMapped);
     }
 
@@ -754,7 +751,7 @@ public:
         BindForDraw();
         glBindVertexArray(VAO);
         glBindBuffer(GL_DRAW_INDIRECT_BUFFER, drawCmdSSBO);
-        spdlog::info(meshesData.size());
+
         glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, (GLsizei)meshesData.size(), sizeof(DrawElementsIndirectCommand));
 
         glBindVertexArray(0);
