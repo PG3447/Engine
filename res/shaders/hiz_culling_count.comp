@@ -44,19 +44,14 @@ void extractPlanes(mat4 m, out vec4 planes[6]) {
     vec4 col2 = vec4(m[0][2], m[1][2], m[2][2], m[3][2]);
     vec4 col3 = vec4(m[0][3], m[1][3], m[2][3], m[3][3]);
 
-    planes[0] = col3 + col0; // left
-    planes[1] = col3 - col0; // right
-    planes[2] = col3 - col1; // top
-    planes[3] = col3 + col1; // bottom
-    planes[4] = col3 + col2; // near
-    planes[5] = col3 - col2; // far
-
-    // Normalizacja (potrzebna do distance queries,
-    // opcjonalna przy samym teście znaku)
-    for (int i = 0; i < 6; ++i)
-        planes[i] /= length(planes[i].xyz);
+    planes[0] = col3 + col0;
+    planes[1] = col3 - col0;
+    planes[2] = col3 - col1;
+    planes[3] = col3 + col1;
+    planes[4] = col3 + col2;
+    planes[5] = col3 - col2;
+    // brak normalizacji — zbędna dla testu znaku
 }
-
 // ───────────────────────────────────────────
 //  Główny test – "p-vertex trick"
 //  Wybieramy narożnik AABB najdalej
@@ -124,8 +119,7 @@ bool hizCull(vec3 aabbMin, vec3 aabbMax, mat4 mvp)
     return zMin > hizDepth;
 }
 
-void transformAABB(vec3 localMin, vec3 localMax, mat4 model,
-                   out vec3 worldMin, out vec3 worldMax)
+void transformAABB(vec3 localMin, vec3 localMax, mat4 model, out vec3 worldMin, out vec3 worldMax)
 {
     // Translacja (kolumna 3)
     vec3 t = model[3].xyz;
@@ -153,15 +147,13 @@ void main()
     RenderData obj = objects[objID];
     uint meshID = obj.meshID;
 
-    mat4 mvp = viewProjection;
-    vec3 aabbMin = obj.aabbMin.xyz;
-    vec3 aabbMax = obj.aabbMax.xyz;
+    mat4 vp = viewProjection;
 
     vec3 worldMin, worldMax;
     transformAABB(obj.aabbMin.xyz, obj.aabbMax.xyz, obj.model, worldMin, worldMax);
 
     atomicAdd(meshInstanceCount[meshID], 1u);
-    if (frustumCull(worldMin, worldMax, mvp) && enableFrustumCulling)// || hizCull(aabbMin, aabbMax, mvp))
+    if (frustumCull(worldMin, worldMax, vp) && enableFrustumCulling)// || hizCull(aabbMin, aabbMax, mvp))
     {
         visibleFlags[objID] = 0u; // odrzucony
         return;
