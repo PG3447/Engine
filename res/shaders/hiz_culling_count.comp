@@ -146,26 +146,6 @@ bool hizCull(vec3 aabbMin, vec3 aabbMax, mat4 mvp)
     return zMin > hizDepth;
 }
 
-void transformAABB(vec3 localMin, vec3 localMax, mat4 model,
-                   out vec3 worldMin, out vec3 worldMax)
-{
-    // Translacja (kolumna 3)
-    vec3 t = model[3].xyz;
-    worldMin = t;
-    worldMax = t;
-
-    // Dla każdej osi X, Y, Z
-    for (int i = 0; i < 3; i++)
-    {
-        vec3 axis = vec3(model[0][i], model[1][i], model[2][i]);
-
-        vec3 a = axis * localMin[i];
-        vec3 b = axis * localMax[i];
-
-        worldMin += min(a, b);
-        worldMax += max(a, b);
-    }
-}
 
 void main()
 {
@@ -176,9 +156,6 @@ void main()
     uint meshID = obj.meshID;
 
     mat4 vp = viewProjection;
-
-    vec3 worldMin, worldMax;
-    transformAABB(obj.aabbMin.xyz, obj.aabbMax.xyz, obj.model, worldMin, worldMax);
 
     atomicAdd(meshInstanceCount[meshID], 1u);
     if (frustumCull(obj.aabbMin.xyz, obj.aabbMax.xyz, obj.model, vp) && enableFrustumCulling)// || hizCull(aabbMin, aabbMax, mvp))
