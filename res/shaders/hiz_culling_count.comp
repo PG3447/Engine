@@ -139,12 +139,12 @@ void main()
     RenderData obj = objects[objID];
 
 
+    atomicAdd(meshInstanceCount[obj.meshID], 1u);
     if (enableFrustumCulling && frustumCull(obj.aabbMin.xyz, obj.aabbMax.xyz, obj.model, sharedPlanes))
     {
         visibleFlags[objID] = 0u;
         return;
     }
-    atomicAdd(meshInstanceCount[obj.meshID], 1u);
 
     visibleFlags[objID] = 1u;
 }
