@@ -396,6 +396,17 @@ public:
         return id; //materialID
     }
 
+
+    uint32_t GetMaterialId(Material* mat) {
+        auto it = materialRegistry.find(mat);
+
+        if (it != materialRegistry.end()) {
+            return it->second;
+        }
+
+        return UINT32_MAX;
+    }
+
     uint32_t RegisterLight(LightComponent* light, TransformComponent* transform)
     {
         auto it = lightRegistry.find(light);

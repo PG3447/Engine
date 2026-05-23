@@ -395,8 +395,8 @@ public:
     GLuint depthTexturePrev = 0;
     GLuint depthFBO = 0;
 
-    std::unordered_map<RenderMesh*, uint32_t>  meshIDMap;
-    std::unordered_map<Material*, uint32_t>  materialIDMap;
+    std::unordered_map<MeshData*, uint32_t>  meshIDMap;
+    //std::unordered_map<Material*, uint32_t>  materialIDMap;
     std::unordered_map<AnimatorComponent*, uint32_t> animatorIDMap;
 
     void InitGPUDrivenRenderer(int width, int height)
@@ -414,19 +414,17 @@ public:
             for (auto& mesh : r->meshes) {
                 if (!mesh.gpuMesh || !mesh.material || !mesh.cpuData) continue;
 
-                RenderMesh* rm = mesh.gpuMesh.get();
+                MeshData* md = mesh.cpuData.get();
                 Material* mat = mesh.material.get();
 
-                if (meshIDMap.find(rm) == meshIDMap.end()) {
-                    MeshData data;
-                    data.vertices = mesh.cpuData->vertices;
-                    data.indices = mesh.cpuData->indices;
-                    meshIDMap[rm] = gpuRenderer.RegisterMesh(data);
+                if (meshIDMap.find(md) == meshIDMap.end()) {
+                    meshIDMap[md] = gpuRenderer.RegisterMesh(*md);
                 }
+                gpuRenderer.RegisterMaterial(mat);
 
-                if (materialIDMap.find(mat) == materialIDMap.end()) {
-                    materialIDMap[mat] = gpuRenderer.RegisterMaterial(mat);
-                }
+                //if (materialIDMap.find(mat) == materialIDMap.end()) {
+                //    materialIDMap[mat] = gpuRenderer.RegisterMaterial(mat);
+                //}
             }
         }
 
@@ -511,7 +509,7 @@ public:
 
             for (const auto& mesh : meshes)
             {
-                auto* gpuMesh = mesh.gpuMesh.get();
+                auto* gpuMesh = mesh.cpuData.get();
                 auto* material = mesh.material.get();
 
                 if (!gpuMesh || !material || !mesh.cpuData)
@@ -521,8 +519,8 @@ public:
                 if (meshIt == meshIDMap.end())
                     continue;
 
-                auto matIt = materialIDMap.find(material);
-                if (matIt == materialIDMap.end())
+                auto matID = gpuRenderer.GetMaterialId(material);
+                if (matID == UINT32_MAX)
                     continue;
 
 
@@ -551,7 +549,7 @@ public:
                     .aabbMin = glm::vec4(aabb.min, 0.0f),
                     .aabbMax = glm::vec4(aabb.max, 0.0f),
                     .meshID = meshIt->second,
-                    .materialID = matIt->second,
+                    .materialID = matID,
                     .skeletonID = animIt != animatorIDMap.end() ? animIt->second : NO_SKELETON,
                     .padding = 0
                     });            
