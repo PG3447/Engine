@@ -264,6 +264,7 @@ void updateFocus() {
 
 }
 
+/*
 GameObject* CreateRaycastTestObject(
     Scene& scene,
     Prefab& prefab,
@@ -290,7 +291,7 @@ GameObject* CreateRaycastTestObject(
     rc->debugDraw    = true;
 
     return go;
-}
+}*/
 
 
 void processCameraInput(ECS& ecs, CameraComponent& cam, TransformComponent& transform,
@@ -454,6 +455,8 @@ int main(int, char**)
     RigidbodyComponent* rigidBodyCamera2 = camera2->AddComponent<RigidbodyComponent>();
     camera2->GetComponent<RigidbodyComponent>()->useGravity = false;
     camera2->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1.0f, 10.0f, 1.0f };
+    RaycastComponent* player2Raycast = camera2->AddComponent<RaycastComponent>();
+    player2Raycast->debugDraw = true;
 
     TransformComponent* camTransform1 = camera1->GetComponent<TransformComponent>();
     camTransform1->position = glm::vec3(0.0f, 20.0f, 0.0f);
@@ -461,6 +464,9 @@ int main(int, char**)
          glm::vec3(0.0f, 1.0f, 0.0f),
          YAW,
          PITCH,
+
+
+
          Viewport{ 0.0f, 0.0f, 0.5f, 1.0f }
      );
 
@@ -1003,6 +1009,14 @@ int main(int, char**)
 
     //XDDD
 
+    player1Raycast->debugDraw = true;
+
+    std::unordered_set<GameObject*> rotatableObjects;
+
+    rotatableObjects.insert(wallObject10);
+    rotatableObjects.insert(wallObject11);
+    rotatableObjects.insert(wallObject12);
+    rotatableObjects.insert(wallObject13);
 
     // Main loop
     while (!glfwWindowShouldClose(window))
@@ -1084,14 +1098,10 @@ int main(int, char**)
         if (ecs.GetSystem<HID>()->is_action_just_pressed("interact")) {
             if (player1Raycast->anyHit()) {
                 RaycastHit hit = player1Raycast->closestHit();
-
-                if (hit.hitObject != nullptr) {
+                if (hit.hitObject != nullptr && rotatableObjects.count(hit.hitObject)) {
                     TransformComponent* transform = hit.hitObject->GetComponent<TransformComponent>();
-
                     if (transform != nullptr) {
-                        transform->rotation.y += 60.0f; // obrót o 60 stopni
-                        transform->rotation.x += 60.0f; // obrót o 60 stopni
-                        transform->rotation.z += 60.0f; // obrót o 60 stopni
+                        transform->rotation.y += 60.0f;
                     }
                 }
             }
