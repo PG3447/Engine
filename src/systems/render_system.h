@@ -14,7 +14,7 @@
 #include "../utils/render_helper.h"
 #include <glm/gtc/type_ptr.hpp>
 #include "../compute_shader.h"
-#include "GPUdriven_renderer.h"
+#include "GPUdriven_manager.h"
 
 class RenderSystem : public System {
 private:
@@ -88,6 +88,8 @@ private:
     glm::mat4 projection;
     glm::mat4 view;
     glm::vec3 currentCameraPos;
+
+    GPUDrivenManager drivenManager;
 
     //GLuint sceneFBO;
     //GLuint sceneColorTexture;
@@ -291,14 +293,6 @@ public:
     }
 
     void Init() {
-        gpuRenderer = GPUDrivenRenderer();
-        gpuRenderer.shaderHizCullCount = new ComputeShader("res/shaders/hiz_culling_count.comp");
-        gpuRenderer.shaderPrefixSum = new ComputeShader("res/shaders/prefix_sum.comp");
-        gpuRenderer.shaderHizWritePass = new ComputeShader("res/shaders/write_pass.comp");
-        gpuRenderer.shaderBuildCmds = new ComputeShader("res/shaders/build_commands.comp");
-        gpuRenderer.shaderHizDownsample = new ComputeShader("res/shaders/hiz_build.comp");
-        gpuRenderer.shaderRender = new Shader("res/shaders/gpu_driven.vert", "res/shaders/gpu_driven.frag");
-
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -390,7 +384,7 @@ public:
         }
     }
 
-    GPUDrivenRenderer gpuRenderer;
+    //GPUDrivenRenderer gpuRenderer;
     bool gpuRendererReady = false;
     GLuint depthTexturePrev = 0;
     GLuint depthFBO = 0;

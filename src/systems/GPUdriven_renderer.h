@@ -343,6 +343,12 @@ public:
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 
+    void AttachHiZ(GLuint tex, int mipLevels) {
+        hizTexture = tex;
+        hizMipLevels = mipLevels;
+    }
+
+
     uint32_t RegisterMesh(MeshData* data)
     {
         auto it = meshRegistry.find(data);
@@ -712,7 +718,6 @@ public:
 
         shaderRender->use();
         shaderRender->setMat4("viewProjection", viewProj);
-        //shaderRender->setBool("isAnimated", false);
         shaderRender->setVec3("viewPos", currentCameraPos);
         shaderRender->setInt("numLights", (int)gpuLights.size());
 
