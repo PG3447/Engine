@@ -421,6 +421,7 @@ int main(int, char**)
     CameraComponent* camCompLeft = camera1->AddComponent<CameraComponent>();
     ColliderComponent* camera1collider = camera1->AddComponent<ColliderComponent>();
     RigidbodyComponent* rigidBodyCamera1 = camera1->AddComponent<RigidbodyComponent>();
+    RaycastComponent* player1Raycast = camera1->AddComponent<RaycastComponent>();
     
 
     camera1->AddComponent<LightComponent>();
@@ -1078,6 +1079,23 @@ int main(int, char**)
         }
 
 		// testy animacji
+
+        //tutaj jest w sumie acutal interakcja
+        if (ecs.GetSystem<HID>()->is_action_just_pressed("interact")) {
+            if (player1Raycast->anyHit()) {
+                RaycastHit hit = player1Raycast->closestHit();
+
+                if (hit.hitObject != nullptr) {
+                    TransformComponent* transform = hit.hitObject->GetComponent<TransformComponent>();
+
+                    if (transform != nullptr) {
+                        transform->rotation.y += 60.0f; // obrót o 60 stopni
+                        transform->rotation.x += 60.0f; // obrót o 60 stopni
+                        transform->rotation.z += 60.0f; // obrót o 60 stopni
+                    }
+                }
+            }
+        }
 
         // Process I/O operations here
         input();
