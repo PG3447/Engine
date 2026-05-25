@@ -395,7 +395,7 @@ public:
     GLuint depthTexturePrev = 0;
     GLuint depthFBO = 0;
 
-    std::unordered_map<MeshData*, uint32_t>  meshIDMap;
+    //std::unordered_map<MeshData*, uint32_t>  meshIDMap;
     //std::unordered_map<Material*, uint32_t>  materialIDMap;
     std::unordered_map<AnimatorComponent*, uint32_t> animatorIDMap;
 
@@ -417,9 +417,10 @@ public:
                 MeshData* md = mesh.cpuData.get();
                 Material* mat = mesh.material.get();
 
-                if (meshIDMap.find(md) == meshIDMap.end()) {
-                    meshIDMap[md] = gpuRenderer.RegisterMesh(*md);
-                }
+                //if (meshIDMap.find(md) == meshIDMap.end()) {
+                //    meshIDMap[md] = gpuRenderer.RegisterMesh(*md);
+                //}
+                gpuRenderer.RegisterMesh(md);
                 gpuRenderer.RegisterMaterial(mat);
 
                 //if (materialIDMap.find(mat) == materialIDMap.end()) {
@@ -515,8 +516,8 @@ public:
                 if (!gpuMesh || !material || !mesh.cpuData)
                     continue;
 
-                auto meshIt = meshIDMap.find(gpuMesh);
-                if (meshIt == meshIDMap.end())
+                auto meshID = gpuRenderer.GetMeshId(gpuMesh);
+                if (meshID == UINT32_MAX)
                     continue;
 
                 auto matID = gpuRenderer.GetMaterialId(material);
@@ -548,7 +549,7 @@ public:
                     .modelMatrix = model,
                     .aabbMin = glm::vec4(aabb.min, 0.0f),
                     .aabbMax = glm::vec4(aabb.max, 0.0f),
-                    .meshID = meshIt->second,
+                    .meshID = meshID,
                     .materialID = matID,
                     .skeletonID = animIt != animatorIDMap.end() ? animIt->second : NO_SKELETON,
                     .padding = 0

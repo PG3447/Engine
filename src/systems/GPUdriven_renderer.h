@@ -125,6 +125,7 @@ private:
     std::vector<GPULight> gpuLights;
     std::vector<GPUMeshMeta> meshMetaCPU;
 
+    std::unordered_map<MeshData*, uint32_t> meshRegistry;
     std::unordered_map<Material*, uint32_t> materialRegistry;
     std::unordered_map<LightComponent*, uint32_t> lightRegistry;
     std::unordered_map<GLuint, GLuint64> handleCacheTextures;
@@ -355,26 +356,42 @@ public:
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 
-    uint32_t RegisterMesh(const MeshData& data)
+    uint32_t RegisterMesh(MeshData* data)
     {
+        auto it = meshRegistry.find(data);
+        if (it != meshRegistry.end()) return it->second;
+
         GPUMeshData meshData;
-        meshData.indexCount = (uint32_t)data.indices.size();
+        meshData.indexCount = (uint32_t)data->indices.size();
         meshData.firstIndex = (uint32_t)allIndices.size();
         meshData.baseVertex = (uint32_t)allVertices.size();
         meshData.padding = 0;
 
         // vertices
-        allVertices.insert(allVertices.end(), data.vertices.begin(), data.vertices.end());
+        allVertices.insert(allVertices.end(), data->vertices.begin(), data->vertices.end());
 
         // indices
-        allIndices.insert(allIndices.end(), data.indices.begin(), data.indices.end());
+        allIndices.insert(allIndices.end(), data->indices.begin(), data->indices.end());
 
         meshesData.push_back(meshData);
+        uint32_t id = meshesData.size() - 1;
+        meshRegistry[data] = id;
         spdlog::error("Zarejestrowano mesh");
         spdlog::info(allVertices.size());
 
-        return (GLuint)meshesData.size() - 1; //meshID
+        return (GLuint)id; //meshID
     }
+
+    uint32_t GetMeshId(MeshData* data) {
+        auto it = meshRegistry.find(data);
+
+        if (it != meshRegistry.end()) {
+            return it->second;
+        }
+
+        return UINT32_MAX;
+    }
+
 
     uint32_t RegisterMaterial(Material* mat) {
         auto it = materialRegistry.find(mat);
