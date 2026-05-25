@@ -641,18 +641,10 @@ for (uint32_t i = 0; i < meshInstanceCounts.size(); i++)
     void DispatchCountPass(const glm::mat4& viewProj, uint32_t objectCount)
     {
         shaderHizCullCount->use();
-
-        glUniformMatrix4fv(glGetUniformLocation(shaderHizCullCount->ID, "viewProjection"), 1, GL_FALSE, &viewProj[0][0]);
-        glUniform2f(glGetUniformLocation(shaderHizCullCount->ID, "screenSize"), (float)screenWidth, (float)screenHeight);
-        glUniform1i(glGetUniformLocation(shaderHizCullCount->ID, "hizMipLevels"), hizMipLevels);
         glUniform1ui(glGetUniformLocation(shaderHizCullCount->ID, "objectCount"), objectCount);
-        glUniform1i(glGetUniformLocation(shaderHizCullCount->ID, "enableFrustumCulling"), GL_TRUE);
-
-        glBindTextureUnit(0, hizTexture);
 
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, renderDataSSBO);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, meshCountersSSBO);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, visibleFlagsSSBO);
 
         glDispatchCompute((objectCount + 63) / 64, 1, 1);
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
@@ -664,6 +656,15 @@ for (uint32_t i = 0; i < meshInstanceCounts.size(); i++)
 
         uint32_t meshCount = (uint32_t)meshesData.size();
         glUniform1ui(glGetUniformLocation(shaderPrefixSum->ID, "meshCount"), meshCount);
+
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, meshCountersSSBO);
+        glBufferData(
+            GL_SHADER_STORAGE_BUFFER,
+            meshInstanceCounts.size() * sizeof(uint32_t),
+            meshInstanceCounts.data(),
+            GL_DYNAMIC_DRAW
+        );
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, meshCountersSSBO);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, meshMetaSSBO);
@@ -702,7 +703,13 @@ for (uint32_t i = 0; i < meshInstanceCounts.size(); i++)
     {
         shaderHizWritePass->use();
 
+        glUniformMatrix4fv(glGetUniformLocation(shaderHizWritePass->ID, "viewProjection"), 1, GL_FALSE, &viewProj[0][0]);
+        glUniform2f(glGetUniformLocation(shaderHizWritePass->ID, "screenSize"), (float)screenWidth, (float)screenHeight);
+        glUniform1i(glGetUniformLocation(shaderHizWritePass->ID, "hizMipLevels"), hizMipLevels);
         glUniform1ui(glGetUniformLocation(shaderHizWritePass->ID, "objectCount"), objectCount);
+        glUniform1i(glGetUniformLocation(shaderHizWritePass->ID, "enableFrustumCulling"), GL_TRUE);
+
+        glBindTextureUnit(0, hizTexture);
 
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, renderDataSSBO);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, meshMetaSSBO);
@@ -822,7 +829,7 @@ for (uint32_t i = 0; i < meshInstanceCounts.size(); i++)
         ResetMeshCounters();
 
         // 3. COUNT PASS: culling + zliczanie (bez zapisu instancji)
-        DispatchCountPass(viewProj, objCount);
+        //DispatchCountPass(viewProj, objCount);
         // barrier wewnątrz DispatchCountPass
 
         // 4. PREFIX-SUM na CPU (czyta tylko meshCount uint32!)
