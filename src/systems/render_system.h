@@ -457,6 +457,7 @@ public:
             glBindTexture(GL_TEXTURE_2D, 0);
         }
 
+
         gpuRendererReady = true;
     }
     std::vector<RenderData> renderDataCache;

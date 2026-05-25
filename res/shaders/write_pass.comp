@@ -54,10 +54,6 @@ layout(std430, binding = 2) buffer Instances
     InstanceData instances[];
 };
 
-layout(std430, binding = 3) readonly buffer VisibleFlags
-{
-    uint visibleFlags[];
-};
 
 void extractPlanes(mat4 m, out vec4 planes[6]) {
     vec4 col0 = vec4(m[0][0], m[1][0], m[2][0], m[3][0]);

@@ -130,8 +130,6 @@ private:
     std::unordered_map<LightComponent*, uint32_t> lightRegistry;
     std::unordered_map<GLuint, GLuint64> handleCacheTextures;
 
-    std::vector<uint32_t> meshInstanceCounts;
-
     uint32_t instanceBufferCapacity = 64;
     int maxRenderObjects = 64;
 
@@ -375,7 +373,6 @@ for (uint32_t i = 0; i < meshInstanceCounts.size(); i++)
         auto it = meshRegistry.find(data);
         if (it != meshRegistry.end())
         {
-            meshInstanceCounts[it->second]++;
             return it->second;
         }
 
@@ -394,7 +391,6 @@ for (uint32_t i = 0; i < meshInstanceCounts.size(); i++)
         meshesData.push_back(meshData);
         uint32_t id = meshesData.size() - 1;
         meshRegistry[data] = id;
-        meshInstanceCounts.push_back(1);
         spdlog::error("Zarejestrowano mesh");
         spdlog::info(allVertices.size());
 
@@ -638,7 +634,7 @@ for (uint32_t i = 0; i < meshInstanceCounts.size(); i++)
         glClearNamedBufferData(meshCountersSSBO, GL_R32UI, GL_RED_INTEGER, GL_UNSIGNED_INT, &zero); // nullptr = wypełnij zerami
     }
 
-    void DispatchCountPass(const glm::mat4& viewProj, uint32_t objectCount)
+    void DispatchCountPass(uint32_t objectCount)
     {
         shaderHizCullCount->use();
         glUniform1ui(glGetUniformLocation(shaderHizCullCount->ID, "objectCount"), objectCount);
@@ -650,21 +646,12 @@ for (uint32_t i = 0; i < meshInstanceCounts.size(); i++)
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     }
     
-    void DispatchPrefixSum()
+    void DispatchPrefixSum(uint32_t objectCount)
     {
         shaderPrefixSum->use();
 
         uint32_t meshCount = (uint32_t)meshesData.size();
         glUniform1ui(glGetUniformLocation(shaderPrefixSum->ID, "meshCount"), meshCount);
-
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, meshCountersSSBO);
-        glBufferData(
-            GL_SHADER_STORAGE_BUFFER,
-            meshInstanceCounts.size() * sizeof(uint32_t),
-            meshInstanceCounts.data(),
-            GL_DYNAMIC_DRAW
-        );
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, meshCountersSSBO);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, meshMetaSSBO);
@@ -672,7 +659,7 @@ for (uint32_t i = 0; i < meshInstanceCounts.size(); i++)
 
         glDispatchCompute((meshCount + 63) / 64, 1, 1);
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
-        ResizeInstanceBufferIfNeeded(*totalVisibleMapped);
+        ResizeInstanceBufferIfNeeded(objectCount);
     }
 
     //void ComputePrefixSum()
@@ -714,7 +701,6 @@ for (uint32_t i = 0; i < meshInstanceCounts.size(); i++)
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, renderDataSSBO);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, meshMetaSSBO);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, instanceSSBO);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, visibleFlagsSSBO);
 
         glDispatchCompute((objectCount + 127) / 128, 1, 1);
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
@@ -813,6 +799,22 @@ for (uint32_t i = 0; i < meshInstanceCounts.size(); i++)
 
     }
 
+    void BuildInstance(uint32_t objectCount)
+    {
+        // 2. Zeruj liczniki meshów
+        ResetMeshCounters();
+
+        // 3. COUNT PASS: culling + zliczanie (bez zapisu instancji)
+        DispatchCountPass(objectCount);
+        // barrier wewnątrz DispatchCountPass
+      
+        // 4. PREFIX-SUM na CPU (czyta tylko meshCount uint32!)
+        // wewnątrz: glGetNamedBufferSubData + wysyłka MeshMeta + ewentualny resize
+        DispatchPrefixSum(objectCount);
+        spdlog::info("totalVisible = {}", *totalVisibleMapped);
+    }
+
+    bool start = true;
     void RenderFrame(const glm::mat4& viewProj, const std::vector<RenderData>& objects, GLuint depthTexturePrevFrame, glm::vec3 currentCameraPos)
     {
         uint32_t objCount = (uint32_t)objects.size();
@@ -824,18 +826,11 @@ for (uint32_t i = 0; i < meshInstanceCounts.size(); i++)
         // 1. Zbuduj HiZ z depth poprzedniej klatki
   /*      CopyDepthToHiZ(depthTexturePrevFrame);
         BuildHiZ();*/
-
-        // 2. Zeruj liczniki meshów
-        ResetMeshCounters();
-
-        // 3. COUNT PASS: culling + zliczanie (bez zapisu instancji)
-        //DispatchCountPass(viewProj, objCount);
-        // barrier wewnątrz DispatchCountPass
-
-        // 4. PREFIX-SUM na CPU (czyta tylko meshCount uint32!)
-        DispatchPrefixSum();
-        // wewnątrz: glGetNamedBufferSubData + wysyłka MeshMeta + ewentualny resize
-
+        if (start) {
+            start = false;
+            BuildInstance(objCount);
+        }
+  
         // 5. WRITE PASS: zapis instancji
         DispatchWritePass(viewProj, objCount);
         // barrier wewnątrz DispatchWritePass
