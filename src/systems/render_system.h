@@ -395,8 +395,6 @@ public:
     GLuint depthTexturePrev = 0;
     GLuint depthFBO = 0;
 
-    //std::unordered_map<MeshData*, uint32_t>  meshIDMap;
-    //std::unordered_map<Material*, uint32_t>  materialIDMap;
     std::unordered_map<AnimatorComponent*, uint32_t> animatorIDMap;
 
     void InitGPUDrivenRenderer(int width, int height)
@@ -417,33 +415,14 @@ public:
                 MeshData* md = mesh.cpuData.get();
                 Material* mat = mesh.material.get();
 
-                //if (meshIDMap.find(md) == meshIDMap.end()) {
-                //    meshIDMap[md] = gpuRenderer.RegisterMesh(*md);
-                //}
                 gpuRenderer.RegisterMesh(md);
                 gpuRenderer.RegisterMaterial(mat);
-
-                //if (materialIDMap.find(mat) == materialIDMap.end()) {
-                //    materialIDMap[mat] = gpuRenderer.RegisterMaterial(mat);
-                //}
             }
         }
 
 
         gpuRenderer.UploadMeshes();
         gpuRenderer.UploadMaterials();
-
-        //auto& lightTransforms = std::get<0>(lightQuery->componentsVectors);
-        //auto& lights = std::get<1>(lightQuery->componentsVectors);
-
-        //for (size_t i = 0; i < lights.size(); i++)
-        //{
-        //    if (!lights[i] || !lightTransforms[i]) continue;
-        //    gpuRenderer.RegisterLight(lights[i], lightTransforms[i]);
-        //}
-        //gpuRenderer.AllocateLightsBuffer();
-        //gpuRenderer.UploadLights();
-        
 
         // Depth texture — tworzona TYLKO RAZ
         if (depthTexturePrev == 0) {
@@ -528,24 +507,6 @@ public:
 
                 auto& aabb = mesh.cpuData->aabb;
 
-                //glm::vec3 worldMin(FLT_MAX), worldMax(-FLT_MAX);
-                //glm::vec3 corners[8] = {
-                //    {aabb.min.x, aabb.min.y, aabb.min.z},
-                //    {aabb.max.x, aabb.min.y, aabb.min.z},
-                //    {aabb.min.x, aabb.max.y, aabb.min.z},
-                //    {aabb.max.x, aabb.max.y, aabb.min.z},
-                //    {aabb.min.x, aabb.min.y, aabb.max.z},
-                //    {aabb.max.x, aabb.min.y, aabb.max.z},
-                //    {aabb.min.x, aabb.max.y, aabb.max.z},
-                //    {aabb.max.x, aabb.max.y, aabb.max.z},
-                //};
-                //for (const auto& c : corners) {
-                //    glm::vec3 w = glm::vec3(model * glm::vec4(c, 1.0f));
-                //    worldMin = glm::min(worldMin, w);
-                //    worldMax = glm::max(worldMax, w);
-                //}
-
-                //DebugDrawSystem::AddAABB(worldMin, worldMax, glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
                 renderDataCache.emplace_back(RenderData{
                     .modelMatrix = model,
                     .aabbMin = glm::vec4(aabb.min, 0.0f),
@@ -575,8 +536,6 @@ public:
         currentCameraPos = transform.position;
 
         if (gpuRendererReady) {
-
-
 
             std::vector<RenderData> objects = CollectRenderData();
 
@@ -943,6 +902,28 @@ public:
 };
 
 #endif
+
+
+
+//glm::vec3 worldMin(FLT_MAX), worldMax(-FLT_MAX);
+//glm::vec3 corners[8] = {
+//    {aabb.min.x, aabb.min.y, aabb.min.z},
+//    {aabb.max.x, aabb.min.y, aabb.min.z},
+//    {aabb.min.x, aabb.max.y, aabb.min.z},
+//    {aabb.max.x, aabb.max.y, aabb.min.z},
+//    {aabb.min.x, aabb.min.y, aabb.max.z},
+//    {aabb.max.x, aabb.min.y, aabb.max.z},
+//    {aabb.min.x, aabb.max.y, aabb.max.z},
+//    {aabb.max.x, aabb.max.y, aabb.max.z},
+//};
+//for (const auto& c : corners) {
+//    glm::vec3 w = glm::vec3(model * glm::vec4(c, 1.0f));
+//    worldMin = glm::min(worldMin, w);
+//    worldMax = glm::max(worldMax, w);
+//}
+
+//DebugDrawSystem::AddAABB(worldMin, worldMax, glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
+// 
 //
 //
 //struct HiZBuffer {

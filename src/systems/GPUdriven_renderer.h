@@ -127,7 +127,6 @@ private:
 
     std::unordered_map<MeshData*, uint32_t> meshRegistry;
     std::unordered_map<Material*, uint32_t> materialRegistry;
-    std::unordered_map<LightComponent*, uint32_t> lightRegistry;
     std::unordered_map<GLuint, GLuint64> handleCacheTextures;
 
     uint32_t instanceBufferCapacity = 64;
@@ -180,7 +179,6 @@ public:
     GLuint renderDataSSBO = 0; // bind 0
     GLuint meshCountersSSBO = 0; // bind 0
     GLuint meshMetaSSBO = 0; // bind 1
-    GLuint visibleFlagsSSBO = 0; // bind 2
     GLuint totalVisibleSSBO = 0; // bind 2
     //build command
     GLuint instanceSSBO = 0; // bind 3
@@ -207,6 +205,7 @@ public:
     ComputeShader* shaderHizDownsample = nullptr;
     Shader* shaderRender = nullptr;
 
+    bool dirtyInstance = true;
 
 	GPUDrivenRenderer() = default; 
 
@@ -224,11 +223,9 @@ public:
         glDeleteBuffers(1, &renderDataSSBO);
         glDeleteBuffers(1, &meshCountersSSBO);
         glDeleteBuffers(1, &meshMetaSSBO);
-        glDeleteBuffers(1, &visibleFlagsSSBO);
         glDeleteBuffers(1, &totalVisibleSSBO);
         glDeleteBuffers(1, &instanceSSBO);
         glDeleteBuffers(1, &drawCmdSSBO);
-        //glDeleteBuffers(1, &drawCountSSBO);
         glDeleteBuffers(1, &meshDataSSBO);
         glDeleteBuffers(1, &materialSSBO);
         glDeleteBuffers(1, &frameUBO);
@@ -267,10 +264,6 @@ public:
         glBindVertexArray(VAO);
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        
-        //glBufferData(GL_ARRAY_BUFFER, data.vertices.size() * sizeof(Vertex), &data.vertices[0], GL_STATIC_DRAW);
-
-        //glBufferData(GL_ELEMENT_ARRAY_BUFFER, data.indices.size() * sizeof(unsigned int), &data.indices[0], GL_STATIC_DRAW);
 
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
@@ -292,7 +285,6 @@ public:
         glGenBuffers(1, &renderDataSSBO);
         glGenBuffers(1, &meshCountersSSBO);
         glGenBuffers(1, &meshMetaSSBO);
-        glGenBuffers(1, &visibleFlagsSSBO);
         glGenBuffers(1, &instanceSSBO);
         // Indirect draw commands
         glGenBuffers(1, &drawCmdSSBO);
@@ -323,11 +315,6 @@ public:
         glBufferData(GL_SHADER_STORAGE_BUFFER, maxRenderObjects * sizeof(RenderData), nullptr, GL_DYNAMIC_DRAW);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
-        // UBO — frame data (binding = 0)
-        //glGenBuffers(1, &frameUBO);
-        //glBindBuffer(GL_UNIFORM_BUFFER, frameUBO);
-        //glBufferData(GL_UNIFORM_BUFFER, sizeof(FrameUBO), nullptr, GL_DYNAMIC_DRAW);
-        //glBindBufferBase(GL_UNIFORM_BUFFER, 0, frameUBO);
 
         // UBO — światła (binding = 0)
         glGenBuffers(1, &lightsUBO);
@@ -355,18 +342,6 @@ public:
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glBindTexture(GL_TEXTURE_2D, 0);
     }
-
-    /*
-    std::vector<uint32_t> meshOffsets(meshInstanceCounts.size());
-
-uint32_t offset = 0;
-
-for (uint32_t i = 0; i < meshInstanceCounts.size(); i++)
-{
-    meshOffsets[i] = offset;
-    offset += meshInstanceCounts[i];
-}
-    */
 
     uint32_t RegisterMesh(MeshData* data)
     {
@@ -439,45 +414,10 @@ for (uint32_t i = 0; i < meshInstanceCounts.size(); i++)
         return UINT32_MAX;
     }
 
-    uint32_t RegisterLight(LightComponent* light, TransformComponent* transform)
-    {
-        auto it = lightRegistry.find(light);
-        if (it != lightRegistry.end()) return it->second;
-
-        GPULight g{};
-        g.position = glm::vec4(transform->position, (float)light->type);
-        if (glm::dot(light->direction, light->direction) < 0.0001f)
-        {
-            g.direction = glm::vec4(TransformHelper::getForward(*transform), 0.0f);
-        }
-        else
-        {
-            g.direction = glm::vec4(light->direction, 0.0f);
-        }
-
-        g.ambient = glm::vec4(light->isOn ? light->ambient : glm::vec3(0), 0);
-        g.diffuse = glm::vec4(light->isOn ? light->diffuse : glm::vec3(0), 0);
-        g.specular = glm::vec4(light->isOn ? light->specular : glm::vec3(0), 0);
-        g.params1 = glm::vec4(light->constant, light->linear, light->quadratic, 0);
-        g.params2 = glm::vec4(light->cutOff, light->outerCutOff, light->isOn ? 1.0f : 0.0f, 0);
-
-        uint32_t id = (uint32_t)gpuLights.size();
-        gpuLights.push_back(g);
-        lightRegistry[light] = id;
-
-        return id;
-    }
-
 
     void UploadObjects(const std::vector<RenderData>& objects)
     {
         ResizeIfNeeded((int)objects.size());
-
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, visibleFlagsSSBO);
-        glBufferData(GL_SHADER_STORAGE_BUFFER, objects.size() * sizeof(uint32_t), nullptr, GL_DYNAMIC_DRAW);
-
-        uint32_t zero = 0;
-        glClearNamedBufferData(visibleFlagsSSBO, GL_R32UI, GL_RED_INTEGER, GL_UNSIGNED_INT, &zero);
 
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, renderDataSSBO);
         glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, objects.size() * sizeof(RenderData), objects.data());
@@ -584,32 +524,6 @@ for (uint32_t i = 0; i < meshInstanceCounts.size(); i++)
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     }
 
-
-    void UpdateLight(LightComponent* light, TransformComponent* transform)
-    {
-        auto it = lightRegistry.find(light);
-        if (it == lightRegistry.end()) return;
-
-        uint32_t id = it->second;
-        GPULight& g = gpuLights[id];
-        g.position = glm::vec4(transform->position, (float)light->type);
-
-        if (glm::dot(light->direction, light->direction) < 0.0001f)
-        {
-            g.direction = glm::vec4(TransformHelper::getForward(*transform), 0.0f);
-        }
-        else
-        {
-            g.direction = glm::vec4(light->direction, 0.0f);
-        }
-
-        g.ambient = glm::vec4(light->isOn ? light->ambient : glm::vec3(0), 0);
-        g.diffuse = glm::vec4(light->isOn ? light->diffuse : glm::vec3(0), 0);
-        g.specular = glm::vec4(light->isOn ? light->specular : glm::vec3(0), 0);
-        g.params1 = glm::vec4(light->constant, light->linear, light->quadratic, 0);
-        g.params2 = glm::vec4(light->cutOff, light->outerCutOff, light->isOn ? 1.0f : 0.0f, 0);
-    }
-
     void AllocateLightsBuffer()
     {
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightsSSBO);
@@ -662,29 +576,7 @@ for (uint32_t i = 0; i < meshInstanceCounts.size(); i++)
         ResizeInstanceBufferIfNeeded(objectCount);
     }
 
-    //void ComputePrefixSum()
-    //{
-    //    uint32_t meshCount = (uint32_t)meshesData.size();
 
-    //    // Odczytaj liczniki z GPU
-    //    std::vector<uint32_t> counts(meshCount);
-    //    glGetNamedBufferSubData(meshCountersSSBO, 0, meshCount * sizeof(uint32_t), counts.data());
-
-    //    // Prefix-sum: instanceOffset[i] = sum(counts[0..i-1])
-    //    uint32_t offset = 0; // offset = łączna liczba widocznych instancji w tej klatce
-    //    for (uint32_t i = 0; i < meshCount; i++) {
-    //        meshMetaCPU[i].instanceOffset = offset;
-    //        meshMetaCPU[i].instanceCount = 0;   // reset przed write_pass
-    //        offset += counts[i];
-    //    }
-
-    //    // Wyślij MeshMeta z powrotem na GPU
-    //    glNamedBufferSubData(meshMetaSSBO, 0, meshCount * sizeof(GPUMeshMeta), meshMetaCPU.data());
-
-
-    //    // Resize instanceSSBO jeśli potrzeba
-    //    ResizeInstanceBufferIfNeeded(offset);
-    //}
 
     void DispatchWritePass(const glm::mat4& viewProj, uint32_t objectCount)
     {
@@ -757,34 +649,14 @@ for (uint32_t i = 0; i < meshInstanceCounts.size(); i++)
     }
 
 
-    //void ResetDrawCount() {
-    //    uint32_t zero = 0;
-    //    glBindBuffer(GL_SHADER_STORAGE_BUFFER, drawCountSSBO);
-    //    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(uint32_t), &zero);
-    //    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-    //}
 
-    //void BindForCompute() {
-    //    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, renderDataSSBO);
-    //    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, meshDataSSBO);
-    //    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, drawCmdSSBO);
-    //    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, drawCountSSBO);
-    //}
-
-    void BindForDraw() {
+    void BindForDraw()
+    {
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, instanceSSBO); // vertex shader
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, boneMatricesSSBO); // vertex shader
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, materialSSBO);   // fragment shader
-        //glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 8, lightsSSBO);   // fragment shader
     }
 
-    //uint32_t ReadDrawCount() {
-    //    uint32_t count = 0;
-    //    glBindBuffer(GL_SHADER_STORAGE_BUFFER, drawCountSSBO);
-    //    glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(uint32_t), &count);
-    //    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-    //    return count;
-    //}
 
     void Draw()
     {
@@ -811,10 +683,10 @@ for (uint32_t i = 0; i < meshInstanceCounts.size(); i++)
         // 4. PREFIX-SUM na CPU (czyta tylko meshCount uint32!)
         // wewnątrz: glGetNamedBufferSubData + wysyłka MeshMeta + ewentualny resize
         DispatchPrefixSum(objectCount);
-        spdlog::info("totalVisible = {}", *totalVisibleMapped);
+        dirtyInstance = false;
     }
 
-    bool start = true;
+
     void RenderFrame(const glm::mat4& viewProj, const std::vector<RenderData>& objects, GLuint depthTexturePrevFrame, glm::vec3 currentCameraPos)
     {
         uint32_t objCount = (uint32_t)objects.size();
@@ -826,10 +698,9 @@ for (uint32_t i = 0; i < meshInstanceCounts.size(); i++)
         // 1. Zbuduj HiZ z depth poprzedniej klatki
   /*      CopyDepthToHiZ(depthTexturePrevFrame);
         BuildHiZ();*/
-        if (start) {
-            start = false;
+
+        if (dirtyInstance)
             BuildInstance(objCount);
-        }
   
         // 5. WRITE PASS: zapis instancji
         DispatchWritePass(viewProj, objCount);
@@ -858,6 +729,54 @@ for (uint32_t i = 0; i < meshInstanceCounts.size(); i++)
 
 #endif
 
+
+
+//void ResetDrawCount() {
+//    uint32_t zero = 0;
+//    glBindBuffer(GL_SHADER_STORAGE_BUFFER, drawCountSSBO);
+//    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(uint32_t), &zero);
+//    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+//}
+
+//void BindForCompute() {
+//    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, renderDataSSBO);
+//    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, meshDataSSBO);
+//    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, drawCmdSSBO);
+//    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, drawCountSSBO);
+//}
+
+
+    //uint32_t ReadDrawCount() {
+    //    uint32_t count = 0;
+    //    glBindBuffer(GL_SHADER_STORAGE_BUFFER, drawCountSSBO);
+    //    glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(uint32_t), &count);
+    //    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    //    return count;
+    //}
+
+    //void ComputePrefixSum()
+    //{
+    //    uint32_t meshCount = (uint32_t)meshesData.size();
+
+    //    // Odczytaj liczniki z GPU
+    //    std::vector<uint32_t> counts(meshCount);
+    //    glGetNamedBufferSubData(meshCountersSSBO, 0, meshCount * sizeof(uint32_t), counts.data());
+
+    //    // Prefix-sum: instanceOffset[i] = sum(counts[0..i-1])
+    //    uint32_t offset = 0; // offset = łączna liczba widocznych instancji w tej klatce
+    //    for (uint32_t i = 0; i < meshCount; i++) {
+    //        meshMetaCPU[i].instanceOffset = offset;
+    //        meshMetaCPU[i].instanceCount = 0;   // reset przed write_pass
+    //        offset += counts[i];
+    //    }
+
+    //    // Wyślij MeshMeta z powrotem na GPU
+    //    glNamedBufferSubData(meshMetaSSBO, 0, meshCount * sizeof(GPUMeshMeta), meshMetaCPU.data());
+
+
+    //    // Resize instanceSSBO jeśli potrzeba
+    //    ResizeInstanceBufferIfNeeded(offset);
+    //}
 //struct DrawCommand {
 //     uint32_t count;
 //     uint32_t instanceCount;
