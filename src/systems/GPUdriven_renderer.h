@@ -130,6 +130,8 @@ private:
     std::unordered_map<LightComponent*, uint32_t> lightRegistry;
     std::unordered_map<GLuint, GLuint64> handleCacheTextures;
 
+    std::vector<uint32_t> meshInstanceCounts;
+
     uint32_t instanceBufferCapacity = 64;
     int maxRenderObjects = 64;
 
@@ -356,10 +358,26 @@ public:
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 
+    /*
+    std::vector<uint32_t> meshOffsets(meshInstanceCounts.size());
+
+uint32_t offset = 0;
+
+for (uint32_t i = 0; i < meshInstanceCounts.size(); i++)
+{
+    meshOffsets[i] = offset;
+    offset += meshInstanceCounts[i];
+}
+    */
+
     uint32_t RegisterMesh(MeshData* data)
     {
         auto it = meshRegistry.find(data);
-        if (it != meshRegistry.end()) return it->second;
+        if (it != meshRegistry.end())
+        {
+            meshInstanceCounts[it->second]++;
+            return it->second;
+        }
 
         GPUMeshData meshData;
         meshData.indexCount = (uint32_t)data->indices.size();
@@ -376,6 +394,7 @@ public:
         meshesData.push_back(meshData);
         uint32_t id = meshesData.size() - 1;
         meshRegistry[data] = id;
+        meshInstanceCounts.push_back(1);
         spdlog::error("Zarejestrowano mesh");
         spdlog::info(allVertices.size());
 
