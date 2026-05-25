@@ -392,7 +392,7 @@ struct RaycastComponent : Component {
     }
 
     //debug
-    bool debugDraw = false;
+    bool debugDraw = true;
     glm::vec4 colorMiss = {0.0f, 1.0f, 0.0f, 1.0f}; // zielony  = brak trafienia
     glm::vec4 colorHit  = {1.0f, 0.3f, 0.0f, 1.0f}; // pomarańczowy = trafienie
 

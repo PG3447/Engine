@@ -16,13 +16,13 @@ void RaycastSystem::Update(ECS&, float)
 
     for (size_t i = 0; i < tObjs.size(); i++) {
         glm::vec3 pos  = glm::vec3(tTrs[i]->modelMatrix[3]);
-        glm::vec3 half = tCols[i]->halfSize * tTrs[i]->scale;
+        glm::vec3 half = tCols[i]->halfSize;
         targets.push_back({ tObjs[i], pos + tCols[i]->offset - half,
                                       pos + tCols[i]->offset + half });
     }
 
     for (const auto& tgt : targets) {
-        //DebugDrawSystem::AddAABB(tgt.min, tgt.max, glm::vec4(0, 1, 1, 1)); // cyjanowy
+        DebugDrawSystem::AddAABB(tgt.min, tgt.max, glm::vec4(0, 1, 1, 1)); // cyjanowy
     }
 
     // Shootery — tylko obiekty z RaycastComponent
