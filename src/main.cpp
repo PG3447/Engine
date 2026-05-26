@@ -799,6 +799,22 @@ int main(int, char**)
     RaycastComponent* player2Raycast = camera2->AddComponent<RaycastComponent>();
     player2Raycast->debugDraw = true;
 
+    camera2->AddComponent<LightComponent>();
+    LightComponent* light3 = camera2->AddComponent<LightComponent>();
+    light3->type = Spot;
+    light3->index = 1;
+
+    light3->ambient = glm::vec3(0.25f);
+    light3->diffuse = glm::vec3(1.0f);
+    light3->specular = glm::vec3(1.0f);
+
+    light3->constant = 1.0f;
+    light3->linear = 0.10f;
+    light3->quadratic = 0.00001f;
+
+    light3->cutOff = glm::cos(glm::radians(4.0f));
+    light3->outerCutOff = glm::cos(glm::radians(16.0f));
+
     TransformComponent* camTransform1 = camera1->GetComponent<TransformComponent>();
     camTransform1->position = glm::vec3(0.0f, 20.0f, -20.0f);
     CameraHelper::InitialCamera(*camCompLeft, *camTransform1,
