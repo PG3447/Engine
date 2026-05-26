@@ -558,7 +558,13 @@ int main(int, char**)
 
 
     GameObject* model1 = bed1Model->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* model2 = bed1Model->Instantiate(*scena1, nullptr, ourShader.get());
     for (auto& mesh : model1->GetComponent<RenderComponent>()->meshes)
+    {
+        mesh.material->surfaceType = SurfaceType::Transparent;
+    }
+    model2->name = "LOZE";
+    for (auto& mesh : model2->GetComponent<RenderComponent>()->meshes)
     {
         mesh.material->surfaceType = SurfaceType::Transparent;
     }
