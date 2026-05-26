@@ -189,6 +189,7 @@ std::unique_ptr<Prefab> placeholderModel;
 std::unique_ptr<Prefab> doorsToiletModel;
 std::unique_ptr<Prefab> toiletPaperModel;
 std::unique_ptr<Prefab> kostkaJEBANA;
+
 //AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 std::unique_ptr<Prefab> floorModel;
 std::unique_ptr<Prefab> wallModel;
@@ -335,13 +336,341 @@ void processCameraMouse(ECS& ecs, CameraComponent& cam, TransformComponent& tran
 
     CameraHelper::ProcessMouseMovement(cam, transform, dx, dy);
 }
-void addAllSystems(ECS& ecs);
-void connectAllModels();
-void createFirstRoom(Scene * scena1) {
- //pokoj bedzie tu
+
+int main(int, char**)
+{
+    if (!init())
+    {
+        spdlog::error("Failed to initialize project!");
+        return EXIT_FAILURE;
+    }
+    spdlog::info("Initialized project.");
+
+    init_imgui();
+    spdlog::info("Initialized ImGui.");
+
+    ECS ecs;
+    SceneManager sceneManager;
+
+    sceneManager.CreateScene("Scena 1", ecs);
+
+    Scene* scena1 = sceneManager.GetActiveScene();
+
+
+    ecs.AddSystem<TransformSystem>(ecs);
+    ecs.AddSystem<PhysicsSystem>(ecs);
+    ecs.AddSystem<AnimationSystem>(ecs);
+    ecs.AddSystem<RenderSystem>(ecs, window);
+    ecs.AddSystem<HID>(ecs, window);
+    ecs.AddSystem<PostProcessingSystem>(ecs, window);
+    ecs.AddSystem<SpriteSystem>(ecs, window);
+    ecs.AddSystem<RaycastSystem>(ecs);
+    ecs.AddSystem<NavMeshSystem>(ecs);
+    ecs.AddSystem<NavPathSystem>(ecs);
+    ecs.AddSystem<AudioSystem>(ecs);
+
+    ourShader = std::make_unique<Shader>("res/shaders/basic.vert", "res/shaders/basic.frag");
+    ourShader->use();
+
+    groundModel = std::make_unique<Prefab>("res/models/podloze.glb");
+    sunModel = std::make_unique<Prefab>("res/models/Sun.glb");
+    //GameObject* obb = groundModel->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* obb2 = sunModel->Instantiate(*scena1, nullptr, ourShader.get());
+ 
+
+    //obb->GetComponent<TransformComponent>()->scale.x = 10;
+    //obb->GetComponent<TransformComponent>()->scale.y = 1;
+    //obb->GetComponent<TransformComponent>()->scale.z = 10;
+
+
+   //obb2->GetComponent<TransformComponent>()->scale.x = 25;
+    //obb2->GetComponent<TransformComponent>()->scale.y = 25;
+   //obb2->GetComponent<TransformComponent>()->scale.z = 25;
+   //obb2->GetComponent<TransformComponent>()->position.y = 250;
+
+    //obb->AddComponent<RigidbodyComponent>();
+    //obb->AddComponent<ColliderComponent>();
+
+
+    //obb->GetComponent<RigidbodyComponent>()->useGravity = false;
+    //obb->GetComponent<RigidbodyComponent>()->isStatic = true;
+
+    //obb->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 1, 100 };
+
+    GameObject* obb3 = sunModel->Instantiate(*scena1, nullptr, ourShader.get());
+    obb3->GetComponent<TransformComponent>()->scale = glm::vec3(25.0f);
+    obb3->GetComponent<TransformComponent>()->position = glm::vec3(75.0f, 250.0f, 0.0f);
+
+    obb3->AddComponent<RigidbodyComponent>()->useGravity = false;
+    obb3->AddComponent<ColliderComponent>()->halfSize = glm::vec3{ 25, 25, 25 };
+
+    GLuint diff = ResourceManager::LoadTexture("diffuse_brick.png", "res/textures/");
+    GLuint spec = ResourceManager::LoadTexture("specular_brick.png", "res/textures/");
+    GLuint norm = ResourceManager::LoadTexture("normal_brick.png", "res/textures/");
+
+
+
+
+    auto brickMat = std::make_shared<Material>();
+    brickMat->shader = ourShader.get();
+    brickMat->diffuseMap = diff;
+    brickMat->specularMap = spec;
+    brickMat->normalMap = norm;
+    brickMat->shininess = 64.0f;
+
+    RenderHelper::SetMaterial(obb3, brickMat);
+
+    GameObject* camera1 = scena1->CreateGameObject(nullptr);
+    CameraComponent* camCompLeft = camera1->AddComponent<CameraComponent>();
+    ColliderComponent* camera1collider = camera1->AddComponent<ColliderComponent>();
+    RigidbodyComponent* rigidBodyCamera1 = camera1->AddComponent<RigidbodyComponent>();
+    
+
+    camera1->AddComponent<LightComponent>();
+    LightComponent* light2 = camera1->GetComponent<LightComponent>();
+
+    light2->type = Spot;
+    light2->index = 0;
+
+    light2->ambient = glm::vec3(0.25f);
+    light2->diffuse = glm::vec3(1.0f);
+    light2->specular = glm::vec3(1.0f);
+
+    light2->constant = 1.0f;
+    light2->linear = 0.10f;
+    light2->quadratic = 0.00001f;
+
+    light2->cutOff = glm::cos(glm::radians(4.0f));
+    light2->outerCutOff = glm::cos(glm::radians(16.0f));
+
+    //// direction będzie z kamery
+    //light2->direction = glm::vec3(0, 0, -1);
+
+
+    camera1->GetComponent<RigidbodyComponent>()->useGravity = false;
+    camera1->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1.0f, 10.0f, 1.0f };
+
+    GameObject* camera2 = scena1->CreateGameObject(nullptr);
+    CameraComponent* camCompRight = camera2->AddComponent<CameraComponent>();
+    ColliderComponent* camera2collider = camera2->AddComponent<ColliderComponent>();
+    RigidbodyComponent* rigidBodyCamera2 = camera2->AddComponent<RigidbodyComponent>();
+    camera2->GetComponent<RigidbodyComponent>()->useGravity = false;
+    camera2->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1.0f, 10.0f, 1.0f };
+
+    TransformComponent* camTransform1 = camera1->GetComponent<TransformComponent>();
+    camTransform1->position = glm::vec3(0.0f, 20.0f, 0.0f);
+    CameraHelper::InitialCamera(*camCompLeft, *camTransform1,
+         glm::vec3(0.0f, 1.0f, 0.0f),
+         YAW,
+         PITCH,
+         Viewport{ 0.0f, 0.0f, 0.5f, 1.0f }
+     );
+
+    camCompLeft->isActive = true;
+
+    TransformComponent* camTransform2 = camera2->GetComponent<TransformComponent>();
+
+    camTransform2->position = glm::vec3(50.0f, 30.0f, 0.0f);
+    CameraHelper::InitialCamera(*camCompRight, *camTransform2,
+        glm::vec3(0.0f, 1.0f, 0.0f),
+        0.0f, -20.0f,
+        Viewport{ 0.5f, 0.0f, 0.5f, 1.0f }
+    );
+
+    camCompRight->isActive = true;
+
+    GameObject* obj_Sprite_1 = scena1->CreateGameObject(nullptr);
+    SpriteComponent* sprite_1 = obj_Sprite_1->AddComponent<SpriteComponent>();
+
+    sprite_1->sprites.push_back(
+        ResourceManager::LoadTexture("sigma.png", "res/textures/PGK_placeholders")
+    );
+    sprite_1->screenPosition = glm::vec2(0.0f, 0.0f);
+    sprite_1->size = glm::vec2(128.0f, 128.0f);
+    sprite_1->frameDuration = 0.15f;
+
+    GameObject* obj_Sprite_2 = scena1->CreateGameObject(nullptr);
+    SpriteComponent* sprite_2 = obj_Sprite_2->AddComponent<SpriteComponent>();
+
+    sprite_2->isAnimating = true;
+    sprite_2->loop = true;
+    sprite_2->sprites.push_back(
+        ResourceManager::LoadTexture("Face_1.png", "res/textures/PGK_placeholders")
+    );
+    sprite_2->sprites.push_back(
+        ResourceManager::LoadTexture("Face_2.png", "res/textures/PGK_placeholders")
+    );
+    sprite_2->sprites.push_back(
+        ResourceManager::LoadTexture("Face_3.png", "res/textures/PGK_placeholders")
+    );
+    sprite_2->screenPosition = glm::vec2(0.0f, 128.0f);
+    sprite_2->size = glm::vec2(128.0f, 128.0f);
+    sprite_2->frameDuration = 0.5f;
+
+    GameObject* obj_Sprite_4 = scena1->CreateGameObject(nullptr);
+    SpriteComponent* sprite_4 = obj_Sprite_4->AddComponent<SpriteComponent>();
+    sprite_4->textEnabled = true;
+    sprite_4->screenPosition = glm::vec2(0.0f, 256.0f);
+
+    sprite_1->layer = 1;
+    sprite_2->layer = 1;
+    sprite_4->layer = 1;
+
+    int placeholderThing = 0;
+
+    bed1Model = std::make_unique<Prefab>("res/models/samochod.glb");
+    bed2Model      = std::make_unique<Prefab>("res/models/bed2.glb");
+    bed3Model      = std::make_unique<Prefab>("res/models/bed3.glb");
+    corkBoardModel = std::make_unique<Prefab>("res/models/cork_board.glb");
+    cupModel       = std::make_unique<Prefab>("res/models/cup.glb");
+  
+    placeholderModel = std::make_unique<Prefab>("res/models/placeholder.glb");
+
+    //deskModel      = std::make_unique<Prefab>("res/models/desk.glb");
+    //doorsModel     = std::make_unique<Prefab>("res/models/doors.glb");
+    //folderModel    = std::make_unique<Prefab>("res/models/folder.glb");
+    //krzesloModel   = std::make_unique<Prefab>("res/models/krzeslo.glb");
+    ////ksiazkaModel   = std::make_unique<Prefab>("res/models/ksiazka.glb");
+    //lampa1Model    = std::make_unique<Prefab>("res/models/lampa1.glb");
+    //lampa2Model    = std::make_unique<Prefab>("res/models/lampa2.glb");
+    //lampa3Model    = std::make_unique<Prefab>("res/models/lampa3.glb");
+    //needleModel    = std::make_unique<Prefab>("res/models/needle.glb");
+    //bad1Model      = std::make_unique<Prefab>("res/models/obiekty_bad1.glb");
+    //bad2Model      = std::make_unique<Prefab>("res/models/obiekty_bad2.glb");
+    //bad3Model      = std::make_unique<Prefab>("res/models/obiekty_bad3.glb");
+    //papersModel    = std::make_unique<Prefab>("res/models/papers.glb");
+    //bossModel      = std::make_unique<Prefab>("res/models/placeholder_boss.glb");
+    //characterModel = std::make_unique<Prefab>("res/models/placeholder_character.glb");
+    //vial1Model     = std::make_unique<Prefab>("res/models/probowka1.glb");
+    //vial2Model     = std::make_unique<Prefab>("res/models/probowka2.glb");
+    //vial3Model     = std::make_unique<Prefab>("res/models/probowka3.glb");
+    //vial4Model     = std::make_unique<Prefab>("res/models/probowka4.glb");
+    //vial5Model     = std::make_unique<Prefab>("res/models/probowka5.glb");
+    //vial61Model    = std::make_unique<Prefab>("res/models/probowka6.glb");
+    //vial7Model     = std::make_unique<Prefab>("res/models/probowka7.glb");
+    //sinkModel      = std::make_unique<Prefab>("res/models/sink.glb");
+    //szafa1Model    = std::make_unique<Prefab>("res/models/szafa1.glb");
+    //szafa2Model    = std::make_unique<Prefab>("res/models/szafa2.glb");
+    //szafa3Model    = std::make_unique<Prefab>("res/models/szafa3.glb");
+    //telephoneModel = std::make_unique<Prefab>("res/models/telephone.glb");
+    //toiletModel    = std::make_unique<Prefab>("res/models/toilet.glb");
+    //wozekModel     = std::make_unique<Prefab>("res/models/wozek.glb");
+    //zaslonaModel   = std::make_unique<Prefab>("res/models/zaslona.glb");
+    //roomModel = std::make_unique<Prefab>("res/models/room.glb");
+
+
+    GameObject* model1 = bed1Model->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model2 = bed2Model->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model3 = bed3Model->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model4 = corkBoardModel->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model6 = deskModel     ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model7 = doorsModel    ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model8 = folderModel   ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model9 = krzesloModel  ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model10 =ksiazkaModel  ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model11 =lampa1Model   ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model12 =lampa2Model   ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model13 =lampa3Model   ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model14 =needleModel   ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model15 =bad1Model     ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model16 =bad2Model     ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model17 =bad3Model     ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model18 =papersModel   ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model19 =bossModel     ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model20 =characterModel->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model21 =vial1Model    ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model22 =vial2Model    ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model23 =vial3Model    ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model24 =vial4Model    ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model25 =vial5Model    ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model26 =vial61Model   ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model27 =vial7Model    ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model28 =sinkModel     ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model29 =szafa1Model   ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model30 =szafa2Model   ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model31 =szafa3Model   ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model32 =telephoneModel->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model33 =toiletModel   ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model34 =wozekModel    ->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* model35 =zaslonaModel  ->Instantiate(*scena1, nullptr, ourShader.get());
+
+    //GameObject* roomObj = roomModel->Instantiate(*scena1, nullptr, ourShader.get());
+
+    model1->GetComponent<TransformComponent>()->position.x = 0.0f;
+    model1->GetComponent<TransformComponent>()->position.y = 2.0f;
+    model1->GetComponent<TransformComponent>()->position.z = 20.0f;
+
+    model1->AddComponent<RigidbodyComponent>();
+    model1->AddComponent<ColliderComponent>();
+    model1->AddComponent<LightComponent>();
+
+
+    model1->GetComponent<LightComponent>()->type = Directional;
+    model1->GetComponent<LightComponent>()->index = 0;
+    auto* light = model1->GetComponent<LightComponent>();
+
+    light->direction = glm::normalize(glm::vec3(-0.3f, -1.0f, -0.1f));
+
+    light->ambient = glm::vec3(0.5f);
+    light->diffuse = glm::vec3(0.3f);
+    light->specular = glm::vec3(0.9f);
+
+    GLuint whiteSpecular = ResourceManager::CreateTextureFromColor("white_spec", glm::vec3(1.0f));
+
+    RenderHelper::SetSpecularTexture(model1, whiteSpecular);
+
+    //model1->GetComponent<RigidbodyComponent>()->useGravity = true;
+    // model1->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 1, 1 };
+    //model1->GetComponent<TransformComponent>()->position.y = 150;
+    //RenderHelper::SetMaterial(model29, brickMat);
+
+    GameObject* raycastTarget = placeholderModel->Instantiate(*scena1, nullptr, ourShader.get());
+
+    auto* targetTr = raycastTarget->GetComponent<TransformComponent>();
+    targetTr->position = glm::vec3(0.0f, 8.0f, -30.0f); // 30 jednostek przed placeholderem
+    targetTr->scale = glm::vec3(3.0f);
+    targetTr->isDirty = true;
+
+    auto* targetCol = raycastTarget->AddComponent<ColliderComponent>();
+    targetCol->halfSize = glm::vec3(3.0f);
+    targetCol->offset   = glm::vec3(0.0f);
+
+    /*GameObject* RaycastSource =
+        CreateRaycastTestObject(
+            *scena1,
+            *placeholderModel,
+            ourShader.get(),
+            glm::vec3(0.0f, 5.0f, 0.0f),
+            glm::vec3(1.0f)
+        );
+        */
+
+    GameObject * model5 = cupModel      ->Instantiate(*scena1, nullptr, ourShader.get());
+    model5->GetComponent<TransformComponent>()->position.x = 0.0f;
+    model5->GetComponent<TransformComponent>()->position.y = 2.0f;
+    model5->GetComponent<TransformComponent>()->position.z = 20.0f;
+
+
+
+    sceneManager.Update(16);
+
+    spdlog::info("Scena git.");
+
+    focused = true;
+    updateFocus();
+
+
+    int test_score = 0;
+    auto* t0 = camera1->GetComponent<TransformComponent>();
+    auto* t1 = camera2->GetComponent<TransformComponent>();
+
+    renderSystem = ecs.GetSystem<RenderSystem>();
+    postProcessingSystem = ecs.GetSystem<PostProcessingSystem>();
+
+
+    //pokoj bedzie tu
     floorModel = std::make_unique<Prefab>("res/models/number_floor.glb");
     GameObject* groundObject = floorModel->Instantiate(*scena1, nullptr, ourShader.get());
-    groundObject->name = "Ground1";
     groundObject->GetComponent<TransformComponent>()->scale.x = 100;
     groundObject->GetComponent<TransformComponent>()->scale.y = 1;
     groundObject->GetComponent<TransformComponent>()->scale.z = 100;
@@ -381,7 +710,6 @@ void createFirstRoom(Scene * scena1) {
     */
 
     GameObject* groundObject2 = floorModel->Instantiate(*scena1, nullptr, ourShader.get());
-    groundObject2->name = "Ground2";
     groundObject2->GetComponent<TransformComponent>()->scale.x = 100;
     groundObject2->GetComponent<TransformComponent>()->scale.y = 1;
     groundObject2->GetComponent<TransformComponent>()->scale.z = 100;
@@ -399,7 +727,6 @@ void createFirstRoom(Scene * scena1) {
 
 
     GameObject* groundObject3 = floorModel->Instantiate(*scena1, nullptr, ourShader.get());
-    groundObject3->name = "Ground3";
     groundObject3->GetComponent<TransformComponent>()->scale.x = 100;
     groundObject3->GetComponent<TransformComponent>()->scale.y = 1;
     groundObject3->GetComponent<TransformComponent>()->scale.z = 100;
@@ -410,12 +737,11 @@ void createFirstRoom(Scene * scena1) {
     groundObject3->GetComponent<RigidbodyComponent>()->useGravity = false;
     groundObject3->GetComponent<RigidbodyComponent>()->isStatic = true;
 
-    groundObject3->GetComponent<TransformComponent>()->position.y = 20;
+    groundObject3->GetComponent<TransformComponent>()->position.y = 40;
 
     groundObject3->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 1, 100 };
 
     GameObject* groundObject4 = floorModel->Instantiate(*scena1, nullptr, ourShader.get());
-    groundObject4->name = "Ground4";
     groundObject4->GetComponent<TransformComponent>()->scale.x = 100;
     groundObject4->GetComponent<TransformComponent>()->scale.y = 1;
     groundObject4->GetComponent<TransformComponent>()->scale.z = 100;
@@ -436,7 +762,7 @@ void createFirstRoom(Scene * scena1) {
     wallModel2 = std::make_unique<Prefab>("res/models/wall2.glb");
     wallModel3 = std::make_unique<Prefab>("res/models/wall3.glb");
     GameObject* wallObject = wallModel->Instantiate(*scena1, nullptr, ourShader.get());
-    wallObject->GetComponent<TransformComponent>()->scale.x = 50;
+    wallObject->GetComponent<TransformComponent>()->scale.x = 100;
     wallObject->GetComponent<TransformComponent>()->scale.y = 50;
     wallObject->GetComponent<TransformComponent>()->scale.z = 1;
 
@@ -446,7 +772,7 @@ void createFirstRoom(Scene * scena1) {
     wallObject->GetComponent<RigidbodyComponent>()->useGravity = false;
     wallObject->GetComponent<RigidbodyComponent>()->isStatic = true;
 
-    wallObject->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 50, 50, 1 };
+    wallObject->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 100, 1 };
 
     wallObject->GetComponent<TransformComponent>()->position.x = 0;
     wallObject->GetComponent<TransformComponent>()->position.y = 0;
@@ -454,9 +780,9 @@ void createFirstRoom(Scene * scena1) {
 
 
     GameObject* wallObject2 = wallModel2->Instantiate(*scena1, nullptr, ourShader.get());
-    wallObject2->GetComponent<TransformComponent>()->scale.x = 100;
     wallObject2->GetComponent<TransformComponent>()->scale.y = 50;
     wallObject2->GetComponent<TransformComponent>()->scale.z = 1;
+    wallObject2->GetComponent<TransformComponent>()->scale.x = 100;
 
 
     wallObject2->AddComponent<RigidbodyComponent>();
@@ -465,16 +791,16 @@ void createFirstRoom(Scene * scena1) {
     wallObject2->GetComponent<RigidbodyComponent>()->useGravity = false;
     wallObject2->GetComponent<RigidbodyComponent>()->isStatic = true;
 
-    wallObject2->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 50, 100 };
+    wallObject2->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 100, 100 };
 
-    wallObject2->GetComponent<TransformComponent>()->position.x = 50;
+    wallObject2->GetComponent<TransformComponent>()->position.x = 100;
     wallObject2->GetComponent<TransformComponent>()->position.y = 0;
     wallObject2->GetComponent<TransformComponent>()->position.z = 0;
 
     GameObject* wallObject3 = wallModel2->Instantiate(*scena1, nullptr, ourShader.get());
-    wallObject3->GetComponent<TransformComponent>()->scale.x = 100;
     wallObject3->GetComponent<TransformComponent>()->scale.y = 50;
     wallObject3->GetComponent<TransformComponent>()->scale.z = 1;
+    wallObject3->GetComponent<TransformComponent>()->scale.x = 100;
 
 
     wallObject3->AddComponent<RigidbodyComponent>();
@@ -483,9 +809,9 @@ void createFirstRoom(Scene * scena1) {
     wallObject3->GetComponent<RigidbodyComponent>()->useGravity = false;
     wallObject3->GetComponent<RigidbodyComponent>()->isStatic = true;
 
-    wallObject3->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 50, 100 };
+    wallObject3->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 100, 100 };
 
-    wallObject3->GetComponent<TransformComponent>()->position.x = -25;
+    wallObject3->GetComponent<TransformComponent>()->position.x = -100;
     wallObject3->GetComponent<TransformComponent>()->position.y = 0;
     wallObject3->GetComponent<TransformComponent>()->position.z = 0;
 
@@ -509,9 +835,9 @@ void createFirstRoom(Scene * scena1) {
 
 
     GameObject* wallObject5 = wallModel2->Instantiate(*scena1, nullptr, ourShader.get());
-    wallObject5->GetComponent<TransformComponent>()->scale.x = 100;
     wallObject5->GetComponent<TransformComponent>()->scale.y = 50;
     wallObject5->GetComponent<TransformComponent>()->scale.z = 1;
+    wallObject5->GetComponent<TransformComponent>()->scale.x = 100;
 
 
     wallObject5->AddComponent<RigidbodyComponent>();
@@ -520,16 +846,16 @@ void createFirstRoom(Scene * scena1) {
     wallObject5->GetComponent<RigidbodyComponent>()->useGravity = false;
     wallObject5->GetComponent<RigidbodyComponent>()->isStatic = true;
 
-    wallObject5->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 50, 100 };
+    wallObject5->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 100, 100 };
 
     wallObject5->GetComponent<TransformComponent>()->position.x = 100;
     wallObject5->GetComponent<TransformComponent>()->position.y = 0;
     wallObject5->GetComponent<TransformComponent>()->position.z = -200;
 
     GameObject* wallObject6 = wallModel2->Instantiate(*scena1, nullptr, ourShader.get());
-    wallObject6->GetComponent<TransformComponent>()->scale.x = 100;
     wallObject6->GetComponent<TransformComponent>()->scale.y = 50;
     wallObject6->GetComponent<TransformComponent>()->scale.z = 1;
+    wallObject6->GetComponent<TransformComponent>()->scale.x = 100;
 
 
     wallObject6->AddComponent<RigidbodyComponent>();
@@ -538,8 +864,7 @@ void createFirstRoom(Scene * scena1) {
     wallObject6->GetComponent<RigidbodyComponent>()->useGravity = false;
     wallObject6->GetComponent<RigidbodyComponent>()->isStatic = true;
 
-    wallObject6->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 50, 100 };
-    wallObject6->GetComponent<ColliderComponent>()->affectsNavMesh = true;;
+    wallObject6->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 100, 100 };
 
     wallObject6->GetComponent<TransformComponent>()->position.x = -100;
     wallObject6->GetComponent<TransformComponent>()->position.y = 0;
@@ -558,8 +883,6 @@ void createFirstRoom(Scene * scena1) {
     wallObject7->GetComponent<RigidbodyComponent>()->isStatic = true;
 
     wallObject7->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 100, 1 };
-    wallObject7->GetComponent<ColliderComponent>()->affectsNavMesh = true;
-
 
     wallObject7->GetComponent<TransformComponent>()->position.x = 110;
     wallObject7->GetComponent<TransformComponent>()->position.y = 0;
@@ -577,14 +900,15 @@ void createFirstRoom(Scene * scena1) {
     wallObject8->GetComponent<RigidbodyComponent>()->isStatic = true;
 
     wallObject8->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 100, 1 };
-    wallObject8->GetComponent<ColliderComponent>()->affectsNavMesh = true;
 
     wallObject8->GetComponent<TransformComponent>()->position.x = -110;
     wallObject8->GetComponent<TransformComponent>()->position.y = 0;
     wallObject8->GetComponent<TransformComponent>()->position.z = -100;
 
     GameObject* wallObject9 = wallModel->Instantiate(*scena1, nullptr, ourShader.get());
-    wallObject9 -> GetComponent<TransformComponent>()->scale = glm::vec3{ 100, 50, 1 };
+    wallObject9->GetComponent<TransformComponent>()->scale.x = 100;
+    wallObject9->GetComponent<TransformComponent>()->scale.y = 50;
+    wallObject9->GetComponent<TransformComponent>()->scale.z = 1;
 
     wallObject9->AddComponent<RigidbodyComponent>();
     wallObject9->AddComponent<ColliderComponent>();
@@ -683,8 +1007,7 @@ void createFirstRoom(Scene * scena1) {
     wallObject10->GetComponent<RigidbodyComponent>()->useGravity = false;
     wallObject10->GetComponent<RigidbodyComponent>()->isStatic = true;
 
-    wallObject10->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 10, 10, 30 };
-    wallObject10->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+    wallObject10->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 11, 11, 33 };
 
     wallObject10->GetComponent<TransformComponent>()->position.x = 30;
     wallObject10->GetComponent<TransformComponent>()->position.y = 0;
@@ -701,9 +1024,7 @@ void createFirstRoom(Scene * scena1) {
     wallObject11->GetComponent<RigidbodyComponent>()->useGravity = false;
     wallObject11->GetComponent<RigidbodyComponent>()->isStatic = true;
 
-    wallObject11->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 10, 10, 30 };
-    wallObject11->GetComponent<ColliderComponent>()->affectsNavMesh = true;
-
+    wallObject11->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 11, 11, 33 };
 
     wallObject11->GetComponent<TransformComponent>()->position.x = -30;
     wallObject11->GetComponent<TransformComponent>()->position.y = 0;
@@ -720,8 +1041,7 @@ void createFirstRoom(Scene * scena1) {
     wallObject12->GetComponent<RigidbodyComponent>()->useGravity = false;
     wallObject12->GetComponent<RigidbodyComponent>()->isStatic = true;
 
-    wallObject12->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 10, 10, 30 };
-    wallObject12->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+    wallObject12->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 11, 11, 33 };
 
     wallObject12->GetComponent<TransformComponent>()->position.x = 30;
     wallObject12->GetComponent<TransformComponent>()->position.y = 0;
@@ -738,8 +1058,7 @@ void createFirstRoom(Scene * scena1) {
     wallObject13->GetComponent<RigidbodyComponent>()->useGravity = false;
     wallObject13->GetComponent<RigidbodyComponent>()->isStatic = true;
 
-    wallObject13->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 10, 10, 30 };
-    wallObject13->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+    wallObject13->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 11, 11, 33 };
 
     wallObject13->GetComponent<TransformComponent>()->position.x = -30;
     wallObject13->GetComponent<TransformComponent>()->position.y = 0;
@@ -974,7 +1293,7 @@ int main(int, char**)
 
     GameObject* dyingObj = dyingModelPrefab->Instantiate(*scena1, nullptr, ourShader.get());
 
-    dyingObj->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, -50.0f, -50.0f);
+    dyingObj->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 0.0f, -50.0f);
     dyingObj->GetComponent<TransformComponent>()->scale = glm::vec3(0.1f);
 
     AnimatorComponent* animator = dyingObj->AddComponent<AnimatorComponent>();
@@ -1014,6 +1333,9 @@ int main(int, char**)
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
         updateFPS(deltaTime);
+
+        test_score++;
+        sprite_4->text = "score: " + std::to_string(test_score);
 
         CpuTimer cpuTimer;
         cpuTimer.start();
@@ -1083,11 +1405,6 @@ int main(int, char**)
         // Process I/O operations here
         input();
 
-        if (focused)
-        {
-            processCameraInput(ecs, *camCompLeft, *t0,
-                "move_up", "move_down", "move_left", "move_right");
-
         processCameraInput(ecs, *camCompLeft, *t0,
             "move_up", "move_down", "move_left", "move_right");
 
@@ -1098,11 +1415,6 @@ int main(int, char**)
         processCameraMouse(ecs, *camCompLeft, *camTransform1);
         processCameraGamepad(ecs, *camCompLeft, *t0, 0);
         processCameraGamepad(ecs, *camCompRight, *t1, 1);
-
-            processCameraMouse(ecs, *camCompLeft, *camTransform1);
-            processCameraGamepad(ecs, *camCompLeft, *t0, 0);
-            processCameraGamepad(ecs, *camCompRight, *t1, 1);
-        }
 
         auto inputEnd = std::chrono::high_resolution_clock::now();
 
@@ -1190,7 +1502,7 @@ bool init()
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
-
+  
 
     bool err = !gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 
@@ -1264,7 +1576,7 @@ void update()
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
-    // make sure the viewport matches the new window dimensions; note that width and
+    // make sure the viewport matches the new window dimensions; note that width and 
     // height will be significantly larger than specified on retina displays.
     glViewport(0, 0, width, height);
 }
