@@ -122,7 +122,7 @@ private:
     //rejestr
     std::vector<GPUMeshData> meshesData;
     std::vector<GPUMaterial> materials;
-    std::vector<GPULight> gpuLights;
+    //std::vector<GPULight> gpuLights;
     std::vector<GPUMeshMeta> meshMetaCPU;
 
     std::unordered_map<MeshData*, uint32_t> meshRegistry;
@@ -186,10 +186,10 @@ public:
     //GLuint drawCountSSBO = 0; // bind 5
     GLuint meshDataSSBO = 0; // bind 6
     GLuint materialSSBO = 0; /// bind 7
-    GLuint lightsSSBO = 0;
+    //GLuint lightsSSBO = 0;
     GLuint boneMatricesSSBO = 0;
 
-    GLuint frameUBO = 0;  // bind = 0
+    //GLuint frameUBO = 0;  // bind = 0
     GLuint lightsUBO = 0;  // bind = 1
     
     uint32_t* totalVisibleMapped = nullptr;
@@ -228,8 +228,8 @@ public:
         glDeleteBuffers(1, &drawCmdSSBO);
         glDeleteBuffers(1, &meshDataSSBO);
         glDeleteBuffers(1, &materialSSBO);
-        glDeleteBuffers(1, &frameUBO);
-        glDeleteBuffers(1, &lightsUBO);
+        //glDeleteBuffers(1, &frameUBO);
+        //glDeleteBuffers(1, &lightsUBO);
         glDeleteBuffers(1, &boneMatricesSSBO);
         if (hizTexture) glDeleteTextures(1, &hizTexture);
     }
@@ -292,7 +292,7 @@ public:
      /*   glGenBuffers(1, &drawCountSSBO);*/
         glGenBuffers(1, &meshDataSSBO);
         glGenBuffers(1, &materialSSBO);
-        glGenBuffers(1, &lightsSSBO);
+     /*   glGenBuffers(1, &lightsSSBO);*/
         glGenBuffers(1, &boneMatricesSSBO);
 
         glGenBuffers(1, &totalVisibleSSBO);
@@ -317,10 +317,10 @@ public:
 
 
         // UBO — światła (binding = 0)
-        glGenBuffers(1, &lightsUBO);
-        glBindBuffer(GL_UNIFORM_BUFFER, lightsUBO);
-        glBufferData(GL_UNIFORM_BUFFER, sizeof(LightsUBO), nullptr, GL_DYNAMIC_DRAW);
-        glBindBufferBase(GL_UNIFORM_BUFFER, 0, lightsUBO);
+        //glGenBuffers(1, &lightsUBO);
+        //glBindBuffer(GL_UNIFORM_BUFFER, lightsUBO);
+        //glBufferData(GL_UNIFORM_BUFFER, sizeof(LightsUBO), nullptr, GL_DYNAMIC_DRAW);
+        //glBindBufferBase(GL_UNIFORM_BUFFER, 0, lightsUBO);
 
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
@@ -471,56 +471,56 @@ public:
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     }
 
-    size_t prevSizeLights = 0;
+    //size_t prevSizeLights = 0;
 
-    void UpdateAndUploadLights(std::vector<LightComponent*>& lights, std::vector<TransformComponent*>& transforms)
-    {
-        if (lights.empty()) return;
+    //void UpdateAndUploadLights(std::vector<LightComponent*>& lights, std::vector<TransformComponent*>& transforms)
+    //{
+    //    if (lights.empty()) return;
 
-        uint32_t count = std::min((uint32_t)lights.size(), (uint32_t)MAX_UBO_LIGHTS);
-        gpuLights.resize(count);
+    //    uint32_t count = std::min((uint32_t)lights.size(), (uint32_t)MAX_UBO_LIGHTS);
+    //    gpuLights.resize(count);
 
-        for (size_t i = 0; i < count; i++)
-        {
-            LightComponent* light = lights[i];
-            TransformComponent* transform = transforms[i];
-            if (!light || !transform) continue;
+    //    for (size_t i = 0; i < count; i++)
+    //    {
+    //        LightComponent* light = lights[i];
+    //        TransformComponent* transform = transforms[i];
+    //        if (!light || !transform) continue;
 
-            GPULight& g = gpuLights[i];
+    //        GPULight& g = gpuLights[i];
 
-            const bool on = light->isOn;
+    //        const bool on = light->isOn;
 
-            g.position = glm::vec4(transform->position, (float)light->type);
-            g.direction = (glm::length2(light->direction) < 0.0001f) ? glm::vec4(TransformHelper::getForward(*transform), 0.0f) : glm::vec4(light->direction, 0.0f);
+    //        g.position = glm::vec4(transform->position, (float)light->type);
+    //        g.direction = (glm::length2(light->direction) < 0.0001f) ? glm::vec4(TransformHelper::getForward(*transform), 0.0f) : glm::vec4(light->direction, 0.0f);
 
-            const glm::vec3& zero = glm::vec3(0.0f);
-            g.ambient = glm::vec4(on ? light->ambient : zero, 0.0f);
-            g.diffuse = glm::vec4(on ? light->diffuse : zero, 0.0f);
-            g.specular = glm::vec4(on ? light->specular : zero, 0.0f);
-            g.params1 = glm::vec4(light->constant, light->linear, light->quadratic, 0.0f);
-            g.params2 = glm::vec4(light->cutOff, light->outerCutOff, on ? 1.0f : 0.0f, 0.0f);
-        }
+    //        const glm::vec3& zero = glm::vec3(0.0f);
+    //        g.ambient = glm::vec4(on ? light->ambient : zero, 0.0f);
+    //        g.diffuse = glm::vec4(on ? light->diffuse : zero, 0.0f);
+    //        g.specular = glm::vec4(on ? light->specular : zero, 0.0f);
+    //        g.params1 = glm::vec4(light->constant, light->linear, light->quadratic, 0.0f);
+    //        g.params2 = glm::vec4(light->cutOff, light->outerCutOff, on ? 1.0f : 0.0f, 0.0f);
+    //    }
 
 
-        glBindBuffer(GL_UNIFORM_BUFFER, lightsUBO);
-        glBufferSubData(GL_UNIFORM_BUFFER, 0, count * sizeof(GPULight), gpuLights.data());
-        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    //    glBindBuffer(GL_UNIFORM_BUFFER, lightsUBO);
+    //    glBufferSubData(GL_UNIFORM_BUFFER, 0, count * sizeof(GPULight), gpuLights.data());
+    //    glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-        //if (prevSizeLights == gpuLights.size())
-        //{
-        //    glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightsSSBO);
-        //    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, gpuLights.size() * sizeof(GPULight), gpuLights.data());
-        //    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-        //}
-        //else
-        //{
-        //    glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightsSSBO);
-        //    glBufferData(GL_SHADER_STORAGE_BUFFER, gpuLights.size() * sizeof(GPULight), gpuLights.data(), GL_DYNAMIC_DRAW);
-        //    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-        //}
+    //    //if (prevSizeLights == gpuLights.size())
+    //    //{
+    //    //    glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightsSSBO);
+    //    //    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, gpuLights.size() * sizeof(GPULight), gpuLights.data());
+    //    //    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    //    //}
+    //    //else
+    //    //{
+    //    //    glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightsSSBO);
+    //    //    glBufferData(GL_SHADER_STORAGE_BUFFER, gpuLights.size() * sizeof(GPULight), gpuLights.data(), GL_DYNAMIC_DRAW);
+    //    //    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    //    //}
 
-        prevSizeLights = count;
-    }
+    //    prevSizeLights = count;
+    //}
 
     void UploadAllBoneMatrices(const std::vector<glm::mat4>& allBones)
     {
@@ -530,7 +530,7 @@ public:
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     }
 
-    void AllocateLightsBuffer()
+  /*  void AllocateLightsBuffer()
     {
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightsSSBO);
         glBufferData(GL_SHADER_STORAGE_BUFFER, gpuLights.size() * sizeof(GPULight), gpuLights.data(), GL_DYNAMIC_DRAW);
@@ -544,7 +544,7 @@ public:
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightsSSBO);
         glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, gpuLights.size() * sizeof(GPULight), gpuLights.data());
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-    }
+    }*/
 
     void ResetMeshCounters()
     {
@@ -717,9 +717,9 @@ public:
         // barrier wewnątrz DispatchBuildCommands
 
         shaderRender->use();
-        shaderRender->setMat4("viewProjection", viewProj);
-        shaderRender->setVec3("viewPos", currentCameraPos);
-        shaderRender->setInt("numLights", (int)gpuLights.size());
+        //shaderRender->setMat4("viewProjection", viewProj);
+        //shaderRender->setVec3("viewPos", currentCameraPos);
+        //shaderRender->setInt("numLights", (int)gpuLights.size());
 
         // 7. Rysuj
         Draw();

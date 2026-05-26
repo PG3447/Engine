@@ -317,7 +317,7 @@ public:
         entry.renderer.shaderHizDownsample = shaderHizDownsample;
         entry.renderer.shaderRender = cfg.shader ? cfg.shader : defaultShaderRender;
         entry.renderer.lightsUBO = lightsUBO;
-
+        spdlog::info("Add pass");
         passes.push_back(std::move(entry));
 
         std::sort(passes.begin(), passes.end(),
@@ -426,16 +426,17 @@ public:
         const int numLights = (int)gpuLights.size();
         UploadFrameUBO(viewProj, cameraPos, numLights, zNear, zFar);
 
-        if (prevDepth && hizTexture) {
-            glCopyImageSubData(prevDepth, GL_TEXTURE_2D, 0, 0, 0, 0,
-                hizTexture, GL_TEXTURE_2D, 0, 0, 0, 0,
-                screenWidth, screenHeight, 1);
-            BuildHiZ();
-        }
-
+        //if (prevDepth && hizTexture) {
+        //    glCopyImageSubData(prevDepth, GL_TEXTURE_2D, 0, 0, 0, 0,
+        //        hizTexture, GL_TEXTURE_2D, 0, 0, 0, 0,
+        //        screenWidth, screenHeight, 1);
+        //    BuildHiZ();
+        //}
+        spdlog::info("Renderowanie");
         for (auto& entry : passes) {
             if (entry.objects.empty()) continue;
             ApplyPassState(entry.config);
+            cout << "renderuje sie " << endl;
             entry.renderer.RenderFrame(viewProj, entry.objects, prevDepth, cameraPos);
         }
 

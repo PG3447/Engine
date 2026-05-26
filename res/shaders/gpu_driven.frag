@@ -38,8 +38,19 @@ struct GPULight {
 //    int  _pad0, _pad1, _pad2;
 //};
 
+
+layout(std140, binding = 0) uniform FrameUBO
+{
+    mat4  viewProjection;
+    vec4  viewPos;   // xyz = pozycja kamery
+    float zNear;
+    float zFar;
+    int   numLights;
+    int   _pad;
+};
+
 #define MAX_LIGHTS 512
-layout(std140, binding = 0) uniform Lights
+layout(std140, binding = 1) uniform Lights
 {
     GPULight lights[MAX_LIGHTS];
 };
@@ -49,9 +60,6 @@ layout(std430, binding = 7) readonly restrict buffer Materials
     MaterialGPU materials[];
 };
 
-
-uniform int  numLights;
-uniform vec3 viewPos;
 
 vec3 CalcDirLight  (in GPULight light, vec3 normal, vec3 viewDir, vec3 diffTex, vec3 specTex, float shininess);
 vec3 CalcPointLight(in GPULight light, vec3 norm, vec3 viewDir, vec3 diffTex, vec3 specTex, float shininess);
@@ -95,7 +103,7 @@ void main()
         norm = normalize(Normal);
     }
 
-    vec3 viewDir = normalize(viewPos - FragPos);
+    vec3 viewDir = normalize(viewPos.xyz - FragPos);
     vec3 diffTex = texColor.rgb;
     vec3 result = vec3(0.0);
 

@@ -26,6 +26,17 @@ struct InstanceData {
     uint padding;
 };
 
+
+layout(std140, binding = 0) uniform FrameUBO
+{
+    mat4  viewProjection;
+    vec4  viewPos;   // xyz = pozycja kamery, w = unused
+    float zNear;
+    float zFar;
+    int   numLights;
+    int   _pad;
+};
+
 // Jedna p³aska tablica wszystkich macierzy koœci dla WSZYSTKICH szkieletów.
 // Uk³ad: skeleton 0 zajmuje [0 .. MAX_BONES-1],
 //        skeleton 1 zajmuje [MAX_BONES .. 2*MAX_BONES-1], itd.
@@ -41,7 +52,6 @@ layout(std430, binding = 4) readonly buffer BoneMatrices
     mat4 boneMatrices[]; //rozmiar MAX_BONES * maxSkeletons
 };
 
-uniform mat4 viewProjection;
 
 mat3 cofactorMatrix(mat4 m)
 {
