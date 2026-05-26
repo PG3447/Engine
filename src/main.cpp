@@ -11,7 +11,7 @@
 
 #define IMGUI_IMPL_OPENGL_LOADER_GLAD
 
-#define STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_IMPLEMENTATION  
 //#include <stb_image.h>
 
 #include <glad/glad.h>  // Initialize with gladLoadGL()
@@ -39,7 +39,7 @@
 
 #include <core/scene.h>
 #include <core/scene_manager.h>
-#include "core/gameobject.h"
+#include "core/gameobject.h" 
 #include <systems/physics_system.h>
 #include <systems/transform_system.h>
 #include <systems/animation_system.h>
@@ -352,32 +352,6 @@ void createFirstRoom(Scene * scena1) {
     groundObject->GetComponent<RigidbodyComponent>()->isStatic = true;
 
     groundObject->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 1, 100 };
-
-    /*
-    GLuint texID = groundObject->GetComponent<RenderComponent>()->meshes[0].material->specularMap;
-
-    spdlog::error("specularMap ID = {}", texID);  // czy w ogóle != 0?
-
-    glBindTexture(GL_TEXTURE_2D, texID);
-
-    GLint width = 0, height = 0;
-    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
-    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
-
-    spdlog::error("rozmiar tekstury: {}x{}", width, height);  // jeśli 0x0 - tekstura pusta
-
-    if (width == 0 || height == 0) {
-        spdlog::error("tekstura jest pusta lub nie zaladowana!");
-    }
-
-    std::vector<unsigned char> pixels(width * height * 4);
-    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
-
-    for (int i = 0; i < std::min(10, width * height); i++) {
-        spdlog::error("pixel[{}] R={} G={} B={} A={}", i,
-            pixels[i * 4 + 0], pixels[i * 4 + 1], pixels[i * 4 + 2], pixels[i * 4 + 3]);
-    }
-    */
 
     GameObject* groundObject2 = floorModel->Instantiate(*scena1, nullptr, ourShader.get());
     groundObject2->name = "Ground2";
@@ -989,7 +963,7 @@ int main(int, char**)
     //FMOD
     FMOD::Sound* sound = nullptr;
 
-//    ecs.GetSystem<AudioSystem>()->createSound("res/sound/test_sound.mp3", sound);
+    ecs.GetSystem<AudioSystem>()->createSound("res/sound/test_sound.mp3", sound);
 
 
 
@@ -1034,7 +1008,7 @@ int main(int, char**)
         }
 
         if (ecs.GetSystem<HID>()->is_action_just_pressed("play_sound")) {
-          //  ecs.GetSystem<AudioSystem>()->playSound(sound);
+            ecs.GetSystem<AudioSystem>()->playSound(sound);
         }
 
         // testy animacji
@@ -1129,7 +1103,7 @@ int main(int, char**)
 
     }
 
-//    sound->release();
+    sound->release();
 
     // Cleanup
     glDeleteVertexArrays(1, &VAO);
