@@ -18,6 +18,7 @@ input:
     gamma_up: [GLFW_KEY_0]
     gamma_down: [GLFW_KEY_9]
     play_sound: [GLFW_KEY_H]
+    interact: [GLFW_KEY_E]
   mouse:
     move_right: [GLFW_MOUSE_BUTTON_LEFT]
     right_click: [GLFW_MOUSE_BUTTON_RIGHT]

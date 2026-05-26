@@ -28,6 +28,7 @@
 #include <entity.h>
 #include <prefab.h>
 #include <filesystem>
+#include <unordered_map>
 
 #include <fmod.h>
 #include <fmod.hpp>
@@ -135,6 +136,19 @@ float  rotationY = 0.0f;
 
 ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 bool   autoRotation = false;
+
+struct DoorState {
+    bool isOpen = false;
+    float currentAngle = 0.0f;
+    float closedAngle = 0.0f;
+    float openAngle = 90.0f;
+    float targetAngle = 0.0f;
+
+    GameObject* hinge = nullptr;
+    glm::vec3 originalOffset = glm::vec3(0.0f);
+};
+
+std::unordered_map<GameObject*, DoorState> toiletDoorsMap;
 
 unsigned int cubemapTexture;
 unsigned int skyboxVAO;
@@ -336,6 +350,51 @@ void processCameraMouse(ECS& ecs, CameraComponent& cam, TransformComponent& tran
 }
 void addAllSystems(ECS& ecs);
 void connectAllModels();
+
+GameObject* CreateInteractableDoor(
+    Scene* scene,
+    Prefab* prefab,
+    Shader* shader,
+    const std::string& name,
+    const glm::vec3& position,
+    const glm::vec3& scale,
+    const glm::vec3& pivotOffset,
+    const glm::vec3& colliderHalfSize,
+    float openAngle
+) {
+    // zawias
+    GameObject* hinge = scene->CreateGameObject(nullptr);
+    hinge->name = "Hinge_" + name;
+    TransformComponent* hingeTr = hinge->AddComponent<TransformComponent>();
+    hingeTr->position = position + pivotOffset;
+    hingeTr->rotation = glm::vec3(0.0f, 0.0f, 0.0f);
+
+    // drzwi
+    GameObject* door = prefab->Instantiate(*scene, hinge, shader);
+    door->name = name;
+    TransformComponent* doorTr = door->GetComponent<TransformComponent>();
+    doorTr->scale = scale;
+    doorTr->rotation = glm::vec3(0.0f, 90.0f, 0.0f);
+    doorTr->position = -pivotOffset;
+
+    // fizyka do zawiasu bo jest rodzicem a system fizyki chyba nie bierze pozycji globalnej dziecka tylko lokalną (nie dam glowy)
+    hinge->AddComponent<RigidbodyComponent>()->useGravity = false;
+    hinge->GetComponent<RigidbodyComponent>()->isStatic = true;
+
+    ColliderComponent* col = hinge->AddComponent<ColliderComponent>();
+    col->halfSize = colliderHalfSize;
+    // kolizja na srodek drzwi (a nie tam gdzie jest zawias)
+    col->offset = -pivotOffset;
+
+    DoorState state;
+    state.hinge = hinge;
+    state.openAngle = openAngle;
+    state.originalOffset = -pivotOffset;
+    toiletDoorsMap[hinge] = state;
+
+    return hinge;
+}
+
 void createFirstRoom(Scene * scena1) {
  //pokoj bedzie tu
     floorModel = std::make_unique<Prefab>("res/models/number_floor.glb");
@@ -618,21 +677,25 @@ void createFirstRoom(Scene * scena1) {
         tablicaZaslon[i]->GetComponent<TransformComponent>()->position = glm::vec3{ 50, 0, -40+(-10*i) };
     }
     GameObject * tablicaDrzwiczekDoKilba[6];
-    for (int i = 0 ; i < 6 ; i++) {
-        tablicaDrzwiczekDoKilba[i] = doorsToiletModel->Instantiate(*scena1, nullptr, ourShader.get());
-        tablicaDrzwiczekDoKilba[i]->GetComponent<TransformComponent>()->scale = glm::vec3{ 11, 10, 16 };
-        tablicaDrzwiczekDoKilba[i]->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 90, 0 };
-        tablicaDrzwiczekDoKilba[i]->AddComponent<RigidbodyComponent>();
-        tablicaDrzwiczekDoKilba[i]->AddComponent<ColliderComponent>();
-        tablicaDrzwiczekDoKilba[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
-        tablicaDrzwiczekDoKilba[i]->GetComponent<RigidbodyComponent>()->isStatic = true;
-        //Dopoki nie da sie otwierac drzwi
-        //tablicaDrzwiczekDoKilba[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 11, 10, 16 };
-        tablicaDrzwiczekDoKilba[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 1, 1 };
-        tablicaDrzwiczekDoKilba[i]->GetComponent<TransformComponent>()->position = glm::vec3{ 30, 1.0, -44+(-10*i) };
+    for (int i = 0; i < 6; i++) {
+        glm::vec3 doorPos = glm::vec3{ 30.0f, 1.0f, -44.0f + (-10.0f * i) };
+        glm::vec3 doorScale = glm::vec3{ 11.0f, 10.0f, 16.0f };
+
+        glm::vec3 pivotOffset = glm::vec3(0.2f, 0.0f, 3.8f);
+        glm::vec3 colliderSize = glm::vec3{ 0.8f, 10.0f, 4.0f };
+
+        CreateInteractableDoor(
+            scena1,
+            doorsToiletModel.get(),
+            ourShader.get(),
+            "ToiletDoor_" + std::to_string(i),
+            doorPos,
+            doorScale,
+            pivotOffset,
+            colliderSize,
+            90.0f
+        );
     }
-    tablicaDrzwiczekDoKilba[5]->GetComponent<TransformComponent>()->position = glm::vec3{ 30, 1.0, -33.5+(-12*5) };
-    tablicaDrzwiczekDoKilba[5]->GetComponent<TransformComponent>()->scale = glm::vec3{ 10, 10, 16 };
 
     GameObject * tablicaPapierowKibel[6];
     for (int i = 0 ; i < 6 ; i++) {
@@ -772,6 +835,8 @@ int main(int, char**)
     CameraComponent* camCompLeft = camera1->AddComponent<CameraComponent>();
     ColliderComponent* camera1collider = camera1->AddComponent<ColliderComponent>();
     RigidbodyComponent* rigidBodyCamera1 = camera1->AddComponent<RigidbodyComponent>();
+    RaycastComponent* player1Raycast = camera1->AddComponent<RaycastComponent>();
+    player1Raycast->debugDraw = true;
 
     camera1->AddComponent<LightComponent>();
     LightComponent* light2 = camera1->GetComponent<LightComponent>();
@@ -1051,6 +1116,58 @@ int main(int, char**)
         }
         else {
             animator->playbackSpeed = 1.0f;
+        }
+
+        // --- SYSTEM INTERAKCJI Z DRZWIAMI ---
+        if (ecs.GetSystem<HID>()->is_action_just_pressed("interact")) {
+            if (player1Raycast->anyHit()) {
+                RaycastHit hit = player1Raycast->closestHit();
+
+                if (hit.hitObject != nullptr && toiletDoorsMap.find(hit.hitObject) != toiletDoorsMap.end()) {
+                    DoorState& state = toiletDoorsMap[hit.hitObject];
+
+                    state.isOpen = !state.isOpen;
+                    state.targetAngle = state.isOpen ? state.openAngle : state.closedAngle;
+
+                    ColliderComponent* col = hit.hitObject->GetComponent<ColliderComponent>();
+                    if (col != nullptr) {
+                        if (state.isOpen) {
+                            col->halfSize = glm::vec3{ 1.0f, 10.0f, 1.0f };
+                            col->offset = glm::vec3(0.0f, 0.0f, 0.0f);
+                        }
+                        else {
+                            col->halfSize = glm::vec3{ 0.8f, 10.0f, 4.0f };
+                            col->offset = state.originalOffset;
+                        }
+                    }
+
+                    spdlog::info("Interakcja z drzwiami - nowy stan: {}", state.isOpen ? "Otwarte" : "Zamkniete");
+                }
+            }
+        }
+
+        float doorAnimSpeed = 180.0f;
+        for (auto& [doorObj, state] : toiletDoorsMap) {
+            if (std::abs(state.currentAngle - state.targetAngle) > 0.1f) {
+                float direction = (state.targetAngle > state.currentAngle) ? 1.0f : -1.0f;
+                state.currentAngle += direction * doorAnimSpeed * deltaTime;
+
+                if ((direction > 0.0f && state.currentAngle > state.targetAngle) ||
+                    (direction < 0.0f && state.currentAngle < state.targetAngle)) {
+                    state.currentAngle = state.targetAngle;
+                }
+
+                TransformComponent* hingeTr = state.hinge->GetComponent<TransformComponent>();
+                if (hingeTr != nullptr) {
+                    hingeTr->rotation.y = state.currentAngle;
+                    hingeTr->isDirty = true;
+                }
+
+                TransformComponent* doorTr = doorObj->GetComponent<TransformComponent>();
+                if (doorTr != nullptr) {
+                    doorTr->isDirty = true;
+                }
+            }
         }
 
 		// testy animacji
