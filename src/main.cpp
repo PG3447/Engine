@@ -1233,7 +1233,7 @@ bool init()
     }
 
     glfwMakeContextCurrent(window);
-    glfwSwapInterval(1); // Enable VSync - fixes FPS at the refresh rate of your screen
+    glfwSwapInterval(0); // Enable VSync - fixes FPS at the refresh rate of your screen
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
