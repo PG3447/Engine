@@ -6,16 +6,9 @@
 #include <spdlog/spdlog.h>
 #include "shader.h"
 
-enum class SurfaceType {
-    Opaque,
-    Transparent
-};
-
 class Material {
 public:
     Shader* shader = nullptr;
-
-    SurfaceType surfaceType = SurfaceType::Opaque;
 
     GLuint diffuseMap = 0;
     GLuint specularMap = 0;

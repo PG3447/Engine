@@ -141,7 +141,6 @@ std::shared_ptr<ModelNode> Model::processNode(aiNode* node, const aiScene* scene
     node->mTransformation.Decompose(scale, rot, pos);
 
     model->name = node->mName.C_Str();
-    spdlog::warn(model->name);
     //model->directory = this->directory;
 
     model->transform.setLocalPosition({ pos.x, pos.y, pos.z });
@@ -230,7 +229,7 @@ MeshNode Model::processMesh(aiMesh* mesh, const aiScene* scene)
         for (unsigned int j = 0; j < face.mNumIndices; j++)
             indices.push_back(face.mIndices[j]);
     }
-    spdlog::warn("ekstracja kosc licze aabb");
+
     ExtractBoneWeightForVertices(vertices, mesh, scene);
 
     // process materials
@@ -276,16 +275,14 @@ MeshNode Model::processMesh(aiMesh* mesh, const aiScene* scene)
     node.cpuData = cpuData;
     node.gpuMesh = gpuMesh;
     node.material = myMaterial;
-    spdlog::warn("uwaga licze aabb");
-    AABB aabb;
-    aabb.min = glm::vec3(FLT_MAX);
-    aabb.max = glm::vec3(-FLT_MAX);
 
+    AABB aabb;
     for (auto& v : cpuData->vertices) {
         aabb.min = glm::min(aabb.min, v.Position);
         aabb.max = glm::max(aabb.max, v.Position);
     }
-    node.cpuData->aabb = aabb;
+    node.aabb = aabb;
+
     return node;
 }
 
@@ -336,10 +333,10 @@ vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType type,
         Texture texture;
 
         const aiTexture* embeddedTexture = scene->GetEmbeddedTexture(str.C_Str());
-        
+
         if (embeddedTexture)
         {
-            texture.id = ResourceManager::LoadTexture(this->fullPath + str.C_Str(), "", embeddedTexture);
+            texture.id = ResourceManager::LoadTexture(str.C_Str(), "", embeddedTexture);
         }
         else
         {
