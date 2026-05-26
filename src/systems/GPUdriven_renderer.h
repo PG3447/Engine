@@ -830,8 +830,8 @@ public:
   /*      CopyDepthToHiZ(depthTexturePrevFrame);
         BuildHiZ();*/
 
-        //if (dirtyInstance)
-        BuildInstance(objCount);
+        if (dirtyInstance)
+            BuildInstance(objCount);
         //DebugPipelineState(objCount);
   
         // 5. WRITE PASS: zapis instancji
