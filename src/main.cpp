@@ -11,7 +11,7 @@
 
 #define IMGUI_IMPL_OPENGL_LOADER_GLAD
 
-#define STB_IMAGE_IMPLEMENTATION  
+#define STB_IMAGE_IMPLEMENTATION
 //#include <stb_image.h>
 
 #include <glad/glad.h>  // Initialize with gladLoadGL()
@@ -39,7 +39,7 @@
 
 #include <core/scene.h>
 #include <core/scene_manager.h>
-#include "core/gameobject.h" 
+#include "core/gameobject.h"
 #include <systems/physics_system.h>
 #include <systems/transform_system.h>
 #include <systems/animation_system.h>
@@ -353,6 +353,7 @@ void createFirstRoom(Scene * scena1) {
 
     groundObject->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 1, 100 };
 
+    /*
     GLuint texID = groundObject->GetComponent<RenderComponent>()->meshes[0].material->specularMap;
 
     spdlog::error("specularMap ID = {}", texID);  // czy w ogóle != 0?
@@ -376,6 +377,7 @@ void createFirstRoom(Scene * scena1) {
         spdlog::error("pixel[{}] R={} G={} B={} A={}", i,
             pixels[i * 4 + 0], pixels[i * 4 + 1], pixels[i * 4 + 2], pixels[i * 4 + 3]);
     }
+    */
 
     GameObject* groundObject2 = floorModel->Instantiate(*scena1, nullptr, ourShader.get());
     groundObject2->name = "Ground2";
@@ -937,7 +939,7 @@ int main(int, char**)
     auto* t1 = camera2->GetComponent<TransformComponent>();
 
     renderSystem = ecs.GetSystem<RenderSystem>();
-    //postProcessingSystem = ecs.GetSystem<PostProcessingSystem>();
+    postProcessingSystem = ecs.GetSystem<PostProcessingSystem>();
 
    createFirstRoom(scena1);
 
@@ -1012,12 +1014,12 @@ int main(int, char**)
                 renderSystem->frustumCullingEnabled ? "ON" : "OFF");
         }
 
-        /*if (ecs.GetSystem<HID>()->is_action_just_pressed("gamma_up")) {
+        if (ecs.GetSystem<HID>()->is_action_just_pressed("gamma_up")) {
             postProcessingSystem->set_gamma(postProcessingSystem->get_gamma() + 0.1f);
         }
         if (ecs.GetSystem<HID>()->is_action_just_pressed("gamma_down")) {
             postProcessingSystem->set_gamma(postProcessingSystem->get_gamma() - 0.1f);
-        }*/
+        }
 
         if (ecs.GetSystem<HID>()->is_action_just_pressed("play_sound")) {
           //  ecs.GetSystem<AudioSystem>()->playSound(sound);
@@ -1409,7 +1411,7 @@ void addAllSystems(ECS &ecs) {
     ecs.AddSystem<AnimationSystem>(ecs);
     ecs.AddSystem<RenderSystem>(ecs, window);
     ecs.AddSystem<HID>(ecs, window);
-    //ecs.AddSystem<PostProcessingSystem>(ecs, window);
+    ecs.AddSystem<PostProcessingSystem>(ecs, window);
     ecs.AddSystem<SpriteSystem>(ecs, window);
     ecs.AddSystem<RaycastSystem>(ecs);
     ecs.AddSystem<NavMeshSystem>(ecs);
