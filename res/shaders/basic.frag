@@ -82,11 +82,6 @@ void main()
         norm = normalize(Normal);
     }
 
-   
-    vec4 texColor = material.hasDiffuseMap ? texture(material.diffuse1, TexCoords) : vec4(material.diffuseColor, 1.0);
-
-    float alpha = texColor.a;
-
     vec3 viewDir = normalize(viewPos - FragPos);
 
     vec3 result = CalcDirLight(dirLight, norm, viewDir);
@@ -103,7 +98,7 @@ void main()
     }
 
 
-    FragColor = vec4(result, alpha);
+    FragColor = vec4(result, 1.0);
 }
 
 vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir)

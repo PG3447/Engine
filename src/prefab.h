@@ -7,7 +7,6 @@
 #include <memory>
 #include "resource_manager.h"
 #include "core/scene.h"
-#include "utils/render_helper.h"
 
 using namespace std;
 
@@ -44,7 +43,8 @@ public:
 
 private:
 
-    GameObject* CreateRecursive(Scene* scene, ModelNode* model, GameObject* parent, Shader* shader, AnimatorComponent* rootAnimator, bool isRoot, bool isAnimated)
+    GameObject* CreateRecursive(Scene* scene, ModelNode* model, GameObject* parent, Shader* shader,
+        AnimatorComponent* rootAnimator, bool isRoot, bool isAnimated)
     {
         if (!model) return nullptr;
 
@@ -54,7 +54,7 @@ private:
         AnimatorComponent* currentAnimator = rootAnimator;
 
         if (isRoot && isAnimated) {
-            currentAnimator = go->AddComponent<AnimatorComponent>();;
+            currentAnimator = go->AddComponent<AnimatorComponent>();
             currentAnimator->currentSkeleton = &rootModel->skeleton;
         }
 
@@ -75,12 +75,6 @@ private:
 
         auto* render = go->AddComponent<RenderComponent>();
         render->meshes = model->meshes;
-        render->localObjectAABB = RenderHelper::GetLocalAABB(render->meshes);
-
-        if (isAnimated)
-        {
-            render->animator = currentAnimator;
-        }
         //render->rootAnimator = currentAnimator;
 
         for (auto& mesh : render->meshes) {
