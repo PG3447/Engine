@@ -188,6 +188,7 @@ std::unique_ptr<Prefab> roomModel;
 std::unique_ptr<Prefab> placeholderModel;
 std::unique_ptr<Prefab> doorsToiletModel;
 std::unique_ptr<Prefab> toiletPaperModel;
+std::unique_ptr<Prefab> kostkaJEBANA;
 //AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 std::unique_ptr<Prefab> floorModel;
 std::unique_ptr<Prefab> wallModel;
@@ -449,7 +450,7 @@ void createFirstRoom(Scene * scena1) {
 
     wallObject->GetComponent<TransformComponent>()->position.x = 0;
     wallObject->GetComponent<TransformComponent>()->position.y = 0;
-    wallObject->GetComponent<TransformComponent>()->position.z = -10;
+    wallObject->GetComponent<TransformComponent>()->position.z = -25;
 
 
     GameObject* wallObject2 = wallModel2->Instantiate(*scena1, nullptr, ourShader.get());
@@ -598,7 +599,7 @@ void createFirstRoom(Scene * scena1) {
     GameObject* tablicaKibli[6];
     for (int i = 0 ; i < 6 ; i++) {
         tablicaKibli[i] = toiletModel->Instantiate(*scena1, nullptr, ourShader.get());
-        tablicaKibli[i]->GetComponent<TransformComponent>()->scale = glm::vec3{ 2, 2, 2 };
+        tablicaKibli[i]->GetComponent<TransformComponent>()->scale = glm::vec3{ 1.5, 1.5, 1.5 };
         tablicaKibli[i]->AddComponent<RigidbodyComponent>();
         tablicaKibli[i]->AddComponent<ColliderComponent>();
         tablicaKibli[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
@@ -646,8 +647,30 @@ void createFirstRoom(Scene * scena1) {
         tablicaPapierowKibel[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
         tablicaPapierowKibel[i]->GetComponent<RigidbodyComponent>()->isStatic = true;
         tablicaPapierowKibel[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 0.7, 0.7, 0.7 };
-        tablicaPapierowKibel[i]->GetComponent<TransformComponent>()->position = glm::vec3{ 35, 5.0, -40.7+(-10*i) };
+        tablicaPapierowKibel[i]->GetComponent<TransformComponent>()->position = glm::vec3{ 38, 5.0, -40.7+(-10*i) };
     }
+    GameObject * tablicaSinkWToalecie[6];
+    for (int i = 0 ; i < 6 ; i++) {
+        tablicaSinkWToalecie[i] = sinkModel->Instantiate(*scena1, nullptr, ourShader.get());
+        tablicaSinkWToalecie[i]->GetComponent<TransformComponent>()->scale = glm::vec3{ 3, 3, 3 };
+        tablicaSinkWToalecie[i]->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 90, 0 };
+        tablicaSinkWToalecie[i]->AddComponent<RigidbodyComponent>();
+        tablicaSinkWToalecie[i]->AddComponent<ColliderComponent>();
+        tablicaSinkWToalecie[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
+        tablicaSinkWToalecie[i]->GetComponent<RigidbodyComponent>()->isStatic = true;
+        tablicaSinkWToalecie[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 3, 20, 3 };
+        tablicaSinkWToalecie[i]->GetComponent<TransformComponent>()->position = glm::vec3{ -21, -1.0, -45+(-10*i) };
+    }
+    GameObject * KOSTKA;
+    KOSTKA = kostkaJEBANA->Instantiate(*scena1, nullptr, ourShader.get());
+    KOSTKA->GetComponent<TransformComponent>()->scale = glm::vec3{ 1, 1, 1 };
+    KOSTKA->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 90, 0 };
+    KOSTKA->AddComponent<RigidbodyComponent>();
+    KOSTKA->AddComponent<ColliderComponent>();
+    KOSTKA->GetComponent<RigidbodyComponent>()->useGravity = false;
+    KOSTKA->GetComponent<RigidbodyComponent>()->isStatic = true;
+    KOSTKA->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 1, 1 };
+    KOSTKA->GetComponent<TransformComponent>()->position = glm::vec3{ 0 , 5 , -40 };
     //Zostawiam jeśli przyda się w przyszłości
     /*GameObject* wallObject10 = wallModel3->Instantiate(*scena1, nullptr, ourShader.get());
     wallObject10->GetComponent<TransformComponent>()->scale.x = 30;
@@ -804,7 +827,7 @@ int main(int, char**)
     camera2->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1.0f, 10.0f, 1.0f };
 
     TransformComponent* camTransform1 = camera1->GetComponent<TransformComponent>();
-    camTransform1->position = glm::vec3(0.0f, 20.0f, -20.0f);
+    camTransform1->position = glm::vec3(0.0f, 20.0f, -30.0f);
     CameraHelper::InitialCamera(*camCompLeft, *camTransform1,
         glm::vec3(0.0f, 1.0f, 0.0f),
         YAW,
@@ -817,7 +840,7 @@ int main(int, char**)
 
     TransformComponent* camTransform2 = camera2->GetComponent<TransformComponent>();
 
-    camTransform2->position = glm::vec3(50.0f, 30.0f, -20.0f);
+    camTransform2->position = glm::vec3(0.0f, 20.0f, -40.0f);
     CameraHelper::InitialCamera(*camCompRight, *camTransform2,
         glm::vec3(0.0f, 1.0f, 0.0f),
         0.0f, -20.0f,
@@ -1446,7 +1469,7 @@ void connectAllModels() {
     //vial5Model     = std::make_unique<Prefab>("res/models/probowka5.glb");
     //vial61Model    = std::make_unique<Prefab>("res/models/probowka6.glb");
     //vial7Model     = std::make_unique<Prefab>("res/models/probowka7.glb");
-    //sinkModel      = std::make_unique<Prefab>("res/models/sink.glb");
+    sinkModel      = std::make_unique<Prefab>("res/models/sink.glb");
     //szafa1Model    = std::make_unique<Prefab>("res/models/szafa1.glb");
     //szafa2Model    = std::make_unique<Prefab>("res/models/szafa2.glb");
     //szafa3Model    = std::make_unique<Prefab>("res/models/szafa3.glb");
@@ -1457,4 +1480,5 @@ void connectAllModels() {
     //wozekModel     = std::make_unique<Prefab>("res/models/wozek.glb");
     //zaslonaModel   = std::make_unique<Prefab>("res/models/zaslona.glb");
     //roomModel = std::make_unique<Prefab>("res/models/room.glb");
+    kostkaJEBANA = std::make_unique<Prefab>("res/models/KOSTKA.glb");
 }
