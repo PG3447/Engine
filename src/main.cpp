@@ -1402,6 +1402,7 @@ void addAllSystems(ECS &ecs) {
     ecs.AddSystem<RaycastSystem>(ecs);
     ecs.AddSystem<NavMeshSystem>(ecs);
     ecs.AddSystem<NavPathSystem>(ecs);
+    ecs.AddSystem<AudioSystem>(ecs);
 }
 void connectAllModels() {
     bed1Model = std::make_unique<Prefab>("res/models/samochod.glb");
