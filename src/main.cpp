@@ -98,8 +98,8 @@ void imgui_end();
 
 void end_frame();
 
-constexpr int32_t WINDOW_WIDTH = 1600;
-constexpr int32_t WINDOW_HEIGHT = 900;
+constexpr int32_t WINDOW_WIDTH = 1920;
+constexpr int32_t WINDOW_HEIGHT = 1080;
 
 GLFWwindow* window = nullptr;
 
@@ -243,7 +243,8 @@ PostProcessingSystem* postProcessingSystem = nullptr;
 
 //meeded for interaction
 std::unordered_set<GameObject*> rotatableObjects;
-
+std::unordered_set<GameObject*> unlockedDoors;
+std::unordered_set<GameObject*> majorDoors;
 
 void updateFPS(float deltaTime) {
     frameTimes[index] = deltaTime;
@@ -609,6 +610,7 @@ void createFirstRoom(Scene * scena1) {
         //tablicaDrzwiczekDoKilba[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 11, 10, 16 };
         tablicaDrzwiczekDoKilba[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 1, 1 };
         tablicaDrzwiczekDoKilba[i]->GetComponent<TransformComponent>()->position = glm::vec3{ 30, 1.0, -44+(-10*i) };
+        unlockedDoors.insert(tablicaDrzwiczekDoKilba[i]);
     }
     tablicaDrzwiczekDoKilba[5]->GetComponent<TransformComponent>()->position = glm::vec3{ 30, 1.0, -33.5+(-12*5) };
     tablicaDrzwiczekDoKilba[5]->GetComponent<TransformComponent>()->scale = glm::vec3{ 10, 10, 16 };
@@ -811,7 +813,7 @@ int main(int, char**)
 
     TransformComponent* camTransform2 = camera2->GetComponent<TransformComponent>();
 
-    camTransform2->position = glm::vec3(50.0f, 30.0f, -20.0f);
+    camTransform2->position = glm::vec3(0.0f, 20.0f, -20.0f);
     CameraHelper::InitialCamera(*camCompRight, *camTransform2,
         glm::vec3(0.0f, 1.0f, 0.0f),
         0.0f, -20.0f,
@@ -840,14 +842,23 @@ int main(int, char**)
     sprite_2->frameDuration = 0.5f;
     */
 
-    int placeholderThing = 0;
-
     GameObject* player1InteractionInfo_obj = scena1->CreateGameObject(nullptr);
     SpriteComponent* player1InteractionInfo = player1InteractionInfo_obj->AddComponent<SpriteComponent>();
     player1InteractionInfo->textEnabled = true;
-    player1InteractionInfo->screenPosition = glm::vec2(0.0f, 256.0f);
-    player1InteractionInfo->text = "Rotate";
+    player1InteractionInfo->screenPosition = glm::vec2(480.0f, 540.0f);
+    player1InteractionInfo->text = "";
+    player1InteractionInfo->textOutlineEnabled = true;
+    player1InteractionInfo->textCentered = true;
     player1InteractionInfo->layer = 1;
+
+    GameObject* player2InteractionInfo_obj = scena1->CreateGameObject(nullptr);
+    SpriteComponent* player2InteractionInfo = player2InteractionInfo_obj->AddComponent<SpriteComponent>();
+    player2InteractionInfo->textEnabled = true;
+    player2InteractionInfo->screenPosition = glm::vec2(1440.0f, 540.0f);
+    player2InteractionInfo->text = "";
+    player2InteractionInfo->textOutlineEnabled = true;
+    player2InteractionInfo->textCentered = true;
+    player2InteractionInfo->layer = 1;
 
     connectAllModels();
 
@@ -875,7 +886,7 @@ int main(int, char**)
     RenderHelper::SetSpecularTexture(model1, whiteSpecular);
 
     //model1->GetComponent<RigidbodyComponent>()->useGravity = true;
-    // model1->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 1, 1 };
+    //model1->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 1, 1 };
     //model1->GetComponent<TransformComponent>()->position.y = 150;
     //RenderHelper::SetMaterial(model29, brickMat);
 
@@ -1003,7 +1014,64 @@ int main(int, char**)
             ecs.GetSystem<AudioSystem>()->playSound(sound);
         }
 
-        if (ecs.GetSystem<HID>()->is_action_just_pressed("interact")) {
+        std::string hintText = "";
+
+        if (player1Raycast->anyHit()) {
+
+            RaycastHit hit = player1Raycast->closestHit();
+
+            if (hit.hitObject != nullptr) {
+                if (rotatableObjects.count(hit.hitObject)) {
+                    hintText = "Rotate";
+                }
+                 else if (unlockedDoors.count(hit.hitObject)) {
+                     hintText = "Open";
+                 }
+                 else if (majorDoors.count(hit.hitObject)) {
+                     hintText = "Unlock"; //placeholder poki co
+                 }
+            }
+        }
+        player1InteractionInfo->text = hintText;
+
+        std::string hintText2 = "";
+        if (player2Raycast->anyHit()) {
+
+            RaycastHit hit = player2Raycast->closestHit();
+
+            if (hit.hitObject != nullptr) {
+                if (rotatableObjects.count(hit.hitObject)) {
+                    hintText2 = "Rotate";
+                }
+                else if (unlockedDoors.count(hit.hitObject)) {
+                    hintText2 = "Open";
+                }
+                else if (majorDoors.count(hit.hitObject)) {
+                    hintText2 = "Unlock"; //placeholder poki co
+                }
+            }
+        }
+        player2InteractionInfo->text = hintText2;
+
+
+        if (ecs.GetSystem<HID>()->is_action_just_pressed("interact_p1")) {
+            if (player1Raycast->anyHit()) {
+                RaycastHit hit = player1Raycast->closestHit();
+
+                if (hit.hitObject != nullptr) {
+                    if (hit.hitObject != nullptr && rotatableObjects.count(hit.hitObject)) {
+                        TransformComponent* transform = hit.hitObject->GetComponent<TransformComponent>();
+
+                        if (transform != nullptr) {
+                            transform->rotation.z += 60.0f;
+                        }
+                    }
+                }
+            }
+        }
+
+
+        if (ecs.GetSystem<HID>()->is_action_just_pressed("interact_p2")) {
             if (player1Raycast->anyHit()) {
                 RaycastHit hit = player1Raycast->closestHit();
 
