@@ -111,6 +111,25 @@ void main() {
         float divider = smoothstep(0.001, 0.005, abs(TexCoords.x - 0.5));
         playerColor *= divider;
 
+    // crosshair
+    vec2 crosshairCenter;
+    if (TexCoords.x < 0.5)
+    crosshairCenter = vec2(0.25, 0.5);
+    else
+    crosshairCenter = vec2(0.75, 0.5);
+
+    vec2 aspectUV = (TexCoords - crosshairCenter) * vec2(2.0, 1.0);
+    float distCrosshair = length(aspectUV);
+
+    float dotRadius = 0.004;
+    float outlineRadius = 0.007;
+
+    float innerDot = smoothstep(dotRadius, dotRadius - 0.001, distCrosshair);
+    float outline  = smoothstep(outlineRadius, outlineRadius - 0.001, distCrosshair);
+
+    playerColor = mix(playerColor, vec3(0.0), outline);
+    playerColor = mix(playerColor, vec3(1.0), innerDot);
+
 
     FragColor = vec4(playerColor, 1.0);
 
