@@ -516,7 +516,7 @@ int main(int, char**)
 
     int placeholderThing = 0;
 
-    bed1Model = std::make_unique<Prefab>("res/models/samochod.glb");
+    bed1Model = std::make_unique<Prefab>("res/models/szklo.glb");
     bed2Model = std::make_unique<Prefab>("res/models/bed2.glb");
     bed3Model = std::make_unique<Prefab>("res/models/bed3.glb");
     corkBoardModel = std::make_unique<Prefab>("res/models/cork_board.glb");
@@ -558,6 +558,10 @@ int main(int, char**)
 
 
     GameObject* model1 = bed1Model->Instantiate(*scena1, nullptr, ourShader.get());
+    for (auto& mesh : model1->GetComponent<RenderComponent>()->meshes)
+    {
+        mesh.material->surfaceType = SurfaceType::Transparent;
+    }
     //GameObject* model2 = bed2Model->Instantiate(*scena1, nullptr, ourShader.get());
     //GameObject* model3 = bed3Model->Instantiate(*scena1, nullptr, ourShader.get());
     //GameObject* model4 = corkBoardModel->Instantiate(*scena1, nullptr, ourShader.get());
