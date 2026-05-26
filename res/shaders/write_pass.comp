@@ -156,11 +156,11 @@ void main()
 
     RenderData obj = objects[objID];
 
-     if (enableFrustumCulling && frustumCull(obj.aabbMin.xyz, obj.aabbMax.xyz, obj.model, sharedPlanes))
-    {
-        return;
-    }
-
+//     if (enableFrustumCulling && frustumCull(obj.aabbMin.xyz, obj.aabbMax.xyz, obj.model, sharedPlanes))
+//    {
+//        return;
+//    }
+//
     uint meshID  = obj.meshID;
     // Zarezerwuj slot — instanceOffset już ustawiony przez CPU prefix-sum
     uint slot     = atomicAdd(meshMeta[meshID].instanceCount, 1u);

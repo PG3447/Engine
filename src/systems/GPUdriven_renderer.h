@@ -130,7 +130,7 @@ private:
     std::unordered_map<GLuint, GLuint64> handleCacheTextures;
 
     uint32_t instanceBufferCapacity = 64;
-    int maxRenderObjects = 64;
+    int maxRenderObjects = 196;
 
     GLuint64 GetOrCreateHandle(GLuint texID) {
         if (texID == 0) return 0;
@@ -310,12 +310,15 @@ public:
         glBufferStorage(GL_SHADER_STORAGE_BUFFER, sizeof(uint32_t), nullptr, GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
         totalVisibleMapped = (uint32_t*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(uint32_t), GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
 
-
+        spdlog::warn("inicjalizacja renderData");
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, renderDataSSBO);
         glBufferData(GL_SHADER_STORAGE_BUFFER, maxRenderObjects * sizeof(RenderData), nullptr, GL_DYNAMIC_DRAW);
+
+        GLint size = 0;
+        glGetBufferParameteriv(GL_SHADER_STORAGE_BUFFER, GL_BUFFER_SIZE, &size);
+
+        std::cout << "AFTER INIT SIZE = " << size << std::endl;
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-
-
         // UBO — światła (binding = 0)
         //glGenBuffers(1, &lightsUBO);
         //glBindBuffer(GL_UNIFORM_BUFFER, lightsUBO);
@@ -472,6 +475,16 @@ public:
 
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, renderDataSSBO);
         glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, objects.size() * sizeof(RenderData), objects.data());
+
+        //GLint size = 0;
+
+        //glGetBufferParameteriv(
+        //    GL_SHADER_STORAGE_BUFFER,
+        //    GL_BUFFER_SIZE,
+        //    &size
+        //);
+
+        //std::cout << "SSBO size: " << size << std::endl;
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     }
 
@@ -597,6 +610,72 @@ public:
         // Jeden clear zamiast N subData — szybsze
         uint32_t zero = 0;
         glClearNamedBufferData(meshCountersSSBO, GL_R32UI, GL_RED_INTEGER, GL_UNSIGNED_INT, &zero); // nullptr = wypełnij zerami
+    }
+
+    void DebugReadBuffers(uint32_t objectCount, uint32_t meshCount)
+    {
+        // =========================================
+        // READ renderDataSSBO
+        // =========================================
+
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, renderDataSSBO);
+
+        std::vector<RenderData> renderData(objectCount);
+
+        glGetBufferSubData(
+            GL_SHADER_STORAGE_BUFFER,
+            0,
+            sizeof(RenderData) * objectCount,
+            renderData.data()
+        );
+
+        std::cout << "===== RenderData =====\n";
+
+        for (uint32_t i = 0; i < objectCount; i++)
+        {
+            std::cout
+                << "Object: " << i
+                << " meshID: " << renderData[i].meshID
+                << " materialID: " << renderData[i].materialID
+                << " skeletonID: " << renderData[i].skeletonID
+                << "\n";
+        }
+
+        // =========================================
+        // READ meshCountersSSBO
+        // =========================================
+
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, meshCountersSSBO);
+
+        std::vector<uint32_t> counters(meshCount);
+
+        glGetBufferSubData(
+            GL_SHADER_STORAGE_BUFFER,
+            0,
+            sizeof(uint32_t) * meshCount,
+            counters.data()
+        );
+
+        std::cout << "===== Mesh Counters =====\n";
+
+        for (uint32_t i = 0; i < meshCount; i++)
+        {
+            std::cout
+                << "Mesh "
+                << i
+                << " count: "
+                << counters[i]
+                << "\n";
+        }
+
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+        GLenum err = glGetError();
+
+        if (err != GL_NO_ERROR)
+        {
+            std::cout << "GL ERROR: " << err << std::endl;
+        }
     }
 
     void DispatchCountPass(uint32_t objectCount)
@@ -730,7 +809,7 @@ public:
         // 3. COUNT PASS: culling + zliczanie (bez zapisu instancji)
         DispatchCountPass(objectCount);
         // barrier wewnątrz DispatchCountPass
-      
+        // 
         // 4. PREFIX-SUM na CPU (czyta tylko meshCount uint32!)
         // wewnątrz: glGetNamedBufferSubData + wysyłka MeshMeta + ewentualny resize
         DispatchPrefixSum(objectCount);
@@ -745,14 +824,15 @@ public:
         // 0. Aktualizuj obiekty na GPU
         UploadObjects(objects);
         //UploadLights();
+        //DebugReadBuffers(objCount, (uint32_t)meshesData.size());
 
         // 1. Zbuduj HiZ z depth poprzedniej klatki
   /*      CopyDepthToHiZ(depthTexturePrevFrame);
         BuildHiZ();*/
 
-        if (dirtyInstance)
-            BuildInstance(objCount);
-        DebugPipelineState(objCount);
+        //if (dirtyInstance)
+        BuildInstance(objCount);
+        //DebugPipelineState(objCount);
   
         // 5. WRITE PASS: zapis instancji
         DispatchWritePass(viewProj, objCount);
@@ -766,12 +846,12 @@ public:
         //shaderRender->setMat4("viewProjection", viewProj);
         //shaderRender->setVec3("viewPos", currentCameraPos);
         //shaderRender->setInt("numLights", (int)gpuLights.size());
-
+        //DebugPipelineState(objCount);
         // 7. Rysuj
         Draw();
 
-    }
 
+    }
     void DebugPipelineState(uint32_t objCount)
     {
         // ── 1. Czy w ogóle są meshe i obiekty? ───────────────────────
@@ -787,77 +867,98 @@ public:
             return;
         }
 
-        // ── 2. Czy meshCountersSSBO ma niezerowe wartości po CountPass? ──
         uint32_t meshCount = (uint32_t)meshesData.size();
-        std::vector<uint32_t> counters(meshCount);
-        glGetNamedBufferSubData(meshCountersSSBO, 0, meshCount * sizeof(uint32_t), counters.data());
-        spdlog::warn("--- meshCounters po CountPass ---");
-        for (uint32_t i = 0; i < meshCount; i++)
-            spdlog::warn("  mesh[{}] count={}", i, counters[i]);
+
+        // ── 2. Czy meshCountersSSBO ma niezerowe wartości po CountPass? ──
+        {
+            std::vector<uint32_t> counters(meshCount);
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, meshCountersSSBO);
+            glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, meshCount * sizeof(uint32_t), counters.data());
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+            spdlog::warn("--- meshCounters po CountPass ---");
+            for (uint32_t i = 0; i < meshCount; i++)
+                spdlog::warn("  mesh[{}] count={}", i, counters[i]);
+        }
 
         // ── 3. Czy meshMeta ma poprawne offsety po PrefixSum? ────────
-        std::vector<GPUMeshMeta> meta(meshCount);
-        glGetNamedBufferSubData(meshMetaSSBO, 0, meshCount * sizeof(GPUMeshMeta), meta.data());
-        spdlog::warn("--- meshMeta po PrefixSum ---");
-        for (uint32_t i = 0; i < meshCount; i++)
-            spdlog::warn("  mesh[{}] instanceOffset={} instanceCount={}", i, meta[i].instanceOffset, meta[i].instanceCount);
+        {
+            std::vector<GPUMeshMeta> meta(meshCount);
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, meshMetaSSBO);
+            glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, meshCount * sizeof(GPUMeshMeta), meta.data());
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+            spdlog::warn("--- meshMeta po PrefixSum ---");
+            for (uint32_t i = 0; i < meshCount; i++)
+                spdlog::warn("  mesh[{}] instanceOffset={} instanceCount={}", i, meta[i].instanceOffset, meta[i].instanceCount);
+        }
 
         // ── 4. Czy totalVisible > 0? ─────────────────────────────────
         if (totalVisibleMapped)
             spdlog::warn("totalVisible (mapped)={}", *totalVisibleMapped);
 
         // ── 5. Czy instanceSSBO zawiera dane po WritePass? ───────────
-        // Odczytaj tylko pierwsze kilka instancji
-        uint32_t readCount = std::min(objCount, 4u);
-        std::vector<GPUInstanceData> instances(readCount);
-        glGetNamedBufferSubData(instanceSSBO, 0, readCount * sizeof(GPUInstanceData), instances.data());
-        spdlog::warn("--- pierwsze {} instancji po WritePass ---", readCount);
-        for (uint32_t i = 0; i < readCount; i++)
-            spdlog::warn("  inst[{}] matID={} skelID={} model[3]={},{},{}",
-                i, instances[i].materialID, instances[i].skeletonID,
-                instances[i].model[3][0], instances[i].model[3][1], instances[i].model[3][2]);
+        {
+            uint32_t readCount = std::min(objCount, 4u);
+            std::vector<GPUInstanceData> instances(readCount);
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, instanceSSBO);
+            glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, readCount * sizeof(GPUInstanceData), instances.data());
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+            spdlog::warn("--- pierwsze {} instancji po WritePass ---", readCount);
+            for (uint32_t i = 0; i < readCount; i++)
+                spdlog::warn("  inst[{}] matID={} skelID={} model[3]={},{},{}",
+                    i, instances[i].materialID, instances[i].skeletonID,
+                    instances[i].model[3][0], instances[i].model[3][1], instances[i].model[3][2]);
+        }
 
         // ── 6. Czy DrawCommands są poprawne? ─────────────────────────
-        std::vector<DrawElementsIndirectCommand> cmds(meshCount);
-        glGetNamedBufferSubData(drawCmdSSBO, 0, meshCount * sizeof(DrawElementsIndirectCommand), cmds.data());
-        spdlog::warn("--- DrawCommands po BuildCommands ---");
-        for (uint32_t i = 0; i < meshCount; i++)
-            spdlog::warn("  cmd[{}] count={} instanceCount={} firstIndex={} baseVertex={} baseInstance={}",
-                i, cmds[i].count, cmds[i].instanceCount,
-                cmds[i].firstIndex, cmds[i].baseVertex, cmds[i].baseInstance);
+        {
+            std::vector<DrawElementsIndirectCommand> cmds(meshCount);
+            glBindBuffer(GL_DRAW_INDIRECT_BUFFER, drawCmdSSBO);
+            glGetBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, meshCount * sizeof(DrawElementsIndirectCommand), cmds.data());
+            glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
+            spdlog::warn("--- DrawCommands po BuildCommands ---");
+            for (uint32_t i = 0; i < meshCount; i++)
+                spdlog::warn("  cmd[{}] count={} instanceCount={} firstIndex={} baseVertex={} baseInstance={}",
+                    i, cmds[i].count, cmds[i].instanceCount,
+                    cmds[i].firstIndex, cmds[i].baseVertex, cmds[i].baseInstance);
+        }
 
         // ── 7. Czy VAO/VBO mają dane? ────────────────────────────────
-        GLint vboSize = 0;
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glGetBufferParameteriv(GL_ARRAY_BUFFER, GL_BUFFER_SIZE, &vboSize);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        spdlog::warn("VBO size={} bytes (oczekiwano={})", vboSize, (int)(allVertices.size() * sizeof(Vertex)));
+        {
+            GLint vboSize = 0;
+            glBindBuffer(GL_ARRAY_BUFFER, VBO);
+            glGetBufferParameteriv(GL_ARRAY_BUFFER, GL_BUFFER_SIZE, &vboSize);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+            spdlog::warn("VBO size={} bytes (oczekiwano={})", vboSize, (int)(allVertices.size() * sizeof(Vertex)));
 
-        GLint eboSize = 0;
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &eboSize);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-        spdlog::warn("EBO size={} bytes (oczekiwano={})", eboSize, (int)(allIndices.size() * sizeof(uint32_t)));
+            GLint eboSize = 0;
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+            glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &eboSize);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+            spdlog::warn("EBO size={} bytes (oczekiwano={})", eboSize, (int)(allIndices.size() * sizeof(uint32_t)));
+        }
 
         // ── 8. Czy materialSSBO ma dane? ─────────────────────────────
-        GLint matSize = 0;
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, materialSSBO);
-        glGetBufferParameteriv(GL_SHADER_STORAGE_BUFFER, GL_BUFFER_SIZE, &matSize);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-        spdlog::warn("materialSSBO size={} bytes (oczekiwano={})", matSize, (int)(materials.size() * sizeof(GPUMaterial)));
+        {
+            GLint matSize = 0;
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, materialSSBO);
+            glGetBufferParameteriv(GL_SHADER_STORAGE_BUFFER, GL_BUFFER_SIZE, &matSize);
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+            spdlog::warn("materialSSBO size={} bytes (oczekiwano={})", matSize, (int)(materials.size() * sizeof(GPUMaterial)));
+        }
 
         // ── 9. Błędy OpenGL ──────────────────────────────────────────
-        GLenum err;
-        bool anyErr = false;
-        while ((err = glGetError()) != GL_NO_ERROR) {
-            spdlog::error("GL ERROR: 0x{:X}", err);
-            anyErr = true;
+        {
+            GLenum err;
+            bool anyErr = false;
+            while ((err = glGetError()) != GL_NO_ERROR) {
+                spdlog::error("GL ERROR: 0x{:X}", err);
+                anyErr = true;
+            }
+            if (!anyErr) spdlog::warn("Brak błędów OpenGL");
         }
-        if (!anyErr) spdlog::warn("Brak błędów OpenGL");
 
         spdlog::warn("=== KONIEC DEBUG ===");
     }
-
 
 
     uint32_t GetMeshCount()    const { return (uint32_t)meshesData.size(); }

@@ -26,7 +26,7 @@ struct RenderPassConfig {
 struct PassEntry {
     uint32_t passID;
     RenderPassConfig config;
-    GPUDrivenRenderer renderer;
+    std::unique_ptr<GPUDrivenRenderer> renderer;
     std::vector<RenderData> objects;
 };
 
@@ -158,8 +158,8 @@ public:
 
         // Wyślij geometrię i materiały każdego pasa na GPU
         for (auto& entry : passes) {
-            entry.renderer.UploadMeshes();
-            entry.renderer.UploadMaterials();
+            entry.renderer->UploadMeshes();
+            entry.renderer->UploadMaterials();
         }
 
         spdlog::info("RendererManager: zainicjalizowano {} passów", passes.size());
@@ -172,7 +172,7 @@ public:
         PassEntry* entry = FindPass(passID);
         if (!entry) return;
 
-        GPUDrivenRenderer* r = &entry->renderer;
+        GPUDrivenRenderer* r = entry->renderer.get();
         const SurfaceType   filter = PassTypeToSurface(entry->config.type);
         const bool          isTransparent = (entry->config.type == RenderPassType::Transparent);
         Shader* passShader = entry->config.shader ? entry->config.shader : defaultShaderRender;
@@ -247,7 +247,7 @@ public:
                 if (matID == UINT32_MAX) continue;
 
                 const auto& aabb = mesh.cpuData->aabb;
-                cout << meshID << endl;
+
                 RenderData rd{
                     .modelMatrix = model,
                     .aabbMin = glm::vec4(aabb.min, 0.0f),
@@ -285,7 +285,7 @@ public:
         r->ResizeBoneBufferIfNeeded((uint32_t)animatorIDMap.size());
         r->UploadAllBoneMatrices(boneMatricesCache);
 
-        entry->renderer.dirtyInstance = true;
+        entry->renderer->dirtyInstance = true;
     }
 
 
@@ -308,15 +308,16 @@ public:
         entry.passID = id;
         entry.config = cfg;
 
-        entry.renderer.Init(screenWidth, screenHeight);
-        entry.renderer.AttachHiZ(hizTexture, hizMipLevels);
-        entry.renderer.shaderHizCullCount = shaderCountInstance;
-        entry.renderer.shaderPrefixSum = shaderPrefixSum;
-        entry.renderer.shaderHizWritePass = shaderHizWritePass;
-        entry.renderer.shaderBuildCmds = shaderBuildCmds;
-        entry.renderer.shaderHizDownsample = shaderHizDownsample;
-        entry.renderer.shaderRender = cfg.shader ? cfg.shader : defaultShaderRender;
-        entry.renderer.lightsUBO = lightsUBO;
+        entry.renderer = std::make_unique<GPUDrivenRenderer>();
+        entry.renderer->Init(screenWidth, screenHeight);
+        entry.renderer->AttachHiZ(hizTexture, hizMipLevels);
+        entry.renderer->shaderHizCullCount = shaderCountInstance;
+        entry.renderer->shaderPrefixSum = shaderPrefixSum;
+        entry.renderer->shaderHizWritePass = shaderHizWritePass;
+        entry.renderer->shaderBuildCmds = shaderBuildCmds;
+        entry.renderer->shaderHizDownsample = shaderHizDownsample;
+        entry.renderer->shaderRender =  defaultShaderRender;//cfg.shader ? cfg.shader :
+        entry.renderer->lightsUBO = lightsUBO;
         spdlog::info("Add pass");
         passes.push_back(std::move(entry));
 
@@ -341,7 +342,7 @@ public:
     GPUDrivenRenderer* GetRenderer(uint32_t passID)
     {
         for (auto& e : passes)
-            if (e.passID == passID) return &e.renderer;
+            if (e.passID == passID) return e.renderer.get();
         return nullptr;
     }
 
@@ -379,7 +380,7 @@ public:
         for (auto& e : passes) {
             if (e.passID == passID) {
                 e.objects.push_back(obj);
-                e.renderer.dirtyInstance = true;
+                e.renderer->dirtyInstance = true;
                 return;
             }
         }
@@ -432,13 +433,13 @@ public:
         //        screenWidth, screenHeight, 1);
         //    BuildHiZ();
         //}
-        spdlog::info("Renderowanie");
+        //spdlog::info("Renderowanie");
         for (auto& entry : passes) {
             if (entry.objects.empty()) continue;
             ApplyPassState(entry.config);
-            cout << "renderuje sie " << endl;
-            cout << entry.objects.size() << endl;
-            entry.renderer.RenderFrame(viewProj, entry.objects, prevDepth, cameraPos);
+            //cout << "renderuje sie " << endl;
+           // cout << entry.objects.size() << endl;
+            entry.renderer->RenderFrame(viewProj, entry.objects, prevDepth, cameraPos);
         }
 
         // Przywróć domyślny stan po wszystkich passach
@@ -476,8 +477,8 @@ public:
     void BuildHiZ()
     {
         for (auto& entry : passes) {
-            if (entry.renderer.shaderHizDownsample) {
-                entry.renderer.BuildHiZ();
+            if (entry.renderer->shaderHizDownsample) {
+                entry.renderer->BuildHiZ();
                 return;
             }
         }
