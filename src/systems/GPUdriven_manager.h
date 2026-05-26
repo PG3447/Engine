@@ -247,7 +247,7 @@ public:
                 if (matID == UINT32_MAX) continue;
 
                 const auto& aabb = mesh.cpuData->aabb;
-
+                cout << meshID << endl;
                 RenderData rd{
                     .modelMatrix = model,
                     .aabbMin = glm::vec4(aabb.min, 0.0f),
@@ -437,6 +437,7 @@ public:
             if (entry.objects.empty()) continue;
             ApplyPassState(entry.config);
             cout << "renderuje sie " << endl;
+            cout << entry.objects.size() << endl;
             entry.renderer.RenderFrame(viewProj, entry.objects, prevDepth, cameraPos);
         }
 

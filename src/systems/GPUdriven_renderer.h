@@ -424,6 +424,51 @@ public:
     void UploadObjects(const std::vector<RenderData>& objects)
     {
         ResizeIfNeeded((int)objects.size());
+      /*  printf("=== UploadObjects ===\n");
+        printf("Count: %zu\n\n", objects.size());
+
+        for (size_t i = 0; i < objects.size(); ++i)
+        {
+            const RenderData& obj = objects[i];
+
+            printf("Object %zu\n", i);
+
+            printf("modelMatrix:\n");
+
+            for (int r = 0; r < 4; ++r)
+            {
+                printf(
+                    "[%.3f %.3f %.3f %.3f]\n",
+                    obj.modelMatrix[0][r],
+                    obj.modelMatrix[1][r],
+                    obj.modelMatrix[2][r],
+                    obj.modelMatrix[3][r]
+                );
+            }
+
+            printf(
+                "aabbMin: %.3f %.3f %.3f %.3f\n",
+                obj.aabbMin.x,
+                obj.aabbMin.y,
+                obj.aabbMin.z,
+                obj.aabbMin.w
+            );
+
+            printf(
+                "aabbMax: %.3f %.3f %.3f %.3f\n",
+                obj.aabbMax.x,
+                obj.aabbMax.y,
+                obj.aabbMax.z,
+                obj.aabbMax.w
+            );
+
+            printf("meshID: %u\n", obj.meshID);
+            printf("materialID: %u\n", obj.materialID);
+            printf("skeletonID: %u\n", obj.skeletonID);
+            printf("padding: %u\n", obj.padding);
+
+            printf("----------------------\n");
+        }*/
 
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, renderDataSSBO);
         glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, objects.size() * sizeof(RenderData), objects.data());
@@ -707,6 +752,7 @@ public:
 
         if (dirtyInstance)
             BuildInstance(objCount);
+        DebugPipelineState(objCount);
   
         // 5. WRITE PASS: zapis instancji
         DispatchWritePass(viewProj, objCount);
@@ -723,6 +769,93 @@ public:
 
         // 7. Rysuj
         Draw();
+
+    }
+
+    void DebugPipelineState(uint32_t objCount)
+    {
+        // ── 1. Czy w ogóle są meshe i obiekty? ───────────────────────
+        spdlog::warn("=== GPU PIPELINE DEBUG ===");
+        spdlog::warn("meshCount={} objCount={}", meshesData.size(), objCount);
+
+        if (meshesData.empty()) {
+            spdlog::error("BRAK MESHÓW — UploadMeshes() nie zostało wywołane lub RegisterMesh() nie dodało nic");
+            return;
+        }
+        if (objCount == 0) {
+            spdlog::error("BRAK OBIEKTÓW — CollectRenderData() zwróciło pusty wektor");
+            return;
+        }
+
+        // ── 2. Czy meshCountersSSBO ma niezerowe wartości po CountPass? ──
+        uint32_t meshCount = (uint32_t)meshesData.size();
+        std::vector<uint32_t> counters(meshCount);
+        glGetNamedBufferSubData(meshCountersSSBO, 0, meshCount * sizeof(uint32_t), counters.data());
+        spdlog::warn("--- meshCounters po CountPass ---");
+        for (uint32_t i = 0; i < meshCount; i++)
+            spdlog::warn("  mesh[{}] count={}", i, counters[i]);
+
+        // ── 3. Czy meshMeta ma poprawne offsety po PrefixSum? ────────
+        std::vector<GPUMeshMeta> meta(meshCount);
+        glGetNamedBufferSubData(meshMetaSSBO, 0, meshCount * sizeof(GPUMeshMeta), meta.data());
+        spdlog::warn("--- meshMeta po PrefixSum ---");
+        for (uint32_t i = 0; i < meshCount; i++)
+            spdlog::warn("  mesh[{}] instanceOffset={} instanceCount={}", i, meta[i].instanceOffset, meta[i].instanceCount);
+
+        // ── 4. Czy totalVisible > 0? ─────────────────────────────────
+        if (totalVisibleMapped)
+            spdlog::warn("totalVisible (mapped)={}", *totalVisibleMapped);
+
+        // ── 5. Czy instanceSSBO zawiera dane po WritePass? ───────────
+        // Odczytaj tylko pierwsze kilka instancji
+        uint32_t readCount = std::min(objCount, 4u);
+        std::vector<GPUInstanceData> instances(readCount);
+        glGetNamedBufferSubData(instanceSSBO, 0, readCount * sizeof(GPUInstanceData), instances.data());
+        spdlog::warn("--- pierwsze {} instancji po WritePass ---", readCount);
+        for (uint32_t i = 0; i < readCount; i++)
+            spdlog::warn("  inst[{}] matID={} skelID={} model[3]={},{},{}",
+                i, instances[i].materialID, instances[i].skeletonID,
+                instances[i].model[3][0], instances[i].model[3][1], instances[i].model[3][2]);
+
+        // ── 6. Czy DrawCommands są poprawne? ─────────────────────────
+        std::vector<DrawElementsIndirectCommand> cmds(meshCount);
+        glGetNamedBufferSubData(drawCmdSSBO, 0, meshCount * sizeof(DrawElementsIndirectCommand), cmds.data());
+        spdlog::warn("--- DrawCommands po BuildCommands ---");
+        for (uint32_t i = 0; i < meshCount; i++)
+            spdlog::warn("  cmd[{}] count={} instanceCount={} firstIndex={} baseVertex={} baseInstance={}",
+                i, cmds[i].count, cmds[i].instanceCount,
+                cmds[i].firstIndex, cmds[i].baseVertex, cmds[i].baseInstance);
+
+        // ── 7. Czy VAO/VBO mają dane? ────────────────────────────────
+        GLint vboSize = 0;
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glGetBufferParameteriv(GL_ARRAY_BUFFER, GL_BUFFER_SIZE, &vboSize);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        spdlog::warn("VBO size={} bytes (oczekiwano={})", vboSize, (int)(allVertices.size() * sizeof(Vertex)));
+
+        GLint eboSize = 0;
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+        glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &eboSize);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+        spdlog::warn("EBO size={} bytes (oczekiwano={})", eboSize, (int)(allIndices.size() * sizeof(uint32_t)));
+
+        // ── 8. Czy materialSSBO ma dane? ─────────────────────────────
+        GLint matSize = 0;
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, materialSSBO);
+        glGetBufferParameteriv(GL_SHADER_STORAGE_BUFFER, GL_BUFFER_SIZE, &matSize);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+        spdlog::warn("materialSSBO size={} bytes (oczekiwano={})", matSize, (int)(materials.size() * sizeof(GPUMaterial)));
+
+        // ── 9. Błędy OpenGL ──────────────────────────────────────────
+        GLenum err;
+        bool anyErr = false;
+        while ((err = glGetError()) != GL_NO_ERROR) {
+            spdlog::error("GL ERROR: 0x{:X}", err);
+            anyErr = true;
+        }
+        if (!anyErr) spdlog::warn("Brak błędów OpenGL");
+
+        spdlog::warn("=== KONIEC DEBUG ===");
     }
 
 
