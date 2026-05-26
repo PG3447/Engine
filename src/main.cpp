@@ -29,6 +29,7 @@
 #include <prefab.h>
 #include <filesystem>
 #include <unordered_map>
+#include <unordered_set>
 
 #include <fmod.h>
 #include <fmod.hpp>
@@ -149,6 +150,10 @@ struct DoorState {
 };
 
 std::unordered_map<GameObject*, DoorState> toiletDoorsMap;
+
+std::unordered_set<GameObject*> pickupObjects;
+GameObject* p1HeldObject = nullptr;
+GameObject* p2HeldObject = nullptr;
 
 unsigned int cubemapTexture;
 unsigned int skyboxVAO;
@@ -350,6 +355,86 @@ void processCameraMouse(ECS& ecs, CameraComponent& cam, TransformComponent& tran
 }
 void addAllSystems(ECS& ecs);
 void connectAllModels();
+
+void HandlePlayerInteraction(
+    ECS& ecs,
+    const std::string& inputAction,
+    RaycastComponent* playerRaycast,
+    GameObject* playerCamera,
+    GameObject*& myHeldObject,
+    GameObject* otherPlayerHeldObject,
+    Scene* scene
+) {
+    if (!ecs.GetSystem<HID>()->is_action_just_pressed(inputAction)) return;
+
+    if (myHeldObject != nullptr) {
+        myHeldObject->SetParent(scene->GetRoot());
+
+        TransformComponent* camTr = playerCamera->GetComponent<TransformComponent>();
+        TransformComponent* heldTr = myHeldObject->GetComponent<TransformComponent>();
+        CameraComponent* camComp = playerCamera->GetComponent<CameraComponent>();
+
+        heldTr->position = camTr->position + (camComp->state.Front * 3.0f);
+        heldTr->rotation = glm::vec3(0.0f);
+        heldTr->isDirty = true;
+
+        RigidbodyComponent* heldRb = myHeldObject->GetComponent<RigidbodyComponent>();
+        if (heldRb) {
+            heldRb->useGravity = true;
+            heldRb->isStatic = false;
+            heldRb->velocity = glm::vec3(0.0f);
+        }
+
+        spdlog::info("Gracz upuscil przedmiot: {}", myHeldObject->name);
+        myHeldObject = nullptr;
+    }
+    else if (playerRaycast->anyHit()) {
+        RaycastHit hit = playerRaycast->closestHit();
+
+        if (hit.hitObject != nullptr && toiletDoorsMap.find(hit.hitObject) != toiletDoorsMap.end()) {
+            DoorState& state = toiletDoorsMap[hit.hitObject];
+
+            state.isOpen = !state.isOpen;
+            state.targetAngle = state.isOpen ? state.openAngle : state.closedAngle;
+
+            ColliderComponent* col = hit.hitObject->GetComponent<ColliderComponent>();
+            if (col != nullptr) {
+                if (state.isOpen) {
+                    col->halfSize = glm::vec3{ 1.0f, 10.0f, 1.0f };
+                    col->offset = glm::vec3(0.0f, 0.0f, 0.0f);
+                }
+                else {
+                    col->halfSize = glm::vec3{ 0.8f, 10.0f, 4.0f };
+                    col->offset = state.originalOffset;
+                }
+            }
+            spdlog::info("Interakcja z drzwiami - nowy stan: {}", state.isOpen ? "Otwarte" : "Zamkniete");
+        }
+        else if (hit.hitObject != nullptr && pickupObjects.find(hit.hitObject) != pickupObjects.end()) {
+
+            if (hit.hitObject == otherPlayerHeldObject) {
+                spdlog::warn("Drugi gracz juz to trzyma");
+                return;
+            }
+
+            myHeldObject = hit.hitObject;
+            myHeldObject->SetParent(playerCamera);
+
+            TransformComponent* heldTr = myHeldObject->GetComponent<TransformComponent>();
+            heldTr->position = glm::vec3(1.0f, -1.0f, -3.0f);
+            heldTr->rotation = glm::vec3(0.0f);
+            heldTr->isDirty = true;
+
+            RigidbodyComponent* heldRb = myHeldObject->GetComponent<RigidbodyComponent>();
+            if (heldRb) {
+                heldRb->useGravity = false;
+                heldRb->isStatic = true;
+            }
+
+            spdlog::info("Gracz podniosl przedmiot: {}", myHeldObject->name);
+        }
+    }
+}
 
 GameObject* CreateInteractableDoor(
     Scene* scene,
@@ -782,6 +867,22 @@ void createFirstRoom(Scene * scena1) {
     wallObject13->GetComponent<TransformComponent>()->position.x = -30;
     wallObject13->GetComponent<TransformComponent>()->position.y = 0;
     wallObject13->GetComponent<TransformComponent>()->position.z = -200;*/
+
+    GameObject* cup = cupModel->Instantiate(*scena1, nullptr, ourShader.get());
+    cup->name = "Magiczny_Kubek";
+
+    TransformComponent* cupTr = cup->GetComponent<TransformComponent>();
+    cupTr->position = glm::vec3{ 30.0f, 5.0f, -30.0f };
+    cupTr->scale = glm::vec3{ 10.0f, 10.0f, 10.0f };
+
+    RigidbodyComponent* cupRb = cup->AddComponent<RigidbodyComponent>();
+    cupRb->useGravity = true;
+    cupRb->isStatic = false;
+
+    ColliderComponent* cupCol = cup->AddComponent<ColliderComponent>();
+    cupCol->halfSize = glm::vec3{ 1.0f, 1.0f, 1.0f };
+
+    pickupObjects.insert(cup);
 }
 
 int main(int, char**)
@@ -863,6 +964,8 @@ int main(int, char**)
     CameraComponent* camCompRight = camera2->AddComponent<CameraComponent>();
     ColliderComponent* camera2collider = camera2->AddComponent<ColliderComponent>();
     RigidbodyComponent* rigidBodyCamera2 = camera2->AddComponent<RigidbodyComponent>();
+    RaycastComponent* player2Raycast = camera2->AddComponent<RaycastComponent>();
+    player2Raycast->debugDraw = true;
     camera2->GetComponent<RigidbodyComponent>()->useGravity = false;
     camera2->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1.0f, 10.0f, 1.0f };
 
@@ -1118,33 +1221,11 @@ int main(int, char**)
             animator->playbackSpeed = 1.0f;
         }
 
-        // --- SYSTEM INTERAKCJI Z DRZWIAMI ---
-        if (ecs.GetSystem<HID>()->is_action_just_pressed("interact")) {
-            if (player1Raycast->anyHit()) {
-                RaycastHit hit = player1Raycast->closestHit();
+        Scene* scenaPtr = scena1;
+        if (!scenaPtr) scenaPtr = scena1;
 
-                if (hit.hitObject != nullptr && toiletDoorsMap.find(hit.hitObject) != toiletDoorsMap.end()) {
-                    DoorState& state = toiletDoorsMap[hit.hitObject];
-
-                    state.isOpen = !state.isOpen;
-                    state.targetAngle = state.isOpen ? state.openAngle : state.closedAngle;
-
-                    ColliderComponent* col = hit.hitObject->GetComponent<ColliderComponent>();
-                    if (col != nullptr) {
-                        if (state.isOpen) {
-                            col->halfSize = glm::vec3{ 1.0f, 10.0f, 1.0f };
-                            col->offset = glm::vec3(0.0f, 0.0f, 0.0f);
-                        }
-                        else {
-                            col->halfSize = glm::vec3{ 0.8f, 10.0f, 4.0f };
-                            col->offset = state.originalOffset;
-                        }
-                    }
-
-                    spdlog::info("Interakcja z drzwiami - nowy stan: {}", state.isOpen ? "Otwarte" : "Zamkniete");
-                }
-            }
-        }
+        HandlePlayerInteraction(ecs, "interact", player1Raycast, camera1, p1HeldObject, p2HeldObject, scenaPtr);
+        HandlePlayerInteraction(ecs, "interact", player2Raycast, camera2, p2HeldObject, p1HeldObject, scenaPtr);
 
         float doorAnimSpeed = 180.0f;
         for (auto& [doorObj, state] : toiletDoorsMap) {
