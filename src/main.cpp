@@ -365,7 +365,7 @@ int main(int, char**)
     ecs.AddSystem<RaycastSystem>(ecs);
     ecs.AddSystem<NavMeshSystem>(ecs);
     ecs.AddSystem<NavPathSystem>(ecs);
-    ecs.AddSystem<AudioSystem>(ecs);
+    //ecs.AddSystem<AudioSystem>(ecs);
 
     ourShader = std::make_unique<Shader>("res/shaders/basic.vert", "res/shaders/basic.frag");
     ourShader->use();
@@ -1003,7 +1003,7 @@ int main(int, char**)
     //FMOD
     FMOD::Sound* sound = nullptr;
 
-    ecs.GetSystem<AudioSystem>()->createSound("res/sound/test_sound.mp3", sound);
+    //ecs.GetSystem<AudioSystem>()->createSound("res/sound/test_sound.mp3", sound);
 
 
 
@@ -1059,7 +1059,7 @@ int main(int, char**)
         }
 
         if (ecs.GetSystem<HID>()->is_action_just_pressed("play_sound")) {
-            ecs.GetSystem<AudioSystem>()->playSound(sound);
+         //   ecs.GetSystem<AudioSystem>()->playSound(sound);
         }
 
         // testy animacji
@@ -1157,7 +1157,7 @@ int main(int, char**)
 
     }
 
-    sound->release();
+//    sound->release();
 
     // Cleanup
     glDeleteVertexArrays(1, &VAO);
