@@ -1032,7 +1032,7 @@ int main(int, char**)
     //FMOD
     FMOD::Sound* sound = nullptr;
 
-   // ecs.GetSystem<AudioSystem>()->createSound("res/sound/test_sound.mp3", sound);
+   ecs.GetSystem<AudioSystem>()->createSound("res/sound/test_sound.mp3", sound);
 
     //obracanie
     std::unordered_map<GameObject*, float> rotatingObjects;
