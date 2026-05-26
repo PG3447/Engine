@@ -184,6 +184,8 @@ std::unique_ptr<Prefab> wozekModel;
 std::unique_ptr<Prefab> zaslonaModel;
 std::unique_ptr<Prefab> roomModel;
 std::unique_ptr<Prefab> placeholderModel;
+std::unique_ptr<Prefab> doorsToiletModel;
+std::unique_ptr<Prefab> toiletPaperModel;
 //AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 std::unique_ptr<Prefab> floorModel;
 std::unique_ptr<Prefab> wallModel;
@@ -416,7 +418,7 @@ int main(int, char**)
     camera2->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1.0f, 10.0f, 1.0f };
 
     TransformComponent* camTransform1 = camera1->GetComponent<TransformComponent>();
-    camTransform1->position = glm::vec3(0.0f, 20.0f, 0.0f);
+    camTransform1->position = glm::vec3(0.0f, 20.0f, -20.0f);
     CameraHelper::InitialCamera(*camCompLeft, *camTransform1,
         glm::vec3(0.0f, 1.0f, 0.0f),
         YAW,
@@ -428,7 +430,7 @@ int main(int, char**)
 
     TransformComponent* camTransform2 = camera2->GetComponent<TransformComponent>();
 
-    camTransform2->position = glm::vec3(50.0f, 30.0f, 0.0f);
+    camTransform2->position = glm::vec3(50.0f, 30.0f, -20.0f);
     CameraHelper::InitialCamera(*camCompRight, *camTransform2,
         glm::vec3(0.0f, 1.0f, 0.0f),
         0.0f, -20.0f,
@@ -1412,9 +1414,12 @@ void connectAllModels() {
     //szafa3Model    = std::make_unique<Prefab>("res/models/szafa3.glb");
     //telephoneModel = std::make_unique<Prefab>("res/models/telephone.glb");
     toiletModel    = std::make_unique<Prefab>("res/models/toilet.glb");
+    doorsToiletModel    = std::make_unique<Prefab>("res/models/doors_toilet.glb");
+    toiletPaperModel = std::make_unique<Prefab>("res/models/toilet_paper_mystery_2.glb");
     //wozekModel     = std::make_unique<Prefab>("res/models/wozek.glb");
     //zaslonaModel   = std::make_unique<Prefab>("res/models/zaslona.glb");
     //roomModel = std::make_unique<Prefab>("res/models/room.glb");
+
 }
 
 void createFirstRoom(Scene * scena1) {
@@ -1492,7 +1497,7 @@ void createFirstRoom(Scene * scena1) {
     groundObject3->GetComponent<RigidbodyComponent>()->useGravity = false;
     groundObject3->GetComponent<RigidbodyComponent>()->isStatic = true;
 
-    groundObject3->GetComponent<TransformComponent>()->position.y = 25;
+    groundObject3->GetComponent<TransformComponent>()->position.y = 20;
 
     groundObject3->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 1, 100 };
     //groundObject3->GetComponent<ColliderComponent>()->isWalkable = true;
@@ -1536,7 +1541,7 @@ void createFirstRoom(Scene * scena1) {
 
     wallObject->GetComponent<TransformComponent>()->position.x = 0;
     wallObject->GetComponent<TransformComponent>()->position.y = 0;
-    wallObject->GetComponent<TransformComponent>()->position.z = 10;
+    wallObject->GetComponent<TransformComponent>()->position.z = -10;
 
 
     GameObject* wallObject2 = wallModel2->Instantiate(*scena1, nullptr, ourShader.get());
@@ -1692,7 +1697,7 @@ void createFirstRoom(Scene * scena1) {
         tablicaKibli[i]->GetComponent<RigidbodyComponent>()->isStatic = true;
         tablicaKibli[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 2.5, 4, 2.5 };
         tablicaKibli[i]->GetComponent<ColliderComponent>()->offset = glm::vec3{ 0, 4, 0 };
-        tablicaKibli[i]->GetComponent<TransformComponent>()->position = glm::vec3{ 45, 0.5f, -12+(-16*i) };
+        tablicaKibli[i]->GetComponent<TransformComponent>()->position = glm::vec3{ 45, 0.5f, -45+(-10*i) };
         tablicaKibli[i]->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 90, 0 };
     }
     GameObject * tablicaZaslon[7];
@@ -1704,18 +1709,36 @@ void createFirstRoom(Scene * scena1) {
         tablicaZaslon[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
         tablicaZaslon[i]->GetComponent<RigidbodyComponent>()->isStatic = true;
         tablicaZaslon[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 20, 15, 0.3 };
-        tablicaZaslon[i]->GetComponent<TransformComponent>()->position = glm::vec3{ 50, 0, -4+(-16*i) };
+        tablicaZaslon[i]->GetComponent<TransformComponent>()->position = glm::vec3{ 50, 0, -40+(-10*i) };
     }
     GameObject * tablicaDrzwiczekDoKilba[6];
     for (int i = 0 ; i < 6 ; i++) {
-        tablicaDrzwiczekDoKilba[i] = wallModel3->Instantiate(*scena1, nullptr, ourShader.get());
-        tablicaDrzwiczekDoKilba[i]->GetComponent<TransformComponent>()->scale = glm::vec3{ 16, 10, 0.3 };
+        tablicaDrzwiczekDoKilba[i] = doorsToiletModel->Instantiate(*scena1, nullptr, ourShader.get());
+        tablicaDrzwiczekDoKilba[i]->GetComponent<TransformComponent>()->scale = glm::vec3{ 11, 10, 16 };
+        tablicaDrzwiczekDoKilba[i]->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 90, 0 };
         tablicaDrzwiczekDoKilba[i]->AddComponent<RigidbodyComponent>();
         tablicaDrzwiczekDoKilba[i]->AddComponent<ColliderComponent>();
         tablicaDrzwiczekDoKilba[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
         tablicaDrzwiczekDoKilba[i]->GetComponent<RigidbodyComponent>()->isStatic = true;
-        tablicaDrzwiczekDoKilba[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 25, 1 };
-        tablicaDrzwiczekDoKilba[i]->GetComponent<TransformComponent>()->position = glm::vec3{ 30, 10.0, -4+(-16*i) };
+        //Dopoki nie da sie otwierac drzwi
+        //tablicaDrzwiczekDoKilba[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 11, 10, 16 };
+        tablicaDrzwiczekDoKilba[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 1, 1 };
+        tablicaDrzwiczekDoKilba[i]->GetComponent<TransformComponent>()->position = glm::vec3{ 30, 1.0, -44+(-10*i) };
+    }
+    tablicaDrzwiczekDoKilba[5]->GetComponent<TransformComponent>()->position = glm::vec3{ 30, 1.0, -33.5+(-12*5) };
+    tablicaDrzwiczekDoKilba[5]->GetComponent<TransformComponent>()->scale = glm::vec3{ 10, 10, 16 };
+
+    GameObject * tablicaPapierowKibel[6];
+    for (int i = 0 ; i < 6 ; i++) {
+        tablicaPapierowKibel[i] = toiletPaperModel->Instantiate(*scena1, nullptr, ourShader.get());
+        tablicaPapierowKibel[i]->GetComponent<TransformComponent>()->scale = glm::vec3{ 1, 1, 1 };
+        tablicaPapierowKibel[i]->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 90, 0 };
+        tablicaPapierowKibel[i]->AddComponent<RigidbodyComponent>();
+        tablicaPapierowKibel[i]->AddComponent<ColliderComponent>();
+        tablicaPapierowKibel[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
+        tablicaPapierowKibel[i]->GetComponent<RigidbodyComponent>()->isStatic = true;
+        tablicaPapierowKibel[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 0.7, 0.7, 0.7 };
+        tablicaPapierowKibel[i]->GetComponent<TransformComponent>()->position = glm::vec3{ 35, 5.0, -40.7+(-10*i) };
     }
     //Zostawiam jeśli przyda się w przyszłości
     /*GameObject* wallObject10 = wallModel3->Instantiate(*scena1, nullptr, ourShader.get());
