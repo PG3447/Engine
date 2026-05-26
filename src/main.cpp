@@ -45,6 +45,8 @@
 #include <systems/animation_system.h>
 #include <systems/SpriteSystem.h>
 #include <systems/raycastSystem.h>
+#include <systems/AudioSystem.h>
+
 #include <systems/NavMeshSystem.h>
 #include "diagnostics/cpu_timer.h"
 
@@ -91,7 +93,7 @@ void processCameraGamepad(ECS& ecs,
 
 
 void imgui_begin();
-void imgui_render(SceneManager& sceneManager);
+void imgui_render();
 void imgui_end();
 
 void end_frame();
@@ -254,12 +256,10 @@ void updateFPS(float deltaTime) {
 }
 
 void updateFocus() {
-    if (focused)
-    {
+    if (focused) {
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     }
-    else
-    {
+    if (!focused) {
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     }
 
@@ -288,7 +288,7 @@ GameObject* CreateRaycastTestObject(
     rc->fovRayCount  = 200;
     rc->fovAngle     = 200.0f;
     rc->originOffset = glm::vec3(0.0f, 0.5f, 0.0f);
-    rc->debugDraw    = false;
+    rc->debugDraw    = true;
 
     return go;
 }
@@ -352,7 +352,6 @@ void createFirstRoom(Scene * scena1) {
     groundObject->GetComponent<RigidbodyComponent>()->isStatic = true;
 
     groundObject->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 1, 100 };
-    //groundObject->GetComponent<ColliderComponent>()->isWalkable = true;
 
     GLuint texID = groundObject->GetComponent<RenderComponent>()->meshes[0].material->specularMap;
 
@@ -391,9 +390,6 @@ void createFirstRoom(Scene * scena1) {
     groundObject2->GetComponent<RigidbodyComponent>()->isStatic = true;
 
     groundObject2->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 1, 100 };
-    groundObject2->GetComponent<ColliderComponent>()->isWalkable = true;
-    groundObject2->GetComponent<ColliderComponent>()->affectsNavMesh = true;
-
     groundObject2->GetComponent<TransformComponent>()->position.x = 0;
     groundObject2->GetComponent<TransformComponent>()->position.y = 0;
     groundObject2->GetComponent<TransformComponent>()->position.z = -200;
@@ -414,8 +410,6 @@ void createFirstRoom(Scene * scena1) {
     groundObject3->GetComponent<TransformComponent>()->position.y = 20;
 
     groundObject3->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 1, 100 };
-    //groundObject3->GetComponent<ColliderComponent>()->isWalkable = true;
-
 
     GameObject* groundObject4 = floorModel->Instantiate(*scena1, nullptr, ourShader.get());
     groundObject4->name = "Ground4";
@@ -430,8 +424,6 @@ void createFirstRoom(Scene * scena1) {
     groundObject4->GetComponent<RigidbodyComponent>()->isStatic = true;
 
     groundObject4->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 1, 100 };
-    //groundObject4->GetComponent<ColliderComponent>()->isWalkable = true;
-
     groundObject4->GetComponent<TransformComponent>()->position.x = 0;
     groundObject4->GetComponent<TransformComponent>()->position.y = 40;
     groundObject4->GetComponent<TransformComponent>()->position.z = -200;
@@ -784,6 +776,7 @@ int main(int, char**)
     camera1->AddComponent<LightComponent>();
     LightComponent* light2 = camera1->GetComponent<LightComponent>();
 
+
     light2->type = Spot;
     light2->index = 0;
 
@@ -817,6 +810,7 @@ int main(int, char**)
         Viewport{ 0.0f, 0.0f, 0.5f, 1.0f }
     );
 
+
     camCompLeft->isActive = true;
 
     TransformComponent* camTransform2 = camera2->GetComponent<TransformComponent>();
@@ -829,8 +823,6 @@ int main(int, char**)
     );
 
     camCompRight->isActive = true;
-
-
 
     /*
     GameObject* obj_Sprite_1 = scena1->CreateGameObject(nullptr);
@@ -884,7 +876,6 @@ int main(int, char**)
     model1->AddComponent<ColliderComponent>();
     model1->AddComponent<LightComponent>();
 
-
     model1->GetComponent<LightComponent>()->type = Directional;
     model1->GetComponent<LightComponent>()->index = 0;
     auto* light = model1->GetComponent<LightComponent>();
@@ -928,6 +919,7 @@ int main(int, char**)
     sourceAgent->moveSpeed = 6.0f;
     sourceAgent->debugDraw = true;
 
+ ustawianiePokoju
     GameObject* model5 = cupModel->Instantiate(*scena1, nullptr, ourShader.get());
     model5->GetComponent<TransformComponent>()->position.x = 0.0f;
     model5->GetComponent<TransformComponent>()->position.y = 2.0f;
@@ -949,9 +941,6 @@ int main(int, char**)
 
    createFirstRoom(scena1);
 
-    //NAVMESH
-    ecs.GetSystem<NavMeshSystem>()->Bake(*scena1);
-    //END NAVMESH
 
     // aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 
@@ -984,16 +973,13 @@ int main(int, char**)
     rigidBodyCamera2->useGravity = true;
 
     //FMOD
+    FMOD::Sound* sound = nullptr;
 
-    //FMOD::System* system = nullptr;
-    //FMOD::Sound* sound = nullptr;
-    //FMOD::Channel* channel = nullptr;
+    ecs.GetSystem<AudioSystem>()->createSound("res/sound/test_sound.mp3", sound);
 
-    //FMOD::System_Create(&system);
 
-    //system->init(512, FMOD_INIT_NORMAL, nullptr);
 
-    //system->createSound("res/sound/test_sound.mp3", FMOD_DEFAULT, nullptr, &sound);
+    //XDDD
 
 
     // Main loop
@@ -1031,6 +1017,10 @@ int main(int, char**)
         }
         if (ecs.GetSystem<HID>()->is_action_just_pressed("gamma_down")) {
             postProcessingSystem->set_gamma(postProcessingSystem->get_gamma() - 0.1f);
+        }
+
+        if (ecs.GetSystem<HID>()->is_action_just_pressed("play_sound")) {
+            ecs.GetSystem<AudioSystem>()->playSound(sound);
         }
 
         // testy animacji
@@ -1073,9 +1063,16 @@ int main(int, char**)
             processCameraInput(ecs, *camCompLeft, *t0,
                 "move_up", "move_down", "move_left", "move_right");
 
-            processCameraInput(ecs, *camCompRight, *t1,
-                "move_up_2", "move_down_2", "move_left_2", "move_right_2");
+        processCameraInput(ecs, *camCompLeft, *t0,
+            "move_up", "move_down", "move_left", "move_right");
 
+        processCameraInput(ecs, *camCompRight, *t1,
+            "move_up_2", "move_down_2", "move_left_2", "move_right_2");
+
+
+        processCameraMouse(ecs, *camCompLeft, *camTransform1);
+        processCameraGamepad(ecs, *camCompLeft, *t0, 0);
+        processCameraGamepad(ecs, *camCompRight, *t1, 1);
 
             processCameraMouse(ecs, *camCompLeft, *camTransform1);
             processCameraGamepad(ecs, *camCompLeft, *t0, 0);
@@ -1097,7 +1094,7 @@ int main(int, char**)
 
         // Draw ImGui
         imgui_begin();
-        imgui_render(sceneManager); // edit this function to add your own ImGui controls
+        imgui_render(); // edit this function to add your own ImGui controls
         imgui_end(); // this call effectively renders ImGui
 
         // --- CPU WORK END ---
@@ -1118,9 +1115,7 @@ int main(int, char**)
 
     }
 
-  /*  sound->release();
-    system->close();
-    system->release();*/
+    sound->release();
 
     // Cleanup
     glDeleteVertexArrays(1, &VAO);
@@ -1141,7 +1136,6 @@ int main(int, char**)
 
     return 0;
 }
-
 bool init()
 {
     // Setup window
@@ -1289,257 +1283,7 @@ void imgui_begin()
     ImGui::NewFrame();
 }
 
-GameObject* selectedGameObject = nullptr;
-
-void ShowGameObjectTree(GameObject* obj)
-{
-    if (!obj)
-        return;
-
-    ImGuiTreeNodeFlags flags =
-        ImGuiTreeNodeFlags_OpenOnArrow |
-        ImGuiTreeNodeFlags_OpenOnDoubleClick |
-        ((obj == selectedGameObject) ? ImGuiTreeNodeFlags_Selected : 0);
-
-    const char* displayName = obj->name.empty() ? "GameObject" : obj->name.c_str();
-
-    // jeśli brak dzieci -> leaf
-    if (!obj->HasChildren())
-        flags |= ImGuiTreeNodeFlags_Leaf;
-
-    bool opened = ImGui::TreeNodeEx((void*)obj, flags, "%s", displayName);
-
-    if (ImGui::IsItemClicked())
-        selectedGameObject = obj;
-
-    if (opened)
-    {
-        for (GameObject* child : obj->GetChildren())
-        {
-            ShowGameObjectTree(child);
-        }
-
-        ImGui::TreePop();
-    }
-}
-
-void ShowTransformEditor(TransformComponent& transform)
-{
-    glm::vec3 pos = TransformHelper::getLocalPosition(transform);
-    glm::vec3 rot = TransformHelper::getLocalRotation(transform);
-    glm::vec3 scale = TransformHelper::getLocalScale(transform);
-
-    if (ImGui::DragFloat3("Position", &pos.x, 0.01f))
-    {
-        TransformHelper::setLocalPosition(transform, pos);
-    }
-
-    if (ImGui::DragFloat3("Rotation", &rot.x, 0.1f))
-    {
-        TransformHelper::setLocalRotation(transform, rot);
-    }
-
-    if (ImGui::DragFloat3("Scale", &scale.x, 0.01f, 0.01f))
-    {
-        TransformHelper::setLocalScale(transform, scale);
-    }
-}
-
-void ShowColliderEditor(ColliderComponent& collider)
-{
-    ImGui::Checkbox("Is Trigger", &collider.isTrigger);
-
-    //DrawVec3Control(
-    //    "Offset",
-    //    collider.offset
-    //);
-
-    //DrawVec3Control(
-    //    "Half Size",
-    //    collider.halfSize,
-    //    0.01f,
-    //    0.5f
-    //);
-}
-//
-//void DrawVec3Control(
-//    const std::string& label,
-//    glm::vec3& values,
-//    float speed = 0.01f,
-//    float resetValue = 0.0f)
-//{
-//    ImGui::PushID(label.c_str());
-//
-//    ImGui::Columns(2);
-//    ImGui::SetColumnWidth(0, 100.0f);
-//    ImGui::Text(label.c_str());
-//    ImGui::NextColumn();
-//
-//    ImGui::PushMultiItemsWidths(3, ImGui::CalcItemWidth());
-//
-//    float lineHeight =
-//        ImGui::GetFontSize() +
-//        ImGui::GetStyle().FramePadding.y * 2.0f;
-//
-//    ImVec2 buttonSize = { lineHeight + 3.0f, lineHeight };
-//
-//    // X
-//    ImGui::PushStyleColor(ImGuiCol_Button,
-//        ImVec4(0.8f, 0.1f, 0.15f, 1.0f));
-//
-//    if (ImGui::Button("X", buttonSize))
-//        values.x = resetValue;
-//
-//    ImGui::SameLine();
-//
-//    ImGui::DragFloat("##X", &values.x, speed);
-//
-//    ImGui::PopItemWidth();
-//    ImGui::SameLine();
-//
-//    ImGui::PopStyleColor();
-//
-//    // Y
-//    ImGui::PushStyleColor(ImGuiCol_Button,
-//        ImVec4(0.2f, 0.7f, 0.2f, 1.0f));
-//
-//    if (ImGui::Button("Y", buttonSize))
-//        values.y = resetValue;
-//
-//    ImGui::SameLine();
-//
-//    ImGui::DragFloat("##Y", &values.y, speed);
-//
-//    ImGui::PopItemWidth();
-//    ImGui::SameLine();
-//
-//    ImGui::PopStyleColor();
-//
-//    // Z
-//    ImGui::PushStyleColor(ImGuiCol_Button,
-//        ImVec4(0.1f, 0.25f, 0.8f, 1.0f));
-//
-//    if (ImGui::Button("Z", buttonSize))
-//        values.z = resetValue;
-//
-//    ImGui::SameLine();
-//
-//    ImGui::DragFloat("##Z", &values.z, speed);
-//
-//    ImGui::PopItemWidth();
-//
-//    ImGui::PopStyleColor();
-//
-//    ImGui::Columns(1);
-//
-//    ImGui::PopID();
-//}
-
-
-
-void ShowLightEditor(LightComponent& light)
-{
-    // enable
-    ImGui::Checkbox("Enabled", &light.isOn);
-
-    // type
-    const char* lightTypes[] =
-    {
-        "Directional",
-        "Point",
-        "Spot"
-    };
-
-    int currentType = static_cast<int>(light.type);
-
-    if (ImGui::Combo("Type", &currentType, lightTypes, IM_ARRAYSIZE(lightTypes)))
-    {
-        light.type = static_cast<LightType>(currentType);
-    }
-
-    ImGui::Separator();
-
-    ImGui::ColorEdit3("Ambient", &light.ambient.x);
-    ImGui::ColorEdit3("Diffuse", &light.diffuse.x);
-    ImGui::ColorEdit3("Specular", &light.specular.x);
-
-    ImGui::Separator();
-
-    // direction
-    //if (light.type == Directional || light.type == Spot)
-    //{
-    //    ImGui::DragFloat3("Direction", &light.direction.x, 0.01f);
-    //}
-
-    // attenuation
-    if (light.type == Point || light.type == Spot)
-    {
-        ImGui::Text("Attenuation");
-        ImGui::DragFloat("Constant", &light.constant, 0.001f, 0.0f, 10.0f);
-        ImGui::DragFloat("Linear", &light.linear, 0.001f, 0.0f, 10.0f);
-        ImGui::DragFloat("Quadratic", &light.quadratic, 0.001f, 0.0f, 10.0f);
-    }
-
-    // spotlight
-    if (light.type == Spot)
-    {
-        ImGui::Separator();
-        ImGui::Text("Spotlight");
-
-        float innerAngle =glm::degrees(glm::acos(light.cutOff));
-        float outerAngle = glm::degrees(glm::acos(light.outerCutOff));
-
-        if (ImGui::DragFloat("Inner Cutoff", &innerAngle, 0.1f, 0.0f, 90.0f))
-        {
-            light.cutOff = glm::cos(glm::radians(innerAngle));
-        }
-
-        if (ImGui::DragFloat("Outer Cutoff", &outerAngle, 0.1f, 0.0f, 90.0f))
-        {
-            light.outerCutOff = glm::cos(glm::radians(outerAngle));
-        }
-    }
-}
-
-std::string OpenFileDialog()
-{
-    char filename[MAX_PATH] = "";
-
-    OPENFILENAMEA ofn = {};
-    ofn.lStructSize = sizeof(OPENFILENAMEA);
-    ofn.lpstrFile = filename;
-    ofn.nMaxFile = MAX_PATH;
-
-    ofn.lpstrInitialDir = "res";
-
-    ofn.lpstrFilter =
-        "Model Files\0*.obj;*.fbx;*.glb;*.gltf\0"
-        "All Files\0*.*\0";
-
-    ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
-
-    if (GetOpenFileNameA(&ofn))
-    {
-        std::filesystem::path fullPath = filename;
-
-        std::filesystem::path projectRoot = std::filesystem::absolute("../../");
-
-        std::filesystem::path relative =
-            std::filesystem::relative(fullPath, projectRoot);
-
-        std::string result = relative.string();
-
-        std::replace(result.begin(), result.end(), '\\', '/');
-
-        return result;
-    }
-
-    return "";
-}
-
-static std::unordered_map<std::string, Prefab> prefabs;
-
-void imgui_render(SceneManager& sceneManager)
+void imgui_render()
 {
     if (show_demo_window)
     {
@@ -1554,105 +1298,6 @@ void imgui_render(SceneManager& sceneManager)
         glPolygonMode(GL_FRONT_AND_BACK,
             wireframeMode ? GL_LINE : GL_FILL);
     }
-
-    ImGui::Separator();
-    ImGui::Text("Hierarchy");
-    //entityFilter.Draw("Search", 200);
-    ShowGameObjectTree(sceneManager.GetActiveScene()->GetRoot());
-
-    if (selectedGameObject)
-    {
-        ImGui::Separator();
-        ImGui::Text("Selected Entity: %s", selectedGameObject->name.c_str());
-        ShowTransformEditor(*selectedGameObject->GetComponent<TransformComponent>());
-
-        LightComponent* light = selectedGameObject->GetComponent<LightComponent>();
-
-        if (light != nullptr)
-        {
-            ShowLightEditor(*light);
-        }
-    }
-
-    if (ImGui::Button("Zapisz"))
-    {
-        sceneManager.Save();
-    }
-
-    ImGui::Separator();
-
-    Scene& scene = *sceneManager.GetActiveScene();
-
-    for (auto& [name, weakModel] : ResourceManager::Models)
-    {
-        ImGui::PushID(name.c_str());
-
-        std::shared_ptr<Model> model = weakModel;
-
-        ImGui::Text("%s", name.c_str());
-        ImGui::SameLine();
-
-        if (!model)
-        {
-            ImGui::TextDisabled("[loading]");
-        }
-        else
-        {
-            if (!prefabs.contains(name))
-            {
-                prefabs.emplace(name, Prefab(model));
-            }
-
-            if (ImGui::Button("Instantiate"))
-            {
-                Prefab& prefab = prefabs.at(name);
-
-                GameObject* obj =
-                    prefab.Instantiate(scene, nullptr, ourShader.get());
-
-                if (obj)
-                    obj->name = name;
-            }
-        }
-
-        ImGui::PopID();
-    }
-
-
-    ImGui::End();
-
-    ImGui::Begin("Loaded Models");
-
-    if (ImGui::Button("Load Model"))
-    {
-        std::string path = OpenFileDialog();
-
-        if (!path.empty())
-        {
-            ResourceManager::LoadModel(path);
-        }
-    }
-
-
-    if (ImGui::Button("Load asset"))
-    {
-        std::string path = "assets.yaml";
-        ResourceManager::LoadAssets(path);
-    }
-
-    if (ImGui::Button("Zapisz asset"))
-    {
-        ResourceManager::SaveAsset();
-    }
-
-    ImGui::Separator();
-
-
-    for (const auto& [name, weakModel] : ResourceManager::Models)
-    {
-        ImGui::Text("%s", name.c_str());
-    }
-
     ImGui::End();
 
     ImGui::Begin("Performance");
@@ -1810,5 +1455,4 @@ void connectAllModels() {
     //wozekModel     = std::make_unique<Prefab>("res/models/wozek.glb");
     //zaslonaModel   = std::make_unique<Prefab>("res/models/zaslona.glb");
     //roomModel = std::make_unique<Prefab>("res/models/room.glb");
-
 }

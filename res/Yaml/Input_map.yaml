@@ -17,6 +17,7 @@ input:
     anim_fast_forward: [GLFW_KEY_4]
     gamma_up: [GLFW_KEY_0]
     gamma_down: [GLFW_KEY_9]
+    play_sound: [GLFW_KEY_H]
   mouse:
     move_right: [GLFW_MOUSE_BUTTON_LEFT]
     right_click: [GLFW_MOUSE_BUTTON_RIGHT]
