@@ -671,7 +671,7 @@ void createFirstRoom(Scene * scena1) {
     GameObject * tablicaDrzwi[2];
     for (int i = 0 ; i < 2 ; i++) {
         tablicaDrzwi[i] = washroomExit->Instantiate(*scena1, nullptr, ourShader.get());
-        tablicaDrzwi[i]->GetComponent<TransformComponent>()->scale = glm::vec3{ 10, 11, 10 };
+        tablicaDrzwi[i]->GetComponent<TransformComponent>()->scale = glm::vec3{ 10, 11, 4 };
         tablicaDrzwi[i]->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 180*i, 0 };
         tablicaDrzwi[i]->AddComponent<RigidbodyComponent>();
         tablicaDrzwi[i]->AddComponent<ColliderComponent>();
@@ -1009,7 +1009,7 @@ int main(int, char**)
     //FMOD
     FMOD::Sound* sound = nullptr;
 
-   // ecs.GetSystem<AudioSystem>()->createSound("res/sound/test_sound.mp3", sound);
+   ecs.GetSystem<AudioSystem>()->createSound("res/sound/test_sound.mp3", sound);
 
 
 
@@ -1054,7 +1054,7 @@ int main(int, char**)
         }
 
         if (ecs.GetSystem<HID>()->is_action_just_pressed("play_sound")) {
-            //ecs.GetSystem<AudioSystem>()->playSound(sound);
+            ecs.GetSystem<AudioSystem>()->playSound(sound);
         }
 
         // testy animacji
