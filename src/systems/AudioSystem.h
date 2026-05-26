@@ -1,4 +1,4 @@
-#ifndef MIMICRY_EXPERIMENTS_AUDIOSYSTEM_H
+/*#ifndef MIMICRY_EXPERIMENTS_AUDIOSYSTEM_H
 #define MIMICRY_EXPERIMENTS_AUDIOSYSTEM_H
 
 #include <core/ecs.h>
@@ -21,8 +21,8 @@ public:
     };
 
     ~AudioSystem() {
-        system->close();
-        system->release();
+        //system->close();
+        //system->release();
     }
 
     void createSound(std::string name, FMOD::Sound*& sound) {
@@ -36,4 +36,4 @@ public:
 };
 
 
-#endif //MIMICRY_EXPERIMENTS_AUDIOSYSTEM_H
+#endif //MIMICRY_EXPERIMENTS_AUDIOSYSTEM_H*/
