@@ -121,8 +121,8 @@ void main() {
     vec2 aspectUV = (TexCoords - crosshairCenter) * vec2(2.0, 1.0);
     float distCrosshair = length(aspectUV);
 
-    float dotRadius = 0.004;
-    float outlineRadius = 0.007;
+    float dotRadius = 0.003;
+    float outlineRadius = 0.006;
 
     float innerDot = smoothstep(dotRadius, dotRadius - 0.001, distCrosshair);
     float outline  = smoothstep(outlineRadius, outlineRadius - 0.001, distCrosshair);

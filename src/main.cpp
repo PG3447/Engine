@@ -861,7 +861,7 @@ int main(int, char**)
     GameObject* player1InteractionInfo_obj = scena1->CreateGameObject(nullptr);
     SpriteComponent* player1InteractionInfo = player1InteractionInfo_obj->AddComponent<SpriteComponent>();
     player1InteractionInfo->textEnabled = true;
-    player1InteractionInfo->screenPosition = glm::vec2(480.0f, 540.0f);
+    player1InteractionInfo->screenPosition = glm::vec2(480.0f, 640.0f);
     player1InteractionInfo->text = "";
     player1InteractionInfo->textOutlineEnabled = true;
     player1InteractionInfo->textCentered = true;
@@ -870,7 +870,7 @@ int main(int, char**)
     GameObject* player2InteractionInfo_obj = scena1->CreateGameObject(nullptr);
     SpriteComponent* player2InteractionInfo = player2InteractionInfo_obj->AddComponent<SpriteComponent>();
     player2InteractionInfo->textEnabled = true;
-    player2InteractionInfo->screenPosition = glm::vec2(1440.0f, 540.0f);
+    player2InteractionInfo->screenPosition = glm::vec2(1440.0f, 640.0f);
     player2InteractionInfo->text = "";
     player2InteractionInfo->textOutlineEnabled = true;
     player2InteractionInfo->textCentered = true;
