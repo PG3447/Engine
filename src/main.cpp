@@ -608,7 +608,7 @@ void createFirstRoom(Scene * scena1) {
         tablicaDrzwiczekDoKilba[i]->GetComponent<RigidbodyComponent>()->isStatic = true;
         //Dopoki nie da sie otwierac drzwi
         //tablicaDrzwiczekDoKilba[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 11, 10, 16 };
-        tablicaDrzwiczekDoKilba[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 1, 1 };
+        tablicaDrzwiczekDoKilba[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 10, 1 };
         tablicaDrzwiczekDoKilba[i]->GetComponent<TransformComponent>()->position = glm::vec3{ 30, 1.0, -44+(-10*i) };
     }
     tablicaDrzwiczekDoKilba[5]->GetComponent<TransformComponent>()->position = glm::vec3{ 30, 1.0, -33.5+(-12*5) };
@@ -1149,7 +1149,7 @@ int main(int, char**)
 
     }
 
-   // sound->release();
+   sound->release();
 
     // Cleanup
     glDeleteVertexArrays(1, &VAO);
@@ -1448,6 +1448,7 @@ void addAllSystems(ECS &ecs) {
     ecs.AddSystem<RaycastSystem>(ecs);
     ecs.AddSystem<NavMeshSystem>(ecs);
     ecs.AddSystem<NavPathSystem>(ecs);
+    ecs.AddSystem<AudioSystem>(ecs);
 }
 void connectAllModels() {
     bed1Model = std::make_unique<Prefab>("res/models/samochod.glb");
