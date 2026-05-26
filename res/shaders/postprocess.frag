@@ -11,11 +11,8 @@ void main() {
     //vec2 uv = TexCoords;
     //uv.y += sin(uv.x * 20.0 + time) * 0.02;
     //vec3 color = texture(screenTexture, uv).rgb;
-    vec4 texColor = texture(screenTexture, TexCoords);
+
     vec3 color = texture(screenTexture, TexCoords).rgb;
-
-    float alpha = texColor.a;
-
     //vec3 negative = 1.0 - color;
     //FragColor = vec4(negative, 1.0);
 
@@ -70,6 +67,7 @@ void main() {
             playerColor = tempColor;//pow(tempColor, vec3(1.0 / 1.8));//dont worry about it
         }
 
+
     //Contrast
 
         float contrast = 1.5;
@@ -114,6 +112,6 @@ void main() {
         playerColor *= divider;
 
 
-    FragColor = vec4(color, alpha);
+    FragColor = vec4(playerColor, 1.0);
 
 }
