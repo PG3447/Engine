@@ -190,7 +190,7 @@ public:
     GLuint boneMatricesSSBO = 0;
 
     //GLuint frameUBO = 0;  // bind = 0
-    GLuint lightsUBO = 0;  // bind = 1
+    //GLuint lightsUBO = 0;  // bind = 1
     
     uint32_t* totalVisibleMapped = nullptr;
 
@@ -427,64 +427,9 @@ public:
     void UploadObjects(const std::vector<RenderData>& objects)
     {
         ResizeIfNeeded((int)objects.size());
-      /*  printf("=== UploadObjects ===\n");
-        printf("Count: %zu\n\n", objects.size());
-
-        for (size_t i = 0; i < objects.size(); ++i)
-        {
-            const RenderData& obj = objects[i];
-
-            printf("Object %zu\n", i);
-
-            printf("modelMatrix:\n");
-
-            for (int r = 0; r < 4; ++r)
-            {
-                printf(
-                    "[%.3f %.3f %.3f %.3f]\n",
-                    obj.modelMatrix[0][r],
-                    obj.modelMatrix[1][r],
-                    obj.modelMatrix[2][r],
-                    obj.modelMatrix[3][r]
-                );
-            }
-
-            printf(
-                "aabbMin: %.3f %.3f %.3f %.3f\n",
-                obj.aabbMin.x,
-                obj.aabbMin.y,
-                obj.aabbMin.z,
-                obj.aabbMin.w
-            );
-
-            printf(
-                "aabbMax: %.3f %.3f %.3f %.3f\n",
-                obj.aabbMax.x,
-                obj.aabbMax.y,
-                obj.aabbMax.z,
-                obj.aabbMax.w
-            );
-
-            printf("meshID: %u\n", obj.meshID);
-            printf("materialID: %u\n", obj.materialID);
-            printf("skeletonID: %u\n", obj.skeletonID);
-            printf("padding: %u\n", obj.padding);
-
-            printf("----------------------\n");
-        }*/
 
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, renderDataSSBO);
         glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, objects.size() * sizeof(RenderData), objects.data());
-
-        //GLint size = 0;
-
-        //glGetBufferParameteriv(
-        //    GL_SHADER_STORAGE_BUFFER,
-        //    GL_BUFFER_SIZE,
-        //    &size
-        //);
-
-        //std::cout << "SSBO size: " << size << std::endl;
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     }
 
@@ -588,94 +533,12 @@ public:
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     }
 
-  /*  void AllocateLightsBuffer()
-    {
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightsSSBO);
-        glBufferData(GL_SHADER_STORAGE_BUFFER, gpuLights.size() * sizeof(GPULight), gpuLights.data(), GL_DYNAMIC_DRAW);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-    }
-
-    void UploadLights()
-    {
-        if (gpuLights.empty()) return;
-
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightsSSBO);
-        glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, gpuLights.size() * sizeof(GPULight), gpuLights.data());
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-    }*/
-
     void ResetMeshCounters()
     {
         uint32_t meshCount = (uint32_t)meshesData.size();
         // Jeden clear zamiast N subData — szybsze
         uint32_t zero = 0;
         glClearNamedBufferData(meshCountersSSBO, GL_R32UI, GL_RED_INTEGER, GL_UNSIGNED_INT, &zero); // nullptr = wypełnij zerami
-    }
-
-    void DebugReadBuffers(uint32_t objectCount, uint32_t meshCount)
-    {
-        // =========================================
-        // READ renderDataSSBO
-        // =========================================
-
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, renderDataSSBO);
-
-        std::vector<RenderData> renderData(objectCount);
-
-        glGetBufferSubData(
-            GL_SHADER_STORAGE_BUFFER,
-            0,
-            sizeof(RenderData) * objectCount,
-            renderData.data()
-        );
-
-        std::cout << "===== RenderData =====\n";
-
-        for (uint32_t i = 0; i < objectCount; i++)
-        {
-            std::cout
-                << "Object: " << i
-                << " meshID: " << renderData[i].meshID
-                << " materialID: " << renderData[i].materialID
-                << " skeletonID: " << renderData[i].skeletonID
-                << "\n";
-        }
-
-        // =========================================
-        // READ meshCountersSSBO
-        // =========================================
-
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, meshCountersSSBO);
-
-        std::vector<uint32_t> counters(meshCount);
-
-        glGetBufferSubData(
-            GL_SHADER_STORAGE_BUFFER,
-            0,
-            sizeof(uint32_t) * meshCount,
-            counters.data()
-        );
-
-        std::cout << "===== Mesh Counters =====\n";
-
-        for (uint32_t i = 0; i < meshCount; i++)
-        {
-            std::cout
-                << "Mesh "
-                << i
-                << " count: "
-                << counters[i]
-                << "\n";
-        }
-
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-
-        GLenum err = glGetError();
-
-        if (err != GL_NO_ERROR)
-        {
-            std::cout << "GL ERROR: " << err << std::endl;
-        }
     }
 
     void DispatchCountPass(uint32_t objectCount)

@@ -285,7 +285,7 @@ public:
         r->ResizeBoneBufferIfNeeded((uint32_t)animatorIDMap.size());
         r->UploadAllBoneMatrices(boneMatricesCache);
 
-        entry->renderer->dirtyInstance = true;
+        //entry->renderer->dirtyInstance = true;
     }
 
 
@@ -317,7 +317,6 @@ public:
         entry.renderer->shaderBuildCmds = shaderBuildCmds;
         entry.renderer->shaderHizDownsample = shaderHizDownsample;
         entry.renderer->shaderRender =  defaultShaderRender;//cfg.shader ? cfg.shader :
-        entry.renderer->lightsUBO = lightsUBO;
         spdlog::info("Add pass");
         passes.push_back(std::move(entry));
 
