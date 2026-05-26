@@ -336,7 +336,398 @@ void processCameraMouse(ECS& ecs, CameraComponent& cam, TransformComponent& tran
 }
 void addAllSystems(ECS& ecs);
 void connectAllModels();
-void createFirstRoom(Scene* scena1);
+void createFirstRoom(Scene * scena1) {
+ //pokoj bedzie tu
+    floorModel = std::make_unique<Prefab>("res/models/number_floor.glb");
+    GameObject* groundObject = floorModel->Instantiate(*scena1, nullptr, ourShader.get());
+    groundObject->name = "Ground1";
+    groundObject->GetComponent<TransformComponent>()->scale.x = 100;
+    groundObject->GetComponent<TransformComponent>()->scale.y = 1;
+    groundObject->GetComponent<TransformComponent>()->scale.z = 100;
+
+    groundObject->AddComponent<RigidbodyComponent>();
+    groundObject->AddComponent<ColliderComponent>();
+
+    groundObject->GetComponent<RigidbodyComponent>()->useGravity = false;
+    groundObject->GetComponent<RigidbodyComponent>()->isStatic = true;
+
+    groundObject->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 1, 100 };
+    //groundObject->GetComponent<ColliderComponent>()->isWalkable = true;
+
+    GLuint texID = groundObject->GetComponent<RenderComponent>()->meshes[0].material->specularMap;
+
+    spdlog::error("specularMap ID = {}", texID);  // czy w ogóle != 0?
+
+    glBindTexture(GL_TEXTURE_2D, texID);
+
+    GLint width = 0, height = 0;
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
+
+    spdlog::error("rozmiar tekstury: {}x{}", width, height);  // jeśli 0x0 - tekstura pusta
+
+    if (width == 0 || height == 0) {
+        spdlog::error("tekstura jest pusta lub nie zaladowana!");
+    }
+
+    std::vector<unsigned char> pixels(width * height * 4);
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+
+    for (int i = 0; i < std::min(10, width * height); i++) {
+        spdlog::error("pixel[{}] R={} G={} B={} A={}", i,
+            pixels[i * 4 + 0], pixels[i * 4 + 1], pixels[i * 4 + 2], pixels[i * 4 + 3]);
+    }
+
+    GameObject* groundObject2 = floorModel->Instantiate(*scena1, nullptr, ourShader.get());
+    groundObject2->name = "Ground2";
+    groundObject2->GetComponent<TransformComponent>()->scale.x = 100;
+    groundObject2->GetComponent<TransformComponent>()->scale.y = 1;
+    groundObject2->GetComponent<TransformComponent>()->scale.z = 100;
+
+    groundObject2->AddComponent<RigidbodyComponent>();
+    groundObject2->AddComponent<ColliderComponent>();
+
+    groundObject2->GetComponent<RigidbodyComponent>()->useGravity = false;
+    groundObject2->GetComponent<RigidbodyComponent>()->isStatic = true;
+
+    groundObject2->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 1, 100 };
+    groundObject2->GetComponent<ColliderComponent>()->isWalkable = true;
+    groundObject2->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+
+    groundObject2->GetComponent<TransformComponent>()->position.x = 0;
+    groundObject2->GetComponent<TransformComponent>()->position.y = 0;
+    groundObject2->GetComponent<TransformComponent>()->position.z = -200;
+
+
+    GameObject* groundObject3 = floorModel->Instantiate(*scena1, nullptr, ourShader.get());
+    groundObject3->name = "Ground3";
+    groundObject3->GetComponent<TransformComponent>()->scale.x = 100;
+    groundObject3->GetComponent<TransformComponent>()->scale.y = 1;
+    groundObject3->GetComponent<TransformComponent>()->scale.z = 100;
+
+    groundObject3->AddComponent<RigidbodyComponent>();
+    groundObject3->AddComponent<ColliderComponent>();
+
+    groundObject3->GetComponent<RigidbodyComponent>()->useGravity = false;
+    groundObject3->GetComponent<RigidbodyComponent>()->isStatic = true;
+
+    groundObject3->GetComponent<TransformComponent>()->position.y = 20;
+
+    groundObject3->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 1, 100 };
+    //groundObject3->GetComponent<ColliderComponent>()->isWalkable = true;
+
+
+    GameObject* groundObject4 = floorModel->Instantiate(*scena1, nullptr, ourShader.get());
+    groundObject4->name = "Ground4";
+    groundObject4->GetComponent<TransformComponent>()->scale.x = 100;
+    groundObject4->GetComponent<TransformComponent>()->scale.y = 1;
+    groundObject4->GetComponent<TransformComponent>()->scale.z = 100;
+
+    groundObject4->AddComponent<RigidbodyComponent>();
+    groundObject4->AddComponent<ColliderComponent>();
+
+    groundObject4->GetComponent<RigidbodyComponent>()->useGravity = false;
+    groundObject4->GetComponent<RigidbodyComponent>()->isStatic = true;
+
+    groundObject4->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 1, 100 };
+    //groundObject4->GetComponent<ColliderComponent>()->isWalkable = true;
+
+    groundObject4->GetComponent<TransformComponent>()->position.x = 0;
+    groundObject4->GetComponent<TransformComponent>()->position.y = 40;
+    groundObject4->GetComponent<TransformComponent>()->position.z = -200;
+
+
+    wallModel = std::make_unique<Prefab>("res/models/wall.glb");
+    wallModel2 = std::make_unique<Prefab>("res/models/wall2.glb");
+    wallModel3 = std::make_unique<Prefab>("res/models/wall3.glb");
+    GameObject* wallObject = wallModel->Instantiate(*scena1, nullptr, ourShader.get());
+    wallObject->GetComponent<TransformComponent>()->scale.x = 50;
+    wallObject->GetComponent<TransformComponent>()->scale.y = 50;
+    wallObject->GetComponent<TransformComponent>()->scale.z = 1;
+
+    wallObject->AddComponent<RigidbodyComponent>();
+    wallObject->AddComponent<ColliderComponent>();
+
+    wallObject->GetComponent<RigidbodyComponent>()->useGravity = false;
+    wallObject->GetComponent<RigidbodyComponent>()->isStatic = true;
+
+    wallObject->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 50, 50, 1 };
+
+    wallObject->GetComponent<TransformComponent>()->position.x = 0;
+    wallObject->GetComponent<TransformComponent>()->position.y = 0;
+    wallObject->GetComponent<TransformComponent>()->position.z = -10;
+
+
+    GameObject* wallObject2 = wallModel2->Instantiate(*scena1, nullptr, ourShader.get());
+    wallObject2->GetComponent<TransformComponent>()->scale.x = 100;
+    wallObject2->GetComponent<TransformComponent>()->scale.y = 50;
+    wallObject2->GetComponent<TransformComponent>()->scale.z = 1;
+
+
+    wallObject2->AddComponent<RigidbodyComponent>();
+    wallObject2->AddComponent<ColliderComponent>();
+
+    wallObject2->GetComponent<RigidbodyComponent>()->useGravity = false;
+    wallObject2->GetComponent<RigidbodyComponent>()->isStatic = true;
+
+    wallObject2->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 50, 100 };
+
+    wallObject2->GetComponent<TransformComponent>()->position.x = 50;
+    wallObject2->GetComponent<TransformComponent>()->position.y = 0;
+    wallObject2->GetComponent<TransformComponent>()->position.z = 0;
+
+    GameObject* wallObject3 = wallModel2->Instantiate(*scena1, nullptr, ourShader.get());
+    wallObject3->GetComponent<TransformComponent>()->scale.x = 100;
+    wallObject3->GetComponent<TransformComponent>()->scale.y = 50;
+    wallObject3->GetComponent<TransformComponent>()->scale.z = 1;
+
+
+    wallObject3->AddComponent<RigidbodyComponent>();
+    wallObject3->AddComponent<ColliderComponent>();
+
+    wallObject3->GetComponent<RigidbodyComponent>()->useGravity = false;
+    wallObject3->GetComponent<RigidbodyComponent>()->isStatic = true;
+
+    wallObject3->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 50, 100 };
+
+    wallObject3->GetComponent<TransformComponent>()->position.x = -25;
+    wallObject3->GetComponent<TransformComponent>()->position.y = 0;
+    wallObject3->GetComponent<TransformComponent>()->position.z = 0;
+
+
+    GameObject* wallObject4 = wallModel->Instantiate(*scena1, nullptr, ourShader.get());
+    wallObject4->GetComponent<TransformComponent>()->scale.x = 100;
+    wallObject4->GetComponent<TransformComponent>()->scale.y = 50;
+    wallObject4->GetComponent<TransformComponent>()->scale.z = 1;
+
+    wallObject4->AddComponent<RigidbodyComponent>();
+    wallObject4->AddComponent<ColliderComponent>();
+
+    wallObject4->GetComponent<RigidbodyComponent>()->useGravity = false;
+    wallObject4->GetComponent<RigidbodyComponent>()->isStatic = true;
+
+    wallObject4->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 100, 1 };
+
+    wallObject4->GetComponent<TransformComponent>()->position.x = 0;
+    wallObject4->GetComponent<TransformComponent>()->position.y = 0;
+    wallObject4->GetComponent<TransformComponent>()->position.z = -300;
+
+
+    GameObject* wallObject5 = wallModel2->Instantiate(*scena1, nullptr, ourShader.get());
+    wallObject5->GetComponent<TransformComponent>()->scale.x = 100;
+    wallObject5->GetComponent<TransformComponent>()->scale.y = 50;
+    wallObject5->GetComponent<TransformComponent>()->scale.z = 1;
+
+
+    wallObject5->AddComponent<RigidbodyComponent>();
+    wallObject5->AddComponent<ColliderComponent>();
+
+    wallObject5->GetComponent<RigidbodyComponent>()->useGravity = false;
+    wallObject5->GetComponent<RigidbodyComponent>()->isStatic = true;
+
+    wallObject5->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 50, 100 };
+
+    wallObject5->GetComponent<TransformComponent>()->position.x = 100;
+    wallObject5->GetComponent<TransformComponent>()->position.y = 0;
+    wallObject5->GetComponent<TransformComponent>()->position.z = -200;
+
+    GameObject* wallObject6 = wallModel2->Instantiate(*scena1, nullptr, ourShader.get());
+    wallObject6->GetComponent<TransformComponent>()->scale.x = 100;
+    wallObject6->GetComponent<TransformComponent>()->scale.y = 50;
+    wallObject6->GetComponent<TransformComponent>()->scale.z = 1;
+
+
+    wallObject6->AddComponent<RigidbodyComponent>();
+    wallObject6->AddComponent<ColliderComponent>();
+
+    wallObject6->GetComponent<RigidbodyComponent>()->useGravity = false;
+    wallObject6->GetComponent<RigidbodyComponent>()->isStatic = true;
+
+    wallObject6->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 50, 100 };
+    wallObject6->GetComponent<ColliderComponent>()->affectsNavMesh = true;;
+
+    wallObject6->GetComponent<TransformComponent>()->position.x = -100;
+    wallObject6->GetComponent<TransformComponent>()->position.y = 0;
+    wallObject6->GetComponent<TransformComponent>()->position.z = -200;
+
+
+    GameObject* wallObject7 = wallModel->Instantiate(*scena1, nullptr, ourShader.get());
+    wallObject7->GetComponent<TransformComponent>()->scale.x = 100;
+    wallObject7->GetComponent<TransformComponent>()->scale.y = 50;
+    wallObject7->GetComponent<TransformComponent>()->scale.z = 1;
+
+    wallObject7->AddComponent<RigidbodyComponent>();
+    wallObject7->AddComponent<ColliderComponent>();
+
+    wallObject7->GetComponent<RigidbodyComponent>()->useGravity = false;
+    wallObject7->GetComponent<RigidbodyComponent>()->isStatic = true;
+
+    wallObject7->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 100, 1 };
+    wallObject7->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+
+
+    wallObject7->GetComponent<TransformComponent>()->position.x = 110;
+    wallObject7->GetComponent<TransformComponent>()->position.y = 0;
+    wallObject7->GetComponent<TransformComponent>()->position.z = -100;
+
+    GameObject* wallObject8 = wallModel->Instantiate(*scena1, nullptr, ourShader.get());
+    wallObject8->GetComponent<TransformComponent>()->scale.x = 100;
+    wallObject8->GetComponent<TransformComponent>()->scale.y = 50;
+    wallObject8->GetComponent<TransformComponent>()->scale.z = 1;
+
+    wallObject8->AddComponent<RigidbodyComponent>();
+    wallObject8->AddComponent<ColliderComponent>();
+
+    wallObject8->GetComponent<RigidbodyComponent>()->useGravity = false;
+    wallObject8->GetComponent<RigidbodyComponent>()->isStatic = true;
+
+    wallObject8->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 100, 1 };
+    wallObject8->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+
+    wallObject8->GetComponent<TransformComponent>()->position.x = -110;
+    wallObject8->GetComponent<TransformComponent>()->position.y = 0;
+    wallObject8->GetComponent<TransformComponent>()->position.z = -100;
+
+    GameObject* wallObject9 = wallModel->Instantiate(*scena1, nullptr, ourShader.get());
+    wallObject9 -> GetComponent<TransformComponent>()->scale = glm::vec3{ 100, 50, 1 };
+
+    wallObject9->AddComponent<RigidbodyComponent>();
+    wallObject9->AddComponent<ColliderComponent>();
+
+    wallObject9->GetComponent<RigidbodyComponent>()->useGravity = false;
+    wallObject9->GetComponent<RigidbodyComponent>()->isStatic = true;
+
+    wallObject9->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 10, 44, 1 };
+    wallObject9->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+    wallObject9->GetComponent<TransformComponent>()->position = glm::vec3{ 0, 70 , -100 };
+
+    GameObject* tablicaKibli[6];
+    for (int i = 0 ; i < 6 ; i++) {
+        tablicaKibli[i] = toiletModel->Instantiate(*scena1, nullptr, ourShader.get());
+        tablicaKibli[i]->GetComponent<TransformComponent>()->scale = glm::vec3{ 2, 2, 2 };
+        tablicaKibli[i]->AddComponent<RigidbodyComponent>();
+        tablicaKibli[i]->AddComponent<ColliderComponent>();
+        tablicaKibli[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
+        tablicaKibli[i]->GetComponent<RigidbodyComponent>()->isStatic = true;
+        tablicaKibli[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 2.5, 4, 2.5 };
+        tablicaKibli[i]->GetComponent<ColliderComponent>()->offset = glm::vec3{ 0, 4, 0 };
+        tablicaKibli[i]->GetComponent<TransformComponent>()->position = glm::vec3{ 45, 0.5f, -45+(-10*i) };
+        tablicaKibli[i]->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 90, 0 };
+    }
+    GameObject * tablicaZaslon[7];
+    for (int i = 0 ; i < 7 ; i++) {
+        tablicaZaslon[i] = wallModel3->Instantiate(*scena1, nullptr, ourShader.get());
+        tablicaZaslon[i]->GetComponent<TransformComponent>()->scale = glm::vec3{ 0.3, 30, 20 };;
+        tablicaZaslon[i]->AddComponent<RigidbodyComponent>();
+        tablicaZaslon[i]->AddComponent<ColliderComponent>();
+        tablicaZaslon[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
+        tablicaZaslon[i]->GetComponent<RigidbodyComponent>()->isStatic = true;
+        tablicaZaslon[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 20, 15, 0.3 };
+        tablicaZaslon[i]->GetComponent<TransformComponent>()->position = glm::vec3{ 50, 0, -40+(-10*i) };
+    }
+    GameObject * tablicaDrzwiczekDoKilba[6];
+    for (int i = 0 ; i < 6 ; i++) {
+        tablicaDrzwiczekDoKilba[i] = doorsToiletModel->Instantiate(*scena1, nullptr, ourShader.get());
+        tablicaDrzwiczekDoKilba[i]->GetComponent<TransformComponent>()->scale = glm::vec3{ 11, 10, 16 };
+        tablicaDrzwiczekDoKilba[i]->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 90, 0 };
+        tablicaDrzwiczekDoKilba[i]->AddComponent<RigidbodyComponent>();
+        tablicaDrzwiczekDoKilba[i]->AddComponent<ColliderComponent>();
+        tablicaDrzwiczekDoKilba[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
+        tablicaDrzwiczekDoKilba[i]->GetComponent<RigidbodyComponent>()->isStatic = true;
+        //Dopoki nie da sie otwierac drzwi
+        //tablicaDrzwiczekDoKilba[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 11, 10, 16 };
+        tablicaDrzwiczekDoKilba[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 1, 1 };
+        tablicaDrzwiczekDoKilba[i]->GetComponent<TransformComponent>()->position = glm::vec3{ 30, 1.0, -44+(-10*i) };
+    }
+    tablicaDrzwiczekDoKilba[5]->GetComponent<TransformComponent>()->position = glm::vec3{ 30, 1.0, -33.5+(-12*5) };
+    tablicaDrzwiczekDoKilba[5]->GetComponent<TransformComponent>()->scale = glm::vec3{ 10, 10, 16 };
+
+    GameObject * tablicaPapierowKibel[6];
+    for (int i = 0 ; i < 6 ; i++) {
+        tablicaPapierowKibel[i] = toiletPaperModel->Instantiate(*scena1, nullptr, ourShader.get());
+        tablicaPapierowKibel[i]->GetComponent<TransformComponent>()->scale = glm::vec3{ 1, 1, 1 };
+        tablicaPapierowKibel[i]->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 90, 0 };
+        tablicaPapierowKibel[i]->AddComponent<RigidbodyComponent>();
+        tablicaPapierowKibel[i]->AddComponent<ColliderComponent>();
+        tablicaPapierowKibel[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
+        tablicaPapierowKibel[i]->GetComponent<RigidbodyComponent>()->isStatic = true;
+        tablicaPapierowKibel[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 0.7, 0.7, 0.7 };
+        tablicaPapierowKibel[i]->GetComponent<TransformComponent>()->position = glm::vec3{ 35, 5.0, -40.7+(-10*i) };
+    }
+    //Zostawiam jeśli przyda się w przyszłości
+    /*GameObject* wallObject10 = wallModel3->Instantiate(*scena1, nullptr, ourShader.get());
+    wallObject10->GetComponent<TransformComponent>()->scale.x = 30;
+    wallObject10->GetComponent<TransformComponent>()->scale.y = 10;
+    wallObject10->GetComponent<TransformComponent>()->scale.z = 10;
+
+    wallObject10->AddComponent<RigidbodyComponent>();
+    wallObject10->AddComponent<ColliderComponent>();
+
+    wallObject10->GetComponent<RigidbodyComponent>()->useGravity = false;
+    wallObject10->GetComponent<RigidbodyComponent>()->isStatic = true;
+
+    wallObject10->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 10, 10, 30 };
+    wallObject10->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+
+    wallObject10->GetComponent<TransformComponent>()->position.x = 30;
+    wallObject10->GetComponent<TransformComponent>()->position.y = 0;
+    wallObject10->GetComponent<TransformComponent>()->position.z = 0;
+
+    GameObject* wallObject11 = wallModel3->Instantiate(*scena1, nullptr, ourShader.get());
+    wallObject11->GetComponent<TransformComponent>()->scale.x = 30;
+    wallObject11->GetComponent<TransformComponent>()->scale.y = 10;
+    wallObject11->GetComponent<TransformComponent>()->scale.z = 10;
+
+    wallObject11->AddComponent<RigidbodyComponent>();
+    wallObject11->AddComponent<ColliderComponent>();
+
+    wallObject11->GetComponent<RigidbodyComponent>()->useGravity = false;
+    wallObject11->GetComponent<RigidbodyComponent>()->isStatic = true;
+
+    wallObject11->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 10, 10, 30 };
+    wallObject11->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+
+
+    wallObject11->GetComponent<TransformComponent>()->position.x = -30;
+    wallObject11->GetComponent<TransformComponent>()->position.y = 0;
+    wallObject11->GetComponent<TransformComponent>()->position.z = 0;
+
+    GameObject* wallObject12 = wallModel3->Instantiate(*scena1, nullptr, ourShader.get());
+    wallObject12->GetComponent<TransformComponent>()->scale.x = 30;
+    wallObject12->GetComponent<TransformComponent>()->scale.y = 10;
+    wallObject12->GetComponent<TransformComponent>()->scale.z = 10;
+
+    wallObject12->AddComponent<RigidbodyComponent>();
+    wallObject12->AddComponent<ColliderComponent>();
+
+    wallObject12->GetComponent<RigidbodyComponent>()->useGravity = false;
+    wallObject12->GetComponent<RigidbodyComponent>()->isStatic = true;
+
+    wallObject12->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 10, 10, 30 };
+    wallObject12->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+
+    wallObject12->GetComponent<TransformComponent>()->position.x = 30;
+    wallObject12->GetComponent<TransformComponent>()->position.y = 0;
+    wallObject12->GetComponent<TransformComponent>()->position.z = -200;
+
+    GameObject* wallObject13 = wallModel3->Instantiate(*scena1, nullptr, ourShader.get());
+    wallObject13->GetComponent<TransformComponent>()->scale.x = 30;
+    wallObject13->GetComponent<TransformComponent>()->scale.y = 10;
+    wallObject13->GetComponent<TransformComponent>()->scale.z = 10;
+
+    wallObject13->AddComponent<RigidbodyComponent>();
+    wallObject13->AddComponent<ColliderComponent>();
+
+    wallObject13->GetComponent<RigidbodyComponent>()->useGravity = false;
+    wallObject13->GetComponent<RigidbodyComponent>()->isStatic = true;
+
+    wallObject13->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 10, 10, 30 };
+    wallObject13->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+
+    wallObject13->GetComponent<TransformComponent>()->position.x = -30;
+    wallObject13->GetComponent<TransformComponent>()->position.y = 0;
+    wallObject13->GetComponent<TransformComponent>()->position.z = -200;*/
+}
 
 int main(int, char**)
 {
@@ -1420,397 +1811,4 @@ void connectAllModels() {
     //zaslonaModel   = std::make_unique<Prefab>("res/models/zaslona.glb");
     //roomModel = std::make_unique<Prefab>("res/models/room.glb");
 
-}
-
-void createFirstRoom(Scene * scena1) {
- //pokoj bedzie tu
-    floorModel = std::make_unique<Prefab>("res/models/number_floor.glb");
-    GameObject* groundObject = floorModel->Instantiate(*scena1, nullptr, ourShader.get());
-    groundObject->name = "Ground1";
-    groundObject->GetComponent<TransformComponent>()->scale.x = 100;
-    groundObject->GetComponent<TransformComponent>()->scale.y = 1;
-    groundObject->GetComponent<TransformComponent>()->scale.z = 100;
-
-    groundObject->AddComponent<RigidbodyComponent>();
-    groundObject->AddComponent<ColliderComponent>();
-
-    groundObject->GetComponent<RigidbodyComponent>()->useGravity = false;
-    groundObject->GetComponent<RigidbodyComponent>()->isStatic = true;
-
-    groundObject->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 1, 100 };
-    //groundObject->GetComponent<ColliderComponent>()->isWalkable = true;
-
-    GLuint texID = groundObject->GetComponent<RenderComponent>()->meshes[0].material->specularMap;
-
-    spdlog::error("specularMap ID = {}", texID);  // czy w ogóle != 0?
-
-    glBindTexture(GL_TEXTURE_2D, texID);
-
-    GLint width = 0, height = 0;
-    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
-    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
-
-    spdlog::error("rozmiar tekstury: {}x{}", width, height);  // jeśli 0x0 - tekstura pusta
-
-    if (width == 0 || height == 0) {
-        spdlog::error("tekstura jest pusta lub nie zaladowana!");
-    }
-
-    std::vector<unsigned char> pixels(width * height * 4);
-    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
-
-    for (int i = 0; i < std::min(10, width * height); i++) {
-        spdlog::error("pixel[{}] R={} G={} B={} A={}", i,
-            pixels[i * 4 + 0], pixels[i * 4 + 1], pixels[i * 4 + 2], pixels[i * 4 + 3]);
-    }
-
-    GameObject* groundObject2 = floorModel->Instantiate(*scena1, nullptr, ourShader.get());
-    groundObject2->name = "Ground2";
-    groundObject2->GetComponent<TransformComponent>()->scale.x = 100;
-    groundObject2->GetComponent<TransformComponent>()->scale.y = 1;
-    groundObject2->GetComponent<TransformComponent>()->scale.z = 100;
-
-    groundObject2->AddComponent<RigidbodyComponent>();
-    groundObject2->AddComponent<ColliderComponent>();
-
-    groundObject2->GetComponent<RigidbodyComponent>()->useGravity = false;
-    groundObject2->GetComponent<RigidbodyComponent>()->isStatic = true;
-
-    groundObject2->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 1, 100 };
-    groundObject2->GetComponent<ColliderComponent>()->isWalkable = true;
-    groundObject2->GetComponent<ColliderComponent>()->affectsNavMesh = true;
-
-    groundObject2->GetComponent<TransformComponent>()->position.x = 0;
-    groundObject2->GetComponent<TransformComponent>()->position.y = 0;
-    groundObject2->GetComponent<TransformComponent>()->position.z = -200;
-
-
-    GameObject* groundObject3 = floorModel->Instantiate(*scena1, nullptr, ourShader.get());
-    groundObject3->name = "Ground3";
-    groundObject3->GetComponent<TransformComponent>()->scale.x = 100;
-    groundObject3->GetComponent<TransformComponent>()->scale.y = 1;
-    groundObject3->GetComponent<TransformComponent>()->scale.z = 100;
-
-    groundObject3->AddComponent<RigidbodyComponent>();
-    groundObject3->AddComponent<ColliderComponent>();
-
-    groundObject3->GetComponent<RigidbodyComponent>()->useGravity = false;
-    groundObject3->GetComponent<RigidbodyComponent>()->isStatic = true;
-
-    groundObject3->GetComponent<TransformComponent>()->position.y = 20;
-
-    groundObject3->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 1, 100 };
-    //groundObject3->GetComponent<ColliderComponent>()->isWalkable = true;
-
-
-    GameObject* groundObject4 = floorModel->Instantiate(*scena1, nullptr, ourShader.get());
-    groundObject4->name = "Ground4";
-    groundObject4->GetComponent<TransformComponent>()->scale.x = 100;
-    groundObject4->GetComponent<TransformComponent>()->scale.y = 1;
-    groundObject4->GetComponent<TransformComponent>()->scale.z = 100;
-
-    groundObject4->AddComponent<RigidbodyComponent>();
-    groundObject4->AddComponent<ColliderComponent>();
-
-    groundObject4->GetComponent<RigidbodyComponent>()->useGravity = false;
-    groundObject4->GetComponent<RigidbodyComponent>()->isStatic = true;
-
-    groundObject4->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 1, 100 };
-    //groundObject4->GetComponent<ColliderComponent>()->isWalkable = true;
-
-    groundObject4->GetComponent<TransformComponent>()->position.x = 0;
-    groundObject4->GetComponent<TransformComponent>()->position.y = 40;
-    groundObject4->GetComponent<TransformComponent>()->position.z = -200;
-
-
-    wallModel = std::make_unique<Prefab>("res/models/wall.glb");
-    wallModel2 = std::make_unique<Prefab>("res/models/wall2.glb");
-    wallModel3 = std::make_unique<Prefab>("res/models/wall3.glb");
-    GameObject* wallObject = wallModel->Instantiate(*scena1, nullptr, ourShader.get());
-    wallObject->GetComponent<TransformComponent>()->scale.x = 50;
-    wallObject->GetComponent<TransformComponent>()->scale.y = 50;
-    wallObject->GetComponent<TransformComponent>()->scale.z = 1;
-
-    wallObject->AddComponent<RigidbodyComponent>();
-    wallObject->AddComponent<ColliderComponent>();
-
-    wallObject->GetComponent<RigidbodyComponent>()->useGravity = false;
-    wallObject->GetComponent<RigidbodyComponent>()->isStatic = true;
-
-    wallObject->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 50, 50, 1 };
-
-    wallObject->GetComponent<TransformComponent>()->position.x = 0;
-    wallObject->GetComponent<TransformComponent>()->position.y = 0;
-    wallObject->GetComponent<TransformComponent>()->position.z = -10;
-
-
-    GameObject* wallObject2 = wallModel2->Instantiate(*scena1, nullptr, ourShader.get());
-    wallObject2->GetComponent<TransformComponent>()->scale.x = 100;
-    wallObject2->GetComponent<TransformComponent>()->scale.y = 50;
-    wallObject2->GetComponent<TransformComponent>()->scale.z = 1;
-
-
-    wallObject2->AddComponent<RigidbodyComponent>();
-    wallObject2->AddComponent<ColliderComponent>();
-
-    wallObject2->GetComponent<RigidbodyComponent>()->useGravity = false;
-    wallObject2->GetComponent<RigidbodyComponent>()->isStatic = true;
-
-    wallObject2->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 50, 100 };
-
-    wallObject2->GetComponent<TransformComponent>()->position.x = 50;
-    wallObject2->GetComponent<TransformComponent>()->position.y = 0;
-    wallObject2->GetComponent<TransformComponent>()->position.z = 0;
-
-    GameObject* wallObject3 = wallModel2->Instantiate(*scena1, nullptr, ourShader.get());
-    wallObject3->GetComponent<TransformComponent>()->scale.x = 100;
-    wallObject3->GetComponent<TransformComponent>()->scale.y = 50;
-    wallObject3->GetComponent<TransformComponent>()->scale.z = 1;
-
-
-    wallObject3->AddComponent<RigidbodyComponent>();
-    wallObject3->AddComponent<ColliderComponent>();
-
-    wallObject3->GetComponent<RigidbodyComponent>()->useGravity = false;
-    wallObject3->GetComponent<RigidbodyComponent>()->isStatic = true;
-
-    wallObject3->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 50, 100 };
-
-    wallObject3->GetComponent<TransformComponent>()->position.x = -25;
-    wallObject3->GetComponent<TransformComponent>()->position.y = 0;
-    wallObject3->GetComponent<TransformComponent>()->position.z = 0;
-
-
-    GameObject* wallObject4 = wallModel->Instantiate(*scena1, nullptr, ourShader.get());
-    wallObject4->GetComponent<TransformComponent>()->scale.x = 100;
-    wallObject4->GetComponent<TransformComponent>()->scale.y = 50;
-    wallObject4->GetComponent<TransformComponent>()->scale.z = 1;
-
-    wallObject4->AddComponent<RigidbodyComponent>();
-    wallObject4->AddComponent<ColliderComponent>();
-
-    wallObject4->GetComponent<RigidbodyComponent>()->useGravity = false;
-    wallObject4->GetComponent<RigidbodyComponent>()->isStatic = true;
-
-    wallObject4->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 100, 1 };
-
-    wallObject4->GetComponent<TransformComponent>()->position.x = 0;
-    wallObject4->GetComponent<TransformComponent>()->position.y = 0;
-    wallObject4->GetComponent<TransformComponent>()->position.z = -300;
-
-
-    GameObject* wallObject5 = wallModel2->Instantiate(*scena1, nullptr, ourShader.get());
-    wallObject5->GetComponent<TransformComponent>()->scale.x = 100;
-    wallObject5->GetComponent<TransformComponent>()->scale.y = 50;
-    wallObject5->GetComponent<TransformComponent>()->scale.z = 1;
-
-
-    wallObject5->AddComponent<RigidbodyComponent>();
-    wallObject5->AddComponent<ColliderComponent>();
-
-    wallObject5->GetComponent<RigidbodyComponent>()->useGravity = false;
-    wallObject5->GetComponent<RigidbodyComponent>()->isStatic = true;
-
-    wallObject5->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 50, 100 };
-
-    wallObject5->GetComponent<TransformComponent>()->position.x = 100;
-    wallObject5->GetComponent<TransformComponent>()->position.y = 0;
-    wallObject5->GetComponent<TransformComponent>()->position.z = -200;
-
-    GameObject* wallObject6 = wallModel2->Instantiate(*scena1, nullptr, ourShader.get());
-    wallObject6->GetComponent<TransformComponent>()->scale.x = 100;
-    wallObject6->GetComponent<TransformComponent>()->scale.y = 50;
-    wallObject6->GetComponent<TransformComponent>()->scale.z = 1;
-
-
-    wallObject6->AddComponent<RigidbodyComponent>();
-    wallObject6->AddComponent<ColliderComponent>();
-
-    wallObject6->GetComponent<RigidbodyComponent>()->useGravity = false;
-    wallObject6->GetComponent<RigidbodyComponent>()->isStatic = true;
-
-    wallObject6->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 50, 100 };
-    wallObject6->GetComponent<ColliderComponent>()->affectsNavMesh = true;;
-
-    wallObject6->GetComponent<TransformComponent>()->position.x = -100;
-    wallObject6->GetComponent<TransformComponent>()->position.y = 0;
-    wallObject6->GetComponent<TransformComponent>()->position.z = -200;
-
-
-    GameObject* wallObject7 = wallModel->Instantiate(*scena1, nullptr, ourShader.get());
-    wallObject7->GetComponent<TransformComponent>()->scale.x = 100;
-    wallObject7->GetComponent<TransformComponent>()->scale.y = 50;
-    wallObject7->GetComponent<TransformComponent>()->scale.z = 1;
-
-    wallObject7->AddComponent<RigidbodyComponent>();
-    wallObject7->AddComponent<ColliderComponent>();
-
-    wallObject7->GetComponent<RigidbodyComponent>()->useGravity = false;
-    wallObject7->GetComponent<RigidbodyComponent>()->isStatic = true;
-
-    wallObject7->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 100, 1 };
-    wallObject7->GetComponent<ColliderComponent>()->affectsNavMesh = true;
-
-
-    wallObject7->GetComponent<TransformComponent>()->position.x = 110;
-    wallObject7->GetComponent<TransformComponent>()->position.y = 0;
-    wallObject7->GetComponent<TransformComponent>()->position.z = -100;
-
-    GameObject* wallObject8 = wallModel->Instantiate(*scena1, nullptr, ourShader.get());
-    wallObject8->GetComponent<TransformComponent>()->scale.x = 100;
-    wallObject8->GetComponent<TransformComponent>()->scale.y = 50;
-    wallObject8->GetComponent<TransformComponent>()->scale.z = 1;
-
-    wallObject8->AddComponent<RigidbodyComponent>();
-    wallObject8->AddComponent<ColliderComponent>();
-
-    wallObject8->GetComponent<RigidbodyComponent>()->useGravity = false;
-    wallObject8->GetComponent<RigidbodyComponent>()->isStatic = true;
-
-    wallObject8->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 100, 1 };
-    wallObject8->GetComponent<ColliderComponent>()->affectsNavMesh = true;
-
-    wallObject8->GetComponent<TransformComponent>()->position.x = -110;
-    wallObject8->GetComponent<TransformComponent>()->position.y = 0;
-    wallObject8->GetComponent<TransformComponent>()->position.z = -100;
-
-    GameObject* wallObject9 = wallModel->Instantiate(*scena1, nullptr, ourShader.get());
-    wallObject9 -> GetComponent<TransformComponent>()->scale = glm::vec3{ 100, 50, 1 };
-
-    wallObject9->AddComponent<RigidbodyComponent>();
-    wallObject9->AddComponent<ColliderComponent>();
-
-    wallObject9->GetComponent<RigidbodyComponent>()->useGravity = false;
-    wallObject9->GetComponent<RigidbodyComponent>()->isStatic = true;
-
-    wallObject9->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 10, 44, 1 };
-    wallObject9->GetComponent<ColliderComponent>()->affectsNavMesh = true;
-    wallObject9->GetComponent<TransformComponent>()->position = glm::vec3{ 0, 70 , -100 };
-
-    GameObject* tablicaKibli[6];
-    for (int i = 0 ; i < 6 ; i++) {
-        tablicaKibli[i] = toiletModel->Instantiate(*scena1, nullptr, ourShader.get());
-        tablicaKibli[i]->GetComponent<TransformComponent>()->scale = glm::vec3{ 2, 2, 2 };
-        tablicaKibli[i]->AddComponent<RigidbodyComponent>();
-        tablicaKibli[i]->AddComponent<ColliderComponent>();
-        tablicaKibli[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
-        tablicaKibli[i]->GetComponent<RigidbodyComponent>()->isStatic = true;
-        tablicaKibli[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 2.5, 4, 2.5 };
-        tablicaKibli[i]->GetComponent<ColliderComponent>()->offset = glm::vec3{ 0, 4, 0 };
-        tablicaKibli[i]->GetComponent<TransformComponent>()->position = glm::vec3{ 45, 0.5f, -45+(-10*i) };
-        tablicaKibli[i]->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 90, 0 };
-    }
-    GameObject * tablicaZaslon[7];
-    for (int i = 0 ; i < 7 ; i++) {
-        tablicaZaslon[i] = wallModel3->Instantiate(*scena1, nullptr, ourShader.get());
-        tablicaZaslon[i]->GetComponent<TransformComponent>()->scale = glm::vec3{ 0.3, 30, 20 };;
-        tablicaZaslon[i]->AddComponent<RigidbodyComponent>();
-        tablicaZaslon[i]->AddComponent<ColliderComponent>();
-        tablicaZaslon[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
-        tablicaZaslon[i]->GetComponent<RigidbodyComponent>()->isStatic = true;
-        tablicaZaslon[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 20, 15, 0.3 };
-        tablicaZaslon[i]->GetComponent<TransformComponent>()->position = glm::vec3{ 50, 0, -40+(-10*i) };
-    }
-    GameObject * tablicaDrzwiczekDoKilba[6];
-    for (int i = 0 ; i < 6 ; i++) {
-        tablicaDrzwiczekDoKilba[i] = doorsToiletModel->Instantiate(*scena1, nullptr, ourShader.get());
-        tablicaDrzwiczekDoKilba[i]->GetComponent<TransformComponent>()->scale = glm::vec3{ 11, 10, 16 };
-        tablicaDrzwiczekDoKilba[i]->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 90, 0 };
-        tablicaDrzwiczekDoKilba[i]->AddComponent<RigidbodyComponent>();
-        tablicaDrzwiczekDoKilba[i]->AddComponent<ColliderComponent>();
-        tablicaDrzwiczekDoKilba[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
-        tablicaDrzwiczekDoKilba[i]->GetComponent<RigidbodyComponent>()->isStatic = true;
-        //Dopoki nie da sie otwierac drzwi
-        //tablicaDrzwiczekDoKilba[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 11, 10, 16 };
-        tablicaDrzwiczekDoKilba[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 1, 1 };
-        tablicaDrzwiczekDoKilba[i]->GetComponent<TransformComponent>()->position = glm::vec3{ 30, 1.0, -44+(-10*i) };
-    }
-    tablicaDrzwiczekDoKilba[5]->GetComponent<TransformComponent>()->position = glm::vec3{ 30, 1.0, -33.5+(-12*5) };
-    tablicaDrzwiczekDoKilba[5]->GetComponent<TransformComponent>()->scale = glm::vec3{ 10, 10, 16 };
-
-    GameObject * tablicaPapierowKibel[6];
-    for (int i = 0 ; i < 6 ; i++) {
-        tablicaPapierowKibel[i] = toiletPaperModel->Instantiate(*scena1, nullptr, ourShader.get());
-        tablicaPapierowKibel[i]->GetComponent<TransformComponent>()->scale = glm::vec3{ 1, 1, 1 };
-        tablicaPapierowKibel[i]->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 90, 0 };
-        tablicaPapierowKibel[i]->AddComponent<RigidbodyComponent>();
-        tablicaPapierowKibel[i]->AddComponent<ColliderComponent>();
-        tablicaPapierowKibel[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
-        tablicaPapierowKibel[i]->GetComponent<RigidbodyComponent>()->isStatic = true;
-        tablicaPapierowKibel[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 0.7, 0.7, 0.7 };
-        tablicaPapierowKibel[i]->GetComponent<TransformComponent>()->position = glm::vec3{ 35, 5.0, -40.7+(-10*i) };
-    }
-    //Zostawiam jeśli przyda się w przyszłości
-    /*GameObject* wallObject10 = wallModel3->Instantiate(*scena1, nullptr, ourShader.get());
-    wallObject10->GetComponent<TransformComponent>()->scale.x = 30;
-    wallObject10->GetComponent<TransformComponent>()->scale.y = 10;
-    wallObject10->GetComponent<TransformComponent>()->scale.z = 10;
-
-    wallObject10->AddComponent<RigidbodyComponent>();
-    wallObject10->AddComponent<ColliderComponent>();
-
-    wallObject10->GetComponent<RigidbodyComponent>()->useGravity = false;
-    wallObject10->GetComponent<RigidbodyComponent>()->isStatic = true;
-
-    wallObject10->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 10, 10, 30 };
-    wallObject10->GetComponent<ColliderComponent>()->affectsNavMesh = true;
-
-    wallObject10->GetComponent<TransformComponent>()->position.x = 30;
-    wallObject10->GetComponent<TransformComponent>()->position.y = 0;
-    wallObject10->GetComponent<TransformComponent>()->position.z = 0;
-
-    GameObject* wallObject11 = wallModel3->Instantiate(*scena1, nullptr, ourShader.get());
-    wallObject11->GetComponent<TransformComponent>()->scale.x = 30;
-    wallObject11->GetComponent<TransformComponent>()->scale.y = 10;
-    wallObject11->GetComponent<TransformComponent>()->scale.z = 10;
-
-    wallObject11->AddComponent<RigidbodyComponent>();
-    wallObject11->AddComponent<ColliderComponent>();
-
-    wallObject11->GetComponent<RigidbodyComponent>()->useGravity = false;
-    wallObject11->GetComponent<RigidbodyComponent>()->isStatic = true;
-
-    wallObject11->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 10, 10, 30 };
-    wallObject11->GetComponent<ColliderComponent>()->affectsNavMesh = true;
-
-
-    wallObject11->GetComponent<TransformComponent>()->position.x = -30;
-    wallObject11->GetComponent<TransformComponent>()->position.y = 0;
-    wallObject11->GetComponent<TransformComponent>()->position.z = 0;
-
-    GameObject* wallObject12 = wallModel3->Instantiate(*scena1, nullptr, ourShader.get());
-    wallObject12->GetComponent<TransformComponent>()->scale.x = 30;
-    wallObject12->GetComponent<TransformComponent>()->scale.y = 10;
-    wallObject12->GetComponent<TransformComponent>()->scale.z = 10;
-
-    wallObject12->AddComponent<RigidbodyComponent>();
-    wallObject12->AddComponent<ColliderComponent>();
-
-    wallObject12->GetComponent<RigidbodyComponent>()->useGravity = false;
-    wallObject12->GetComponent<RigidbodyComponent>()->isStatic = true;
-
-    wallObject12->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 10, 10, 30 };
-    wallObject12->GetComponent<ColliderComponent>()->affectsNavMesh = true;
-
-    wallObject12->GetComponent<TransformComponent>()->position.x = 30;
-    wallObject12->GetComponent<TransformComponent>()->position.y = 0;
-    wallObject12->GetComponent<TransformComponent>()->position.z = -200;
-
-    GameObject* wallObject13 = wallModel3->Instantiate(*scena1, nullptr, ourShader.get());
-    wallObject13->GetComponent<TransformComponent>()->scale.x = 30;
-    wallObject13->GetComponent<TransformComponent>()->scale.y = 10;
-    wallObject13->GetComponent<TransformComponent>()->scale.z = 10;
-
-    wallObject13->AddComponent<RigidbodyComponent>();
-    wallObject13->AddComponent<ColliderComponent>();
-
-    wallObject13->GetComponent<RigidbodyComponent>()->useGravity = false;
-    wallObject13->GetComponent<RigidbodyComponent>()->isStatic = true;
-
-    wallObject13->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 10, 10, 30 };
-    wallObject13->GetComponent<ColliderComponent>()->affectsNavMesh = true;
-
-    wallObject13->GetComponent<TransformComponent>()->position.x = -30;
-    wallObject13->GetComponent<TransformComponent>()->position.y = 0;
-    wallObject13->GetComponent<TransformComponent>()->position.z = -200;*/
 }
