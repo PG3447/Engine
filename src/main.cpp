@@ -773,7 +773,6 @@ int main(int, char**)
     CameraComponent* camCompLeft = camera1->AddComponent<CameraComponent>();
     ColliderComponent* camera1collider = camera1->AddComponent<ColliderComponent>();
     RigidbodyComponent* rigidBodyCamera1 = camera1->AddComponent<RigidbodyComponent>();
-    RaycastComponent* player1Raycast = camera1->AddComponent<RaycastComponent>();
 
     camera1->AddComponent<LightComponent>();
     LightComponent* light2 = camera1->GetComponent<LightComponent>();
@@ -983,7 +982,14 @@ int main(int, char**)
 
     //XDDD
 
+    player1Raycast->debugDraw = true;
+
     std::unordered_set<GameObject*> rotatableObjects;
+
+    rotatableObjects.insert(wallObject10);
+    rotatableObjects.insert(wallObject11);
+    rotatableObjects.insert(wallObject12);
+    rotatableObjects.insert(wallObject13);
 
     // Main loop
     while (!glfwWindowShouldClose(window))
@@ -1059,7 +1065,7 @@ int main(int, char**)
 		// testy animacji
 
         //tutaj jest w sumie acutal interakcja
-        /*if (ecs.GetSystem<HID>()->is_action_just_pressed("interact")) {
+        if (ecs.GetSystem<HID>()->is_action_just_pressed("interact")) {
             if (player1Raycast->anyHit()) {
                 RaycastHit hit = player1Raycast->closestHit();
                 if (hit.hitObject != nullptr && rotatableObjects.count(hit.hitObject)) {
@@ -1069,7 +1075,7 @@ int main(int, char**)
                     }
                 }
             }
-        }*/
+        }
 
         // Process I/O operations here
         input();
