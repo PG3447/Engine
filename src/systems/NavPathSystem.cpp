@@ -84,13 +84,13 @@ void NavPathSystem::Update(ECS& ecs, float dt) {
             for (int j = 0; j + 1 < (int)comp->path.size(); j++) {
                 glm::vec3 a = comp->path[j]   + glm::vec3(0, yOff, 0);
                 glm::vec3 b = comp->path[j+1] + glm::vec3(0, yOff, 0);
-                DebugDrawSystem::AddLine(a, b, comp->colorPath);
+                //DebugDrawSystem::AddLine(a, b, comp->colorPath);
             }
             // Aktualny waypoint
             if (comp->currentWaypoint < (int)comp->path.size()) {
                 glm::vec3 wp = comp->path[comp->currentWaypoint] + glm::vec3(0, yOff, 0);
-                DebugDrawSystem::AddLine(tr->position + glm::vec3(0, yOff, 0),
-                                         wp, comp->colorWaypoint);
+                //DebugDrawSystem::AddLine(tr->position + glm::vec3(0, yOff, 0),
+                  //                       wp, comp->colorWaypoint);
             }
         }
     }
