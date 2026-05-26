@@ -988,6 +988,9 @@ int main(int, char**)
 
     ecs.GetSystem<AudioSystem>()->createSound("res/sound/test_sound.mp3", sound);
 
+    //obracanie
+    std::unordered_map<GameObject*, float> rotatingObjects;
+
 
     // Main loop
     while (!glfwWindowShouldClose(window))
@@ -1070,38 +1073,64 @@ int main(int, char**)
         player2InteractionInfo->text = hintText2;
 
 
-        if (ecs.GetSystem<HID>()->is_action_just_pressed("interact_p1")) {
-            if (player1Raycast->anyHit()) {
-                RaycastHit hit = player1Raycast->closestHit();
+    for (auto it = rotatingObjects.begin(); it != rotatingObjects.end(); )
+    {
+        TransformComponent* transform = it->first->GetComponent<TransformComponent>();
+        if (transform == nullptr) { it = rotatingObjects.erase(it); continue; }
 
-                if (hit.hitObject != nullptr) {
-                    if (hit.hitObject != nullptr && rotatableObjects.count(hit.hitObject)) {
-                        TransformComponent* transform = hit.hitObject->GetComponent<TransformComponent>();
+        float step = 90.0f * deltaTime;
+        if (step > it->second) step = it->second;
 
-                        if (transform != nullptr) {
-                            transform->rotation.z += 60.0f;
-                        }
+        transform->rotation.z -= step;
+        it->second -= step;
+
+        if (it->second <= 0.0f)
+        {
+            spdlog::info("Rotated to: {:.2f}", transform->rotation.z);
+            it = rotatingObjects.erase(it);
+        }
+        else ++it;
+    }
+
+    //P1
+    if (ecs.GetSystem<HID>()->is_action_just_pressed("interact_p1")) {
+        if (player1Raycast->anyHit()) {
+            RaycastHit hit = player1Raycast->closestHit();
+            if (hit.hitObject != nullptr) {
+                if (rotatableObjects.count(hit.hitObject)) {
+                    if (!rotatingObjects.count(hit.hitObject)) {
+                        rotatingObjects[hit.hitObject] = 60.0f; // ilosc stopni do obrotu
                     }
+                }
+                else if (unlockedDoors.count(hit.hitObject)) {
+                    spdlog::info("nie ma otwierania", (void*)hit.hitObject);
+                }
+                else if (majorDoors.count(hit.hitObject)) {
+                    spdlog::info("nie ma tego", (void*)hit.hitObject);
                 }
             }
         }
+    }
 
-
-        if (ecs.GetSystem<HID>()->is_action_just_pressed("interact_p2")) {
-            if (player2Raycast->anyHit()) {
-                RaycastHit hit = player2Raycast->closestHit();
-
-                if (hit.hitObject != nullptr) {
-                    if (hit.hitObject != nullptr && rotatableObjects.count(hit.hitObject)) {
-                        TransformComponent* transform = hit.hitObject->GetComponent<TransformComponent>();
-
-                        if (transform != nullptr) {
-                            transform->rotation.z += 60.0f;
-                        }
+    //P2
+    if (ecs.GetSystem<HID>()->is_action_just_pressed("interact_p2")) {
+        if (player2Raycast->anyHit()) {
+            RaycastHit hit = player2Raycast->closestHit();
+            if (hit.hitObject != nullptr) {
+                if (rotatableObjects.count(hit.hitObject)) {
+                    if (!rotatingObjects.count(hit.hitObject)) {
+                        rotatingObjects[hit.hitObject] = 60.0f;
                     }
+                }
+                else if (unlockedDoors.count(hit.hitObject)) {
+                    spdlog::info("nie ma otwierania", (void*)hit.hitObject);
+                }
+                else if (majorDoors.count(hit.hitObject)) {
+                    spdlog::info("nie ma tego", (void*)hit.hitObject);
                 }
             }
         }
+    }
 
         // testy animacji
 
