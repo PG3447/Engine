@@ -4,15 +4,6 @@
 #include <glad/glad.h>
 #include "mesh_data.h"
 
-//struct DrawElementsIndirectCommand
-//{
-//    uint32_t count;          // indicesCount
-//    uint32_t instanceCount;  // ile instancji
-//    uint32_t firstIndex;     // offset w EBO
-//    uint32_t baseVertex;     // offset w VBO
-//    uint32_t baseInstance;   // offset w instanceVBO
-//};
-
 class RenderMesh {
 public:
     unsigned int VAO, VBO, EBO;
@@ -118,8 +109,5 @@ private:
 
         glBindVertexArray(0);
     }
-
- 
-    
 };
 #endif

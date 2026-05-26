@@ -11,16 +11,6 @@
 
 class ECS;
 
-template<typename T>
-concept HasOnEnable = requires(T t, GameObject * go) {
-    t.OnEnable(go);
-};
-
-template<typename T>
-concept HasOnDisable = requires(T t, GameObject * go) {
-    t.OnDisable(go);
-};
-
 class GameObject {
 public:
     size_t id;
@@ -50,28 +40,13 @@ public:
     T* AddComponent(Args&&... args) {
         static_assert(std::is_base_of<Component, T>::value, "T must inherit Component");
 
-        // Blokuj duplikaty jeśli komponent ma flagę unique
-        if constexpr (T::Unique) {
-            if (GetComponent<T>() != nullptr) {
-                spdlog::warn("Ostrzezenie");
-                spdlog::warn("Komponent {} już istnieje na obiekcie {}", typeid(T).name(), name);
-                return GetComponent<T>();
-            }
-        }
-
-
         T* comp = GetPool<T>().Allocate();
         *comp = T(std::forward<Args>(args)...);
         componentMap[std::type_index(typeid(T))].push_back(comp);
 
         componentMask |= T::ComponentBit;
-
-        if constexpr (HasOnEnable<T>) {
-            comp->OnEnable(this);
-        }
-
         NotifyChanged();
-  
+
         return GetComponent<T>();
     }
 
@@ -105,11 +80,6 @@ public:
 
         for (size_t i = 0; i < vec.size(); ++i) {
             if (vec[i] == comp) {
-
-                if constexpr (HasOnDisable<T>) {
-                    comp->OnDisable(this);
-                }
-
                 vec[i] = vec.back();
                 vec.pop_back();
                 GetPool<T>().Free(comp);
@@ -158,14 +128,6 @@ public:
         }
 
         return result;
-    }
-
-    template<typename Func>
-    void TraverseChildren(Func&& func) {
-        func(this);
-        for (GameObject* child : children) {
-            child->TraverseChildren(std::forward<Func>(func));
-        }
     }
 
     std::vector<Component*> GetAllComponents()
