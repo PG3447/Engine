@@ -241,6 +241,9 @@ PerformanceData perf;
 RenderSystem * renderSystem = nullptr;
 PostProcessingSystem* postProcessingSystem = nullptr;
 
+//meeded for interaction
+std::unordered_set<GameObject*> rotatableObjects;
+
 
 void updateFPS(float deltaTime) {
     frameTimes[index] = deltaTime;
@@ -621,6 +624,7 @@ void createFirstRoom(Scene * scena1) {
         tablicaPapierowKibel[i]->GetComponent<RigidbodyComponent>()->isStatic = true;
         tablicaPapierowKibel[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 0.7, 0.7, 0.7 };
         tablicaPapierowKibel[i]->GetComponent<TransformComponent>()->position = glm::vec3{ 35, 5.0, -40.7+(-10*i) };
+        rotatableObjects.insert(tablicaPapierowKibel[i]);
     }
     GameObject * tablicaSink[6];
     for (int i = 0 ; i < 6 ; i++) {
@@ -760,6 +764,8 @@ int main(int, char**)
     CameraComponent* camCompLeft = camera1->AddComponent<CameraComponent>();
     ColliderComponent* camera1collider = camera1->AddComponent<ColliderComponent>();
     RigidbodyComponent* rigidBodyCamera1 = camera1->AddComponent<RigidbodyComponent>();
+    RaycastComponent* player1Raycast = camera1->AddComponent<RaycastComponent>();
+    player1Raycast->debugDraw = true;
 
     camera1->AddComponent<LightComponent>();
     LightComponent* light2 = camera1->GetComponent<LightComponent>();
@@ -788,6 +794,8 @@ int main(int, char**)
     RigidbodyComponent* rigidBodyCamera2 = camera2->AddComponent<RigidbodyComponent>();
     camera2->GetComponent<RigidbodyComponent>()->useGravity = false;
     camera2->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1.0f, 10.0f, 1.0f };
+    RaycastComponent* player2Raycast = camera2->AddComponent<RaycastComponent>();
+    player2Raycast->debugDraw = true;
 
     TransformComponent* camTransform1 = camera1->GetComponent<TransformComponent>();
     camTransform1->position = glm::vec3(0.0f, 20.0f, -20.0f);
@@ -813,16 +821,6 @@ int main(int, char**)
     camCompRight->isActive = true;
 
     /*
-    GameObject* obj_Sprite_1 = scena1->CreateGameObject(nullptr);
-    SpriteComponent* sprite_1 = obj_Sprite_1->AddComponent<SpriteComponent>();
-
-    sprite_1->sprites.push_back(
-        ResourceManager::LoadTexture("sigma.png", "res/textures/PGK_placeholders")
-    );
-    sprite_1->screenPosition = glm::vec2(0.0f, 0.0f);
-    sprite_1->size = glm::vec2(128.0f, 128.0f);
-    sprite_1->frameDuration = 0.15f;
-
     GameObject* obj_Sprite_2 = scena1->CreateGameObject(nullptr);
     SpriteComponent* sprite_2 = obj_Sprite_2->AddComponent<SpriteComponent>();
 
@@ -840,18 +838,16 @@ int main(int, char**)
     sprite_2->screenPosition = glm::vec2(0.0f, 128.0f);
     sprite_2->size = glm::vec2(128.0f, 128.0f);
     sprite_2->frameDuration = 0.5f;
-
-    GameObject* obj_Sprite_4 = scena1->CreateGameObject(nullptr);
-    SpriteComponent* sprite_4 = obj_Sprite_4->AddComponent<SpriteComponent>();
-    sprite_4->textEnabled = true;
-    sprite_4->screenPosition = glm::vec2(0.0f, 256.0f);
-
-    sprite_1->layer = 1;
-    sprite_2->layer = 1;
-    sprite_4->layer = 1;
     */
 
     int placeholderThing = 0;
+
+    GameObject* player1InteractionInfo_obj = scena1->CreateGameObject(nullptr);
+    SpriteComponent* player1InteractionInfo = player1InteractionInfo_obj->AddComponent<SpriteComponent>();
+    player1InteractionInfo->textEnabled = true;
+    player1InteractionInfo->screenPosition = glm::vec2(0.0f, 256.0f);
+    player1InteractionInfo->text = "Rotate";
+    player1InteractionInfo->layer = 1;
 
     connectAllModels();
 
@@ -966,10 +962,6 @@ int main(int, char**)
     ecs.GetSystem<AudioSystem>()->createSound("res/sound/test_sound.mp3", sound);
 
 
-
-    //XDDD
-
-
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
@@ -1009,6 +1001,22 @@ int main(int, char**)
 
         if (ecs.GetSystem<HID>()->is_action_just_pressed("play_sound")) {
             ecs.GetSystem<AudioSystem>()->playSound(sound);
+        }
+
+        if (ecs.GetSystem<HID>()->is_action_just_pressed("interact")) {
+            if (player1Raycast->anyHit()) {
+                RaycastHit hit = player1Raycast->closestHit();
+
+                if (hit.hitObject != nullptr) {
+                    if (hit.hitObject != nullptr && rotatableObjects.count(hit.hitObject)) {
+                        TransformComponent* transform = hit.hitObject->GetComponent<TransformComponent>();
+
+                        if (transform != nullptr) {
+                            transform->rotation.z += 60.0f;
+                        }
+                    }
+                }
+            }
         }
 
         // testy animacji
