@@ -598,7 +598,7 @@ void createFirstRoom(Scene * scena1) {
     GameObject* tablicaKibli[6];
     for (int i = 0 ; i < 6 ; i++) {
         tablicaKibli[i] = toiletModel->Instantiate(*scena1, nullptr, ourShader.get());
-        tablicaKibli[i]->GetComponent<TransformComponent>()->scale = glm::vec3{ 2, 2, 2 };
+        tablicaKibli[i]->GetComponent<TransformComponent>()->scale = glm::vec3{ 1.5, 1.5, 1.5 };
         tablicaKibli[i]->AddComponent<RigidbodyComponent>();
         tablicaKibli[i]->AddComponent<ColliderComponent>();
         tablicaKibli[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
@@ -647,6 +647,18 @@ void createFirstRoom(Scene * scena1) {
         tablicaPapierowKibel[i]->GetComponent<RigidbodyComponent>()->isStatic = true;
         tablicaPapierowKibel[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 0.7, 0.7, 0.7 };
         tablicaPapierowKibel[i]->GetComponent<TransformComponent>()->position = glm::vec3{ 35, 5.0, -40.7+(-10*i) };
+    }
+    GameObject * tablicaSink[6];
+    for (int i = 0 ; i < 6 ; i++) {
+        tablicaSink[i] = sinkModel->Instantiate(*scena1, nullptr, ourShader.get());
+        tablicaSink[i]->GetComponent<TransformComponent>()->scale = glm::vec3{ 3, 3, 3 };
+        tablicaSink[i]->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 90, 0 };
+        tablicaSink[i]->AddComponent<RigidbodyComponent>();
+        tablicaSink[i]->AddComponent<ColliderComponent>();
+        tablicaSink[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
+        tablicaSink[i]->GetComponent<RigidbodyComponent>()->isStatic = true;
+        tablicaSink[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 3, 20, 3 };
+        tablicaSink[i]->GetComponent<TransformComponent>()->position = glm::vec3{ -21, -1.0, -45+(-10*i) };
     }
     //Zostawiam jeśli przyda się w przyszłości
     /*GameObject* wallObject10 = wallModel3->Instantiate(*scena1, nullptr, ourShader.get());
@@ -1446,7 +1458,7 @@ void connectAllModels() {
     //vial5Model     = std::make_unique<Prefab>("res/models/probowka5.glb");
     //vial61Model    = std::make_unique<Prefab>("res/models/probowka6.glb");
     //vial7Model     = std::make_unique<Prefab>("res/models/probowka7.glb");
-    //sinkModel      = std::make_unique<Prefab>("res/models/sink.glb");
+    sinkModel      = std::make_unique<Prefab>("res/models/sink.glb");
     //szafa1Model    = std::make_unique<Prefab>("res/models/szafa1.glb");
     //szafa2Model    = std::make_unique<Prefab>("res/models/szafa2.glb");
     //szafa3Model    = std::make_unique<Prefab>("res/models/szafa3.glb");
