@@ -1072,8 +1072,8 @@ int main(int, char**)
 
 
         if (ecs.GetSystem<HID>()->is_action_just_pressed("interact_p2")) {
-            if (player1Raycast->anyHit()) {
-                RaycastHit hit = player1Raycast->closestHit();
+            if (player2Raycast->anyHit()) {
+                RaycastHit hit = player2Raycast->closestHit();
 
                 if (hit.hitObject != nullptr) {
                     if (hit.hitObject != nullptr && rotatableObjects.count(hit.hitObject)) {
