@@ -1,6 +1,6 @@
 #include "NavMeshSystem.h"
 #include "core/scene.h"
-#include "systems/DebugDrawSystem.h" // DebugDrawSystem::AddLine / AddAABB
+//#include "systems/DebugDrawSystem.h" // DebugDrawSystem::AddLine / AddAABB
 #include <spdlog/spdlog.h>
 #include <algorithm>
 #include <cmath>
@@ -69,9 +69,9 @@ void NavMeshSystem::Update(ECS& /*ecs*/, float /*dt*/) {
 
         glm::vec4 col = tri.walkable ? nm->colorEdge : nm->colorUnwalkable;
 
-        DebugDrawSystem::AddLine(ao, bo, col);
+      /*  DebugDrawSystem::AddLine(ao, bo, col);
         DebugDrawSystem::AddLine(bo, co, col);
-        DebugDrawSystem::AddLine(co, ao, col);
+        DebugDrawSystem::AddLine(co, ao, col);*/
     }
 }
 
