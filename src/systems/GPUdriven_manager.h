@@ -166,6 +166,50 @@ public:
     }
 
 
+    void RebuildAllRegistries(Query<TransformComponent, RenderComponent>& renderQuery) {
+        // 1. Wyczyść wszystkie passy
+        for (auto& entry : passes) {
+            GPUDrivenRenderer* r = entry.renderer.get();
+
+            // Wyczyść CPU-side rejestry i bufory geometrii
+            r->clearRegisterAll();
+        }
+
+        animatorIDMap.clear();
+
+        // 2. Zarejestruj wszystko od nowa (jak InitPassesFromScene)
+        // ale NIE czyść samych passów — zostają te same passy
+        auto& renderers = std::get<1>(renderQuery.componentsVectors);
+
+        for (size_t i = 0; i < renderers.size(); i++) {
+            RenderComponent* rc = renderers[i];
+            if (!rc) continue;
+
+            if (rc->animator && animatorIDMap.find(rc->animator) == animatorIDMap.end())
+                animatorIDMap[rc->animator] = (uint32_t)animatorIDMap.size();
+
+            for (auto& mesh : rc->meshes) {
+                if (!mesh.cpuData || !mesh.material) continue;
+
+                Material* mat = mesh.material.get();
+                Shader* shader = mat->shader ? mat->shader : defaultShaderRender;
+
+                uint32_t pid = GetOrCreatePass(shader, mat->surfaceType);
+                GPUDrivenRenderer* r = GetRenderer(pid);
+                if (!r) continue;
+
+                r->RegisterMesh(mesh.cpuData.get());
+                r->RegisterMaterial(mat);
+            }
+        }
+
+        // 3. Upload na GPU
+        for (auto& entry : passes) {
+            entry.renderer->UploadMeshes();
+            entry.renderer->UploadMaterials();
+            entry.renderer->dirtyInstance = true;
+        }
+    }
 
     void CollectRenderData(uint32_t passID, Query<TransformComponent, RenderComponent>& renderQuery, const glm::vec3& cameraPos)
     {

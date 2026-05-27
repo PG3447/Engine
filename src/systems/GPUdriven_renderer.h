@@ -346,6 +346,17 @@ public:
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 
+    void clearRegisterAll()
+    {
+        allVertices.clear();
+        allIndices.clear();
+        meshesData.clear();
+        materials.clear();
+        meshMetaCPU.clear();
+        meshRegistry.clear();
+        materialRegistry.clear();
+    }
+
     void AttachHiZ(GLuint tex, int mipLevels) {
         hizTexture = tex;
         hizMipLevels = mipLevels;
