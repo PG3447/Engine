@@ -281,8 +281,8 @@ MeshNode Model::processMesh(aiMesh* mesh, const aiScene* scene)
         aabb.min = glm::min(aabb.min, v.Position);
         aabb.max = glm::max(aabb.max, v.Position);
     }
-    node.aabb = aabb;
-
+    aabb.centerLocal = (aabb.min + aabb.max) * 0.5f;
+    node.cpuData->aabb = aabb;
     return node;
 }
 
