@@ -244,9 +244,11 @@ RenderSystem * renderSystem = nullptr;
 PostProcessingSystem* postProcessingSystem = nullptr;
 
 //meeded for interaction
+GameObject * tablicaPapierowKibel[6];
 std::unordered_set<GameObject*> rotatableObjects;
 std::unordered_set<GameObject*> unlockedDoors;
 std::unordered_set<GameObject*> majorDoors;
+bool can_open_door_1 = false;
 
 struct DoorState {
     bool isOpen = false;
@@ -749,7 +751,7 @@ void createFirstRoom(Scene* scena1) {
         unlockedDoors.insert(hinge);
     }
 
-    GameObject * tablicaPapierowKibel[6];
+
     for (int i = 0 ; i < 6 ; i++) {
         tablicaPapierowKibel[i] = toiletPaperModel->Instantiate(*scena1, nullptr, ourShader.get());
         tablicaPapierowKibel[i]->GetComponent<TransformComponent>()->scale = glm::vec3{ 1, 1, 1 };
@@ -762,6 +764,7 @@ void createFirstRoom(Scene* scena1) {
         tablicaPapierowKibel[i]->GetComponent<TransformComponent>()->position = glm::vec3{ 35, 5.0, -40.7+(-10*i) };
         rotatableObjects.insert(tablicaPapierowKibel[i]);
     }
+
     GameObject * tablicaSink[6];
     for (int i = 0 ; i < 6 ; i++) {
         tablicaSink[i] = sinkModel->Instantiate(*scena1, nullptr, ourShader.get());
@@ -1179,10 +1182,42 @@ int main(int, char**)
     //FMOD
     FMOD::Sound* sound = nullptr;
 
-   ecs.GetSystem<AudioSystem>()->createSound("res/sound/test_sound.mp3", sound);
+   ecs.GetSystem<AudioSystem>()->createSound("res/sound/door_unlock.mp3", sound);
 
     //obracanie
     std::unordered_map<GameObject*, float> rotatingObjects;
+
+    auto normalizeAngle = [](float angle) -> float {
+        angle = fmod(angle, 360.0f);
+        if (angle < 0.0f) angle += 360.0f;
+        return angle;
+    };
+
+    auto checkKibelUstawienia = [&]() {
+        const float expectedAngles[6] = { 0.0f, -60.0f, -180.0f, -120.0f, -240.0f, -300.0f };
+
+        // normalizujemy expected tez bo np -60 -> 300, -180 -> 180 itd
+        bool allCorrect = true;
+        for (int i = 0; i < 6; i++) {
+            TransformComponent* transform = tablicaPapierowKibel[i]->GetComponent<TransformComponent>();
+            if (transform == nullptr) { allCorrect = false; continue; }
+
+            float current  = normalizeAngle(transform->rotation.z);
+            float expected = normalizeAngle(expectedAngles[i]);
+
+            bool correct = fabs(current - expected) < 1.0f; // tolerancja 1 stopien
+            spdlog::info("Kibel[{}] rotacja Z: {:.2f} (oczekiwana: {:.2f}) - {}",
+                i, current, expected, correct ? "OK" : "ZLE");
+
+            if (!correct) allCorrect = false;
+        }
+
+        if (allCorrect == true) {
+            ecs.GetSystem<AudioSystem>()->playSound(sound);
+        }
+
+        can_open_door_1 = allCorrect;
+    };
 
 
     // Main loop
@@ -1290,9 +1325,12 @@ int main(int, char**)
         {
             spdlog::info("Rotated to: {:.2f}", transform->rotation.z);
             it = rotatingObjects.erase(it);
+            checkKibelUstawienia();
         }
         else ++it;
     }
+
+        spdlog::info(can_open_door_1);
 
     // caly ten wielki kod wydzielilem do funkcji
     HandlePlayerInteraction(ecs, "interact_p1", player1Raycast, camera1, p1HeldObject, p2HeldObject, scena1, rotatingObjects);
