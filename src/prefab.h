@@ -1,7 +1,6 @@
 ﻿#ifndef PREFAB_H
 #define PREFAB_H
 
-#include <entity.h>
 #include <shader.h>
 #include <string>
 #include <memory>

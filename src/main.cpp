@@ -25,7 +25,6 @@
 #include <shader.h>
 #include <unused/camera.h>
 #include <model.h>
-#include <entity.h>
 #include <prefab.h>
 #include <filesystem>
 
@@ -71,7 +70,6 @@ void input();
 void controlKoparka();
 void update();
 //void render();
-void renderInstanced(Model* model, Shader* shader, std::vector<Entity*>& entities);
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
@@ -222,10 +220,6 @@ std::unique_ptr<Prefab> groundModel;
 
 std::unique_ptr<Prefab> koparkaModel;
 
-
-std::unique_ptr<Entity> root;
-Entity* venus;
-Entity* koparkaEntity;
 
 unsigned int triangleVAO = 0;
 unsigned int triangleVBO = 0;
