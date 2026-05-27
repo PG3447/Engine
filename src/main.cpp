@@ -1,4 +1,6 @@
-
+// dear imgui: standalone example application for GLFW + OpenGL 3, using programmable pipeline
+// If you are new to dear imgui, see examples/README.txt and documentation at the top of imgui.cpp.
+// (GLFW is a cross-platform general purpose library for handling windows, inputs, OpenGL/Vulkan graphics context creation, etc.)
 
 #include "imgui.h"
 #include "imgui_impl/imgui_impl_glfw.h"
@@ -9,7 +11,7 @@
 
 #define IMGUI_IMPL_OPENGL_LOADER_GLAD
 
-#define STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_IMPLEMENTATION  
 //#include <stb_image.h>
 
 #include <glad/glad.h>  // Initialize with gladLoadGL()
@@ -36,7 +38,7 @@
 
 #include <core/scene.h>
 #include <core/scene_manager.h>
-#include "core/gameobject.h"
+#include "core/gameobject.h" 
 #include <systems/physics_system.h>
 #include <systems/transform_system.h>
 #include <systems/animation_system.h>
@@ -89,7 +91,7 @@ void processCameraGamepad(ECS& ecs,
 
 
 void imgui_begin();
-void imgui_render();
+void imgui_render(SceneManager& sceneManager);
 void imgui_end();
 
 void end_frame();
@@ -218,6 +220,7 @@ std::unique_ptr<Prefab> groundModel;
 
 std::unique_ptr<Prefab> koparkaModel;
 
+
 unsigned int triangleVAO = 0;
 unsigned int triangleVBO = 0;
 std::unique_ptr<Shader> triangleShader;
@@ -237,11 +240,9 @@ RenderSystem * renderSystem = nullptr;
 PostProcessingSystem* postProcessingSystem = nullptr;
 
 //meeded for interaction
-GameObject * tablicaPapierowKibel[6];
 std::unordered_set<GameObject*> rotatableObjects;
 std::unordered_set<GameObject*> unlockedDoors;
 std::unordered_set<GameObject*> majorDoors;
-bool can_open_door_1 = false;
 
 struct DoorState {
     bool isOpen = false;
@@ -389,19 +390,6 @@ void HandlePlayerInteraction(
             if (rotatableObjects.count(hit.hitObject)) {
                 if (!rotatingObjects.count(hit.hitObject)) rotatingObjects[hit.hitObject] = 60.0f;
             }
-            //PAIN
-            if (majorDoors.count(hit.hitObject)) {
-                if (can_open_door_1) {
-                    for (GameObject* door : majorDoors) {
-                        TransformComponent* transform = door->GetComponent<TransformComponent>();
-                        if (transform != nullptr) {
-                            transform->position = glm::vec3(-1000.0f, -1000.0f, -1000.0f);
-                        }
-                    }
-                }
-            }
-
-
             // Otwieranie drzwi
             else if (toiletDoorsMap.count(hit.hitObject)) {
                 DoorState& state = toiletDoorsMap[hit.hitObject];
@@ -495,7 +483,7 @@ void createFirstRoom(Scene* scena1) {
     groundObject->GetComponent<RigidbodyComponent>()->useGravity = false;
     groundObject->GetComponent<RigidbodyComponent>()->isStatic = true;
 
-    groundObject->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 200, 1, 200 };
+    groundObject->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 1, 100 };
 
     GameObject* groundObject2 = floorModel->Instantiate(*scena1, nullptr, ourShader.get());
     groundObject2->name = "Ground2";
@@ -757,7 +745,7 @@ void createFirstRoom(Scene* scena1) {
         unlockedDoors.insert(hinge);
     }
 
-
+    GameObject * tablicaPapierowKibel[6];
     for (int i = 0 ; i < 6 ; i++) {
         tablicaPapierowKibel[i] = toiletPaperModel->Instantiate(*scena1, nullptr, ourShader.get());
         tablicaPapierowKibel[i]->GetComponent<TransformComponent>()->scale = glm::vec3{ 1, 1, 1 };
@@ -770,7 +758,6 @@ void createFirstRoom(Scene* scena1) {
         tablicaPapierowKibel[i]->GetComponent<TransformComponent>()->position = glm::vec3{ 35, 5.0, -40.7+(-10*i) };
         rotatableObjects.insert(tablicaPapierowKibel[i]);
     }
-
     GameObject * tablicaSink[6];
     for (int i = 0 ; i < 6 ; i++) {
         tablicaSink[i] = sinkModel->Instantiate(*scena1, nullptr, ourShader.get());
@@ -786,7 +773,7 @@ void createFirstRoom(Scene* scena1) {
     GameObject * lustro1;
     lustro1 = mirrorModel1->Instantiate(*scena1, nullptr, ourShader.get());
     lustro1->GetComponent<TransformComponent>()->scale = glm::vec3{ 1, 2, 8 };
-    lustro1->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, -180, 0 };
+    lustro1->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 180, 0 };
     lustro1->AddComponent<RigidbodyComponent>();
     lustro1->AddComponent<ColliderComponent>();
     lustro1->GetComponent<RigidbodyComponent>()->useGravity = false;
@@ -796,7 +783,7 @@ void createFirstRoom(Scene* scena1) {
     GameObject * lustro2;
     lustro2 = mirrorModel2->Instantiate(*scena1, nullptr, ourShader.get());
     lustro2->GetComponent<TransformComponent>()->scale = glm::vec3{ 1, 2, 8 };
-    lustro2->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, -180, 0 };
+    lustro2->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 180, 0 };
     lustro2->AddComponent<RigidbodyComponent>();
     lustro2->AddComponent<ColliderComponent>();
     lustro2->GetComponent<RigidbodyComponent>()->useGravity = false;
@@ -806,7 +793,7 @@ void createFirstRoom(Scene* scena1) {
     GameObject * lustro3;
     lustro3 = mirrorModel3->Instantiate(*scena1, nullptr, ourShader.get());
     lustro3->GetComponent<TransformComponent>()->scale = glm::vec3{ 1, 2, 8 };
-    lustro3->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, -180, 0 };
+    lustro3->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 180, 0 };
     lustro3->AddComponent<RigidbodyComponent>();
     lustro3->AddComponent<ColliderComponent>();
     lustro3->GetComponent<RigidbodyComponent>()->useGravity = false;
@@ -822,9 +809,8 @@ void createFirstRoom(Scene* scena1) {
         tablicaDrzwi[i]->AddComponent<ColliderComponent>();
         tablicaDrzwi[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
         tablicaDrzwi[i]->GetComponent<RigidbodyComponent>()->isStatic = true;
-        tablicaDrzwi[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 5, 22, 1 };
+        tablicaDrzwi[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 1, 1 };
         tablicaDrzwi[i]->GetComponent<TransformComponent>()->position = glm::vec3{ -5+(10*i), 0.0, -100 };
-        majorDoors.insert(tablicaDrzwi[i]);
     }
 
     GameObject* cup = cupModel->Instantiate(*scena1, nullptr, ourShader.get());
@@ -969,7 +955,7 @@ int main(int, char**)
     ColliderComponent* camera1collider = camera1->AddComponent<ColliderComponent>();
     RigidbodyComponent* rigidBodyCamera1 = camera1->AddComponent<RigidbodyComponent>();
     RaycastComponent* player1Raycast = camera1->AddComponent<RaycastComponent>();
-    player1Raycast->debugDraw = false;
+    player1Raycast->debugDraw = true;
 
     camera1->AddComponent<LightComponent>();
     LightComponent* light2 = camera1->GetComponent<LightComponent>();
@@ -999,7 +985,7 @@ int main(int, char**)
     camera2->GetComponent<RigidbodyComponent>()->useGravity = false;
     camera2->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1.0f, 10.0f, 1.0f };
     RaycastComponent* player2Raycast = camera2->AddComponent<RaycastComponent>();
-    player2Raycast->debugDraw = false;
+    player2Raycast->debugDraw = true;
 
     camera2->AddComponent<LightComponent>();
     LightComponent* light3 = camera2->AddComponent<LightComponent>();
@@ -1059,7 +1045,6 @@ int main(int, char**)
     sprite_2->size = glm::vec2(128.0f, 128.0f);
     sprite_2->frameDuration = 0.5f;
     */
-
 
     GameObject* player1InteractionInfo_obj = scena1->CreateGameObject(nullptr);
     SpriteComponent* player1InteractionInfo = player1InteractionInfo_obj->AddComponent<SpriteComponent>();
@@ -1194,38 +1179,6 @@ int main(int, char**)
     //obracanie
     std::unordered_map<GameObject*, float> rotatingObjects;
 
-    auto normalizeAngle = [](float angle) -> float {
-        angle = fmod(angle, 360.0f);
-        if (angle < 0.0f) angle += 360.0f;
-        return angle;
-    };
-
-    auto checkKibelUstawienia = [&]() {
-        const float expectedAngles[6] = { 0.0f, -60.0f, -180.0f, -120.0f, -240.0f, -300.0f };
-
-        // normalizujemy expected tez bo np -60 -> 300, -180 -> 180 itd
-        bool allCorrect = true;
-        for (int i = 0; i < 6; i++) {
-            TransformComponent* transform = tablicaPapierowKibel[i]->GetComponent<TransformComponent>();
-            if (transform == nullptr) { allCorrect = false; continue; }
-
-            float current  = normalizeAngle(transform->rotation.z);
-            float expected = normalizeAngle(expectedAngles[i]);
-
-            bool correct = fabs(current - expected) < 1.0f; // tolerancja 1 stopien
-            spdlog::info("Kibel[{}] rotacja Z: {:.2f} (oczekiwana: {:.2f}) - {}",
-                i, current, expected, correct ? "OK" : "ZLE");
-
-            if (!correct) allCorrect = false;
-        }
-
-        if (allCorrect == true) {
-            ecs.GetSystem<AudioSystem>()->playSound(sound);
-        }
-
-        can_open_door_1 = allCorrect;
-    };
-
 
     // Main loop
     while (!glfwWindowShouldClose(window))
@@ -1269,7 +1222,6 @@ int main(int, char**)
         if (ecs.GetSystem<HID>()->is_action_just_pressed("play_sound")) {
             ecs.GetSystem<AudioSystem>()->playSound(sound);
         }
-
 
         std::string hintText = "";
 
@@ -1332,12 +1284,9 @@ int main(int, char**)
         {
             spdlog::info("Rotated to: {:.2f}", transform->rotation.z);
             it = rotatingObjects.erase(it);
-            checkKibelUstawienia();
         }
         else ++it;
     }
-
-        spdlog::info(can_open_door_1);
 
     // caly ten wielki kod wydzielilem do funkcji
     HandlePlayerInteraction(ecs, "interact_p1", player1Raycast, camera1, p1HeldObject, p2HeldObject, scena1, rotatingObjects);
@@ -1414,7 +1363,7 @@ int main(int, char**)
 
         // Draw ImGui
         imgui_begin();
-        imgui_render(); // edit this function to add your own ImGui controls
+        imgui_render(sceneManager); // edit this function to add your own ImGui controls
         imgui_end(); // this call effectively renders ImGui
 
         // --- CPU WORK END ---
@@ -1603,7 +1552,257 @@ void imgui_begin()
     ImGui::NewFrame();
 }
 
-void imgui_render()
+GameObject* selectedGameObject = nullptr;
+
+void ShowGameObjectTree(GameObject* obj)
+{
+    if (!obj)
+        return;
+
+    ImGuiTreeNodeFlags flags =
+        ImGuiTreeNodeFlags_OpenOnArrow |
+        ImGuiTreeNodeFlags_OpenOnDoubleClick |
+        ((obj == selectedGameObject) ? ImGuiTreeNodeFlags_Selected : 0);
+
+    const char* displayName = obj->name.empty() ? "GameObject" : obj->name.c_str();
+
+    // jeśli brak dzieci -> leaf
+    if (!obj->HasChildren())
+        flags |= ImGuiTreeNodeFlags_Leaf;
+
+    bool opened = ImGui::TreeNodeEx((void*)obj, flags, "%s", displayName);
+
+    if (ImGui::IsItemClicked())
+        selectedGameObject = obj;
+
+    if (opened)
+    {
+        for (GameObject* child : obj->GetChildren())
+        {
+            ShowGameObjectTree(child);
+        }
+
+        ImGui::TreePop();
+    }
+}
+
+void ShowTransformEditor(TransformComponent& transform)
+{
+    glm::vec3 pos = TransformHelper::getLocalPosition(transform);
+    glm::vec3 rot = TransformHelper::getLocalRotation(transform);
+    glm::vec3 scale = TransformHelper::getLocalScale(transform);
+
+    if (ImGui::DragFloat3("Position", &pos.x, 0.01f))
+    {
+        TransformHelper::setLocalPosition(transform, pos);
+    }
+
+    if (ImGui::DragFloat3("Rotation", &rot.x, 0.1f))
+    {
+        TransformHelper::setLocalRotation(transform, rot);
+    }
+
+    if (ImGui::DragFloat3("Scale", &scale.x, 0.01f, 0.01f))
+    {
+        TransformHelper::setLocalScale(transform, scale);
+    }
+}
+
+void ShowColliderEditor(ColliderComponent& collider)
+{
+    ImGui::Checkbox("Is Trigger", &collider.isTrigger);
+
+    //DrawVec3Control(
+    //    "Offset",
+    //    collider.offset
+    //);
+
+    //DrawVec3Control(
+    //    "Half Size",
+    //    collider.halfSize,
+    //    0.01f,
+    //    0.5f
+    //);
+}
+//
+//void DrawVec3Control(
+//    const std::string& label,
+//    glm::vec3& values,
+//    float speed = 0.01f,
+//    float resetValue = 0.0f)
+//{
+//    ImGui::PushID(label.c_str());
+//
+//    ImGui::Columns(2);
+//    ImGui::SetColumnWidth(0, 100.0f);
+//    ImGui::Text(label.c_str());
+//    ImGui::NextColumn();
+//
+//    ImGui::PushMultiItemsWidths(3, ImGui::CalcItemWidth());
+//
+//    float lineHeight =
+//        ImGui::GetFontSize() +
+//        ImGui::GetStyle().FramePadding.y * 2.0f;
+//
+//    ImVec2 buttonSize = { lineHeight + 3.0f, lineHeight };
+//
+//    // X
+//    ImGui::PushStyleColor(ImGuiCol_Button,
+//        ImVec4(0.8f, 0.1f, 0.15f, 1.0f));
+//
+//    if (ImGui::Button("X", buttonSize))
+//        values.x = resetValue;
+//
+//    ImGui::SameLine();
+//
+//    ImGui::DragFloat("##X", &values.x, speed);
+//
+//    ImGui::PopItemWidth();
+//    ImGui::SameLine();
+//
+//    ImGui::PopStyleColor();
+//
+//    // Y
+//    ImGui::PushStyleColor(ImGuiCol_Button,
+//        ImVec4(0.2f, 0.7f, 0.2f, 1.0f));
+//
+//    if (ImGui::Button("Y", buttonSize))
+//        values.y = resetValue;
+//
+//    ImGui::SameLine();
+//
+//    ImGui::DragFloat("##Y", &values.y, speed);
+//
+//    ImGui::PopItemWidth();
+//    ImGui::SameLine();
+//
+//    ImGui::PopStyleColor();
+//
+//    // Z
+//    ImGui::PushStyleColor(ImGuiCol_Button,
+//        ImVec4(0.1f, 0.25f, 0.8f, 1.0f));
+//
+//    if (ImGui::Button("Z", buttonSize))
+//        values.z = resetValue;
+//
+//    ImGui::SameLine();
+//
+//    ImGui::DragFloat("##Z", &values.z, speed);
+//
+//    ImGui::PopItemWidth();
+//
+//    ImGui::PopStyleColor();
+//
+//    ImGui::Columns(1);
+//
+//    ImGui::PopID();
+//}
+
+
+
+void ShowLightEditor(LightComponent& light)
+{
+    // enable
+    ImGui::Checkbox("Enabled", &light.isOn);
+
+    // type
+    const char* lightTypes[] =
+    {
+        "Directional",
+        "Point",
+        "Spot"
+    };
+
+    int currentType = static_cast<int>(light.type);
+
+    if (ImGui::Combo("Type", &currentType, lightTypes, IM_ARRAYSIZE(lightTypes)))
+    {
+        light.type = static_cast<LightType>(currentType);
+    }
+
+    ImGui::Separator();
+
+    ImGui::ColorEdit3("Ambient", &light.ambient.x);
+    ImGui::ColorEdit3("Diffuse", &light.diffuse.x);
+    ImGui::ColorEdit3("Specular", &light.specular.x);
+
+    ImGui::Separator();
+
+    // direction
+    //if (light.type == Directional || light.type == Spot)
+    //{
+    //    ImGui::DragFloat3("Direction", &light.direction.x, 0.01f);
+    //}
+
+    // attenuation
+    if (light.type == Point || light.type == Spot)
+    {
+        ImGui::Text("Attenuation");
+        ImGui::DragFloat("Constant", &light.constant, 0.001f, 0.0f, 10.0f);
+        ImGui::DragFloat("Linear", &light.linear, 0.001f, 0.0f, 10.0f);
+        ImGui::DragFloat("Quadratic", &light.quadratic, 0.001f, 0.0f, 10.0f);
+    }
+
+    // spotlight
+    if (light.type == Spot)
+    {
+        ImGui::Separator();
+        ImGui::Text("Spotlight");
+
+        float innerAngle = glm::degrees(glm::acos(light.cutOff));
+        float outerAngle = glm::degrees(glm::acos(light.outerCutOff));
+
+        if (ImGui::DragFloat("Inner Cutoff", &innerAngle, 0.1f, 0.0f, 90.0f))
+        {
+            light.cutOff = glm::cos(glm::radians(innerAngle));
+        }
+
+        if (ImGui::DragFloat("Outer Cutoff", &outerAngle, 0.1f, 0.0f, 90.0f))
+        {
+            light.outerCutOff = glm::cos(glm::radians(outerAngle));
+        }
+    }
+}
+
+std::string OpenFileDialog()
+{
+    char filename[MAX_PATH] = "";
+
+    OPENFILENAMEA ofn = {};
+    ofn.lStructSize = sizeof(OPENFILENAMEA);
+    ofn.lpstrFile = filename;
+    ofn.nMaxFile = MAX_PATH;
+
+    ofn.lpstrInitialDir = "res";
+
+    ofn.lpstrFilter =
+        "Model Files\0*.obj;*.fbx;*.glb;*.gltf\0"
+        "All Files\0*.*\0";
+
+    ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
+
+    if (GetOpenFileNameA(&ofn))
+    {
+        std::filesystem::path fullPath = filename;
+
+        std::filesystem::path projectRoot = std::filesystem::absolute("../../");
+
+        std::filesystem::path relative =
+            std::filesystem::relative(fullPath, projectRoot);
+
+        std::string result = relative.string();
+
+        std::replace(result.begin(), result.end(), '\\', '/');
+
+        return result;
+    }
+
+    return "";
+}
+
+static std::unordered_map<std::string, Prefab> prefabs;
+
+void imgui_render(SceneManager& sceneManager)
 {
     if (show_demo_window)
     {
@@ -1618,6 +1817,105 @@ void imgui_render()
         glPolygonMode(GL_FRONT_AND_BACK,
             wireframeMode ? GL_LINE : GL_FILL);
     }
+
+    ImGui::Separator();
+    ImGui::Text("Hierarchy");
+    //entityFilter.Draw("Search", 200);
+    ShowGameObjectTree(sceneManager.GetActiveScene()->GetRoot());
+
+    if (selectedGameObject)
+    {
+        ImGui::Separator();
+        ImGui::Text("Selected Entity: %s", selectedGameObject->name.c_str());
+        ShowTransformEditor(*selectedGameObject->GetComponent<TransformComponent>());
+
+        LightComponent* light = selectedGameObject->GetComponent<LightComponent>();
+
+        if (light != nullptr)
+        {
+            ShowLightEditor(*light);
+        }
+    }
+
+    if (ImGui::Button("Zapisz"))
+    {
+        sceneManager.Save();
+    }
+
+    ImGui::Separator();
+
+    Scene& scene = *sceneManager.GetActiveScene();
+
+    for (auto& [name, weakModel] : ResourceManager::Models)
+    {
+        ImGui::PushID(name.c_str());
+
+        std::shared_ptr<Model> model = weakModel;
+
+        ImGui::Text("%s", name.c_str());
+        ImGui::SameLine();
+
+        if (!model)
+        {
+            ImGui::TextDisabled("[loading]");
+        }
+        else
+        {
+            if (!prefabs.contains(name))
+            {
+                prefabs.emplace(name, Prefab(model));
+            }
+
+            if (ImGui::Button("Instantiate"))
+            {
+                Prefab& prefab = prefabs.at(name);
+
+                GameObject* obj =
+                    prefab.Instantiate(scene, nullptr, ourShader.get());
+
+                if (obj)
+                    obj->name = name;
+            }
+        }
+
+        ImGui::PopID();
+    }
+
+
+    ImGui::End();
+
+    ImGui::Begin("Loaded Models");
+
+    if (ImGui::Button("Load Model"))
+    {
+        std::string path = OpenFileDialog();
+
+        if (!path.empty())
+        {
+            ResourceManager::LoadModel(path);
+        }
+    }
+
+
+    if (ImGui::Button("Load asset"))
+    {
+        std::string path = "assets.yaml";
+        ResourceManager::LoadAssets(path);
+    }
+
+    if (ImGui::Button("Zapisz asset"))
+    {
+        ResourceManager::SaveAsset();
+    }
+
+    ImGui::Separator();
+
+
+    for (const auto& [name, weakModel] : ResourceManager::Models)
+    {
+        ImGui::Text("%s", name.c_str());
+    }
+
     ImGui::End();
 
     ImGui::Begin("Performance");
@@ -1646,13 +1944,13 @@ void imgui_render()
         ImGui::Text("State changes:%d", renderSystem->stats.stateChanges);
     }
     if (ImGui::CollapsingHeader("Culling")) {
-        ImGui::Checkbox("Frustum culling",   &renderSystem->frustumCullingEnabled);
+        ImGui::Checkbox("Frustum culling", &renderSystem->frustumCullingEnabled);
         ImGui::Checkbox("Occlusion culling", &renderSystem->occlusionCullingEnabled);
         ImGui::Text("Frustum culled:   %d", renderSystem->stats.frustumCulledSet.size());
         ImGui::Text("Occlusion culled: %d", renderSystem->stats.occlusionCulledSet.size());
     }
     ImGui::PlotLines("Frame time", frameTimes, MAX_SAMPLES, index,
-                 nullptr, 0.0f, 1.0f, ImVec2(0, 60));
+        nullptr, 0.0f, 1.0f, ImVec2(0, 60));
 
     ImGui::End();
 
@@ -1685,6 +1983,7 @@ void end_frame()
     glfwMakeContextCurrent(window);
     glfwSwapBuffers(window);
 }
+
 
 void processCameraGamepad(ECS &ecs, CameraComponent &cam, TransformComponent &transform, int gamepad_id) {
     const auto& hid = ecs.GetSystem<HID>();
