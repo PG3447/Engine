@@ -51,6 +51,7 @@
 
 #include "systems/PostProcessingSystem.h"
 #include "systems/NavPathSystem.h"
+#include "systems/NpcSystem.h"
 #include "utils/render_helper.h"
 #include "utils/animation_helper.h"
 
@@ -930,6 +931,85 @@ void createFirstRoom(Scene* scena1) {
     wallObject13->GetComponent<TransformComponent>()->position.z = -200;*/
 }
 
+GameObject* CreateCockroachLeader(
+    Scene& scene,
+    Prefab& prefab,
+    Shader* shader,
+    const glm::vec3& homePos,
+    float moveSpeed = 4.0f)
+{
+    GameObject* go = prefab.Instantiate(scene, nullptr, shader);
+    go->name = "CockroachLeader";
+
+    auto* tr     = go->GetComponent<TransformComponent>();
+    tr->position = homePos;
+    tr->scale    = glm::vec3(0.3f);
+    tr->isDirty  = true;
+
+    auto* rb = go->AddComponent<RigidbodyComponent>();
+    rb->useGravity = true;
+    rb->isStatic   = false;
+
+    auto* col = go->AddComponent<ColliderComponent>();
+    col->halfSize = glm::vec3(0.3f, 0.2f, 0.3f);
+
+    auto* nav      = go->AddComponent<NavPathComponent>();
+    nav->state     = NavAgentState::ExternalControl;
+    nav->moveSpeed = moveSpeed;
+    nav->idleTimeMax = 0.0f;
+
+    auto* leader = go->AddComponent<CockroachLeaderComponent>();
+    leader->homePosition     = homePos;
+    leader->homeRadius       = 15.0f;
+    leader->homeTimeRequired = 8.0f;
+    leader->exploreRadius    = 50.0f;
+    leader->exploreDuration  = 20.0f;
+    leader->detectionRadius  = 25.0f;
+    leader->escapeRadius     = 35.0f;
+    leader->idleWanderRadius = 8.0f;
+    leader->state            = LeaderState::Idle;
+
+    return go;
+}
+
+GameObject* CreateCockroachFollower(
+    Scene& scene,
+    Prefab& prefab,
+    Shader* shader,
+    GameObject* leaderGO,
+    const glm::vec3& spawnPos,
+    float moveSpeed = 4.5f)
+{
+    GameObject* go = prefab.Instantiate(scene, nullptr, shader);
+    go->name = "CockroachFollower";
+
+    auto* tr     = go->GetComponent<TransformComponent>();
+    tr->position = spawnPos;
+    tr->scale    = glm::vec3(0.25f);
+    tr->isDirty  = true;
+
+    auto* rb = go->AddComponent<RigidbodyComponent>();
+    rb->useGravity = true;
+    rb->isStatic   = false;
+
+    auto* col = go->AddComponent<ColliderComponent>();
+    col->halfSize = glm::vec3(0.25f, 0.15f, 0.25f);
+
+    auto* nav      = go->AddComponent<NavPathComponent>();
+    nav->state     = NavAgentState::ExternalControl;
+    nav->moveSpeed = moveSpeed;
+    nav->idleTimeMax = 0.0f;
+
+    auto* follower = go->AddComponent<CockroachFollowerComponent>();
+    follower->leaderGameObject  = leaderGO;
+    follower->followDistance    = 6.0f;
+    follower->followStopDistance= 2.0f;
+    follower->idleWanderRadius  = 6.0f;
+    follower->state             = FollowerState::Follow;
+
+    return go;
+}
+
 int main(int, char**)
 {
     if (!init())
@@ -1132,7 +1212,7 @@ int main(int, char**)
     auto* targetCol = raycastTarget->AddComponent<ColliderComponent>();
     targetCol->halfSize = glm::vec3(3.0f);
     targetCol->offset = glm::vec3(0.0f);
-    */
+    *//*
     GameObject* RaycastSource =
         CreateRaycastTestObject(
             *scena1,
@@ -1144,7 +1224,7 @@ int main(int, char**)
     NavPathComponent* sourceAgent = RaycastSource->AddComponent<NavPathComponent>();
     RaycastSource->AddComponent<RigidbodyComponent>();
     sourceAgent->moveSpeed = 6.0f;
-    sourceAgent->debugDraw = true;
+    sourceAgent->debugDraw = true;*/
     /*
  ustawianiePokoju
     GameObject* model5 = cupModel->Instantiate(*scena1, nullptr, ourShader.get());
@@ -1239,6 +1319,24 @@ int main(int, char**)
 
         can_open_door_1 = allCorrect;
         };
+
+    //Karaluch center
+
+    glm::vec3 nestPos = glm::vec3(-20.0f, 0.5f, -80.0f);
+
+    GameObject* leader = CreateCockroachLeader(*scena1, *placeholderModel, ourShader.get(), nestPos, 4.0f);
+
+    for (int i = 0; i < 3; i++) {
+        glm::vec3 offset = glm::vec3(
+            (float)(rand()%6) - 3.0f, 0,
+            (float)(rand()%6) - 3.0f
+        );
+        CreateCockroachFollower(
+            *scena1, *placeholderModel, ourShader.get(),
+            leader, nestPos + offset, 4.5f);
+    }
+
+
 
     // Main loop
     while (!glfwWindowShouldClose(window))
@@ -1350,7 +1448,6 @@ int main(int, char**)
             else ++it;
         }
 
-        spdlog::info(can_open_door_1);
 
         // caly ten wielki kod wydzielilem do funkcji
         HandlePlayerInteraction(ecs, "interact_p1", player1Raycast, camera1, p1HeldObject, p2HeldObject, scena1, rotatingObjects);
@@ -2099,6 +2196,7 @@ void addAllSystems(ECS &ecs) {
     ecs.AddSystem<NavMeshSystem>(ecs);
     ecs.AddSystem<NavPathSystem>(ecs);
     ecs.AddSystem<AudioSystem>(ecs);
+    ecs.AddSystem<NpcSystem>(ecs);
 }
 void connectAllModels() {
     bed1Model = std::make_unique<Prefab>("res/models/samochod.glb");

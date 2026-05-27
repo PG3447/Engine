@@ -17,8 +17,9 @@ NavPathSystem::NavPathSystem(ECS& ecs) {
 void NavPathSystem::OnGameObjectUpdated(GameObject* e) {
     agentQuery_->OnGameObjectUpdated(e);
 }
-void NavPathSystem::Update(ECS& ecs, float dt) {
-    // Pobierz navmesh (raz na klatke)
+
+void NavPathSystem::Update(ECS& ecs, float dt)
+{
     auto* navSys = ecs.GetSystem<NavMeshSystem>();
     if (!navSys || !navSys->IsBaked()) return;
 
@@ -38,7 +39,9 @@ void NavPathSystem::Update(ECS& ecs, float dt) {
 
         switch (comp->state) {
 
-        // --- Idle: odczekaj chwile, potem wylosuj nowy cel ---
+        case NavAgentState::ExternalControl:
+            break;
+
         case NavAgentState::Idle:
             comp->idleTimer -= dt;
             if (comp->idleTimer <= 0.0f) {
@@ -53,69 +56,63 @@ void NavPathSystem::Update(ECS& ecs, float dt) {
 
             if (ok && !comp->path.empty()) {
                 comp->currentWaypoint  = 0;
-                comp->stuckCheckTimer  = comp->stuckCheckInterval; // reset
-                comp->lastCheckedPos   = tr->position;             // reset
+                comp->stuckCheckTimer  = comp->stuckCheckInterval;
+                comp->lastCheckedPos   = tr->position;
                 comp->state = NavAgentState::Moving;
             } else {
-                spdlog::warn("[NavPath] Nie znaleziono sciezki, losuje nowy cel");
-                comp->goalPosition = RandomPointOnNavMesh(navData);
+                spdlog::warn("[NavPath] Nie znaleziono sciezki");
+                if (comp->goalPosition == glm::vec3(0.0f)) {
+                    comp->goalPosition = RandomPointOnNavMesh(navData);
+                } else {
+                    comp->state = NavAgentState::Arrived;
+                }
             }
             break;
         }
 
-        // --- Moving: przesun agenta wzdluz sciezki ---
-            case NavAgentState::Moving:
-                // Stuck detection
-                comp->stuckCheckTimer -= dt;
-                if (comp->stuckCheckTimer <= 0.0f) {
-                    comp->stuckCheckTimer = comp->stuckCheckInterval;
+        case NavAgentState::Moving:
+            // Stuck detection
+            comp->stuckCheckTimer -= dt;
+            if (comp->stuckCheckTimer <= 0.0f) {
+                comp->stuckCheckTimer = comp->stuckCheckInterval;
 
-                    float moved = glm::length(
-                        glm::vec3(tr->position.x, 0.0f, tr->position.z) -
-                        glm::vec3(comp->lastCheckedPos.x, 0.0f, comp->lastCheckedPos.z)
-                    );
+                float moved = glm::length(
+                    glm::vec3(tr->position.x, 0.0f, tr->position.z) -
+                    glm::vec3(comp->lastCheckedPos.x, 0.0f, comp->lastCheckedPos.z)
+                );
 
-                    if (moved < comp->stuckThreshold) {
-                        spdlog::warn("[NavPath] Agent stuck, losuje nowy cel");
-                        comp->goalPosition = RandomPointOnNavMesh(cachedNavMesh_->data);
-                        comp->state = NavAgentState::RequestingPath;
-                        comp->path.clear();
-                    }
-
-                    comp->lastCheckedPos = tr->position;
+                if (moved < comp->stuckThreshold) {
+                    //spdlog::warn("[NavPath] Agent stuck");
+                    comp->path.clear();
+                    comp->state = NavAgentState::Arrived;
                 }
 
-                MoveAgent(go, *comp, dt);
-                break;
+                comp->lastCheckedPos = tr->position;
+            }
 
-        // --- Arrived: dotarl, ustaw idle timer ---
+            MoveAgent(go, *comp, dt);
+            break;
+
+
         case NavAgentState::Arrived:
-            comp->idleTimer = comp->idleTimeMin +
-                ((float)rand() / RAND_MAX) * (comp->idleTimeMax - comp->idleTimeMin);
             comp->path.clear();
-            comp->state = NavAgentState::Idle;
+            if (comp->idleTimeMax > 0.0f && comp->idleTimer <= 0.0f) {
+                comp->idleTimer = comp->idleTimeMin +
+                    ((float)rand() / RAND_MAX) * (comp->idleTimeMax - comp->idleTimeMin);
+                comp->state = NavAgentState::Idle;
+            }
             break;
         }
 
-        // --- Debug draw sciezki ---
         if (comp->debugDraw && !comp->path.empty()) {
             const float yOff = 0.1f;
             for (int j = 0; j + 1 < (int)comp->path.size(); j++) {
                 glm::vec3 a = comp->path[j]   + glm::vec3(0, yOff, 0);
                 glm::vec3 b = comp->path[j+1] + glm::vec3(0, yOff, 0);
-                //DebugDrawSystem::AddLine(a, b, comp->colorPath);
-            }
-            // Aktualny waypoint
-            if (comp->currentWaypoint < (int)comp->path.size()) {
-                glm::vec3 wp = comp->path[comp->currentWaypoint] + glm::vec3(0, yOff, 0);
-                //DebugDrawSystem::AddLine(tr->position + glm::vec3(0, yOff, 0),
-                  //                       wp, comp->colorWaypoint);
             }
         }
     }
 }
-
-//  RequestPath - A* + Funnel
 
 bool NavPathSystem::RequestPath(NavPathComponent& comp,
                                  const glm::vec3& start,
