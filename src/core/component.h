@@ -190,8 +190,12 @@ struct SpriteComponent : Component {
     std::string text = "";
     std::string fontPath = "res/textures/fonts/arial.ttf";
     float fontSize = 32.0f;
-    glm::vec3 textColor = { 0.0f, 0.0f, 0.0f };
+    glm::vec3 textColor = { 255.0f, 255.0f, 255.0f };
     glm::vec2 textOffset = { 0.0f, 0.0f };
+    bool textOutlineEnabled = false;
+    float textOutlineSize = 1.5f;
+    glm::vec3 textOutlineColor = { 0.0f, 0.0f, 0.0f };
+    bool textCentered = true;
 
     unsigned int currentTextureID() const {
         if (sprites.empty() || !sprites[currentSprite]) return 0;
@@ -199,6 +203,7 @@ struct SpriteComponent : Component {
     }
 
     int totalFrames() const { return (int)sprites.size(); }
+
 };
 
 
