@@ -71,30 +71,30 @@ public:
         //unused
     }
 
-    //void Update(ECS& ecs, float dt) override {
-    //    time += dt;
-    //    int display_w, display_h;
-    //    glfwGetFramebufferSize(window, &display_w, &display_h);
-    //    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    //    glViewport(0, 0, display_w, display_h);
-    //    glClear(GL_COLOR_BUFFER_BIT);
+    void Update(ECS& ecs, float dt) override {
+        time += dt;
+        int display_w, display_h;
+        glfwGetFramebufferSize(window, &display_w, &display_h);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glViewport(0, 0, display_w, display_h);
+        glClear(GL_COLOR_BUFFER_BIT);
 
-    //    glDisable(GL_DEPTH_TEST);
+        glDisable(GL_DEPTH_TEST);
 
-    //    postShader->use();
-    //    postShader->setInt("screenTexture", 0);
-    //    postShader->setFloat("gamma", gamma);
-    //    postShader->setFloat("time", time);
+        postShader->use();
+        postShader->setInt("screenTexture", 0);
+        postShader->setFloat("gamma", gamma);
+        postShader->setFloat("time", time);
 
-    //    glActiveTexture(GL_TEXTURE0);
-    //    glBindTexture(GL_TEXTURE_2D, renderSystem->GetSceneTexture());
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, renderSystem->GetSceneTexture());
 
-    //    glBindVertexArray(quadVAO);
-    //    glDrawArrays(GL_TRIANGLES, 0, 6);
-    //    glBindVertexArray(0);
+        glBindVertexArray(quadVAO);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glBindVertexArray(0);
 
-    //    glEnable(GL_DEPTH_TEST);
-    //}
+        glEnable(GL_DEPTH_TEST);
+    }
 
     [[nodiscard]] float get_gamma() const {
         return gamma;

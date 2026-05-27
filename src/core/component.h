@@ -6,7 +6,6 @@
 #include <string>
 #include "../unused/camera.h"
 #include "yaml_config.h"
-#include "mesh_data.h"
 
 class GameObject;
 class MeshNode;
@@ -30,11 +29,7 @@ struct NodeAnimCache {
 };
 
 struct Component {
-    static constexpr bool Unique = false;
     virtual ~Component() {}
-
-    virtual void OnEnable(GameObject* owner) {}
-    virtual void OnDisable(GameObject* owner) {}
 
     virtual const char* GetTypeName() const { return "Component"; }
 
@@ -101,10 +96,7 @@ struct RenderComponent : Component {
     static constexpr uint64_t ComponentBit = 1ull << 1;
 
     std::vector<MeshNode> meshes;
-    AnimatorComponent* animator;
-    AABB localObjectAABB;
-
-
+    
     //std::vector<std::shared_ptr<Material>> materials; Fajnie jak bedzie xD
 
     //std::shared_ptr<Model> model;
@@ -190,8 +182,12 @@ struct SpriteComponent : Component {
     std::string text = "";
     std::string fontPath = "res/textures/fonts/arial.ttf";
     float fontSize = 32.0f;
-    glm::vec3 textColor = { 0.0f, 0.0f, 0.0f };
+    glm::vec3 textColor = { 255.0f, 255.0f, 255.0f };
     glm::vec2 textOffset = { 0.0f, 0.0f };
+    bool textOutlineEnabled = false;
+    float textOutlineSize = 1.5f;
+    glm::vec3 textOutlineColor = { 0.0f, 0.0f, 0.0f };
+    bool textCentered = true;
 
     unsigned int currentTextureID() const {
         if (sprites.empty() || !sprites[currentSprite]) return 0;
@@ -199,6 +195,7 @@ struct SpriteComponent : Component {
     }
 
     int totalFrames() const { return (int)sprites.size(); }
+
 };
 
 
@@ -338,7 +335,6 @@ struct LightComponent : Component {
 
 struct AnimatorComponent : Component {
     static constexpr uint64_t ComponentBit = 1ull << 7;
-    static constexpr bool Unique = true;
 
     static const int MAX_BONES = 200;
 
@@ -357,10 +353,7 @@ struct AnimatorComponent : Component {
     {
         finalBoneMatrices.resize(MAX_BONES, glm::mat4(1.0f));
     }
-
-    void OnEnable(GameObject* owner) override;
 };
-
 struct RaycastHit {
     bool hit = false;
     float distance = 0.0f; //odleglosc
