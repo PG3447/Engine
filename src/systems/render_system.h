@@ -338,16 +338,16 @@ public:
 
         int display_w, display_h;
         glfwGetFramebufferSize(window, &display_w, &display_h);
-        //InitFBO(display_w, display_h);
+        InitFBO(display_w, display_h);
 
-        //glBindFramebuffer(GL_FRAMEBUFFER, sceneFBO);
+        glBindFramebuffer(GL_FRAMEBUFFER, sceneFBO);
         glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         //BuildGroups();
         RenderAllCameras();
 
-        //glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         gpuQuery.end();
         gpuQuery.nextFrame();

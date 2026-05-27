@@ -37,7 +37,7 @@ void Scene::Update(float deltaTime) {
 
     if (auto* ps = ecs.GetSystem<PhysicsSystem>())
         ps->Update(ecs, deltaTime);
-  
+
     if (auto* ps = ecs.GetSystem<AnimationSystem>())
         ps->Update(ecs, deltaTime);
 
@@ -54,11 +54,15 @@ void Scene::Update(float deltaTime) {
         obj->Update(ecs, deltaTime);
     }
 
-    //if (auto* pps = ecs.GetSystem<PostProcessingSystem>())
-    //    pps->Update(ecs, deltaTime);
+    if (auto* pps = ecs.GetSystem<PostProcessingSystem>())
+        pps->Update(ecs, deltaTime);
 
     if (auto* ss = ecs.GetSystem<SpriteSystem>())
         ss->Update(ecs, deltaTime);
+
+    //if (auto* as = ecs.GetSystem<AudioSystem>())
+        //as->Update(ecs, deltaTime);
+
 }
 //
 //std::vector<GameObject*> Scene::GetGameObjects() {
