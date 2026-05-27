@@ -13,6 +13,7 @@ void main() {
     //vec3 color = texture(screenTexture, uv).rgb;
 
     vec3 color = texture(screenTexture, TexCoords).rgb;
+    color = pow(color, vec3(2.2));
     //vec3 negative = 1.0 - color;
     //FragColor = vec4(negative, 1.0);
 
@@ -21,10 +22,12 @@ void main() {
     playerColor = color;
 
     //color efects
-        if (TexCoords.x < 0.5){
+    if (TexCoords.x < 0.5){
             float R = color.r;
             float G = color.g;
             float B = color.b;
+
+            float dotProduct = dot(color, vec3(0.0, 0.587, 0.114));
 
             float s1 = G - R;
             float s2 = G - B;
@@ -34,12 +37,10 @@ void main() {
             float m1 = max(s1, s2);
             float m2 = max(s3, s4);
 
-            float ss1 = smoothstep(0.12, 0.25, m1);
-            float ss2 = smoothstep(0.12, 0.25, m2);
+            float ss1 = smoothstep(0.2, 0.4, m1);
+            float ss2 = smoothstep(0.2, 0.4, m2);
 
             float GIGAWYNIK = max(ss1, ss2);
-
-            float dotProduct = dot(color, vec3(0.0, 0.587, 0.114));
 
             playerColor =  mix(vec3(dotProduct), color, GIGAWYNIK);
         } else {
@@ -55,17 +56,17 @@ void main() {
             float m1 = max(s1, s2);
             float m2 = max(s3, s4);
 
-            float ss1 = smoothstep(0.12, 0.25, m1);
-            float ss2 = smoothstep(0.12, 0.25, m2);
+            float ss1 = smoothstep(0.2, 0.4, m1);
+            float ss2 = smoothstep(0.2, 0.4, m2);
 
             float GIGAWYNIK = max(ss1, ss2);
 
             float dotProduct = dot(color, vec3(0.299, 0.0, 0.114));
 
-            vec3 tempColor =  mix(vec3(dotProduct), color, GIGAWYNIK);
+            playerColor =  mix(vec3(dotProduct), color, GIGAWYNIK);//pow(tempColor, vec3(1.0 / 1.8));//dont worry about it
+     }
 
-            playerColor = tempColor;//pow(tempColor, vec3(1.0 / 1.8));//dont worry about it
-        }
+     playerColor = pow(playerColor, vec3(1.0 / 2.2));
 
 
     //Contrast
