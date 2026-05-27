@@ -501,6 +501,11 @@ struct NavPathComponent : Component {
     // --- Stan ---
     NavAgentState state = NavAgentState::Idle;
 
+    float stuckCheckInterval = 1.5f;  // co ile sekund sprawdzamy
+    float stuckCheckTimer    = 0.0f;
+    float stuckThreshold     = 1.0f;  // minimalne przesunięcie żeby nie uznać za stuck
+    glm::vec3 lastCheckedPos = glm::vec3(0.0f);
+
     // --- Debug ---
     bool debugDraw = true;
     glm::vec4 colorPath    = glm::vec4(1.0f, 1.0f, 0.0f, 1.0f); // zolty

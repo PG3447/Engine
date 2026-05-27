@@ -232,7 +232,7 @@ NavMeshSystem::CollectObstacles(Scene& scene) {
         // Przeszkoda = affectsNavMesh=true ALE isWalkable=false
         if (!col->affectsNavMesh || col->isWalkable) continue;
 
-        glm::vec3 worldPos = glm::vec3(tr->modelMatrix[3]);
+        glm::vec3 worldPos = tr->position;
         glm::vec3 scale    = tr->scale;
         glm::vec3 half     = col->halfSize;
         glm::vec3 center   = worldPos + col->offset;

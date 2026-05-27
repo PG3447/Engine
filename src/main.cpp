@@ -471,6 +471,8 @@ GameObject* CreateInteractableDoor(Scene* scene, Prefab* prefab, Shader* shader,
     ColliderComponent* col = hinge->AddComponent<ColliderComponent>();
     col->halfSize = colliderHalfSize;
     col->offset = -pivotOffset;
+    col->isWalkable = false;
+    col->affectsNavMesh = true;
 
     DoorState state;
     state.hinge = hinge;
@@ -728,6 +730,8 @@ void createFirstRoom(Scene* scena1) {
         tablicaKibli[i]->GetComponent<ColliderComponent>()->offset = glm::vec3{ 0, 4, 0 };
         tablicaKibli[i]->GetComponent<TransformComponent>()->position = glm::vec3{ 45, 0.5f, -45 + (-10 * i) };
         tablicaKibli[i]->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 90, 0 };
+        tablicaKibli[i]->GetComponent<ColliderComponent>()->isWalkable = false;
+        tablicaKibli[i]->GetComponent<ColliderComponent>()->affectsNavMesh = true;
     }
     GameObject* tablicaZaslon[7];
     for (int i = 0; i < 7; i++) {
@@ -739,6 +743,8 @@ void createFirstRoom(Scene* scena1) {
         tablicaZaslon[i]->GetComponent<RigidbodyComponent>()->isStatic = true;
         tablicaZaslon[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 20, 15, 0.3 };
         tablicaZaslon[i]->GetComponent<TransformComponent>()->position = glm::vec3{ 50, 0, -40 + (-10 * i) };
+        tablicaZaslon[i]->GetComponent<ColliderComponent>()->isWalkable = false;
+        tablicaZaslon[i]->GetComponent<ColliderComponent>()->affectsNavMesh = true;
     }
     GameObject* tablicaDrzwiczekDoKilba[6];
     for (int i = 0; i < 6; i++) {
@@ -785,6 +791,8 @@ void createFirstRoom(Scene* scena1) {
         tablicaSink[i]->GetComponent<RigidbodyComponent>()->isStatic = true;
         tablicaSink[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 3, 20, 3 };
         tablicaSink[i]->GetComponent<TransformComponent>()->position = glm::vec3{ -21.5, -2.0, -45 + (-10 * i) };
+        tablicaSink[i]->GetComponent<ColliderComponent>()->isWalkable = false;
+        tablicaSink[i]->GetComponent<ColliderComponent>()->affectsNavMesh = true;
     }
     GameObject* lustro1;
     lustro1 = mirrorModel1->Instantiate(*scena1, nullptr, ourShader.get());
@@ -828,6 +836,8 @@ void createFirstRoom(Scene* scena1) {
         tablicaDrzwi[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 5, 22, 1 };
         tablicaDrzwi[i]->GetComponent<TransformComponent>()->position = glm::vec3{ -5 + (10 * i), 0.0, -100 };
         majorDoors.insert(tablicaDrzwi[i]);
+        tablicaDrzwi[i]->GetComponent<ColliderComponent>()->isWalkable = false;
+        tablicaDrzwi[i]->GetComponent<ColliderComponent>()->affectsNavMesh = true;
     }
 
     GameObject* cup = cupModel->Instantiate(*scena1, nullptr, ourShader.get());
@@ -1128,10 +1138,11 @@ int main(int, char**)
             *scena1,
             *placeholderModel,
             ourShader.get(),
-            glm::vec3(0.0f, 5.0f, 0.0f),
+            glm::vec3(0.0f, 5.0f, -20.0f),
             glm::vec3(1.0f)
         );
     NavPathComponent* sourceAgent = RaycastSource->AddComponent<NavPathComponent>();
+    RaycastSource->AddComponent<RigidbodyComponent>();
     sourceAgent->moveSpeed = 6.0f;
     sourceAgent->debugDraw = true;
     /*

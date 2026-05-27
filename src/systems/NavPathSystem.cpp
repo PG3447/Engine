@@ -47,27 +47,46 @@ void NavPathSystem::Update(ECS& ecs, float dt) {
             }
             break;
 
-        // --- RequestingPath: oblicz A* i funnel ---
         case NavAgentState::RequestingPath: {
             glm::vec3 startPos = tr->position;
             bool ok = RequestPath(*comp, startPos, comp->goalPosition, navData);
 
             if (ok && !comp->path.empty()) {
-                comp->currentWaypoint = 0;
+                comp->currentWaypoint  = 0;
+                comp->stuckCheckTimer  = comp->stuckCheckInterval; // reset
+                comp->lastCheckedPos   = tr->position;             // reset
                 comp->state = NavAgentState::Moving;
             } else {
-                // Nie udalo sie - wylosuj nowy cel
                 spdlog::warn("[NavPath] Nie znaleziono sciezki, losuje nowy cel");
                 comp->goalPosition = RandomPointOnNavMesh(navData);
-                // Zostajemy w RequestingPath - sprobuje w nastepnej klatce
             }
             break;
         }
 
         // --- Moving: przesun agenta wzdluz sciezki ---
-        case NavAgentState::Moving:
-            MoveAgent(go, *comp, dt);
-            break;
+            case NavAgentState::Moving:
+                // Stuck detection
+                comp->stuckCheckTimer -= dt;
+                if (comp->stuckCheckTimer <= 0.0f) {
+                    comp->stuckCheckTimer = comp->stuckCheckInterval;
+
+                    float moved = glm::length(
+                        glm::vec3(tr->position.x, 0.0f, tr->position.z) -
+                        glm::vec3(comp->lastCheckedPos.x, 0.0f, comp->lastCheckedPos.z)
+                    );
+
+                    if (moved < comp->stuckThreshold) {
+                        spdlog::warn("[NavPath] Agent stuck, losuje nowy cel");
+                        comp->goalPosition = RandomPointOnNavMesh(cachedNavMesh_->data);
+                        comp->state = NavAgentState::RequestingPath;
+                        comp->path.clear();
+                    }
+
+                    comp->lastCheckedPos = tr->position;
+                }
+
+                MoveAgent(go, *comp, dt);
+                break;
 
         // --- Arrived: dotarl, ustaw idle timer ---
         case NavAgentState::Arrived:
@@ -364,9 +383,7 @@ std::vector<glm::vec3> NavPathSystem::FunnelPath(
 
 //  Ruch agenta
 
-void NavPathSystem::MoveAgent(GameObject* go,
-                               NavPathComponent& comp,
-                               float dt)
+void NavPathSystem::MoveAgent(GameObject* go, NavPathComponent& comp, float dt)
 {
     if (comp.path.empty() || comp.currentWaypoint >= (int)comp.path.size()) {
         comp.state = NavAgentState::Arrived;
@@ -374,21 +391,19 @@ void NavPathSystem::MoveAgent(GameObject* go,
     }
 
     auto* tr = go->GetComponent<TransformComponent>();
+    auto* rb = go->GetComponent<RigidbodyComponent>();
     if (!tr) return;
 
     glm::vec3 target = comp.path[comp.currentWaypoint];
-
-    // Ruch tylko w XZ (Y pozostaje jak jest - agent "lezy" na podlodze)
     glm::vec3 toTarget = target - tr->position;
     toTarget.y = 0.0f;
-
     float dist = glm::length(toTarget);
 
-    // Sprawdz czy dotarl do ostatniego punktu
     bool isLastWaypoint = (comp.currentWaypoint == (int)comp.path.size() - 1);
     float threshold = isLastWaypoint ? comp.arrivalRadius : comp.waypointRadius;
 
     if (dist < threshold) {
+        if (rb) rb->velocity = glm::vec3(0.0f);
         if (isLastWaypoint) {
             comp.state = NavAgentState::Arrived;
             return;
@@ -397,15 +412,23 @@ void NavPathSystem::MoveAgent(GameObject* go,
         return;
     }
 
-    // Przesun w kierunku waypointa
-    glm::vec3 dir = toTarget / dist; // normalize
-    tr->position += dir * comp.moveSpeed * dt;
-    tr->isDirty = true;
+    glm::vec3 dir = toTarget / dist;
 
-    // Obrot agenta w kierunku ruchu (opcjonalny - tylko Y)
+    if (rb) {
+        // Zachowaj Y velocity (grawitacja), zmień tylko XZ
+        float yVel = rb->velocity.y;
+        rb->velocity = dir * comp.moveSpeed;
+        rb->velocity.y = yVel;
+    } else {
+        // Fallback bez rigidbody
+        tr->position += dir * comp.moveSpeed * dt;
+        tr->isDirty = true;
+    }
+
     if (dist > 0.01f) {
         float angle = std::atan2(-dir.x, -dir.z);
         tr->rotation.y = glm::degrees(angle);
+        tr->isDirty = true;
     }
 }
 
