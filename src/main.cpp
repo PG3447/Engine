@@ -396,6 +396,19 @@ void HandlePlayerInteraction(
             if (rotatableObjects.count(hit.hitObject)) {
                 if (!rotatingObjects.count(hit.hitObject)) rotatingObjects[hit.hitObject] = 60.0f;
             }
+            //PAIN
+            if (majorDoors.count(hit.hitObject)) {
+                if (can_open_door_1) {
+                    for (GameObject* door : majorDoors) {
+                        TransformComponent* transform = door->GetComponent<TransformComponent>();
+                        if (transform != nullptr) {
+                            transform->position = glm::vec3(-1000.0f, -1000.0f, -1000.0f);
+                        }
+                    }
+                }
+            }
+
+
             // Otwieranie drzwi
             else if (toiletDoorsMap.count(hit.hitObject)) {
                 DoorState& state = toiletDoorsMap[hit.hitObject];
@@ -818,6 +831,7 @@ void createFirstRoom(Scene* scena1) {
         tablicaDrzwi[i]->GetComponent<RigidbodyComponent>()->isStatic = true;
         tablicaDrzwi[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 5, 22, 1 };
         tablicaDrzwi[i]->GetComponent<TransformComponent>()->position = glm::vec3{ -5+(10*i), 0.0, -100 };
+        majorDoors.insert(tablicaDrzwi[i]);
     }
 
     GameObject* cup = cupModel->Instantiate(*scena1, nullptr, ourShader.get());
