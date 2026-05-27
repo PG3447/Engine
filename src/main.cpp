@@ -839,7 +839,7 @@ void createFirstRoom(Scene* scena1) {
     cupRb->isStatic = false;
 
     ColliderComponent* cupCol = cup->AddComponent<ColliderComponent>();
-    cupCol->halfSize = glm::vec3{ 0.1f, 0.1f, 0.1f };
+    cupCol->halfSize = glm::vec3{ 1.0f, 1.0f, 1.0f };
 
     pickupObjects.insert(cup);
     //Zostawiam jeśli przyda się w przyszłości
@@ -1004,7 +1004,7 @@ int main(int, char**)
     camera2->AddComponent<LightComponent>();
     LightComponent* light3 = camera2->AddComponent<LightComponent>();
     light3->type = Spot;
-    light3->index = 1;
+    light3->index = 2;
 
     light3->ambient = glm::vec3(0.25f);
     light3->diffuse = glm::vec3(1.0f);
