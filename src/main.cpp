@@ -773,33 +773,33 @@ void createFirstRoom(Scene* scena1) {
     GameObject * lustro1;
     lustro1 = mirrorModel1->Instantiate(*scena1, nullptr, ourShader.get());
     lustro1->GetComponent<TransformComponent>()->scale = glm::vec3{ 1, 2, 8 };
-    lustro1->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 0, 0 };
+    lustro1->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 180, 0 };
     lustro1->AddComponent<RigidbodyComponent>();
     lustro1->AddComponent<ColliderComponent>();
     lustro1->GetComponent<RigidbodyComponent>()->useGravity = false;
     lustro1->GetComponent<RigidbodyComponent>()->isStatic = true;
     lustro1->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 1, 1 };
-    lustro1->GetComponent<TransformComponent>()->position = glm::vec3{ -24, 12.0, -50+(-20*0) };
+    lustro1->GetComponent<TransformComponent>()->position = glm::vec3{ -23.5, 12.0, -50+(-20*0) };
     GameObject * lustro2;
     lustro2 = mirrorModel2->Instantiate(*scena1, nullptr, ourShader.get());
     lustro2->GetComponent<TransformComponent>()->scale = glm::vec3{ 1, 2, 8 };
-    lustro2->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 0, 0 };
+    lustro2->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 180, 0 };
     lustro2->AddComponent<RigidbodyComponent>();
     lustro2->AddComponent<ColliderComponent>();
     lustro2->GetComponent<RigidbodyComponent>()->useGravity = false;
     lustro2->GetComponent<RigidbodyComponent>()->isStatic = true;
     lustro2->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 1, 1 };
-    lustro2->GetComponent<TransformComponent>()->position = glm::vec3{ -24, 12.0, -50+(-20*1) };
+    lustro2->GetComponent<TransformComponent>()->position = glm::vec3{ -23.5, 12.0, -50+(-20*1) };
     GameObject * lustro3;
     lustro3 = mirrorModel3->Instantiate(*scena1, nullptr, ourShader.get());
     lustro3->GetComponent<TransformComponent>()->scale = glm::vec3{ 1, 2, 8 };
-    lustro3->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 0, 0 };
+    lustro3->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 180, 0 };
     lustro3->AddComponent<RigidbodyComponent>();
     lustro3->AddComponent<ColliderComponent>();
     lustro3->GetComponent<RigidbodyComponent>()->useGravity = false;
     lustro3->GetComponent<RigidbodyComponent>()->isStatic = true;
     lustro3->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 1, 1 };
-    lustro3->GetComponent<TransformComponent>()->position = glm::vec3{ -24, 12.0, -50+(-20*2) };
+    lustro3->GetComponent<TransformComponent>()->position = glm::vec3{ -23.5, 12.0, -50+(-20*2) };
     GameObject * tablicaDrzwi[2];
     for (int i = 0 ; i < 2 ; i++) {
         tablicaDrzwi[i] = washroomExit->Instantiate(*scena1, nullptr, ourShader.get());
@@ -1174,7 +1174,7 @@ int main(int, char**)
     //FMOD
     FMOD::Sound* sound = nullptr;
 
-   ecs.GetSystem<AudioSystem>()->createSound("res/sound/test_sound.mp3", sound);
+   ecs.GetSystem<AudioSystem>()->createSound("res/sound/door_unlock.wav", sound);
 
     //obracanie
     std::unordered_map<GameObject*, float> rotatingObjects;
@@ -1220,7 +1220,7 @@ int main(int, char**)
         }
 
         if (ecs.GetSystem<HID>()->is_action_just_pressed("play_sound")) {
-            //ecs.GetSystem<AudioSystem>()->playSound(sound);
+            ecs.GetSystem<AudioSystem>()->playSound(sound);
         }
 
         std::string hintText = "";
