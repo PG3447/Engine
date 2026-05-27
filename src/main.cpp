@@ -1050,6 +1050,7 @@ int main(int, char**)
     sprite_2->frameDuration = 0.5f;
     */
 
+    /*
     GameObject* player1InteractionInfo_obj = scena1->CreateGameObject(nullptr);
     SpriteComponent* player1InteractionInfo = player1InteractionInfo_obj->AddComponent<SpriteComponent>();
     player1InteractionInfo->textEnabled = true;
@@ -1066,7 +1067,7 @@ int main(int, char**)
     player2InteractionInfo->text = "";
     player2InteractionInfo->textOutlineEnabled = true;
     player2InteractionInfo->textCentered = true;
-    player2InteractionInfo->layer = 1;
+    player2InteractionInfo->layer = 1;*/
 
     connectAllModels();
 
@@ -1227,6 +1228,7 @@ int main(int, char**)
             //ecs.GetSystem<AudioSystem>()->playSound(sound);
         }
 
+        /*
         std::string hintText = "";
 
         if (player1Raycast->anyHit()) {
@@ -1271,7 +1273,7 @@ int main(int, char**)
             }
         }
         player2InteractionInfo->text = hintText2;
-
+*/
 
     for (auto it = rotatingObjects.begin(); it != rotatingObjects.end(); )
     {
