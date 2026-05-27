@@ -13,7 +13,8 @@
 #include "../utils/light_helper.h"
 #include "../utils/render_helper.h"
 #include <glm/gtc/type_ptr.hpp>
-
+#include "../compute_shader.h"
+#include "GPUdriven_manager.h"
 
 class RenderSystem : public System {
 private:
@@ -87,6 +88,8 @@ private:
     glm::mat4 projection;
     glm::mat4 view;
     glm::vec3 currentCameraPos;
+
+    GPUDrivenManager drivenManager;
 
     GLuint sceneFBO;
     GLuint sceneColorTexture;
@@ -285,6 +288,11 @@ public:
         cameraQuery = ecs.CreateQuery<TransformComponent, CameraComponent>();
         animatorQuery = ecs.CreateQuery<TransformComponent, RenderComponent, AnimatorComponent>();
 
+        drivenManager = GPUDrivenManager();
+        int display_w, display_h;
+        glfwGetFramebufferSize(window, &display_w, &display_h);
+        drivenManager.Init(display_w, display_h);
+
         Init();
         DebugDrawSystem::Init();
     }
@@ -363,6 +371,18 @@ public:
         int display_w, display_h;
         glfwGetFramebufferSize(window, &display_w, &display_h);
 
+        if (!gpuRendererInitialized && renderQuery->gameobjects.size() > 50) {
+            //InitGPUDrivenRenderer(display_w, display_h);
+            drivenManager.InitPassesFromScene(*renderQuery);
+            gpuRendererInitialized = true;
+            gpuRendererReady = true;
+        }
+        if (gpuRendererReady) {
+            auto& lightTransforms = std::get<0>(lightQuery->componentsVectors);
+            auto& lights = std::get<1>(lightQuery->componentsVectors);
+
+            drivenManager.UpdateAndUploadLights(lights, lightTransforms);
+        }
         for (size_t i = 0; i < cameras.size(); i++) {
             if (!cameras[i]->isActive)
                 continue;
@@ -370,6 +390,178 @@ public:
             //RenderCamera(*cameras[i], *transforms[i], display_w, display_h);
         }
     }
+
+    //GPUDrivenRenderer gpuRenderer;
+    bool gpuRendererReady = false;
+    GLuint depthTexturePrev = 0;
+    GLuint depthFBO = 0;
+
+    //std::unordered_map<AnimatorComponent*, uint32_t> animatorIDMap;
+
+    //void InitGPUDrivenRenderer(int width, int height)
+    //{
+    //    auto& renderers = std::get<1>(renderQuery->componentsVectors);
+    //    gpuRenderer.Init(width, height);
+
+    //    for (size_t i = 0; i < renderers.size(); i++) {
+    //        RenderComponent* r = renderers[i];
+    //        if (!r) continue;
+
+    //        if (r->animator && animatorIDMap.find(r->animator) == animatorIDMap.end())
+    //            animatorIDMap[r->animator] = (uint32_t)animatorIDMap.size();
+
+    //        for (auto& mesh : r->meshes) {
+    //            if (!mesh.gpuMesh || !mesh.material || !mesh.cpuData) continue;
+
+    //            MeshData* md = mesh.cpuData.get();
+    //            Material* mat = mesh.material.get();
+
+    //            gpuRenderer.RegisterMesh(md);
+    //            gpuRenderer.RegisterMaterial(mat);
+    //        }
+    //    }
+
+
+    //    gpuRenderer.UploadMeshes();
+    //    gpuRenderer.UploadMaterials();
+
+    //    // Depth texture — tworzona TYLKO RAZ
+    //    if (depthTexturePrev == 0) {
+    //        glGenTextures(1, &depthTexturePrev);
+    //        glBindTexture(GL_TEXTURE_2D, depthTexturePrev);
+    //        glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32F, width, height);
+    //        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    //        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    //        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    //        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    //        glBindTexture(GL_TEXTURE_2D, 0);
+    //    }
+
+
+    //    gpuRendererReady = true;
+    //}
+    //std::vector<RenderData> renderDataCache;
+    //std::vector<glm::mat4> boneMatricesCache;
+    //struct AnimCache { uint32_t slot; AnimatorComponent* anim; };
+
+    //std::vector<RenderData>& CollectRenderData()
+    //{
+    //    auto& transforms = std::get<0>(renderQuery->componentsVectors);
+    //    auto& renderers = std::get<1>(renderQuery->componentsVectors);
+
+    //    renderDataCache.clear();
+    //    renderDataCache.reserve(renderQuery->gameobjects.size());
+
+    //    const size_t objectCount = renderQuery->gameobjects.size();
+
+    //    // trzeba znalezc to co ustawia animatory w RenderComponent zeby pozbyc sie tej petli i robic to raz
+    //    // 1. najpierw zarejestruj nowe animatory
+    //    for (size_t i = 0; i < objectCount; ++i) {
+    //        const RenderComponent* r = renderers[i];
+    //        if (!r || !r->animator) continue;
+    //        if (animatorIDMap.find(r->animator) == animatorIDMap.end())
+    //            animatorIDMap[r->animator] = (uint32_t)animatorIDMap.size();
+    //    }
+
+    //    size_t requiredSize = animatorIDMap.size() * MAX_BONES_PER_SKELETON;
+    //    if (boneMatricesCache.size() != requiredSize)
+    //        boneMatricesCache.resize(requiredSize, glm::mat4(1.0f));
+
+    //    for (size_t i = 0; i < objectCount; ++i)
+    //    {
+    //        const TransformComponent* t = transforms[i];
+    //        const RenderComponent* r = renderers[i];
+
+    //        if (!t || !r)
+    //            continue;
+    //        const glm::mat4 model = t->modelMatrix;
+
+    //        
+    //        const auto& meshes = r->meshes;
+    //        auto animator = r->animator;
+
+    //        auto animIt = animator ? animatorIDMap.find(animator) : animatorIDMap.end();
+    //        if (animIt != animatorIDMap.end() && animator->currentSkeleton)
+    //        {
+    //            uint32_t slot = animIt->second;
+    //            uint32_t boneCount = (uint32_t)std::min(animator->finalBoneMatrices.size(), (size_t)MAX_BONES_PER_SKELETON);
+
+    //            std::copy(animator->finalBoneMatrices.begin(), animator->finalBoneMatrices.begin() + boneCount, boneMatricesCache.begin() + slot * MAX_BONES_PER_SKELETON);
+    //        }
+
+    //        for (const auto& mesh : meshes)
+    //        {
+    //            auto* gpuMesh = mesh.cpuData.get();
+    //            auto* material = mesh.material.get();
+
+    //            if (!gpuMesh || !material || !mesh.cpuData)
+    //                continue;
+
+    //            auto meshID = gpuRenderer.GetMeshId(gpuMesh);
+    //            if (meshID == UINT32_MAX)
+    //                continue;
+
+    //            auto matID = gpuRenderer.GetMaterialId(material);
+    //            if (matID == UINT32_MAX)
+    //                continue;
+
+
+    //            auto& aabb = mesh.cpuData->aabb;
+
+    //            renderDataCache.emplace_back(RenderData{
+    //                .modelMatrix = model,
+    //                .aabbMin = glm::vec4(aabb.min, 0.0f),
+    //                .aabbMax = glm::vec4(aabb.max, 0.0f),
+    //                .meshID = meshID,
+    //                .materialID = matID,
+    //                .skeletonID = animIt != animatorIDMap.end() ? animIt->second : NO_SKELETON,
+    //                .padding = 0
+    //                });            
+    //        }
+    //    }
+    //    
+    //    gpuRenderer.ResizeBoneBufferIfNeeded((uint32_t)animatorIDMap.size());
+    //    gpuRenderer.UploadAllBoneMatrices(boneMatricesCache);
+
+    //    return renderDataCache;
+    //}
+
+    void RenderCameraGPUDriven(CameraComponent& cam, TransformComponent& transform, int width, int height)
+    {
+        ApplyViewport(cam.viewport, width, height);
+
+        view = CameraHelper::getViewMatrix(cam, transform);
+        projection = CameraHelper::getProjectionMatrix(cam, width, height);
+
+        glm::mat4 vp = projection * view;
+        currentCameraPos = transform.position;
+
+        if (gpuRendererReady) {
+
+            //std::vector<RenderData> objects = CollectRenderData();
+
+        /*    gpuRenderer.shaderRender->use();
+            gpuRenderer.shaderRender->setMat4("viewProjection", vp);
+            gpuRenderer.shaderRender->setVec3("viewPos", currentCameraPos);
+            gpuRenderer.shaderRender->setBool("isAnimated", false);*/
+            // + światła jak w starym kodzie...
+            drivenManager.CollectAllPasses(*renderQuery, currentCameraPos);
+
+            drivenManager.RenderFrame(vp, currentCameraPos, depthTexturePrev);
+
+            // Skopiuj depth bieżącej klatki do depthTexturePrev dla następnej
+       /*     std::vector<float> zeros(width * height, 0.0f);
+            glTextureSubImage2D(depthTexturePrev, 0, 0, 0, width, height,
+                GL_DEPTH_COMPONENT, GL_FLOAT, zeros.data());*/
+        }
+
+        DebugDrawSystem::Flush(vp);
+
+        glBindVertexArray(0);
+        
+        skybox.Render(view, projection);
+    }
+
 
     void RenderCamera(CameraComponent& cam, TransformComponent& transform, int width, int height) {
         ApplyViewport(cam.viewport, width, height);
@@ -672,40 +864,40 @@ public:
     }
 
 
-    //void InitFBO(int w, int h) {
-    //    if (fboWidth == w && fboHeight == h) return; // bez zmian
-    //    fboWidth = w; fboHeight = h;
+    void InitFBO(int w, int h) {
+        if (fboWidth == w && fboHeight == h) return; // bez zmian
+        fboWidth = w; fboHeight = h;
 
-    //    if (sceneFBO) {
-    //        glDeleteFramebuffers(1, &sceneFBO);
-    //        glDeleteTextures(1, &sceneColorTexture);
-    //        glDeleteRenderbuffers(1, &sceneDepthRBO);
-    //    }
+        if (sceneFBO) {
+            glDeleteFramebuffers(1, &sceneFBO);
+            glDeleteTextures(1, &sceneColorTexture);
+            glDeleteRenderbuffers(1, &sceneDepthRBO);
+        }
 
-    //    glGenFramebuffers(1, &sceneFBO);
-    //    glBindFramebuffer(GL_FRAMEBUFFER, sceneFBO);
+        glGenFramebuffers(1, &sceneFBO);
+        glBindFramebuffer(GL_FRAMEBUFFER, sceneFBO);
 
-    //    // Textura koloru
-    //    glGenTextures(1, &sceneColorTexture);
-    //    glBindTexture(GL_TEXTURE_2D, sceneColorTexture);
-    //    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-    //    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    //    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    //    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, sceneColorTexture, 0);
+        // Textura koloru
+        glGenTextures(1, &sceneColorTexture);
+        glBindTexture(GL_TEXTURE_2D, sceneColorTexture);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, sceneColorTexture, 0);
 
-    //    // Renderbuffer dla depth+stencil
-    //    glGenRenderbuffers(1, &sceneDepthRBO);
-    //    glBindRenderbuffer(GL_RENDERBUFFER, sceneDepthRBO);
-    //    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, w, h);
-    //    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, sceneDepthRBO);
+        // Renderbuffer dla depth+stencil
+        glGenRenderbuffers(1, &sceneDepthRBO);
+        glBindRenderbuffer(GL_RENDERBUFFER, sceneDepthRBO);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, w, h);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, sceneDepthRBO);
 
-    //    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-    //        spdlog::error("PostProcessing FBO incomplete!");
+        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+            spdlog::error("PostProcessing FBO incomplete!");
 
-    //    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    //}
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
 
-    //GLuint GetSceneTexture() const { return sceneColorTexture; }
+    GLuint GetSceneTexture() const { return sceneColorTexture; }
 
   
 
