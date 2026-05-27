@@ -17,4 +17,3 @@ CTestTestfile.cmake
 *.vsidx
 
 .idea/
-cmake-build-debug/

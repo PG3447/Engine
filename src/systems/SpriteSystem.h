@@ -191,71 +191,45 @@ private:
 
         textShader->use();
         textShader->setMat4("projection", proj);
+        textShader->setVec3("textColor", sprite.textColor);
         textShader->setInt("text", 0);
 
         glActiveTexture(GL_TEXTURE0);
         glBindVertexArray(textVAO);
 
-        float baseX = sprite.screenPosition.x + sprite.textOffset.x;
-        float baseY = sprite.screenPosition.y + sprite.textOffset.y;
+        float x = sprite.screenPosition.x + sprite.textOffset.x;
+        float y = sprite.screenPosition.y + sprite.textOffset.y;
 
-        if (sprite.textCentered)
+        for (char c : sprite.text)
         {
-            float textWidth = 0.0f;
-            for (char c : sprite.text) {
-                auto it = chars.find(c);
-                if (it != chars.end())
-                    textWidth += (it->second.advance >> 6);
-            }
-            float outlinePadding = sprite.textOutlineEnabled ? sprite.textOutlineSize : 0.0f;
-            baseX -= (textWidth / 2.0f) - outlinePadding;
+            auto it = chars.find(c);
+            if (it == chars.end()) continue;
+
+            const Character& ch = it->second;
+
+            float xpos = x + ch.bearing.x;
+            float ypos = y + ((int)sprite.fontSize - ch.bearing.y);
+
+            float w = (float)ch.size.x;
+            float h = (float)ch.size.y;
+
+            float verts[6][4] = {
+                { xpos,     ypos + h, 0.0f, 1.0f },
+                { xpos + w, ypos,     1.0f, 0.0f },
+                { xpos,     ypos,     0.0f, 0.0f },
+
+                { xpos,     ypos + h, 0.0f, 1.0f },
+                { xpos + w, ypos + h, 1.0f, 1.0f },
+                { xpos + w, ypos,     1.0f, 0.0f },
+            };
+
+            glBindTexture(GL_TEXTURE_2D, ch.textureID);
+            glBindBuffer(GL_ARRAY_BUFFER, textVBO);
+            glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(verts), verts);
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+
+            x += (ch.advance >> 6);
         }
-
-        auto renderString = [&](float offsetX, float offsetY, glm::vec3 color)
-        {
-            textShader->setVec3("textColor", color);
-            float x = baseX + offsetX;
-            float y = baseY + offsetY;
-
-            for (char c : sprite.text)
-            {
-                auto it = chars.find(c);
-                if (it == chars.end()) continue;
-
-                const Character& ch = it->second;
-                float xpos = x + ch.bearing.x;
-                float ypos = y + ((int)sprite.fontSize - ch.bearing.y);
-                float w = (float)ch.size.x;
-                float h = (float)ch.size.y;
-
-                float verts[6][4] = {
-                    { xpos,     ypos + h, 0.0f, 1.0f },
-                    { xpos + w, ypos,     1.0f, 0.0f },
-                    { xpos,     ypos,     0.0f, 0.0f },
-                    { xpos,     ypos + h, 0.0f, 1.0f },
-                    { xpos + w, ypos + h, 1.0f, 1.0f },
-                    { xpos + w, ypos,     1.0f, 0.0f },
-                };
-
-                glBindTexture(GL_TEXTURE_2D, ch.textureID);
-                glBindBuffer(GL_ARRAY_BUFFER, textVBO);
-                glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(verts), verts);
-                glDrawArrays(GL_TRIANGLES, 0, 6);
-
-                x += (ch.advance >> 6);
-            }
-        };
-
-        if (sprite.textOutlineEnabled)
-        {
-            float o = sprite.textOutlineSize;
-            for (float dx = -o; dx <= o; dx += o)
-                for (float dy = -o; dy <= o; dy += o)
-                    if (dx != 0.0f || dy != 0.0f)
-                        renderString(dx, dy, sprite.textOutlineColor);
-        }
-
-        renderString(0.0f, 0.0f, sprite.textColor);
 
         glBindVertexArray(0);
         glBindTexture(GL_TEXTURE_2D, 0);

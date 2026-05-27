@@ -1,7 +1,6 @@
 ﻿#include "scene.h"
 #include <spdlog/spdlog.h>
 
-#include "systems/AudioSystem.h"
 #include "systems/PostProcessingSystem.h"
 #include "systems/NavMeshSystem.h"
 #include "systems/NavPathSystem.h"
@@ -55,15 +54,11 @@ void Scene::Update(float deltaTime) {
         obj->Update(ecs, deltaTime);
     }
 
-    if (auto* pps = ecs.GetSystem<PostProcessingSystem>())
-        pps->Update(ecs, deltaTime);
+    //if (auto* pps = ecs.GetSystem<PostProcessingSystem>())
+    //    pps->Update(ecs, deltaTime);
 
     if (auto* ss = ecs.GetSystem<SpriteSystem>())
         ss->Update(ecs, deltaTime);
-
-    //if (auto* as = ecs.GetSystem<AudioSystem>())
-        //as->Update(ecs, deltaTime);
-
 }
 //
 //std::vector<GameObject*> Scene::GetGameObjects() {

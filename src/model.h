@@ -47,7 +47,7 @@ struct MeshNode {
     std::shared_ptr<MeshData> cpuData;
     std::shared_ptr<RenderMesh> gpuMesh;
     std::shared_ptr<Material> material;
-    AABB aabb;
+
     //int indexMaterial;
 };
 

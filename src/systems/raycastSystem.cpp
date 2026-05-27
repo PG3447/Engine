@@ -16,9 +16,8 @@ void RaycastSystem::Update(ECS&, float)
 
     for (size_t i = 0; i < tObjs.size(); i++) {
         glm::vec3 pos  = glm::vec3(tTrs[i]->modelMatrix[3]);
-        glm::vec3 half = tCols[i]->halfSize * tTrs[i]->scale;
-        targets.push_back({ tObjs[i], pos + tCols[i]->offset - half,
-                                      pos + tCols[i]->offset + half });
+        glm::vec3 half = tCols[i]->halfSize;
+        targets.push_back({ tObjs[i], pos + tCols[i]->offset - half, pos + tCols[i]->offset + half });
     }
 
     for (const auto& tgt : targets) {
@@ -36,16 +35,7 @@ void RaycastSystem::Update(ECS&, float)
         rc->raycastHits.clear();
 
         glm::vec3 origin  = glm::vec3(tr->modelMatrix[3]) + rc->originOffset;
-//        glm::vec3 forward = glm::normalize(glm::vec3(tr->modelMatrix * glm::vec4(0,0,-1,0)));
-
-        auto* cam = sObjs[i]->GetComponent<CameraComponent>();
-        glm::vec3 forward;
-        if (cam != nullptr) {
-            forward = glm::normalize(cam->state.Front);
-        } else {
-            forward = glm::normalize(glm::vec3(tr->modelMatrix * glm::vec4(0,0,-1,0)));
-        }
-
+        glm::vec3 forward = glm::normalize(glm::vec3(tr->modelMatrix * glm::vec4(0,0,-1,0)));
         int count = std::max(1, rc->fovRayCount);
 
         for (int r = 0; r < count; ++r) {
