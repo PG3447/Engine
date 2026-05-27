@@ -187,6 +187,7 @@ std::unique_ptr<Prefab> mirrorModel1;
 std::unique_ptr<Prefab> mirrorModel2;
 std::unique_ptr<Prefab> mirrorModel3;
 std::unique_ptr<Prefab> washroomExit;
+std::unique_ptr<Prefab> urinModel;
 //AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 std::unique_ptr<Prefab> floorModel;
 std::unique_ptr<Prefab> wallModel;
@@ -760,7 +761,7 @@ void createFirstRoom(Scene* scena1) {
 
     for (int i = 0; i < 6; i++) {
         tablicaPapierowKibel[i] = toiletPaperModel->Instantiate(*scena1, nullptr, ourShader.get());
-        tablicaPapierowKibel[i]->GetComponent<TransformComponent>()->scale = glm::vec3{ 1, 1, 1 };
+        tablicaPapierowKibel[i]->GetComponent<TransformComponent>()->scale = glm::vec3{ 2, 2, 2 };
         tablicaPapierowKibel[i]->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 90, 0 };
         tablicaPapierowKibel[i]->AddComponent<RigidbodyComponent>();
         tablicaPapierowKibel[i]->AddComponent<ColliderComponent>();
@@ -781,8 +782,22 @@ void createFirstRoom(Scene* scena1) {
         tablicaSink[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
         tablicaSink[i]->GetComponent<RigidbodyComponent>()->isStatic = true;
         tablicaSink[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 3, 20, 3 };
-        tablicaSink[i]->GetComponent<TransformComponent>()->position = glm::vec3{ -21.5, -2.0, -45 + (-10 * i) };
+        tablicaSink[i]->GetComponent<TransformComponent>()->position = glm::vec3{ -20.5, -2.0, -45 + (-10 * i) };
     }
+
+    GameObject* tablicaurin[4];
+    for (int i = 0; i < 4; i++) {
+        tablicaurin[i] = urinModel->Instantiate(*scena1, nullptr, ourShader.get());
+        tablicaurin[i]->GetComponent<TransformComponent>()->scale = glm::vec3{ 3, 3, 3 };
+        tablicaurin[i]->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 0, 0 };
+        tablicaurin[i]->AddComponent<RigidbodyComponent>();
+        tablicaurin[i]->AddComponent<ColliderComponent>();
+        tablicaurin[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
+        tablicaurin[i]->GetComponent<RigidbodyComponent>()->isStatic = true;
+        tablicaurin[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 3, 20, 3 };
+        tablicaurin[i]->GetComponent<TransformComponent>()->position = glm::vec3{ -20.5, 0.0, -45 + (-10 * i) };
+    }
+
     GameObject* lustro1;
     lustro1 = mirrorModel1->Instantiate(*scena1, nullptr, ourShader.get());
     lustro1->GetComponent<TransformComponent>()->scale = glm::vec3{ 1, 2, 8 };
@@ -1095,7 +1110,7 @@ int main(int, char**)
 
     light->direction = glm::normalize(glm::vec3(-0.3f, -1.0f, -0.1f));
 
-    light->ambient = glm::vec3(0.5f);
+    light->ambient = glm::vec3(0.2f);
     light->diffuse = glm::vec3(0.3f);
     light->specular = glm::vec3(0.9f);
 
@@ -2114,18 +2129,19 @@ void connectAllModels() {
     //vial5Model     = std::make_unique<Prefab>("res/models/probowka5.glb");
     //vial61Model    = std::make_unique<Prefab>("res/models/probowka6.glb");
     //vial7Model     = std::make_unique<Prefab>("res/models/probowka7.glb");
-    sinkModel      = std::make_unique<Prefab>("res/models/sink.glb");
+    sinkModel      = std::make_unique<Prefab>("res/models/sink_2.glb");
     //szafa1Model    = std::make_unique<Prefab>("res/models/szafa1.glb");
     //szafa2Model    = std::make_unique<Prefab>("res/models/szafa2.glb");
     //szafa3Model    = std::make_unique<Prefab>("res/models/szafa3.glb");
     //telephoneModel = std::make_unique<Prefab>("res/models/telephone.glb");
-    toiletModel    = std::make_unique<Prefab>("res/models/toilet.glb");
-    doorsToiletModel    = std::make_unique<Prefab>("res/models/doors_toilet.glb");
+    toiletModel    = std::make_unique<Prefab>("res/models/toilet_f.glb");
+    doorsToiletModel    = std::make_unique<Prefab>("res/models/doors_toliet_tex6.glb");
     toiletPaperModel = std::make_unique<Prefab>("res/models/toilet_paper_mystery_2.glb");
-    mirrorModel1 = std::make_unique<Prefab>("res/models/glass1.glb");
-    mirrorModel2 = std::make_unique<Prefab>("res/models/glass2.glb");
-    mirrorModel3 = std::make_unique<Prefab>("res/models/glass3.glb");
+    mirrorModel1 = std::make_unique<Prefab>("res/models/glass1_v2.glb");
+    mirrorModel2 = std::make_unique<Prefab>("res/models/glass2_v2.glb");
+    mirrorModel3 = std::make_unique<Prefab>("res/models/glass3_v2.glb");
     washroomExit = std::make_unique<Prefab>("res/models/door_other_2.glb");
+    urinModel = std::make_unique<Prefab>("res/models/uniral_v2.glb");
     //wozekModel     = std::make_unique<Prefab>("res/models/wozek.glb");
     //zaslonaModel   = std::make_unique<Prefab>("res/models/zaslona.glb");
     //roomModel = std::make_unique<Prefab>("res/models/room.glb");
