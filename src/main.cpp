@@ -303,7 +303,7 @@ GameObject* CreateRaycastTestObject(
     rc->fovRayCount  = 200;
     rc->fovAngle     = 200.0f;
     rc->originOffset = glm::vec3(0.0f, 0.5f, 0.0f);
-    rc->debugDraw    = true;
+    rc->debugDraw    = false;
 
     return go;
 }
