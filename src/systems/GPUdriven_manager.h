@@ -166,19 +166,54 @@ public:
     }
 
 
-    void RebuildAllRegistries(Query<TransformComponent, RenderComponent>& renderQuery) {
-        // 1. Wyczyść wszystkie passy
-        for (auto& entry : passes) {
-            GPUDrivenRenderer* r = entry.renderer.get();
+    //void RebuildAllRegistries(Query<TransformComponent, RenderComponent>& renderQuery) {
+    //    // 1. Wyczyść wszystkie passy
+    //    for (auto& entry : passes) {
+    //        GPUDrivenRenderer* r = entry.renderer.get();
 
-            // Wyczyść CPU-side rejestry i bufory geometrii
-            r->clearRegisterAll();
-        }
+    //        // Wyczyść CPU-side rejestry i bufory geometrii
+    //        r->clearRegisterAll();
+    //    }
 
-        animatorIDMap.clear();
+    //    animatorIDMap.clear();
 
-        // 2. Zarejestruj wszystko od nowa (jak InitPassesFromScene)
-        // ale NIE czyść samych passów — zostają te same passy
+    //    // 2. Zarejestruj wszystko od nowa (jak InitPassesFromScene)
+    //    // ale NIE czyść samych passów — zostają te same passy
+    //    auto& renderers = std::get<1>(renderQuery.componentsVectors);
+
+    //    for (size_t i = 0; i < renderers.size(); i++) {
+    //        RenderComponent* rc = renderers[i];
+    //        if (!rc) continue;
+
+    //        if (rc->animator && animatorIDMap.find(rc->animator) == animatorIDMap.end())
+    //            animatorIDMap[rc->animator] = (uint32_t)animatorIDMap.size();
+
+    //        for (auto& mesh : rc->meshes) {
+    //            if (!mesh.cpuData || !mesh.material) continue;
+
+    //            Material* mat = mesh.material.get();
+    //            Shader* shader = mat->shader ? mat->shader : defaultShaderRender;
+
+    //            uint32_t pid = GetOrCreatePass(shader, mat->surfaceType);
+    //            GPUDrivenRenderer* r = GetRenderer(pid);
+    //            if (!r) continue;
+
+    //            r->RegisterMesh(mesh.cpuData.get());
+    //            r->RegisterMaterial(mat);
+    //        }
+    //    }
+
+    //    // 3. Upload na GPU
+    //    for (auto& entry : passes) {
+    //        entry.renderer->UploadMeshes();
+    //        entry.renderer->UploadMaterials();
+    //        entry.renderer->dirtyInstance = true;
+    //    }
+    //}
+    std::unordered_map<uint32_t, bool> meshDirty;
+
+    void RebuildAllRegistries(Query<TransformComponent, RenderComponent>& renderQuery)
+    {
         auto& renderers = std::get<1>(renderQuery.componentsVectors);
 
         for (size_t i = 0; i < renderers.size(); i++) {
@@ -193,21 +228,40 @@ public:
 
                 Material* mat = mesh.material.get();
                 Shader* shader = mat->shader ? mat->shader : defaultShaderRender;
+                uint32_t  pid = GetOrCreatePass(shader, mat->surfaceType);
 
-                uint32_t pid = GetOrCreatePass(shader, mat->surfaceType);
                 GPUDrivenRenderer* r = GetRenderer(pid);
                 if (!r) continue;
 
-                r->RegisterMesh(mesh.cpuData.get());
-                r->RegisterMaterial(mat);
+                // RegisterMesh / RegisterMaterial są idempotentne —
+                // zwracają istniejące ID gdy zasób już jest zarejestrowany.
+                // Sprawdzamy przed wywołaniem czy coś faktycznie jest nowe,
+                // żeby wiedzieć czy należy re-uploadować.
+                bool meshIsNew = (r->GetMeshId(mesh.cpuData.get()) == UINT32_MAX);
+                bool materialIsNew = (r->GetMaterialId(mat) == UINT32_MAX);
+
+                if (meshIsNew)     r->RegisterMesh(mesh.cpuData.get());
+                if (materialIsNew) r->RegisterMaterial(mat);
+
+                if (meshIsNew || materialIsNew)
+                    meshDirty[pid] = true;
             }
+
+            // Każda zmiana obiektu wymaga odbudowy instancji
+            // (transform mógł się zmienić, obiekt mógł być dodany/usunięty)
+            for (auto& entry : passes)
+                entry.renderer->dirtyInstance = true;
         }
 
-        // 3. Upload na GPU
+        // Flush tylko passów które faktycznie dostały nowe zasoby
         for (auto& entry : passes) {
+            auto it = meshDirty.find(entry.passID);
+            if (it == meshDirty.end() || !it->second) continue;
+
             entry.renderer->UploadMeshes();
             entry.renderer->UploadMaterials();
-            entry.renderer->dirtyInstance = true;
+            it->second = false;
+            spdlog::info("RendererManager: flush pass {}", entry.passID);
         }
     }
 
