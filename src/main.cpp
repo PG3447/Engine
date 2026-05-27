@@ -495,7 +495,10 @@ void createFirstRoom(Scene* scena1) {
     groundObject->GetComponent<RigidbodyComponent>()->useGravity = false;
     groundObject->GetComponent<RigidbodyComponent>()->isStatic = true;
 
-    groundObject->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 200, 1, 200 };
+    groundObject->GetComponent<TransformComponent>()->position = glm::vec3 {10, 0, -50};
+    groundObject->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 40, 1, 50 };
+    groundObject->GetComponent<ColliderComponent>()->isWalkable = true;
+    groundObject->GetComponent<ColliderComponent>()->affectsNavMesh = true;
 
     GameObject* groundObject2 = floorModel->Instantiate(*scena1, nullptr, ourShader.get());
     groundObject2->name = "Ground2";
@@ -1119,7 +1122,7 @@ int main(int, char**)
     auto* targetCol = raycastTarget->AddComponent<ColliderComponent>();
     targetCol->halfSize = glm::vec3(3.0f);
     targetCol->offset = glm::vec3(0.0f);
-
+    */
     GameObject* RaycastSource =
         CreateRaycastTestObject(
             *scena1,
@@ -1131,7 +1134,7 @@ int main(int, char**)
     NavPathComponent* sourceAgent = RaycastSource->AddComponent<NavPathComponent>();
     sourceAgent->moveSpeed = 6.0f;
     sourceAgent->debugDraw = true;
-
+    /*
  ustawianiePokoju
     GameObject* model5 = cupModel->Instantiate(*scena1, nullptr, ourShader.get());
     model5->GetComponent<TransformComponent>()->position.x = 0.0f;
@@ -1154,6 +1157,7 @@ int main(int, char**)
 
    createFirstRoom(scena1);
 
+    ecs.GetSystem<NavMeshSystem>()->Bake(*scena1);
 
     // aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 

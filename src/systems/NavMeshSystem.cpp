@@ -69,9 +69,9 @@ void NavMeshSystem::Update(ECS& /*ecs*/, float /*dt*/) {
 
         glm::vec4 col = tri.walkable ? nm->colorEdge : nm->colorUnwalkable;
 
-      /*  DebugDrawSystem::AddLine(ao, bo, col);
+        DebugDrawSystem::AddLine(ao, bo, col);
         DebugDrawSystem::AddLine(bo, co, col);
-        DebugDrawSystem::AddLine(co, ao, col);*/
+        DebugDrawSystem::AddLine(co, ao, col);
     }
 }
 
@@ -148,7 +148,7 @@ NavMeshSystem::CollectWalkableSurfaces(Scene& scene) {
         if (!col->isWalkable) continue;
 
         // Pozycja ze swiata (uzywamy modelMatrix jesli dostepna, inaczej position)
-        glm::vec3 worldPos = glm::vec3(tr->modelMatrix[3]);
+        glm::vec3 worldPos = tr->position;
         glm::vec3 scale    = tr->scale;
 
         // Rzeczywisty polrozmar w przestrzeni swiata
