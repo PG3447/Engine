@@ -643,10 +643,10 @@ public:
 
         glm::mat4 vp = projection * view;
         currentCameraPos = transform.position;
-        drivenManager.CollectAllPasses(*renderQuery, currentCameraPos);
         
         auto cullStart = std::chrono::high_resolution_clock::now();
 
+        drivenManager.CollectAllPasses(*renderQuery, currentCameraPos);
         drivenManager.RenderFrame(vp, currentCameraPos, depthTexturePrev);
 
         auto cullEnd = std::chrono::high_resolution_clock::now();
