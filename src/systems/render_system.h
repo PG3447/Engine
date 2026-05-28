@@ -321,10 +321,16 @@ public:
     std::vector<RenderComponent*> pendingRegistration;
 
     void OnGameObjectUpdated(GameObject* e) override {
-        if (renderQuery->OnGameObjectUpdated(e)) // && gpuRendererInitialized
+        int resultAddRender = renderQuery->OnGameObjectUpdated(e);
+        if (resultAddRender <= 1) // && gpuRendererInitialized
         {
             pendingRegistration.push_back(e->GetComponent<RenderComponent>());  //drivenManager.RebuildAllRegistries(*renderQuery);
             groupsDirty = true;
+        }
+        if (resultAddRender == 2)
+        {
+            //komponent zostal usuniety
+            drivenManager.RebuildInstance();
         }
         lightQuery->OnGameObjectUpdated(e);  // forward do query
         cameraQuery->OnGameObjectUpdated(e); // forward do query

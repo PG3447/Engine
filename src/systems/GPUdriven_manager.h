@@ -265,6 +265,12 @@ public:
         }
     }
 
+    void RebuildInstance()
+    {
+        for (auto& entry : passes)
+            entry.renderer->dirtyInstance = true;
+    }
+
     void AddGameObjectToRegistries(RenderComponent* rc)
     {
         if (!rc) return;
@@ -423,8 +429,6 @@ public:
         // ── 6. Kości na GPU ───────────────────────────────────────
         r->ResizeBoneBufferIfNeeded((uint32_t)animatorIDMap.size());
         r->UploadAllBoneMatrices(boneMatricesCache);
-
-        //entry->renderer->dirtyInstance = true;
     }
 
 
