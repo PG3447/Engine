@@ -318,6 +318,8 @@ public:
         }
     }
 
+    std::vector<GameObject*> pendingRegistration;
+
     void OnGameObjectUpdated(GameObject* e) override {
         renderQuery->OnGameObjectUpdated(e); // forward do query
         lightQuery->OnGameObjectUpdated(e);  // forward do query
@@ -325,7 +327,10 @@ public:
         animatorQuery->OnGameObjectUpdated(e);
         
         if (gpuRendererInitialized)
-            drivenManager.RebuildAllRegistries(*renderQuery);
+        {
+            pendingRegistration.push_back(e);
+        }
+            //drivenManager.RebuildAllRegistries(*renderQuery);
 
         groupsDirty = true;
     }
@@ -434,6 +439,14 @@ public:
         glBindFramebuffer(GL_FRAMEBUFFER, sceneFBO);
         glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        if (groupsDirty)
+        {
+            for (GameObject* e : pendingRegistration)
+                drivenManager.AddGameObjectToRegistries(e);
+            pendingRegistration.clear();
+            groupsDirty = false;
+        }
 
         //BuildGroups();
         RenderAllCameras();

@@ -267,7 +267,46 @@ public:
 
     void AddGameObjectToRegistries(GameObject* object)
     {
-        //object->GetComponent<RenderComponent>()
+        RenderComponent* rc = object->GetComponent<RenderComponent>();
+        spdlog::error("HALALOOOOO");
+        if (!rc) return;
+
+        spdlog::error("Rejestrowanie");
+        if (rc->animator && animatorIDMap.find(rc->animator) == animatorIDMap.end())
+            animatorIDMap[rc->animator] = (uint32_t)animatorIDMap.size();
+
+        for (auto& mesh : rc->meshes) {
+            if (!mesh.cpuData || !mesh.material) continue;
+            Material* mat = mesh.material.get();
+            Shader* shader = mat->shader ? mat->shader : defaultShaderRender;
+            uint32_t pid = GetOrCreatePass(shader, mat->surfaceType);
+
+            GPUDrivenRenderer* r = GetRenderer(pid);
+            if (!r) continue;
+
+            bool meshIsNew = (r->GetMeshId(mesh.cpuData.get()) == UINT32_MAX);
+            bool materialIsNew = (r->GetMaterialId(mat) == UINT32_MAX);
+            spdlog::warn("Rejestrowanie");
+            if (meshIsNew)     r->RegisterMesh(mesh.cpuData.get());
+            if (materialIsNew) r->RegisterMaterial(mat);
+
+            if (meshIsNew || materialIsNew)
+                meshDirty[pid] = true;
+        }
+
+        for (auto& entry : passes)
+            entry.renderer->dirtyInstance = true;
+
+        // Flush tylko passów które dostały nowe zasoby
+        for (auto& entry : passes) {
+            auto it = meshDirty.find(entry.passID);
+            if (it == meshDirty.end() || !it->second) continue;
+
+            entry.renderer->UploadMeshes();
+            entry.renderer->UploadMaterials();
+            it->second = false;
+            spdlog::info("RendererManager: flush pass {}", entry.passID);
+        }
     }
 
     void CollectRenderData(uint32_t passID, Query<TransformComponent, RenderComponent>& renderQuery, const glm::vec3& cameraPos)

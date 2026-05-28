@@ -1350,7 +1350,7 @@ int main(int, char**)
             else ++it;
         }
 
-        spdlog::info(can_open_door_1);
+        //spdlog::info(can_open_door_1);
 
         // caly ten wielki kod wydzielilem do funkcji
         HandlePlayerInteraction(ecs, "interact_p1", player1Raycast, camera1, p1HeldObject, p2HeldObject, scena1, rotatingObjects);
