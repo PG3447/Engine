@@ -103,7 +103,7 @@ void NpcSystem::UpdateLeader(
             leader.hasActiveNavGoal = false;
             nav.path.clear();
             SendTo(nav, escapeGoal);
-            spdlog::info("[Leader] Wykryto gracza – ucieczka do ({:.1f},{:.1f})", escapeGoal.x, escapeGoal.z);
+            spdlog::info("[Leader] player is here", escapeGoal.x, escapeGoal.z);
             return;
         }
     }
