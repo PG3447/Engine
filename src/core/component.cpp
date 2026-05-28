@@ -12,3 +12,12 @@ void AnimatorComponent::OnEnable(GameObject* owner) {
         });
 }
 
+
+void ColliderComponent::OnEnable(GameObject* owner) {
+    auto renderComponent = owner->GetComponent<RenderComponent>();
+    if (renderComponent != nullptr)
+    {
+        owner->GetComponent<ColliderComponent>()->halfSize = renderComponent->localObjectAABB.max * owner->GetComponent<TransformComponent>()->scale;
+    }
+}
+

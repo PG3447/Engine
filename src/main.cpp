@@ -806,7 +806,7 @@ void createFirstRoom(Scene* scena1) {
     lustro1->AddComponent<ColliderComponent>();
     lustro1->GetComponent<RigidbodyComponent>()->useGravity = false;
     lustro1->GetComponent<RigidbodyComponent>()->isStatic = true;
-    lustro1->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 1, 1 };
+    //lustro1->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 1, 1 };
     lustro1->GetComponent<TransformComponent>()->position = glm::vec3{ -23.5, 12.0, -50 + (-20 * 0) };
     GameObject* lustro2;
     lustro2 = mirrorModel2->Instantiate(*scena1, nullptr, ourShader.get());
@@ -816,7 +816,7 @@ void createFirstRoom(Scene* scena1) {
     lustro2->AddComponent<ColliderComponent>();
     lustro2->GetComponent<RigidbodyComponent>()->useGravity = false;
     lustro2->GetComponent<RigidbodyComponent>()->isStatic = true;
-    lustro2->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 1, 1 };
+    //lustro2->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 1, 1 };
     lustro2->GetComponent<TransformComponent>()->position = glm::vec3{ -23.5, 12.0, -50 + (-20 * 1) };
     GameObject* lustro3;
     lustro3 = mirrorModel3->Instantiate(*scena1, nullptr, ourShader.get());
@@ -826,7 +826,7 @@ void createFirstRoom(Scene* scena1) {
     lustro3->AddComponent<ColliderComponent>();
     lustro3->GetComponent<RigidbodyComponent>()->useGravity = false;
     lustro3->GetComponent<RigidbodyComponent>()->isStatic = true;
-    lustro3->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 1, 1 };
+    //lustro3->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 1, 1 };
     lustro3->GetComponent<TransformComponent>()->position = glm::vec3{ -23.5, 12.0, -50 + (-20 * 2) };
     GameObject* tablicaDrzwi[2];
     for (int i = 0; i < 2; i++) {
