@@ -265,9 +265,8 @@ public:
         }
     }
 
-    void AddGameObjectToRegistries(GameObject* object)
+    void AddGameObjectToRegistries(RenderComponent* rc)
     {
-        RenderComponent* rc = object->GetComponent<RenderComponent>();
         if (!rc) return;
 
         if (rc->animator && animatorIDMap.find(rc->animator) == animatorIDMap.end())

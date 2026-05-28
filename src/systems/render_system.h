@@ -318,12 +318,12 @@ public:
         }
     }
 
-    std::vector<GameObject*> pendingRegistration;
+    std::vector<RenderComponent*> pendingRegistration;
 
     void OnGameObjectUpdated(GameObject* e) override {
         if (renderQuery->OnGameObjectUpdated(e)) // && gpuRendererInitialized
         {
-            pendingRegistration.push_back(e);  //drivenManager.RebuildAllRegistries(*renderQuery);
+            pendingRegistration.push_back(e->GetComponent<RenderComponent>());  //drivenManager.RebuildAllRegistries(*renderQuery);
             groupsDirty = true;
         }
         lightQuery->OnGameObjectUpdated(e);  // forward do query
@@ -439,7 +439,7 @@ public:
 
         if (groupsDirty)
         {
-            for (GameObject* e : pendingRegistration)
+            for (RenderComponent* e : pendingRegistration)
                 drivenManager.AddGameObjectToRegistries(e);
             pendingRegistration.clear();
             groupsDirty = false;
