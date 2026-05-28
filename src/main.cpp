@@ -1322,7 +1322,7 @@ int main(int, char**)
 
     //Karaluch center
 
-    glm::vec3 nestPos = glm::vec3(-20.0f, 0.5f, -80.0f);
+    glm::vec3 nestPos = glm::vec3(0.0f, 0.5f, -80.0f);
 
     GameObject* leader = CreateCockroachLeader(*scena1, *placeholderModel, ourShader.get(), nestPos, 4.0f);
 

@@ -156,7 +156,7 @@ void NpcSystem::UpdateLeader(
             glm::vec3 exploreGoal = RandomPointAround(leader.homePosition, leader.exploreRadius);
             SendTo(nav, exploreGoal);
             leader.hasActiveNavGoal = true;
-            spdlog::info("[Leader] im explorin again)", exploreGoal.x, exploreGoal.z);
+            spdlog::info("[Leader] im explorin again", exploreGoal.x, exploreGoal.z);
         }
         break;
     }
