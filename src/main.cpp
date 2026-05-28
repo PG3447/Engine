@@ -601,7 +601,7 @@ void createFirstRoom(Scene* scena1) {
     wallObject3->GetComponent<RigidbodyComponent>()->useGravity = false;
     wallObject3->GetComponent<RigidbodyComponent>()->isStatic = true;
 
-    wallObject3->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 50, 100 };
+    //wallObject3->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 50, 100 };
 
     wallObject3->GetComponent<TransformComponent>()->position.x = -25;
     wallObject3->GetComponent<TransformComponent>()->position.y = 0;
@@ -619,7 +619,7 @@ void createFirstRoom(Scene* scena1) {
     wallObject4->GetComponent<RigidbodyComponent>()->useGravity = false;
     wallObject4->GetComponent<RigidbodyComponent>()->isStatic = true;
 
-    wallObject4->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 100, 1 };
+    //wallObject4->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 100, 1 };
 
     wallObject4->GetComponent<TransformComponent>()->position.x = 0;
     wallObject4->GetComponent<TransformComponent>()->position.y = 0;
@@ -638,7 +638,7 @@ void createFirstRoom(Scene* scena1) {
     wallObject5->GetComponent<RigidbodyComponent>()->useGravity = false;
     wallObject5->GetComponent<RigidbodyComponent>()->isStatic = true;
 
-    wallObject5->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 50, 100 };
+    //wallObject5->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 50, 100 };
 
     wallObject5->GetComponent<TransformComponent>()->position.x = 100;
     wallObject5->GetComponent<TransformComponent>()->position.y = 0;
@@ -656,7 +656,7 @@ void createFirstRoom(Scene* scena1) {
     wallObject6->GetComponent<RigidbodyComponent>()->useGravity = false;
     wallObject6->GetComponent<RigidbodyComponent>()->isStatic = true;
 
-    wallObject6->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 50, 100 };
+    //wallObject6->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 50, 100 };
     wallObject6->GetComponent<ColliderComponent>()->affectsNavMesh = true;;
 
     wallObject6->GetComponent<TransformComponent>()->position.x = -100;
@@ -675,7 +675,7 @@ void createFirstRoom(Scene* scena1) {
     wallObject7->GetComponent<RigidbodyComponent>()->useGravity = false;
     wallObject7->GetComponent<RigidbodyComponent>()->isStatic = true;
 
-    wallObject7->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 100, 1 };
+    //wallObject7->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 100, 1 };
     wallObject7->GetComponent<ColliderComponent>()->affectsNavMesh = true;
 
 
@@ -694,7 +694,7 @@ void createFirstRoom(Scene* scena1) {
     wallObject8->GetComponent<RigidbodyComponent>()->useGravity = false;
     wallObject8->GetComponent<RigidbodyComponent>()->isStatic = true;
 
-    wallObject8->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 100, 1 };
+    //wallObject8->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 100, 1 };
     wallObject8->GetComponent<ColliderComponent>()->affectsNavMesh = true;
 
     wallObject8->GetComponent<TransformComponent>()->position.x = -110;
@@ -710,7 +710,7 @@ void createFirstRoom(Scene* scena1) {
     wallObject9->GetComponent<RigidbodyComponent>()->useGravity = false;
     wallObject9->GetComponent<RigidbodyComponent>()->isStatic = true;
 
-    wallObject9->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 10, 44, 1 };
+    //wallObject9->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 10, 44, 1 };
     wallObject9->GetComponent<ColliderComponent>()->affectsNavMesh = true;
     wallObject9->GetComponent<TransformComponent>()->position = glm::vec3{ 0, 70 , -100 };
 
@@ -722,7 +722,7 @@ void createFirstRoom(Scene* scena1) {
         tablicaKibli[i]->AddComponent<ColliderComponent>();
         tablicaKibli[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
         tablicaKibli[i]->GetComponent<RigidbodyComponent>()->isStatic = true;
-        tablicaKibli[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 2.5, 4, 2.5 };
+        //tablicaKibli[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 2.5, 4, 2.5 };
         tablicaKibli[i]->GetComponent<ColliderComponent>()->offset = glm::vec3{ 0, 4, 0 };
         tablicaKibli[i]->GetComponent<TransformComponent>()->position = glm::vec3{ 45, 0.5f, -45 + (-10 * i) };
         tablicaKibli[i]->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 90, 0 };
@@ -735,7 +735,7 @@ void createFirstRoom(Scene* scena1) {
         tablicaZaslon[i]->AddComponent<ColliderComponent>();
         tablicaZaslon[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
         tablicaZaslon[i]->GetComponent<RigidbodyComponent>()->isStatic = true;
-        tablicaZaslon[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 20, 15, 0.3 };
+        //tablicaZaslon[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 20, 15, 0.3 };
         tablicaZaslon[i]->GetComponent<TransformComponent>()->position = glm::vec3{ 50, 0, -40 + (-10 * i) };
     }
     GameObject* tablicaDrzwiczekDoKilba[6];
@@ -767,7 +767,7 @@ void createFirstRoom(Scene* scena1) {
         tablicaPapierowKibel[i]->AddComponent<ColliderComponent>();
         tablicaPapierowKibel[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
         tablicaPapierowKibel[i]->GetComponent<RigidbodyComponent>()->isStatic = true;
-        tablicaPapierowKibel[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 0.7, 0.7, 0.7 };
+        //tablicaPapierowKibel[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 0.7, 0.7, 0.7 };
         tablicaPapierowKibel[i]->GetComponent<TransformComponent>()->position = glm::vec3{ 35, 5.0, -40.7 + (-10 * i) };
         rotatableObjects.insert(tablicaPapierowKibel[i]);
     }
@@ -775,14 +775,15 @@ void createFirstRoom(Scene* scena1) {
     GameObject* tablicaSink[6];
     for (int i = 0; i < 6; i++) {
         tablicaSink[i] = sinkModel->Instantiate(*scena1, nullptr, ourShader.get());
+        tablicaSink[i]->name = "Sink" + std::to_string(i);
         tablicaSink[i]->GetComponent<TransformComponent>()->scale = glm::vec3{ 3, 3, 3 };
         tablicaSink[i]->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 90, 0 };
+        tablicaSink[i]->GetComponent<TransformComponent>()->position = glm::vec3{ -20.5, 6.0, -45 + (-10 * i) };
         tablicaSink[i]->AddComponent<RigidbodyComponent>();
         tablicaSink[i]->AddComponent<ColliderComponent>();
         tablicaSink[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
         tablicaSink[i]->GetComponent<RigidbodyComponent>()->isStatic = true;
-        tablicaSink[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 3, 20, 3 };
-        tablicaSink[i]->GetComponent<TransformComponent>()->position = glm::vec3{ -20.5, -2.0, -45 + (-10 * i) };
+        //tablicaSink[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 3, 20, 3 };
     }
 
     GameObject* tablicaurin[4];
@@ -794,7 +795,7 @@ void createFirstRoom(Scene* scena1) {
         tablicaurin[i]->AddComponent<ColliderComponent>();
         tablicaurin[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
         tablicaurin[i]->GetComponent<RigidbodyComponent>()->isStatic = true;
-        tablicaurin[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 3, 20, 3 };
+        //tablicaurin[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 3, 20, 3 };
         tablicaurin[i]->GetComponent<TransformComponent>()->position = glm::vec3{ -20.5, 0.0, -45 + (-10 * i) };
     }
 
@@ -837,7 +838,7 @@ void createFirstRoom(Scene* scena1) {
         tablicaDrzwi[i]->AddComponent<ColliderComponent>();
         tablicaDrzwi[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
         tablicaDrzwi[i]->GetComponent<RigidbodyComponent>()->isStatic = true;
-        tablicaDrzwi[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 5, 22, 1 };
+        //tablicaDrzwi[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 5, 22, 1 };
         tablicaDrzwi[i]->GetComponent<TransformComponent>()->position = glm::vec3{ -5 + (10 * i), 0.0, -100 };
         majorDoors.insert(tablicaDrzwi[i]);
     }
