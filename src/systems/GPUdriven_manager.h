@@ -318,8 +318,8 @@ public:
         if (!entry) return;
 
         GPUDrivenRenderer* r = entry->renderer.get();
-        const SurfaceType   filter = PassTypeToSurface(entry->config.type);
-        const bool          isTransparent = (entry->config.type == RenderPassType::Transparent);
+        const SurfaceType filter = PassTypeToSurface(entry->config.type);
+        const bool isTransparent = (entry->config.type == RenderPassType::Transparent);
         Shader* passShader = entry->config.shader ? entry->config.shader : defaultShaderRender;
 
         auto& transforms = std::get<0>(renderQuery.componentsVectors);
@@ -332,30 +332,6 @@ public:
             if (!rc || !rc->animator) continue;
             if (animatorIDMap.find(rc->animator) == animatorIDMap.end())
                 animatorIDMap[rc->animator] = (uint32_t)animatorIDMap.size();
-        }
-
-        // ── 2. Rozmiar bufora kości ────────────────────────────────
-        const size_t requiredBones = animatorIDMap.size() * MAX_BONES_PER_SKELETON;
-        if (boneMatricesCache.size() != requiredBones)
-            boneMatricesCache.resize(requiredBones, glm::mat4(1.0f));
-
-        // ── 3. Macierze kości ─────────────────────────────────────
-        for (size_t i = 0; i < count; ++i) {
-            const RenderComponent* rc = renderers[i];
-            if (!rc || !rc->animator || !rc->animator->currentSkeleton) continue;
-
-            auto animIt = animatorIDMap.find(rc->animator);
-            if (animIt == animatorIDMap.end()) continue;
-
-            uint32_t slot = animIt->second;
-            uint32_t boneCount = (uint32_t)std::min(
-                rc->animator->finalBoneMatrices.size(),
-                (size_t)MAX_BONES_PER_SKELETON);
-
-            std::copy(
-                rc->animator->finalBoneMatrices.begin(),
-                rc->animator->finalBoneMatrices.begin() + boneCount,
-                boneMatricesCache.begin() + slot * MAX_BONES_PER_SKELETON);
         }
 
         // ── 4. Buduj RenderData ───────────────────────────────────
@@ -371,9 +347,7 @@ public:
 
             const glm::mat4 model = t->modelMatrix;
 
-            auto animIt = rc->animator
-                ? animatorIDMap.find(rc->animator)
-                : animatorIDMap.end();
+            auto animIt = rc->animator ? animatorIDMap.find(rc->animator) : animatorIDMap.end();
 
             for (const auto& mesh : rc->meshes) {
                 if (!mesh.cpuData || !mesh.material) continue;
@@ -425,19 +399,51 @@ public:
             for (auto& te : transparentBuffer)
                 entry->objects.push_back(te.data);
         }
-
-        // ── 6. Kości na GPU ───────────────────────────────────────
-        r->ResizeBoneBufferIfNeeded((uint32_t)animatorIDMap.size());
-        r->UploadAllBoneMatrices(boneMatricesCache);
     }
 
 
-    void CollectAllPasses(Query<TransformComponent, RenderComponent>& renderQuery, const glm::vec3& cameraPos)
+    void UpdateBoneCache(Query<TransformComponent, RenderComponent>& renderQuery)
     {
+        auto& renderers = std::get<1>(renderQuery.componentsVectors);
+        const size_t count = renderQuery.gameobjects.size();
+
+        const size_t requiredBones = animatorIDMap.size() * MAX_BONES_PER_SKELETON;
+        if (boneMatricesCache.size() != requiredBones)
+            boneMatricesCache.resize(requiredBones, glm::mat4(1.0f));
+
+        for (size_t i = 0; i < count; ++i) {
+            const RenderComponent* rc = renderers[i];
+            if (!rc || !rc->animator || !rc->animator->currentSkeleton) continue;
+
+            auto animIt = animatorIDMap.find(rc->animator);
+            if (animIt == animatorIDMap.end()) continue;
+
+            const uint32_t slot = animIt->second;
+            const uint32_t boneCount = (uint32_t)std::min(
+                rc->animator->finalBoneMatrices.size(),
+                (size_t)MAX_BONES_PER_SKELETON);
+
+            std::memcpy(
+                boneMatricesCache.data() + slot * MAX_BONES_PER_SKELETON,
+                rc->animator->finalBoneMatrices.data(),
+                boneCount * sizeof(glm::mat4));
+        }
+    }
+
+    void CollectAllPasses(Query<TransformComponent, RenderComponent>& renderQuery,  const glm::vec3& cameraPos)
+    {
+        // ── Kości raz, nie N razy per pass ───────────────────────────
+        UpdateBoneCache(renderQuery);
+
         for (auto& entry : passes)
             CollectRenderData(entry.passID, renderQuery, cameraPos);
-    }
 
+        // ── Upload kości do każdego renderera ─────────────────────────
+        for (auto& entry : passes) {
+            entry.renderer->ResizeBoneBufferIfNeeded((uint32_t)animatorIDMap.size());
+            entry.renderer->UploadAllBoneMatrices(boneMatricesCache);
+        }
+    }
 
     //  Zarządzanie passami
        //  Każdy pass rejestruje własne mesze i materiały przez GetRenderer()
