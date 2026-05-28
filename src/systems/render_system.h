@@ -644,8 +644,14 @@ public:
         glm::mat4 vp = projection * view;
         currentCameraPos = transform.position;
         drivenManager.CollectAllPasses(*renderQuery, currentCameraPos);
+        
+        auto cullStart = std::chrono::high_resolution_clock::now();
 
         drivenManager.RenderFrame(vp, currentCameraPos, depthTexturePrev);
+
+        auto cullEnd = std::chrono::high_resolution_clock::now();
+        stats.cullingTimeMs += std::chrono::duration<float, std::milli>(cullEnd - cullStart).count();
+
        // if (gpuRendererReady) {
 
        //     //std::vector<RenderData> objects = CollectRenderData();
