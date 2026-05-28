@@ -472,18 +472,19 @@ public:
         int display_w, display_h;
         glfwGetFramebufferSize(window, &display_w, &display_h);
 
-        if (!gpuRendererInitialized) { // && renderQuery->gameobjects.size() > 50
-            //InitGPUDrivenRenderer(display_w, display_h);
-            //drivenManager.InitPassesFromScene(*renderQuery);
-            gpuRendererInitialized = true;
-            gpuRendererReady = true;
-        }
-        if (gpuRendererReady) {
-            auto& lightTransforms = std::get<0>(lightQuery->componentsVectors);
-            auto& lights = std::get<1>(lightQuery->componentsVectors);
+        //if (!gpuRendererInitialized) { // && renderQuery->gameobjects.size() > 50
+        //    //InitGPUDrivenRenderer(display_w, display_h);
+        //    //drivenManager.InitPassesFromScene(*renderQuery);
+        //    gpuRendererInitialized = true;
+        //    gpuRendererReady = true;
+        //}
+        auto& lightTransforms = std::get<0>(lightQuery->componentsVectors);
+        auto& lights = std::get<1>(lightQuery->componentsVectors);
 
-            drivenManager.UpdateAndUploadLights(lights, lightTransforms);
-        }
+        drivenManager.UpdateAndUploadLights(lights, lightTransforms);
+        //if (gpuRendererReady) {
+        //    
+        //}
         for (size_t i = 0; i < cameras.size(); i++) {
             if (!cameras[i]->isActive)
                 continue;
@@ -636,25 +637,25 @@ public:
 
         glm::mat4 vp = projection * view;
         currentCameraPos = transform.position;
+        drivenManager.CollectAllPasses(*renderQuery, currentCameraPos);
 
-        if (gpuRendererReady) {
+        drivenManager.RenderFrame(vp, currentCameraPos, depthTexturePrev);
+       // if (gpuRendererReady) {
 
-            //std::vector<RenderData> objects = CollectRenderData();
+       //     //std::vector<RenderData> objects = CollectRenderData();
 
-        /*    gpuRenderer.shaderRender->use();
-            gpuRenderer.shaderRender->setMat4("viewProjection", vp);
-            gpuRenderer.shaderRender->setVec3("viewPos", currentCameraPos);
-            gpuRenderer.shaderRender->setBool("isAnimated", false);*/
-            // + światła jak w starym kodzie...
-            drivenManager.CollectAllPasses(*renderQuery, currentCameraPos);
+       // /*    gpuRenderer.shaderRender->use();
+       //     gpuRenderer.shaderRender->setMat4("viewProjection", vp);
+       //     gpuRenderer.shaderRender->setVec3("viewPos", currentCameraPos);
+       //     gpuRenderer.shaderRender->setBool("isAnimated", false);*/
+       //     // + światła jak w starym kodzie...
+       //    ;
 
-            drivenManager.RenderFrame(vp, currentCameraPos, depthTexturePrev);
-
-            // Skopiuj depth bieżącej klatki do depthTexturePrev dla następnej
-       /*     std::vector<float> zeros(width * height, 0.0f);
-            glTextureSubImage2D(depthTexturePrev, 0, 0, 0, width, height,
-                GL_DEPTH_COMPONENT, GL_FLOAT, zeros.data());*/
-        }
+       //     // Skopiuj depth bieżącej klatki do depthTexturePrev dla następnej
+       ///*     std::vector<float> zeros(width * height, 0.0f);
+       //     glTextureSubImage2D(depthTexturePrev, 0, 0, 0, width, height,
+       //         GL_DEPTH_COMPONENT, GL_FLOAT, zeros.data());*/
+       // }
 
         DebugDrawSystem::Flush(vp);
 
