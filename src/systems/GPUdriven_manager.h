@@ -61,8 +61,8 @@ public:
     int    hizMipLevels = 0;
 
     // --- rejestry ---
-    std::unordered_map<MeshData*, uint32_t> meshRegistry;
-    std::unordered_map<Material*, uint32_t> materialRegistry;
+    //std::unordered_map<MeshData*, uint32_t> meshRegistry;
+    //std::unordered_map<Material*, uint32_t> materialRegistry;
 
     // --- passy (posortowane po sortOrder) ---
     std::vector<GPULight> gpuLights;
@@ -263,6 +263,11 @@ public:
             it->second = false;
             spdlog::info("RendererManager: flush pass {}", entry.passID);
         }
+    }
+
+    void AddGameObjectToRegistries(GameObject* object)
+    {
+        //object->GetComponent<RenderComponent>()
     }
 
     void CollectRenderData(uint32_t passID, Query<TransformComponent, RenderComponent>& renderQuery, const glm::vec3& cameraPos)
