@@ -268,10 +268,8 @@ public:
     void AddGameObjectToRegistries(GameObject* object)
     {
         RenderComponent* rc = object->GetComponent<RenderComponent>();
-        spdlog::error("HALALOOOOO");
         if (!rc) return;
 
-        spdlog::error("Rejestrowanie");
         if (rc->animator && animatorIDMap.find(rc->animator) == animatorIDMap.end())
             animatorIDMap[rc->animator] = (uint32_t)animatorIDMap.size();
 
@@ -286,7 +284,7 @@ public:
 
             bool meshIsNew = (r->GetMeshId(mesh.cpuData.get()) == UINT32_MAX);
             bool materialIsNew = (r->GetMaterialId(mat) == UINT32_MAX);
-            spdlog::warn("Rejestrowanie");
+
             if (meshIsNew)     r->RegisterMesh(mesh.cpuData.get());
             if (materialIsNew) r->RegisterMaterial(mat);
 

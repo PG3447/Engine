@@ -321,18 +321,15 @@ public:
     std::vector<GameObject*> pendingRegistration;
 
     void OnGameObjectUpdated(GameObject* e) override {
-        renderQuery->OnGameObjectUpdated(e); // forward do query
+        if (renderQuery->OnGameObjectUpdated(e)) // && gpuRendererInitialized
+        {
+            pendingRegistration.push_back(e);  //drivenManager.RebuildAllRegistries(*renderQuery);
+            groupsDirty = true;
+        }
         lightQuery->OnGameObjectUpdated(e);  // forward do query
         cameraQuery->OnGameObjectUpdated(e); // forward do query
-        animatorQuery->OnGameObjectUpdated(e);
+        animatorQuery->OnGameObjectUpdated(e); 
         
-        if (gpuRendererInitialized)
-        {
-            pendingRegistration.push_back(e);
-        }
-            //drivenManager.RebuildAllRegistries(*renderQuery);
-
-        groupsDirty = true;
     }
 
     void MarkDirty()
@@ -475,9 +472,9 @@ public:
         int display_w, display_h;
         glfwGetFramebufferSize(window, &display_w, &display_h);
 
-        if (!gpuRendererInitialized && renderQuery->gameobjects.size() > 50) {
+        if (!gpuRendererInitialized) { // && renderQuery->gameobjects.size() > 50
             //InitGPUDrivenRenderer(display_w, display_h);
-            drivenManager.InitPassesFromScene(*renderQuery);
+            //drivenManager.InitPassesFromScene(*renderQuery);
             gpuRendererInitialized = true;
             gpuRendererReady = true;
         }

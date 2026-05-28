@@ -10,7 +10,7 @@
 class QueryBase {
 public:
     virtual ~QueryBase() {}
-    virtual void OnGameObjectUpdated(GameObject* e) = 0;
+    virtual bool OnGameObjectUpdated(GameObject* e) = 0;
 };
 
 
@@ -25,7 +25,7 @@ public:
 
     Query() : requiredMask((Components::ComponentBit | ...)) {}
 
-    void OnGameObjectUpdated(GameObject* e) override {
+    bool OnGameObjectUpdated(GameObject* e) override {
         // Sprawdzenie, czy wszystkie wymagane komponenty s� obecne przez bitmask�
         bool match = (e->componentMask & requiredMask) == requiredMask;
 
@@ -41,6 +41,7 @@ public:
 
                 (..., (std::get<std::vector<Components*>>(componentsVectors).push_back(e->template GetComponent<Components>())));
             }
+            return true;
         }
         else if (currentIndex != size_t(-1)) {
             size_t last = gameobjects.size() - 1;
@@ -59,6 +60,8 @@ public:
             indexMap[lastObj->id] = currentIndex;
             indexMap.erase(e->id);
         }
+
+        return false;
     }
 };
 
