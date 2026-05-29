@@ -626,7 +626,7 @@ public:
     {
         for (auto& entry : passes) {
             if (entry.renderer->shaderHizDownsample) {
-                entry.renderer->BuildHiZ();
+                //entry.renderer->BuildHiZ();
                 return;
             }
         }

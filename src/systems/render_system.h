@@ -89,14 +89,19 @@ private:
     glm::mat4 view;
     glm::vec3 currentCameraPos;
 
-    GPUDrivenManager drivenManager;
 
-    GLuint sceneFBO;
+    GLuint sceneFBO = 0;
     GLuint sceneColorTexture;
-    GLuint sceneDepthRBO;
-    int fboWidth = 0, fboHeight = 0;
+    GLuint sceneDepthTexture;
+
+
 
 public:
+    GPUDrivenManager drivenManager;
+    //GLuint sceneDepthRBO = 0;
+    GLuint depthTexturePrev = 0;
+    int fboWidth = 0, fboHeight = 0;
+    
     void IssueOcclusionQuery(size_t entityIdx, const glm::mat4& modelMatrix, const AABB& localAABB) {
         OcclusionData& data = occlusionMap[entityIdx];
         if (data.queryId == 0) glGenQueries(1, &data.queryId);
@@ -501,8 +506,7 @@ public:
 
     //GPUDrivenRenderer gpuRenderer;
     bool gpuRendererReady = false;
-    GLuint depthTexturePrev = 0;
-    GLuint depthFBO = 0;
+
 
     //std::unordered_map<AnimatorComponent*, uint32_t> animatorIDMap;
 
@@ -649,6 +653,13 @@ public:
         drivenManager.CollectAllPasses(*renderQuery, currentCameraPos);
         drivenManager.RenderFrame(vp, currentCameraPos, depthTexturePrev);
 
+        if (depthTexturePrev && sceneDepthTexture) {
+            glCopyImageSubData(sceneDepthTexture, GL_TEXTURE_2D, 0, 0, 0, 0,
+                depthTexturePrev, GL_TEXTURE_2D, 0, 0, 0, 0,
+                width, height, 1);
+            //drivenManager.BuildHiZ();
+        }
+
         auto cullEnd = std::chrono::high_resolution_clock::now();
         stats.cullingTimeMs += std::chrono::duration<float, std::milli>(cullEnd - cullStart).count();
 
@@ -676,6 +687,37 @@ public:
         skybox.Render(view, projection);
     }
 
+
+    void ShowDepthTextureImGui(GLuint depthTex, int w, int h, float zNear, float zFar)
+    {
+        static GLuint debugTex = 0;
+        if (!debugTex) {
+            glGenTextures(1, &debugTex);
+            glBindTexture(GL_TEXTURE_2D, debugTex);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        }
+
+        // Pobierz depth z GPU
+        std::vector<float> depth(w * h);
+        glGetTextureImage(depthTex, 0, GL_DEPTH_COMPONENT, GL_FLOAT, w * h * sizeof(float), depth.data());
+
+        // Konwertuj na RGB (linearyzuj)
+        std::vector<uint8_t> rgb(w * h * 3);
+        for (int i = 0; i < w * h; i++) {
+            float d = depth[i];
+            float linear = (2.0f * zNear) / (zFar + zNear - d * (zFar - zNear));
+            uint8_t v = (uint8_t)(linear * 255.0f);
+            rgb[i * 3 + 0] = v;
+            rgb[i * 3 + 1] = v;
+            rgb[i * 3 + 2] = v;
+        }
+
+        glBindTexture(GL_TEXTURE_2D, debugTex);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, rgb.data());
+
+        ImGui::Image((ImTextureID)(intptr_t)debugTex, ImVec2(320, 180));
+    }
 
     void RenderCamera(CameraComponent& cam, TransformComponent& transform, int width, int height) {
         ApplyViewport(cam.viewport, width, height);
@@ -985,7 +1027,12 @@ public:
         if (sceneFBO) {
             glDeleteFramebuffers(1, &sceneFBO);
             glDeleteTextures(1, &sceneColorTexture);
-            glDeleteRenderbuffers(1, &sceneDepthRBO);
+            glDeleteTextures(1, &sceneDepthTexture);
+
+            if (depthTexturePrev) {
+                glDeleteTextures(1, &depthTexturePrev);
+                depthTexturePrev = 0;
+            }
         }
 
         glGenFramebuffers(1, &sceneFBO);
@@ -999,16 +1046,29 @@ public:
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, sceneColorTexture, 0);
 
-        // Renderbuffer dla depth+stencil
-        glGenRenderbuffers(1, &sceneDepthRBO);
-        glBindRenderbuffer(GL_RENDERBUFFER, sceneDepthRBO);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, w, h);
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, sceneDepthRBO);
+        // depth jako tekstura — potrzebna do glCopyImageSubData
+        glGenTextures(1, &sceneDepthTexture);
+        glBindTexture(GL_TEXTURE_2D, sceneDepthTexture);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, w, h, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, sceneDepthTexture, 0);
 
         if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-            spdlog::error("PostProcessing FBO incomplete!");
-
+            spdlog::error("SceneFBO incomplete!");
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        // depthTexturePrev — ten sam format, glCopyImageSubData depth→depth działa
+        glGenTextures(1, &depthTexturePrev);
+        glBindTexture(GL_TEXTURE_2D, depthTexturePrev);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, w, h, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glBindTexture(GL_TEXTURE_2D, 0);
     }
 
     GLuint GetSceneTexture() const { return sceneColorTexture; }

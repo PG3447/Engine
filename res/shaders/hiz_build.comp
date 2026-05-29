@@ -1,33 +1,35 @@
 #version 460 core
+layout(local_size_x = 8, local_size_y = 8) in;
 
-layout (local_size_x = 8, local_size_y = 8) in;
-
-// poprzedni mip poziom - do odczytu
-layout(binding = 0) uniform sampler2D prevMip;
-
-// aktualny mip poziom - do zapisu
-layout(r32f, binding = 1) uniform image2D currentMip;
+// MIP 0: depth source (GL_DEPTH_COMPONENT32F) - bezposrednio z FBO
+layout(binding = 0) uniform sampler2D depthSrc;
+// Zapis mip0 HiZ (kopia depth -> R32F)
+layout(r32f, binding = 1) uniform image2D hizMip0;
+// Zapis aktualnego mipa (downsampling)
+layout(r32f, binding = 2) uniform image2D currentMip;
 
 void main()
 {
-	ivec2 texelCoord = ivec2(gl_GlobalInvocationID.xy);
-	ivec2 size = imageSize(currentMip);
+    ivec2 texelCoord = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 size = imageSize(currentMip);
+    if (texelCoord.x >= size.x || texelCoord.y >= size.y) return;
 
-	if (texelCoord.x >= size.x || texelCoord.y >= size.y)
-	{
-		return;
-	}
+    ivec2 srcCoord = texelCoord * 2;
+    ivec2 depthSize = textureSize(depthSrc, 0);
 
-	vec2 uv = (vec2(texelCoord) + 0.5) / vec2(size); //Znajdujemy srodek UV 2x2 na teksturze
-	vec2 texelSize = 1.0 / vec2(textureSize(prevMip, 0)); //Ustalamy wielkosc texel-a
+    // Odczyt 2x2 pikseli z depth texture
+    float d0 = texelFetch(depthSrc, min(srcCoord + ivec2(0,0), depthSize-1), 0).r;
+    float d1 = texelFetch(depthSrc, min(srcCoord + ivec2(1,0), depthSize-1), 0).r;
+    float d2 = texelFetch(depthSrc, min(srcCoord + ivec2(0,1), depthSize-1), 0).r;
+    float d3 = texelFetch(depthSrc, min(srcCoord + ivec2(1,1), depthSize-1), 0).r;
 
-	float d0 = texture(prevMip, uv + vec2(-texelSize.x, -texelSize.y)).r; // lewy gorny piksel
-    float d1 = texture(prevMip, uv + vec2( texelSize.x, -texelSize.y)).r; // prawy gorny piksel
-    float d2 = texture(prevMip, uv + vec2(-texelSize.x,  texelSize.y)).r; // lewy dolny piksel
-    float d3 = texture(prevMip, uv + vec2( texelSize.x,  texelSize.y)).r; // prawy dolny piksel
+    // Kopiuj 4 piksele do mip0 (tylko jesli miescimy sie w granicach)
+    ivec2 mip0Size = imageSize(hizMip0);
+    if (srcCoord.x     < mip0Size.x && srcCoord.y     < mip0Size.y) imageStore(hizMip0, srcCoord + ivec2(0,0), vec4(d0));
+    if (srcCoord.x + 1 < mip0Size.x && srcCoord.y     < mip0Size.y) imageStore(hizMip0, srcCoord + ivec2(1,0), vec4(d1));
+    if (srcCoord.x     < mip0Size.x && srcCoord.y + 1 < mip0Size.y) imageStore(hizMip0, srcCoord + ivec2(0,1), vec4(d2));
+    if (srcCoord.x + 1 < mip0Size.x && srcCoord.y + 1 < mip0Size.y) imageStore(hizMip0, srcCoord + ivec2(1,1), vec4(d3));
 
-	// max depth - najdalsza głębokości 
-	float maxDepth = max(max(d0, d1), max(d2, d3));
-
-	imageStore(currentMip, texelCoord, vec4(maxDepth));
+    // Downsampling: max depth -> currentMip (mip1)
+    imageStore(currentMip, texelCoord, vec4(max(max(d0, d1), max(d2, d3))));
 }

@@ -980,7 +980,7 @@ int main(int, char**)
 
     RenderHelper::SetMaterial(obb3, brickMat);
 
-    GameObject* camera1 = groundModel->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* camera1 = scena1->CreateGameObject(nullptr);//groundModel->Instantiate(*scena1, nullptr, ourShader.get());
     CameraComponent* camCompLeft = camera1->AddComponent<CameraComponent>();
     ColliderComponent* camera1collider = camera1->AddComponent<ColliderComponent>();
     RigidbodyComponent* rigidBodyCamera1 = camera1->AddComponent<RigidbodyComponent>();
@@ -1950,6 +1950,8 @@ void imgui_render(SceneManager& sceneManager)
 
     ImGui::End();
 
+
+
     ImGui::Begin("Loaded Models");
 
     if (ImGui::Button("Load Model"))
@@ -1983,6 +1985,22 @@ void imgui_render(SceneManager& sceneManager)
     }
 
     ImGui::End();
+    auto system = sceneManager.GetActiveScene()->GetECS().GetSystem<RenderSystem>();
+    if (ImGui::Begin("Debug")) {
+       
+        system->ShowDepthTextureImGui(system->depthTexturePrev, system->fboWidth, system->fboHeight, 0.1f, 1000.0f);
+    }
+    ImGui::End();
+
+    // Osobno — cały ImGui
+    static int debugMip = 0;
+    ImGui::Begin("HiZ Debug Controls");
+    auto* renderer = system->drivenManager.GetRenderer(0);
+    ImGui::SliderInt("Mip", &debugMip, 0, renderer->hizMipLevels - 1);
+    ImGui::End();
+
+    // Pobierz renderer żeby wywołać debug
+    if (renderer) renderer->DebugShowHiZ(debugMip);
 
     ImGui::Begin("Performance");
 
