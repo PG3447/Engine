@@ -788,7 +788,7 @@ void createFirstRoom(Scene* scena1) {
         tablicaSink[i]->name = "Sink" + std::to_string(i);
         tablicaSink[i]->GetComponent<TransformComponent>()->scale = glm::vec3{ 3, 3, 3 };
         tablicaSink[i]->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 90, 0 };
-        tablicaSink[i]->GetComponent<TransformComponent>()->position = glm::vec3{ -21.5, -2.0, -45 + (-10 * i) };
+        tablicaSink[i]->GetComponent<TransformComponent>()->position = glm::vec3{ -21.5, 6.0, -45 + (-10 * i) };
         tablicaSink[i]->AddComponent<RigidbodyComponent>();
         tablicaSink[i]->AddComponent<ColliderComponent>();
         tablicaSink[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
