@@ -188,6 +188,7 @@ std::unique_ptr<Prefab> mirrorModel1;
 std::unique_ptr<Prefab> mirrorModel2;
 std::unique_ptr<Prefab> mirrorModel3;
 std::unique_ptr<Prefab> washroomExit;
+std::unique_ptr<Prefab> urinModel;
 //AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 std::unique_ptr<Prefab> floorModel;
 std::unique_ptr<Prefab> wallModel;
@@ -606,7 +607,7 @@ void createFirstRoom(Scene* scena1) {
     wallObject3->GetComponent<RigidbodyComponent>()->useGravity = false;
     wallObject3->GetComponent<RigidbodyComponent>()->isStatic = true;
 
-    wallObject3->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 50, 100 };
+    //wallObject3->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 50, 100 };
 
     wallObject3->GetComponent<TransformComponent>()->position.x = -25;
     wallObject3->GetComponent<TransformComponent>()->position.y = 0;
@@ -624,7 +625,7 @@ void createFirstRoom(Scene* scena1) {
     wallObject4->GetComponent<RigidbodyComponent>()->useGravity = false;
     wallObject4->GetComponent<RigidbodyComponent>()->isStatic = true;
 
-    wallObject4->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 100, 1 };
+    //wallObject4->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 100, 1 };
 
     wallObject4->GetComponent<TransformComponent>()->position.x = 0;
     wallObject4->GetComponent<TransformComponent>()->position.y = 0;
@@ -643,7 +644,7 @@ void createFirstRoom(Scene* scena1) {
     wallObject5->GetComponent<RigidbodyComponent>()->useGravity = false;
     wallObject5->GetComponent<RigidbodyComponent>()->isStatic = true;
 
-    wallObject5->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 50, 100 };
+    //wallObject5->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 50, 100 };
 
     wallObject5->GetComponent<TransformComponent>()->position.x = 100;
     wallObject5->GetComponent<TransformComponent>()->position.y = 0;
@@ -661,7 +662,7 @@ void createFirstRoom(Scene* scena1) {
     wallObject6->GetComponent<RigidbodyComponent>()->useGravity = false;
     wallObject6->GetComponent<RigidbodyComponent>()->isStatic = true;
 
-    wallObject6->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 50, 100 };
+    //wallObject6->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 50, 100 };
     wallObject6->GetComponent<ColliderComponent>()->affectsNavMesh = true;;
 
     wallObject6->GetComponent<TransformComponent>()->position.x = -100;
@@ -680,7 +681,7 @@ void createFirstRoom(Scene* scena1) {
     wallObject7->GetComponent<RigidbodyComponent>()->useGravity = false;
     wallObject7->GetComponent<RigidbodyComponent>()->isStatic = true;
 
-    wallObject7->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 100, 1 };
+    //wallObject7->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 100, 1 };
     wallObject7->GetComponent<ColliderComponent>()->affectsNavMesh = true;
 
 
@@ -699,7 +700,7 @@ void createFirstRoom(Scene* scena1) {
     wallObject8->GetComponent<RigidbodyComponent>()->useGravity = false;
     wallObject8->GetComponent<RigidbodyComponent>()->isStatic = true;
 
-    wallObject8->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 100, 1 };
+    //wallObject8->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 100, 100, 1 };
     wallObject8->GetComponent<ColliderComponent>()->affectsNavMesh = true;
 
     wallObject8->GetComponent<TransformComponent>()->position.x = -110;
@@ -715,7 +716,7 @@ void createFirstRoom(Scene* scena1) {
     wallObject9->GetComponent<RigidbodyComponent>()->useGravity = false;
     wallObject9->GetComponent<RigidbodyComponent>()->isStatic = true;
 
-    wallObject9->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 10, 44, 1 };
+    //wallObject9->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 10, 44, 1 };
     wallObject9->GetComponent<ColliderComponent>()->affectsNavMesh = true;
     wallObject9->GetComponent<TransformComponent>()->position = glm::vec3{ 0, 70 , -100 };
 
@@ -727,7 +728,7 @@ void createFirstRoom(Scene* scena1) {
         tablicaKibli[i]->AddComponent<ColliderComponent>();
         tablicaKibli[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
         tablicaKibli[i]->GetComponent<RigidbodyComponent>()->isStatic = true;
-        tablicaKibli[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 2.5, 4, 2.5 };
+        //tablicaKibli[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 2.5, 4, 2.5 };
         tablicaKibli[i]->GetComponent<ColliderComponent>()->offset = glm::vec3{ 0, 4, 0 };
         tablicaKibli[i]->GetComponent<TransformComponent>()->position = glm::vec3{ 45, 0.5f, -45 + (-10 * i) };
         tablicaKibli[i]->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 90, 0 };
@@ -742,7 +743,7 @@ void createFirstRoom(Scene* scena1) {
         tablicaZaslon[i]->AddComponent<ColliderComponent>();
         tablicaZaslon[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
         tablicaZaslon[i]->GetComponent<RigidbodyComponent>()->isStatic = true;
-        tablicaZaslon[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 20, 15, 0.3 };
+        //tablicaZaslon[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 20, 15, 0.3 };
         tablicaZaslon[i]->GetComponent<TransformComponent>()->position = glm::vec3{ 50, 0, -40 + (-10 * i) };
         tablicaZaslon[i]->GetComponent<ColliderComponent>()->isWalkable = false;
         tablicaZaslon[i]->GetComponent<ColliderComponent>()->affectsNavMesh = true;
@@ -770,13 +771,13 @@ void createFirstRoom(Scene* scena1) {
 
     for (int i = 0; i < 6; i++) {
         tablicaPapierowKibel[i] = toiletPaperModel->Instantiate(*scena1, nullptr, ourShader.get());
-        tablicaPapierowKibel[i]->GetComponent<TransformComponent>()->scale = glm::vec3{ 1, 1, 1 };
+        tablicaPapierowKibel[i]->GetComponent<TransformComponent>()->scale = glm::vec3{ 2, 2, 2 };
         tablicaPapierowKibel[i]->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 90, 0 };
         tablicaPapierowKibel[i]->AddComponent<RigidbodyComponent>();
         tablicaPapierowKibel[i]->AddComponent<ColliderComponent>();
         tablicaPapierowKibel[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
         tablicaPapierowKibel[i]->GetComponent<RigidbodyComponent>()->isStatic = true;
-        tablicaPapierowKibel[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 0.7, 0.7, 0.7 };
+        //tablicaPapierowKibel[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 0.7, 0.7, 0.7 };
         tablicaPapierowKibel[i]->GetComponent<TransformComponent>()->position = glm::vec3{ 35, 5.0, -40.7 + (-10 * i) };
         rotatableObjects.insert(tablicaPapierowKibel[i]);
     }
@@ -784,17 +785,32 @@ void createFirstRoom(Scene* scena1) {
     GameObject* tablicaSink[6];
     for (int i = 0; i < 6; i++) {
         tablicaSink[i] = sinkModel->Instantiate(*scena1, nullptr, ourShader.get());
+        tablicaSink[i]->name = "Sink" + std::to_string(i);
         tablicaSink[i]->GetComponent<TransformComponent>()->scale = glm::vec3{ 3, 3, 3 };
         tablicaSink[i]->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 90, 0 };
+        tablicaSink[i]->GetComponent<TransformComponent>()->position = glm::vec3{ -21.5, -2.0, -45 + (-10 * i) };
         tablicaSink[i]->AddComponent<RigidbodyComponent>();
         tablicaSink[i]->AddComponent<ColliderComponent>();
         tablicaSink[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
         tablicaSink[i]->GetComponent<RigidbodyComponent>()->isStatic = true;
-        tablicaSink[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 3, 20, 3 };
-        tablicaSink[i]->GetComponent<TransformComponent>()->position = glm::vec3{ -21.5, -2.0, -45 + (-10 * i) };
         tablicaSink[i]->GetComponent<ColliderComponent>()->isWalkable = false;
         tablicaSink[i]->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+        //tablicaSink[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 3, 20, 3 };
     }
+
+    GameObject* tablicaurin[4];
+    for (int i = 0; i < 4; i++) {
+        tablicaurin[i] = urinModel->Instantiate(*scena1, nullptr, ourShader.get());
+        tablicaurin[i]->GetComponent<TransformComponent>()->scale = glm::vec3{ 3, 3, 3 };
+        tablicaurin[i]->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 0, 0 };
+        tablicaurin[i]->AddComponent<RigidbodyComponent>();
+        tablicaurin[i]->AddComponent<ColliderComponent>();
+        tablicaurin[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
+        tablicaurin[i]->GetComponent<RigidbodyComponent>()->isStatic = true;
+        //tablicaurin[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 3, 20, 3 };
+        tablicaurin[i]->GetComponent<TransformComponent>()->position = glm::vec3{ -20.5, 0.0, -45 + (-10 * i) };
+    }
+
     GameObject* lustro1;
     lustro1 = mirrorModel1->Instantiate(*scena1, nullptr, ourShader.get());
     lustro1->GetComponent<TransformComponent>()->scale = glm::vec3{ 1, 2, 8 };
@@ -803,7 +819,7 @@ void createFirstRoom(Scene* scena1) {
     lustro1->AddComponent<ColliderComponent>();
     lustro1->GetComponent<RigidbodyComponent>()->useGravity = false;
     lustro1->GetComponent<RigidbodyComponent>()->isStatic = true;
-    lustro1->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 1, 1 };
+    //lustro1->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 1, 1 };
     lustro1->GetComponent<TransformComponent>()->position = glm::vec3{ -23.5, 12.0, -50 + (-20 * 0) };
     GameObject* lustro2;
     lustro2 = mirrorModel2->Instantiate(*scena1, nullptr, ourShader.get());
@@ -813,7 +829,7 @@ void createFirstRoom(Scene* scena1) {
     lustro2->AddComponent<ColliderComponent>();
     lustro2->GetComponent<RigidbodyComponent>()->useGravity = false;
     lustro2->GetComponent<RigidbodyComponent>()->isStatic = true;
-    lustro2->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 1, 1 };
+    //lustro2->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 1, 1 };
     lustro2->GetComponent<TransformComponent>()->position = glm::vec3{ -23.5, 12.0, -50 + (-20 * 1) };
     GameObject* lustro3;
     lustro3 = mirrorModel3->Instantiate(*scena1, nullptr, ourShader.get());
@@ -823,7 +839,7 @@ void createFirstRoom(Scene* scena1) {
     lustro3->AddComponent<ColliderComponent>();
     lustro3->GetComponent<RigidbodyComponent>()->useGravity = false;
     lustro3->GetComponent<RigidbodyComponent>()->isStatic = true;
-    lustro3->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 1, 1 };
+    //lustro3->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 1, 1 };
     lustro3->GetComponent<TransformComponent>()->position = glm::vec3{ -23.5, 12.0, -50 + (-20 * 2) };
     GameObject* tablicaDrzwi[2];
     for (int i = 0; i < 2; i++) {
@@ -834,7 +850,7 @@ void createFirstRoom(Scene* scena1) {
         tablicaDrzwi[i]->AddComponent<ColliderComponent>();
         tablicaDrzwi[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
         tablicaDrzwi[i]->GetComponent<RigidbodyComponent>()->isStatic = true;
-        tablicaDrzwi[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 5, 22, 1 };
+        //tablicaDrzwi[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 5, 22, 1 };
         tablicaDrzwi[i]->GetComponent<TransformComponent>()->position = glm::vec3{ -5 + (10 * i), 0.0, -100 };
         majorDoors.insert(tablicaDrzwi[i]);
         tablicaDrzwi[i]->GetComponent<ColliderComponent>()->isWalkable = false;
@@ -1057,7 +1073,7 @@ int main(int, char**)
 
     RenderHelper::SetMaterial(obb3, brickMat);
 
-    GameObject* camera1 = scena1->CreateGameObject(nullptr);
+    GameObject* camera1 = groundModel->Instantiate(*scena1, nullptr, ourShader.get());
     CameraComponent* camCompLeft = camera1->AddComponent<CameraComponent>();
     ColliderComponent* camera1collider = camera1->AddComponent<ColliderComponent>();
     RigidbodyComponent* rigidBodyCamera1 = camera1->AddComponent<RigidbodyComponent>();
@@ -1188,7 +1204,7 @@ int main(int, char**)
 
     light->direction = glm::normalize(glm::vec3(-0.3f, -1.0f, -0.1f));
 
-    light->ambient = glm::vec3(0.5f);
+    light->ambient = glm::vec3(0.2f);
     light->diffuse = glm::vec3(0.3f);
     light->specular = glm::vec3(0.9f);
 
@@ -1448,6 +1464,7 @@ int main(int, char**)
             else ++it;
         }
 
+        //spdlog::info(can_open_door_1);
 
         // caly ten wielki kod wydzielilem do funkcji
         HandlePlayerInteraction(ecs, "interact_p1", player1Raycast, camera1, p1HeldObject, p2HeldObject, scena1, rotatingObjects);
@@ -2227,18 +2244,19 @@ void connectAllModels() {
     //vial5Model     = std::make_unique<Prefab>("res/models/probowka5.glb");
     //vial61Model    = std::make_unique<Prefab>("res/models/probowka6.glb");
     //vial7Model     = std::make_unique<Prefab>("res/models/probowka7.glb");
-    sinkModel      = std::make_unique<Prefab>("res/models/sink.glb");
+    sinkModel      = std::make_unique<Prefab>("res/models/sink_2.glb");
     //szafa1Model    = std::make_unique<Prefab>("res/models/szafa1.glb");
     //szafa2Model    = std::make_unique<Prefab>("res/models/szafa2.glb");
     //szafa3Model    = std::make_unique<Prefab>("res/models/szafa3.glb");
     //telephoneModel = std::make_unique<Prefab>("res/models/telephone.glb");
-    toiletModel    = std::make_unique<Prefab>("res/models/toilet.glb");
-    doorsToiletModel    = std::make_unique<Prefab>("res/models/doors_toilet.glb");
+    toiletModel    = std::make_unique<Prefab>("res/models/toilet_f.glb");
+    doorsToiletModel    = std::make_unique<Prefab>("res/models/doors_toliet_tex6.glb");
     toiletPaperModel = std::make_unique<Prefab>("res/models/toilet_paper_mystery_2.glb");
-    mirrorModel1 = std::make_unique<Prefab>("res/models/glass1.glb");
-    mirrorModel2 = std::make_unique<Prefab>("res/models/glass2.glb");
-    mirrorModel3 = std::make_unique<Prefab>("res/models/glass3.glb");
+    mirrorModel1 = std::make_unique<Prefab>("res/models/glass1_v2.glb");
+    mirrorModel2 = std::make_unique<Prefab>("res/models/glass2_v2.glb");
+    mirrorModel3 = std::make_unique<Prefab>("res/models/glass3_v2.glb");
     washroomExit = std::make_unique<Prefab>("res/models/door_other_2.glb");
+    urinModel = std::make_unique<Prefab>("res/models/uniral_v2.glb");
     //wozekModel     = std::make_unique<Prefab>("res/models/wozek.glb");
     //zaslonaModel   = std::make_unique<Prefab>("res/models/zaslona.glb");
     //roomModel = std::make_unique<Prefab>("res/models/room.glb");

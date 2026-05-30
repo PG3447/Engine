@@ -318,15 +318,24 @@ public:
         }
     }
 
+    std::vector<RenderComponent*> pendingRegistration;
+
     void OnGameObjectUpdated(GameObject* e) override {
-        renderQuery->OnGameObjectUpdated(e); // forward do query
+        int resultAddRender = renderQuery->OnGameObjectUpdated(e);
+        if (resultAddRender <= 1) // && gpuRendererInitialized
+        {
+            pendingRegistration.push_back(e->GetComponent<RenderComponent>());  //drivenManager.RebuildAllRegistries(*renderQuery);
+            groupsDirty = true;
+        }
+        if (resultAddRender == 2)
+        {
+            //komponent zostal usuniety
+            drivenManager.RebuildInstance();
+        }
         lightQuery->OnGameObjectUpdated(e);  // forward do query
         cameraQuery->OnGameObjectUpdated(e); // forward do query
-        animatorQuery->OnGameObjectUpdated(e);
+        animatorQuery->OnGameObjectUpdated(e); 
         
-        if (gpuRendererInitialized)
-            RebuildGameObjectInRenderer(e);
-        groupsDirty = true;
     }
 
     void MarkDirty()
@@ -334,141 +343,93 @@ public:
         groupsDirty = true;
     }
 
-    void RebuildGameObjectInRenderer(GameObject* e) {
-        // Szukamy tego obiektu w renderQuery po wskaźniku
-        auto& gos = renderQuery->gameobjects;
-        auto& renderers = std::get<1>(renderQuery->componentsVectors);
+    //void RebuildGameObjectInRenderer(GameObject* e) {
+    //    // Szukamy tego obiektu w renderQuery po wskaźniku
+    //    auto& gos = renderQuery->gameobjects;
+    //    auto& renderers = std::get<1>(renderQuery->componentsVectors);
 
-        for (size_t i = 0; i < gos.size(); ++i) {
-            if (gos[i] != e) continue;
+    //    for (size_t i = 0; i < gos.size(); ++i) {
+    //        if (gos[i] != e) continue;
 
+    //        RenderComponent* rc = renderers[i];
+    //        if (!rc) return;
+
+    //        // 1. Zarejestruj animator jeśli nowy
+    //        if (rc->animator &&
+    //            drivenManager.animatorIDMap.find(rc->animator) == drivenManager.animatorIDMap.end())
+    //        {
+    //            drivenManager.animatorIDMap[rc->animator] =
+    //                (uint32_t)drivenManager.animatorIDMap.size();
+    //        }
+
+    //        // 2. Dla każdego mesha sprawdź czy pass/mesh/materiał już istnieje
+    //        for (auto& mesh : rc->meshes) {
+    //            if (!mesh.cpuData || !mesh.material) continue;
+
+    //            MeshData* md = mesh.cpuData.get();
+    //            Material* mat = mesh.material.get();
+    //            Shader* shader = mat->shader ? mat->shader : drivenManager.defaultShaderRender;
+
+    //            uint32_t pid = drivenManager.GetOrCreatePass(shader, mat->surfaceType);
+    //            GPUDrivenRenderer* r = drivenManager.GetRenderer(pid);
+    //            if (!r) continue;
+
+    //            // RegisterMesh/RegisterMaterial są idempotentne —
+    //            // zwracają istniejące ID jeśli już zarejestrowane,
+    //            // a dodają nowy wpis tylko gdy go nie ma
+    //            bool meshIsNew = (r->GetMeshId(md) == UINT32_MAX);
+    //            bool materialIsNew = (r->GetMaterialId(mat) == UINT32_MAX);
+
+    //            if (meshIsNew)     r->RegisterMesh(md);
+    //            if (materialIsNew) r->RegisterMaterial(mat);
+
+    //            // Upload na GPU tylko jeśli faktycznie coś nowego trafiło do rejestrów
+    //            // UploadMeshes() to pełna realokacja VBO/EBO/meshDataSSBO — wywołujemy rzadko
+    //            if (meshIsNew)     r->UploadMeshes();
+    //            if (materialIsNew) r->UploadMaterials();
+
+    //            // Zawsze oznacz instancje jako brudne — nowy/zmieniony obiekt
+    //            // musi przejść przez BuildInstance przy następnym RenderFrame
+    //            r->dirtyInstance = true;
+    //        }
+
+    //        return; // obiekt znaleziony, kończymy
+    //    }
+    //}
+
+
+    /*void RebuildAllRegistries(Query<TransformComponent, RenderComponent>& renderQuery) {
+        for (auto& entry : passes)
+            entry.renderer->Reset();
+
+        animatorIDMap.clear();
+
+        // identyczne jak InitPassesFromScene
+        auto& renderers = std::get<1>(renderQuery.componentsVectors);
+        for (size_t i = 0; i < renderers.size(); i++) {
             RenderComponent* rc = renderers[i];
-            if (!rc) return;
+            if (!rc) continue;
 
-            // 1. Zarejestruj animator jeśli nowy
-            if (rc->animator &&
-                drivenManager.animatorIDMap.find(rc->animator) == drivenManager.animatorIDMap.end())
-            {
-                drivenManager.animatorIDMap[rc->animator] =
-                    (uint32_t)drivenManager.animatorIDMap.size();
-            }
+            if (rc->animator && animatorIDMap.find(rc->animator) == animatorIDMap.end())
+                animatorIDMap[rc->animator] = (uint32_t)animatorIDMap.size();
 
-            // 2. Dla każdego mesha sprawdź czy pass/mesh/materiał już istnieje
             for (auto& mesh : rc->meshes) {
                 if (!mesh.cpuData || !mesh.material) continue;
-
-                MeshData* md = mesh.cpuData.get();
                 Material* mat = mesh.material.get();
-                Shader* shader = mat->shader ? mat->shader : drivenManager.defaultShaderRender;
-
-                uint32_t pid = drivenManager.GetOrCreatePass(shader, mat->surfaceType);
-                GPUDrivenRenderer* r = drivenManager.GetRenderer(pid);
+                Shader* shader = mat->shader ? mat->shader : defaultShaderRender;
+                uint32_t pid = GetOrCreatePass(shader, mat->surfaceType);
+                GPUDrivenRenderer* r = GetRenderer(pid);
                 if (!r) continue;
-
-                // RegisterMesh/RegisterMaterial są idempotentne —
-                // zwracają istniejące ID jeśli już zarejestrowane,
-                // a dodają nowy wpis tylko gdy go nie ma
-                bool meshIsNew = (r->GetMeshId(md) == UINT32_MAX);
-                bool materialIsNew = (r->GetMaterialId(mat) == UINT32_MAX);
-
-                if (meshIsNew)     r->RegisterMesh(md);
-                if (materialIsNew) r->RegisterMaterial(mat);
-
-                // Upload na GPU tylko jeśli faktycznie coś nowego trafiło do rejestrów
-                // UploadMeshes() to pełna realokacja VBO/EBO/meshDataSSBO — wywołujemy rzadko
-                if (meshIsNew)     r->UploadMeshes();
-                if (materialIsNew) r->UploadMaterials();
-
-                // Zawsze oznacz instancje jako brudne — nowy/zmieniony obiekt
-                // musi przejść przez BuildInstance przy następnym RenderFrame
-                r->dirtyInstance = true;
+                r->RegisterMesh(mesh.cpuData.get());
+                r->RegisterMaterial(mat);
             }
+        }
 
-            return; // obiekt znaleziony, kończymy
+        for (auto& entry : passes) {
+            entry.renderer->UploadMeshes();
+            entry.renderer->UploadMaterials();
         }
     }
-    /*
-    void RebuildAllRegistries() {
-    // 1. Wyczyść wszystkie passy
-    for (auto& entry : passes) {
-        GPUDrivenRenderer* r = entry.renderer.get();
-        
-        // Wyczyść CPU-side rejestry i bufory geometrii
-        r->allVertices.clear();
-        r->allIndices.clear();
-        r->meshesData.clear();
-        r->materials.clear();
-        r->meshMetaCPU.clear();
-        r->meshRegistry.clear();
-        r->materialRegistry.clear();
-    }
-    
-    animatorIDMap.clear();
-    
-    // 2. Zarejestruj wszystko od nowa (jak InitPassesFromScene)
-    // ale NIE czyść samych passów — zostają te same passy
-    auto& renderers = std::get<1>(renderQuery.componentsVectors);
-    
-    for (size_t i = 0; i < renderers.size(); i++) {
-        RenderComponent* rc = renderers[i];
-        if (!rc) continue;
-        
-        if (rc->animator && animatorIDMap.find(rc->animator) == animatorIDMap.end())
-            animatorIDMap[rc->animator] = (uint32_t)animatorIDMap.size();
-        
-        for (auto& mesh : rc->meshes) {
-            if (!mesh.cpuData || !mesh.material) continue;
-            
-            Material* mat = mesh.material.get();
-            Shader* shader = mat->shader ? mat->shader : defaultShaderRender;
-            
-            uint32_t pid = GetOrCreatePass(shader, mat->surfaceType);
-            GPUDrivenRenderer* r = GetRenderer(pid);
-            if (!r) continue;
-            
-            r->RegisterMesh(mesh.cpuData.get());
-            r->RegisterMaterial(mat);
-        }
-    }
-    
-    // 3. Upload na GPU
-    for (auto& entry : passes) {
-        entry.renderer->UploadMeshes();
-        entry.renderer->UploadMaterials();
-        entry.renderer->dirtyInstance = true;
-    }
-}void RebuildAllRegistries(Query<TransformComponent, RenderComponent>& renderQuery) {
-    for (auto& entry : passes)
-        entry.renderer->Reset();
-    
-    animatorIDMap.clear();
-    
-    // identyczne jak InitPassesFromScene
-    auto& renderers = std::get<1>(renderQuery.componentsVectors);
-    for (size_t i = 0; i < renderers.size(); i++) {
-        RenderComponent* rc = renderers[i];
-        if (!rc) continue;
-
-        if (rc->animator && animatorIDMap.find(rc->animator) == animatorIDMap.end())
-            animatorIDMap[rc->animator] = (uint32_t)animatorIDMap.size();
-
-        for (auto& mesh : rc->meshes) {
-            if (!mesh.cpuData || !mesh.material) continue;
-            Material* mat  = mesh.material.get();
-            Shader* shader = mat->shader ? mat->shader : defaultShaderRender;
-            uint32_t pid   = GetOrCreatePass(shader, mat->surfaceType);
-            GPUDrivenRenderer* r = GetRenderer(pid);
-            if (!r) continue;
-            r->RegisterMesh(mesh.cpuData.get());
-            r->RegisterMaterial(mat);
-        }
-    }
-
-    for (auto& entry : passes) {
-        entry.renderer->UploadMeshes();
-        entry.renderer->UploadMaterials();
-    }
-}
     */
     void Update(ECS& ecs, float dt) override {
         stats.Reset();
@@ -481,6 +442,14 @@ public:
         glBindFramebuffer(GL_FRAMEBUFFER, sceneFBO);
         glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        if (groupsDirty)
+        {
+            for (RenderComponent* e : pendingRegistration)
+                drivenManager.AddGameObjectToRegistries(e);
+            pendingRegistration.clear();
+            groupsDirty = false;
+        }
 
         //BuildGroups();
         RenderAllCameras();
@@ -509,18 +478,19 @@ public:
         int display_w, display_h;
         glfwGetFramebufferSize(window, &display_w, &display_h);
 
-        if (!gpuRendererInitialized && renderQuery->gameobjects.size() > 50) {
-            //InitGPUDrivenRenderer(display_w, display_h);
-            drivenManager.InitPassesFromScene(*renderQuery);
-            gpuRendererInitialized = true;
-            gpuRendererReady = true;
-        }
-        if (gpuRendererReady) {
-            auto& lightTransforms = std::get<0>(lightQuery->componentsVectors);
-            auto& lights = std::get<1>(lightQuery->componentsVectors);
+        //if (!gpuRendererInitialized) { // && renderQuery->gameobjects.size() > 50
+        //    //InitGPUDrivenRenderer(display_w, display_h);
+        //    //drivenManager.InitPassesFromScene(*renderQuery);
+        //    gpuRendererInitialized = true;
+        //    gpuRendererReady = true;
+        //}
+        auto& lightTransforms = std::get<0>(lightQuery->componentsVectors);
+        auto& lights = std::get<1>(lightQuery->componentsVectors);
 
-            drivenManager.UpdateAndUploadLights(lights, lightTransforms);
-        }
+        drivenManager.UpdateAndUploadLights(lights, lightTransforms);
+        //if (gpuRendererReady) {
+        //    
+        //}
         for (size_t i = 0; i < cameras.size(); i++) {
             if (!cameras[i]->isActive)
                 continue;
@@ -673,25 +643,31 @@ public:
 
         glm::mat4 vp = projection * view;
         currentCameraPos = transform.position;
+        drivenManager.CollectAllPasses(*renderQuery, currentCameraPos);
+        
+        auto cullStart = std::chrono::high_resolution_clock::now();
 
-        if (gpuRendererReady) {
+        drivenManager.RenderFrame(vp, currentCameraPos, depthTexturePrev);
 
-            //std::vector<RenderData> objects = CollectRenderData();
+        auto cullEnd = std::chrono::high_resolution_clock::now();
+        stats.cullingTimeMs += std::chrono::duration<float, std::milli>(cullEnd - cullStart).count();
 
-        /*    gpuRenderer.shaderRender->use();
-            gpuRenderer.shaderRender->setMat4("viewProjection", vp);
-            gpuRenderer.shaderRender->setVec3("viewPos", currentCameraPos);
-            gpuRenderer.shaderRender->setBool("isAnimated", false);*/
-            // + światła jak w starym kodzie...
-            drivenManager.CollectAllPasses(*renderQuery, currentCameraPos);
+       // if (gpuRendererReady) {
 
-            drivenManager.RenderFrame(vp, currentCameraPos, depthTexturePrev);
+       //     //std::vector<RenderData> objects = CollectRenderData();
 
-            // Skopiuj depth bieżącej klatki do depthTexturePrev dla następnej
-       /*     std::vector<float> zeros(width * height, 0.0f);
-            glTextureSubImage2D(depthTexturePrev, 0, 0, 0, width, height,
-                GL_DEPTH_COMPONENT, GL_FLOAT, zeros.data());*/
-        }
+       // /*    gpuRenderer.shaderRender->use();
+       //     gpuRenderer.shaderRender->setMat4("viewProjection", vp);
+       //     gpuRenderer.shaderRender->setVec3("viewPos", currentCameraPos);
+       //     gpuRenderer.shaderRender->setBool("isAnimated", false);*/
+       //     // + światła jak w starym kodzie...
+       //    ;
+
+       //     // Skopiuj depth bieżącej klatki do depthTexturePrev dla następnej
+       ///*     std::vector<float> zeros(width * height, 0.0f);
+       //     glTextureSubImage2D(depthTexturePrev, 0, 0, 0, width, height,
+       //         GL_DEPTH_COMPONENT, GL_FLOAT, zeros.data());*/
+       // }
 
         DebugDrawSystem::Flush(vp);
 
