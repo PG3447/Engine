@@ -346,6 +346,17 @@ public:
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 
+    void clearRegisterAll()
+    {
+        allVertices.clear();
+        allIndices.clear();
+        meshesData.clear();
+        materials.clear();
+        meshMetaCPU.clear();
+        meshRegistry.clear();
+        materialRegistry.clear();
+    }
+
     void AttachHiZ(GLuint tex, int mipLevels) {
         hizTexture = tex;
         hizMipLevels = mipLevels;
@@ -465,6 +476,7 @@ public:
         glBufferData(GL_SHADER_STORAGE_BUFFER, meshCount * sizeof(DrawElementsIndirectCommand), nullptr, GL_DYNAMIC_DRAW);
 
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+        spdlog::critical("Dane sie wysylaja");
     }
 
     void UploadMaterials()
@@ -472,6 +484,7 @@ public:
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, materialSSBO);
         glBufferData(GL_SHADER_STORAGE_BUFFER, materials.size() * sizeof(GPUMaterial), materials.data(), GL_STATIC_DRAW);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+        spdlog::critical("Materialy sie wysylaja");
     }
 
     //size_t prevSizeLights = 0;

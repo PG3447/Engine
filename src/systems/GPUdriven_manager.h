@@ -61,8 +61,8 @@ public:
     int    hizMipLevels = 0;
 
     // --- rejestry ---
-    std::unordered_map<MeshData*, uint32_t> meshRegistry;
-    std::unordered_map<Material*, uint32_t> materialRegistry;
+    //std::unordered_map<MeshData*, uint32_t> meshRegistry;
+    //std::unordered_map<Material*, uint32_t> materialRegistry;
 
     // --- passy (posortowane po sortOrder) ---
     std::vector<GPULight> gpuLights;
@@ -166,6 +166,151 @@ public:
     }
 
 
+    //void RebuildAllRegistries(Query<TransformComponent, RenderComponent>& renderQuery) {
+    //    // 1. Wyczyść wszystkie passy
+    //    for (auto& entry : passes) {
+    //        GPUDrivenRenderer* r = entry.renderer.get();
+
+    //        // Wyczyść CPU-side rejestry i bufory geometrii
+    //        r->clearRegisterAll();
+    //    }
+
+    //    animatorIDMap.clear();
+
+    //    // 2. Zarejestruj wszystko od nowa (jak InitPassesFromScene)
+    //    // ale NIE czyść samych passów — zostają te same passy
+    //    auto& renderers = std::get<1>(renderQuery.componentsVectors);
+
+    //    for (size_t i = 0; i < renderers.size(); i++) {
+    //        RenderComponent* rc = renderers[i];
+    //        if (!rc) continue;
+
+    //        if (rc->animator && animatorIDMap.find(rc->animator) == animatorIDMap.end())
+    //            animatorIDMap[rc->animator] = (uint32_t)animatorIDMap.size();
+
+    //        for (auto& mesh : rc->meshes) {
+    //            if (!mesh.cpuData || !mesh.material) continue;
+
+    //            Material* mat = mesh.material.get();
+    //            Shader* shader = mat->shader ? mat->shader : defaultShaderRender;
+
+    //            uint32_t pid = GetOrCreatePass(shader, mat->surfaceType);
+    //            GPUDrivenRenderer* r = GetRenderer(pid);
+    //            if (!r) continue;
+
+    //            r->RegisterMesh(mesh.cpuData.get());
+    //            r->RegisterMaterial(mat);
+    //        }
+    //    }
+
+    //    // 3. Upload na GPU
+    //    for (auto& entry : passes) {
+    //        entry.renderer->UploadMeshes();
+    //        entry.renderer->UploadMaterials();
+    //        entry.renderer->dirtyInstance = true;
+    //    }
+    //}
+    std::unordered_map<uint32_t, bool> meshDirty;
+
+    void RebuildAllRegistries(Query<TransformComponent, RenderComponent>& renderQuery)
+    {
+        auto& renderers = std::get<1>(renderQuery.componentsVectors);
+
+        for (size_t i = 0; i < renderers.size(); i++) {
+            RenderComponent* rc = renderers[i];
+            if (!rc) continue;
+
+            if (rc->animator && animatorIDMap.find(rc->animator) == animatorIDMap.end())
+                animatorIDMap[rc->animator] = (uint32_t)animatorIDMap.size();
+
+            for (auto& mesh : rc->meshes) {
+                if (!mesh.cpuData || !mesh.material) continue;
+
+                Material* mat = mesh.material.get();
+                Shader* shader = mat->shader ? mat->shader : defaultShaderRender;
+                uint32_t  pid = GetOrCreatePass(shader, mat->surfaceType);
+
+                GPUDrivenRenderer* r = GetRenderer(pid);
+                if (!r) continue;
+
+                // RegisterMesh / RegisterMaterial są idempotentne —
+                // zwracają istniejące ID gdy zasób już jest zarejestrowany.
+                // Sprawdzamy przed wywołaniem czy coś faktycznie jest nowe,
+                // żeby wiedzieć czy należy re-uploadować.
+                bool meshIsNew = (r->GetMeshId(mesh.cpuData.get()) == UINT32_MAX);
+                bool materialIsNew = (r->GetMaterialId(mat) == UINT32_MAX);
+
+                if (meshIsNew)     r->RegisterMesh(mesh.cpuData.get());
+                if (materialIsNew) r->RegisterMaterial(mat);
+
+                if (meshIsNew || materialIsNew)
+                    meshDirty[pid] = true;
+            }
+
+            // Każda zmiana obiektu wymaga odbudowy instancji
+            // (transform mógł się zmienić, obiekt mógł być dodany/usunięty)
+            for (auto& entry : passes)
+                entry.renderer->dirtyInstance = true;
+        }
+
+        // Flush tylko passów które faktycznie dostały nowe zasoby
+        for (auto& entry : passes) {
+            auto it = meshDirty.find(entry.passID);
+            if (it == meshDirty.end() || !it->second) continue;
+
+            entry.renderer->UploadMeshes();
+            entry.renderer->UploadMaterials();
+            it->second = false;
+            spdlog::info("RendererManager: flush pass {}", entry.passID);
+        }
+    }
+
+    void RebuildInstance()
+    {
+        for (auto& entry : passes)
+            entry.renderer->dirtyInstance = true;
+    }
+
+    void AddGameObjectToRegistries(RenderComponent* rc)
+    {
+        if (!rc) return;
+
+        if (rc->animator && animatorIDMap.find(rc->animator) == animatorIDMap.end())
+            animatorIDMap[rc->animator] = (uint32_t)animatorIDMap.size();
+
+        for (auto& mesh : rc->meshes) {
+            if (!mesh.cpuData || !mesh.material) continue;
+            Material* mat = mesh.material.get();
+            Shader* shader = mat->shader ? mat->shader : defaultShaderRender;
+            uint32_t pid = GetOrCreatePass(shader, mat->surfaceType);
+
+            GPUDrivenRenderer* r = GetRenderer(pid);
+            if (!r) continue;
+
+            bool meshIsNew = (r->GetMeshId(mesh.cpuData.get()) == UINT32_MAX);
+            bool materialIsNew = (r->GetMaterialId(mat) == UINT32_MAX);
+
+            if (meshIsNew)     r->RegisterMesh(mesh.cpuData.get());
+            if (materialIsNew) r->RegisterMaterial(mat);
+
+            if (meshIsNew || materialIsNew)
+                meshDirty[pid] = true;
+        }
+
+        for (auto& entry : passes)
+            entry.renderer->dirtyInstance = true;
+
+        // Flush tylko passów które dostały nowe zasoby
+        for (auto& entry : passes) {
+            auto it = meshDirty.find(entry.passID);
+            if (it == meshDirty.end() || !it->second) continue;
+
+            entry.renderer->UploadMeshes();
+            entry.renderer->UploadMaterials();
+            it->second = false;
+            spdlog::info("RendererManager: flush pass {}", entry.passID);
+        }
+    }
 
     void CollectRenderData(uint32_t passID, Query<TransformComponent, RenderComponent>& renderQuery, const glm::vec3& cameraPos)
     {
@@ -173,8 +318,8 @@ public:
         if (!entry) return;
 
         GPUDrivenRenderer* r = entry->renderer.get();
-        const SurfaceType   filter = PassTypeToSurface(entry->config.type);
-        const bool          isTransparent = (entry->config.type == RenderPassType::Transparent);
+        const SurfaceType filter = PassTypeToSurface(entry->config.type);
+        const bool isTransparent = (entry->config.type == RenderPassType::Transparent);
         Shader* passShader = entry->config.shader ? entry->config.shader : defaultShaderRender;
 
         auto& transforms = std::get<0>(renderQuery.componentsVectors);
@@ -187,30 +332,6 @@ public:
             if (!rc || !rc->animator) continue;
             if (animatorIDMap.find(rc->animator) == animatorIDMap.end())
                 animatorIDMap[rc->animator] = (uint32_t)animatorIDMap.size();
-        }
-
-        // ── 2. Rozmiar bufora kości ────────────────────────────────
-        const size_t requiredBones = animatorIDMap.size() * MAX_BONES_PER_SKELETON;
-        if (boneMatricesCache.size() != requiredBones)
-            boneMatricesCache.resize(requiredBones, glm::mat4(1.0f));
-
-        // ── 3. Macierze kości ─────────────────────────────────────
-        for (size_t i = 0; i < count; ++i) {
-            const RenderComponent* rc = renderers[i];
-            if (!rc || !rc->animator || !rc->animator->currentSkeleton) continue;
-
-            auto animIt = animatorIDMap.find(rc->animator);
-            if (animIt == animatorIDMap.end()) continue;
-
-            uint32_t slot = animIt->second;
-            uint32_t boneCount = (uint32_t)std::min(
-                rc->animator->finalBoneMatrices.size(),
-                (size_t)MAX_BONES_PER_SKELETON);
-
-            std::copy(
-                rc->animator->finalBoneMatrices.begin(),
-                rc->animator->finalBoneMatrices.begin() + boneCount,
-                boneMatricesCache.begin() + slot * MAX_BONES_PER_SKELETON);
         }
 
         // ── 4. Buduj RenderData ───────────────────────────────────
@@ -226,9 +347,7 @@ public:
 
             const glm::mat4 model = t->modelMatrix;
 
-            auto animIt = rc->animator
-                ? animatorIDMap.find(rc->animator)
-                : animatorIDMap.end();
+            auto animIt = rc->animator ? animatorIDMap.find(rc->animator) : animatorIDMap.end();
 
             for (const auto& mesh : rc->meshes) {
                 if (!mesh.cpuData || !mesh.material) continue;
@@ -280,21 +399,51 @@ public:
             for (auto& te : transparentBuffer)
                 entry->objects.push_back(te.data);
         }
-
-        // ── 6. Kości na GPU ───────────────────────────────────────
-        r->ResizeBoneBufferIfNeeded((uint32_t)animatorIDMap.size());
-        r->UploadAllBoneMatrices(boneMatricesCache);
-
-        //entry->renderer->dirtyInstance = true;
     }
 
 
-    void CollectAllPasses(Query<TransformComponent, RenderComponent>& renderQuery, const glm::vec3& cameraPos)
+    void UpdateBoneCache(Query<TransformComponent, RenderComponent>& renderQuery)
     {
+        auto& renderers = std::get<1>(renderQuery.componentsVectors);
+        const size_t count = renderQuery.gameobjects.size();
+
+        const size_t requiredBones = animatorIDMap.size() * MAX_BONES_PER_SKELETON;
+        if (boneMatricesCache.size() != requiredBones)
+            boneMatricesCache.resize(requiredBones, glm::mat4(1.0f));
+
+        for (size_t i = 0; i < count; ++i) {
+            const RenderComponent* rc = renderers[i];
+            if (!rc || !rc->animator || !rc->animator->currentSkeleton) continue;
+
+            auto animIt = animatorIDMap.find(rc->animator);
+            if (animIt == animatorIDMap.end()) continue;
+
+            const uint32_t slot = animIt->second;
+            const uint32_t boneCount = (uint32_t)std::min(
+                rc->animator->finalBoneMatrices.size(),
+                (size_t)MAX_BONES_PER_SKELETON);
+
+            std::memcpy(
+                boneMatricesCache.data() + slot * MAX_BONES_PER_SKELETON,
+                rc->animator->finalBoneMatrices.data(),
+                boneCount * sizeof(glm::mat4));
+        }
+    }
+
+    void CollectAllPasses(Query<TransformComponent, RenderComponent>& renderQuery,  const glm::vec3& cameraPos)
+    {
+        // ── Kości raz, nie N razy per pass ───────────────────────────
+        UpdateBoneCache(renderQuery);
+
         for (auto& entry : passes)
             CollectRenderData(entry.passID, renderQuery, cameraPos);
-    }
 
+        // ── Upload kości do każdego renderera ─────────────────────────
+        for (auto& entry : passes) {
+            entry.renderer->ResizeBoneBufferIfNeeded((uint32_t)animatorIDMap.size());
+            entry.renderer->UploadAllBoneMatrices(boneMatricesCache);
+        }
+    }
 
     //  Zarządzanie passami
        //  Każdy pass rejestruje własne mesze i materiały przez GetRenderer()

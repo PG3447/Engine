@@ -1,4 +1,4 @@
-﻿#ifndef COMPONENT_H
+#ifndef COMPONENT_H
 #define COMPONENT_H
 
 #include <glm/glm.hpp>
@@ -222,6 +222,8 @@ struct ColliderComponent : Component {
     bool isWalkable = false;
     
     const char* GetTypeName() const override { return "Collider"; }
+
+    void OnEnable(GameObject* owner) override;
 
     void Serialize(YAML::Node& node) override
     {
