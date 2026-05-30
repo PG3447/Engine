@@ -18,6 +18,8 @@ void ColliderComponent::OnEnable(GameObject* owner) {
     auto transformComponent = owner->GetComponent<TransformComponent>();
     if (renderComponent != nullptr && transformComponent != nullptr)
     {
-        this->halfSize = renderComponent->localObjectAABB.max * transformComponent->scale;
+        this->halfSize = (renderComponent->localObjectAABB.max - renderComponent->localObjectAABB.min) * 0.5f;
+        this->halfSize *= transformComponent->scale;
+        //this->halfSize = renderComponent->localObjectAABB.max * transformComponent->scale;
     }
 }
