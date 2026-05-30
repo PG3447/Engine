@@ -17,8 +17,9 @@ NavPathSystem::NavPathSystem(ECS& ecs) {
 void NavPathSystem::OnGameObjectUpdated(GameObject* e) {
     agentQuery_->OnGameObjectUpdated(e);
 }
-void NavPathSystem::Update(ECS& ecs, float dt) {
-    // Pobierz navmesh (raz na klatke)
+
+void NavPathSystem::Update(ECS& ecs, float dt)
+{
     auto* navSys = ecs.GetSystem<NavMeshSystem>();
     if (!navSys || !navSys->IsBaked()) return;
 
@@ -38,7 +39,9 @@ void NavPathSystem::Update(ECS& ecs, float dt) {
 
         switch (comp->state) {
 
-        // --- Idle: odczekaj chwile, potem wylosuj nowy cel ---
+        case NavAgentState::ExternalControl:
+            break;
+
         case NavAgentState::Idle:
             comp->idleTimer -= dt;
             if (comp->idleTimer <= 0.0f) {
@@ -47,56 +50,69 @@ void NavPathSystem::Update(ECS& ecs, float dt) {
             }
             break;
 
-        // --- RequestingPath: oblicz A* i funnel ---
         case NavAgentState::RequestingPath: {
             glm::vec3 startPos = tr->position;
             bool ok = RequestPath(*comp, startPos, comp->goalPosition, navData);
 
             if (ok && !comp->path.empty()) {
-                comp->currentWaypoint = 0;
+                comp->currentWaypoint  = 0;
+                comp->stuckCheckTimer  = comp->stuckCheckInterval;
+                comp->lastCheckedPos   = tr->position;
                 comp->state = NavAgentState::Moving;
             } else {
-                // Nie udalo sie - wylosuj nowy cel
-                spdlog::warn("[NavPath] Nie znaleziono sciezki, losuje nowy cel");
-                comp->goalPosition = RandomPointOnNavMesh(navData);
-                // Zostajemy w RequestingPath - sprobuje w nastepnej klatce
+                spdlog::warn("[NavPath] Nie znaleziono sciezki");
+                if (comp->goalPosition == glm::vec3(0.0f)) {
+                    comp->goalPosition = RandomPointOnNavMesh(navData);
+                } else {
+                    comp->state = NavAgentState::Arrived;
+                }
             }
             break;
         }
 
-        // --- Moving: przesun agenta wzdluz sciezki ---
         case NavAgentState::Moving:
+            // Stuck detection
+            comp->stuckCheckTimer -= dt;
+            if (comp->stuckCheckTimer <= 0.0f) {
+                comp->stuckCheckTimer = comp->stuckCheckInterval;
+
+                float moved = glm::length(
+                    glm::vec3(tr->position.x, 0.0f, tr->position.z) -
+                    glm::vec3(comp->lastCheckedPos.x, 0.0f, comp->lastCheckedPos.z)
+                );
+
+                if (moved < comp->stuckThreshold) {
+                    //spdlog::warn("[NavPath] Agent stuck");
+                    comp->path.clear();
+                    comp->state = NavAgentState::Arrived;
+                }
+
+                comp->lastCheckedPos = tr->position;
+            }
+
             MoveAgent(go, *comp, dt);
             break;
 
-        // --- Arrived: dotarl, ustaw idle timer ---
+
         case NavAgentState::Arrived:
-            comp->idleTimer = comp->idleTimeMin +
-                ((float)rand() / RAND_MAX) * (comp->idleTimeMax - comp->idleTimeMin);
             comp->path.clear();
-            comp->state = NavAgentState::Idle;
+            if (comp->idleTimeMax > 0.0f && comp->idleTimer <= 0.0f) {
+                comp->idleTimer = comp->idleTimeMin +
+                    ((float)rand() / RAND_MAX) * (comp->idleTimeMax - comp->idleTimeMin);
+                comp->state = NavAgentState::Idle;
+            }
             break;
         }
 
-        // --- Debug draw sciezki ---
         if (comp->debugDraw && !comp->path.empty()) {
             const float yOff = 0.1f;
             for (int j = 0; j + 1 < (int)comp->path.size(); j++) {
                 glm::vec3 a = comp->path[j]   + glm::vec3(0, yOff, 0);
                 glm::vec3 b = comp->path[j+1] + glm::vec3(0, yOff, 0);
-                //DebugDrawSystem::AddLine(a, b, comp->colorPath);
-            }
-            // Aktualny waypoint
-            if (comp->currentWaypoint < (int)comp->path.size()) {
-                glm::vec3 wp = comp->path[comp->currentWaypoint] + glm::vec3(0, yOff, 0);
-                //DebugDrawSystem::AddLine(tr->position + glm::vec3(0, yOff, 0),
-                  //                       wp, comp->colorWaypoint);
             }
         }
     }
 }
-
-//  RequestPath - A* + Funnel
 
 bool NavPathSystem::RequestPath(NavPathComponent& comp,
                                  const glm::vec3& start,
@@ -364,9 +380,7 @@ std::vector<glm::vec3> NavPathSystem::FunnelPath(
 
 //  Ruch agenta
 
-void NavPathSystem::MoveAgent(GameObject* go,
-                               NavPathComponent& comp,
-                               float dt)
+void NavPathSystem::MoveAgent(GameObject* go, NavPathComponent& comp, float dt)
 {
     if (comp.path.empty() || comp.currentWaypoint >= (int)comp.path.size()) {
         comp.state = NavAgentState::Arrived;
@@ -374,21 +388,19 @@ void NavPathSystem::MoveAgent(GameObject* go,
     }
 
     auto* tr = go->GetComponent<TransformComponent>();
+    auto* rb = go->GetComponent<RigidbodyComponent>();
     if (!tr) return;
 
     glm::vec3 target = comp.path[comp.currentWaypoint];
-
-    // Ruch tylko w XZ (Y pozostaje jak jest - agent "lezy" na podlodze)
     glm::vec3 toTarget = target - tr->position;
     toTarget.y = 0.0f;
-
     float dist = glm::length(toTarget);
 
-    // Sprawdz czy dotarl do ostatniego punktu
     bool isLastWaypoint = (comp.currentWaypoint == (int)comp.path.size() - 1);
     float threshold = isLastWaypoint ? comp.arrivalRadius : comp.waypointRadius;
 
     if (dist < threshold) {
+        if (rb) rb->velocity = glm::vec3(0.0f);
         if (isLastWaypoint) {
             comp.state = NavAgentState::Arrived;
             return;
@@ -397,15 +409,23 @@ void NavPathSystem::MoveAgent(GameObject* go,
         return;
     }
 
-    // Przesun w kierunku waypointa
-    glm::vec3 dir = toTarget / dist; // normalize
-    tr->position += dir * comp.moveSpeed * dt;
-    tr->isDirty = true;
+    glm::vec3 dir = toTarget / dist;
 
-    // Obrot agenta w kierunku ruchu (opcjonalny - tylko Y)
+    if (rb) {
+        // Zachowaj Y velocity (grawitacja), zmień tylko XZ
+        float yVel = rb->velocity.y;
+        rb->velocity = dir * comp.moveSpeed;
+        rb->velocity.y = yVel;
+    } else {
+        // Fallback bez rigidbody
+        tr->position += dir * comp.moveSpeed * dt;
+        tr->isDirty = true;
+    }
+
     if (dist > 0.01f) {
         float angle = std::atan2(-dir.x, -dir.z);
         tr->rotation.y = glm::degrees(angle);
+        tr->isDirty = true;
     }
 }
 

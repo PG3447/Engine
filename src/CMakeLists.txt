@@ -31,7 +31,10 @@ add_executable(${PROJECT_NAME} ${HEADER_FILES} ${SOURCE_FILES} ${ASSETS_FILES} "
 		systems/NavMeshSystem.cpp
 		systems/NavMeshSystem.h
 		systems/PostProcessingSystem.cpp
-		systems/PostProcessingSystem.h)
+		systems/PostProcessingSystem.h
+		systems/NpcSystem.cpp
+		systems/NpcSystem.h
+)
 
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE GLFW_INCLUDE_NONE)

@@ -51,6 +51,7 @@
 
 #include "systems/PostProcessingSystem.h"
 #include "systems/NavPathSystem.h"
+#include "systems/NpcSystem.h"
 #include "utils/render_helper.h"
 #include "utils/animation_helper.h"
 
@@ -304,7 +305,7 @@ GameObject* CreateRaycastTestObject(
     rc->fovRayCount  = 200;
     rc->fovAngle     = 200.0f;
     rc->originOffset = glm::vec3(0.0f, 0.5f, 0.0f);
-    rc->debugDraw    = true;
+    rc->debugDraw    = false;
 
     return go;
 }
@@ -472,6 +473,8 @@ GameObject* CreateInteractableDoor(Scene* scene, Prefab* prefab, Shader* shader,
     ColliderComponent* col = hinge->AddComponent<ColliderComponent>();
     col->halfSize = colliderHalfSize;
     col->offset = -pivotOffset;
+    col->isWalkable = false;
+    col->affectsNavMesh = true;
 
     DoorState state;
     state.hinge = hinge;
@@ -496,7 +499,10 @@ void createFirstRoom(Scene* scena1) {
     groundObject->GetComponent<RigidbodyComponent>()->useGravity = false;
     groundObject->GetComponent<RigidbodyComponent>()->isStatic = true;
 
-    groundObject->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 200, 1, 200 };
+    groundObject->GetComponent<TransformComponent>()->position = glm::vec3 {10, 0, -50};
+    groundObject->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 40, 1, 50 };
+    groundObject->GetComponent<ColliderComponent>()->isWalkable = true;
+    groundObject->GetComponent<ColliderComponent>()->affectsNavMesh = true;
 
     GameObject* groundObject2 = floorModel->Instantiate(*scena1, nullptr, ourShader.get());
     groundObject2->name = "Ground2";
@@ -726,6 +732,8 @@ void createFirstRoom(Scene* scena1) {
         tablicaKibli[i]->GetComponent<ColliderComponent>()->offset = glm::vec3{ 0, 4, 0 };
         tablicaKibli[i]->GetComponent<TransformComponent>()->position = glm::vec3{ 45, 0.5f, -45 + (-10 * i) };
         tablicaKibli[i]->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 90, 0 };
+        tablicaKibli[i]->GetComponent<ColliderComponent>()->isWalkable = false;
+        tablicaKibli[i]->GetComponent<ColliderComponent>()->affectsNavMesh = true;
     }
     GameObject* tablicaZaslon[7];
     for (int i = 0; i < 7; i++) {
@@ -737,6 +745,8 @@ void createFirstRoom(Scene* scena1) {
         tablicaZaslon[i]->GetComponent<RigidbodyComponent>()->isStatic = true;
         //tablicaZaslon[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 20, 15, 0.3 };
         tablicaZaslon[i]->GetComponent<TransformComponent>()->position = glm::vec3{ 50, 0, -40 + (-10 * i) };
+        tablicaZaslon[i]->GetComponent<ColliderComponent>()->isWalkable = false;
+        tablicaZaslon[i]->GetComponent<ColliderComponent>()->affectsNavMesh = true;
     }
     GameObject* tablicaDrzwiczekDoKilba[6];
     for (int i = 0; i < 6; i++) {
@@ -778,11 +788,13 @@ void createFirstRoom(Scene* scena1) {
         tablicaSink[i]->name = "Sink" + std::to_string(i);
         tablicaSink[i]->GetComponent<TransformComponent>()->scale = glm::vec3{ 3, 3, 3 };
         tablicaSink[i]->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 90, 0 };
-        tablicaSink[i]->GetComponent<TransformComponent>()->position = glm::vec3{ -20.5, 6.0, -45 + (-10 * i) };
+        tablicaSink[i]->GetComponent<TransformComponent>()->position = glm::vec3{ -21.5, 6.0, -45 + (-10 * i) };
         tablicaSink[i]->AddComponent<RigidbodyComponent>();
         tablicaSink[i]->AddComponent<ColliderComponent>();
         tablicaSink[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
         tablicaSink[i]->GetComponent<RigidbodyComponent>()->isStatic = true;
+        tablicaSink[i]->GetComponent<ColliderComponent>()->isWalkable = false;
+        tablicaSink[i]->GetComponent<ColliderComponent>()->affectsNavMesh = true;
         //tablicaSink[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 3, 20, 3 };
     }
 
@@ -841,6 +853,8 @@ void createFirstRoom(Scene* scena1) {
         //tablicaDrzwi[i]->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 5, 22, 1 };
         tablicaDrzwi[i]->GetComponent<TransformComponent>()->position = glm::vec3{ -5 + (10 * i), 0.0, -100 };
         majorDoors.insert(tablicaDrzwi[i]);
+        tablicaDrzwi[i]->GetComponent<ColliderComponent>()->isWalkable = false;
+        tablicaDrzwi[i]->GetComponent<ColliderComponent>()->affectsNavMesh = true;
     }
 
     GameObject* cup = cupModel->Instantiate(*scena1, nullptr, ourShader.get());
@@ -931,6 +945,85 @@ void createFirstRoom(Scene* scena1) {
     wallObject13->GetComponent<TransformComponent>()->position.x = -30;
     wallObject13->GetComponent<TransformComponent>()->position.y = 0;
     wallObject13->GetComponent<TransformComponent>()->position.z = -200;*/
+}
+
+GameObject* CreateCockroachLeader(
+    Scene& scene,
+    Prefab& prefab,
+    Shader* shader,
+    const glm::vec3& homePos,
+    float moveSpeed = 4.0f)
+{
+    GameObject* go = prefab.Instantiate(scene, nullptr, shader);
+    go->name = "CockroachLeader";
+
+    auto* tr     = go->GetComponent<TransformComponent>();
+    tr->position = homePos;
+    tr->scale    = glm::vec3(0.3f);
+    tr->isDirty  = true;
+
+    auto* rb = go->AddComponent<RigidbodyComponent>();
+    rb->useGravity = true;
+    rb->isStatic   = false;
+
+    auto* col = go->AddComponent<ColliderComponent>();
+    col->halfSize = glm::vec3(0.3f, 0.2f, 0.3f);
+
+    auto* nav      = go->AddComponent<NavPathComponent>();
+    nav->state     = NavAgentState::ExternalControl;
+    nav->moveSpeed = moveSpeed;
+    nav->idleTimeMax = 0.0f;
+
+    auto* leader = go->AddComponent<CockroachLeaderComponent>();
+    leader->homePosition     = homePos;
+    leader->homeRadius       = 15.0f;
+    leader->homeTimeRequired = 8.0f;
+    leader->exploreRadius    = 50.0f;
+    leader->exploreDuration  = 20.0f;
+    leader->detectionRadius  = 25.0f;
+    leader->escapeRadius     = 35.0f;
+    leader->idleWanderRadius = 8.0f;
+    leader->state            = LeaderState::Idle;
+
+    return go;
+}
+
+GameObject* CreateCockroachFollower(
+    Scene& scene,
+    Prefab& prefab,
+    Shader* shader,
+    GameObject* leaderGO,
+    const glm::vec3& spawnPos,
+    float moveSpeed = 4.5f)
+{
+    GameObject* go = prefab.Instantiate(scene, nullptr, shader);
+    go->name = "CockroachFollower";
+
+    auto* tr     = go->GetComponent<TransformComponent>();
+    tr->position = spawnPos;
+    tr->scale    = glm::vec3(0.25f);
+    tr->isDirty  = true;
+
+    auto* rb = go->AddComponent<RigidbodyComponent>();
+    rb->useGravity = true;
+    rb->isStatic   = false;
+
+    auto* col = go->AddComponent<ColliderComponent>();
+    col->halfSize = glm::vec3(0.25f, 0.15f, 0.25f);
+
+    auto* nav      = go->AddComponent<NavPathComponent>();
+    nav->state     = NavAgentState::ExternalControl;
+    nav->moveSpeed = moveSpeed;
+    nav->idleTimeMax = 0.0f;
+
+    auto* follower = go->AddComponent<CockroachFollowerComponent>();
+    follower->leaderGameObject  = leaderGO;
+    follower->followDistance    = 6.0f;
+    follower->followStopDistance= 2.0f;
+    follower->idleWanderRadius  = 6.0f;
+    follower->state             = FollowerState::Follow;
+
+    return go;
 }
 
 int main(int, char**)
@@ -1135,19 +1228,20 @@ int main(int, char**)
     auto* targetCol = raycastTarget->AddComponent<ColliderComponent>();
     targetCol->halfSize = glm::vec3(3.0f);
     targetCol->offset = glm::vec3(0.0f);
-
+    *//*
     GameObject* RaycastSource =
         CreateRaycastTestObject(
             *scena1,
             *placeholderModel,
             ourShader.get(),
-            glm::vec3(0.0f, 5.0f, 0.0f),
+            glm::vec3(0.0f, 5.0f, -20.0f),
             glm::vec3(1.0f)
         );
     NavPathComponent* sourceAgent = RaycastSource->AddComponent<NavPathComponent>();
+    RaycastSource->AddComponent<RigidbodyComponent>();
     sourceAgent->moveSpeed = 6.0f;
-    sourceAgent->debugDraw = true;
-
+    sourceAgent->debugDraw = true;*/
+    /*
  ustawianiePokoju
     GameObject* model5 = cupModel->Instantiate(*scena1, nullptr, ourShader.get());
     model5->GetComponent<TransformComponent>()->position.x = 0.0f;
@@ -1170,6 +1264,7 @@ int main(int, char**)
 
    createFirstRoom(scena1);
 
+    ecs.GetSystem<NavMeshSystem>()->Bake(*scena1);
 
     // aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 
@@ -1240,6 +1335,24 @@ int main(int, char**)
 
         can_open_door_1 = allCorrect;
         };
+
+    //Karaluch center
+
+    glm::vec3 nestPos = glm::vec3(0.0f, 0.5f, -80.0f);
+
+    GameObject* leader = CreateCockroachLeader(*scena1, *placeholderModel, ourShader.get(), nestPos, 4.0f);
+
+    for (int i = 0; i < 3; i++) {
+        glm::vec3 offset = glm::vec3(
+            (float)(rand()%6) - 3.0f, 0,
+            (float)(rand()%6) - 3.0f
+        );
+        CreateCockroachFollower(
+            *scena1, *placeholderModel, ourShader.get(),
+            leader, nestPos + offset, 4.5f);
+    }
+
+
 
     // Main loop
     while (!glfwWindowShouldClose(window))
@@ -2100,6 +2213,7 @@ void addAllSystems(ECS &ecs) {
     ecs.AddSystem<NavMeshSystem>(ecs);
     ecs.AddSystem<NavPathSystem>(ecs);
     ecs.AddSystem<AudioSystem>(ecs);
+    ecs.AddSystem<NpcSystem>(ecs);
 }
 void connectAllModels() {
     bed1Model = std::make_unique<Prefab>("res/models/samochod.glb");
