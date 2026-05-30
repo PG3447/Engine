@@ -257,18 +257,68 @@ std::unordered_set<GameObject*> pickupObjects;
 GameObject* p1HeldObject = nullptr;
 GameObject* p2HeldObject = nullptr;
 
-void updateFPS(float deltaTime) {
-    frameTimes[index] = deltaTime;
-    index = (index + 1) % MAX_SAMPLES;
 
-    float sum = 0.0f;
-    for (int i = 0; i < MAX_SAMPLES; i++)
-        sum += frameTimes[i];
 
-    float avg = sum / MAX_SAMPLES;
-    float fps = 1.0f / avg;
+struct FPSRecorder {
+    std::vector<float> fpsSamples;
+    float recordDuration = 300.0f; // 5 minut w sekundach
+    float elapsedTime = 0.0f;
+    bool isRecording = true;
+    bool hasSaved = false;
 
-}
+    void Update(float deltaTime, float currentFPS) {
+        if (!isRecording || hasSaved) return;
+
+        elapsedTime += deltaTime;
+        fpsSamples.push_back(currentFPS);
+
+        if (elapsedTime >= recordDuration) {
+            isRecording = false;
+            Save();
+        }
+    }
+
+    void Save() {
+        if (hasSaved || fpsSamples.empty()) return;
+        hasSaved = true;
+
+        float sum = 0.0f;
+        float minFPS = fpsSamples[0];
+        float maxFPS = fpsSamples[0];
+
+        for (float fps : fpsSamples) {
+            sum += fps;
+            if (fps < minFPS) minFPS = fps;
+            if (fps > maxFPS) maxFPS = fps;
+        }
+
+        float avgFPS = sum / static_cast<float>(fpsSamples.size());
+
+        // Pobierz aktualny timestamp
+        auto now = std::chrono::system_clock::now();
+        std::time_t t = std::chrono::system_clock::to_time_t(now);
+        char timeBuf[64];
+        std::strftime(timeBuf, sizeof(timeBuf), "%Y-%m-%d_%H-%M-%S", std::localtime(&t));
+
+        std::string filename = std::string("fps_report_") + timeBuf + ".txt";
+        std::ofstream file(filename);
+
+        if (file.is_open()) {
+            file << "=== FPS Report (pierwsze 5 minut) ===\n";
+            file << "Czas pomiaru:    " << timeBuf << "\n";
+            file << "Liczba próbek:   " << fpsSamples.size() << "\n";
+            file << "Srednia FPS:     " << std::fixed << std::setprecision(2) << avgFPS << "\n";
+            file << "Minimalna FPS:   " << std::fixed << std::setprecision(2) << minFPS << "\n";
+            file << "Maksymalna FPS:  " << std::fixed << std::setprecision(2) << maxFPS << "\n";
+            file.close();
+            spdlog::info("Zapisano raport FPS do: {}", filename);
+        } else {
+            spdlog::error("Nie udalo sie zapisac raportu FPS!");
+        }
+    }
+};
+
+FPSRecorder fpsRecorder;
 
 void updateFocus() {
     if (focused) {
@@ -1233,12 +1283,15 @@ int main(int, char**)
         float currentFrame = static_cast<float>(glfwGetTime());
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
-        updateFPS(deltaTime);
 
         CpuTimer cpuTimer;
         cpuTimer.start();
 
         UpdateDoors(deltaTime);
+
+        // FPS recording — pierwsze 5 minut
+        float currentFPS = (deltaTime > 0.0f) ? (1.0f / deltaTime) : 0.0f;
+        fpsRecorder.Update(deltaTime, currentFPS);
 
         // --- CPU WORK START ---
 
@@ -1337,7 +1390,7 @@ int main(int, char**)
         else ++it;
     }
 
-        spdlog::info(can_open_door_1);
+        //spdlog::info(can_open_door_1);
 
     // caly ten wielki kod wydzielilem do funkcji
     HandlePlayerInteraction(ecs, "interact_p1", player1Raycast, camera1, p1HeldObject, p2HeldObject, scena1, rotatingObjects);
@@ -1481,7 +1534,7 @@ bool init()
     }
 
     glfwMakeContextCurrent(window);
-    glfwSwapInterval(1); // Enable VSync - fixes FPS at the refresh rate of your screen
+    glfwSwapInterval(0); // Enable VSync - fixes FPS at the refresh rate of your screen
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
