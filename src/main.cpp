@@ -187,6 +187,7 @@ std::unique_ptr<Prefab> toiletPaperModel;
 std::unique_ptr<Prefab> mirrorModel1;
 std::unique_ptr<Prefab> mirrorModel2;
 std::unique_ptr<Prefab> mirrorModel3;
+std::unique_ptr<Prefab> mirrorModel4;
 std::unique_ptr<Prefab> washroomExit;
 std::unique_ptr<Prefab> urinModel;
 //AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
@@ -2259,6 +2260,7 @@ void connectAllModels() {
     mirrorModel1 = std::make_unique<Prefab>("res/models/glass1_v2.glb");
     mirrorModel2 = std::make_unique<Prefab>("res/models/glass2_v2.glb");
     mirrorModel3 = std::make_unique<Prefab>("res/models/glass3_v2.glb");
+    mirrorModel4 = std::make_unique<Prefab>("res/models/lustro_puste.glb");
     washroomExit = std::make_unique<Prefab>("res/models/door_other_2.glb");
     urinModel = std::make_unique<Prefab>("res/models/uniral_v2.glb");
     //wozekModel     = std::make_unique<Prefab>("res/models/wozek.glb");
