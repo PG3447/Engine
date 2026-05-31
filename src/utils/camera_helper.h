@@ -8,7 +8,7 @@
 
 constexpr float YAW = -90.0f;
 constexpr float PITCH = 0.0f;
-constexpr  float MovementSpeed = 12.5f;
+constexpr  float MovementSpeed = 22.5f;
 constexpr  float MouseSensitivity = 0.1f;
 
 class CameraHelper {

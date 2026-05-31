@@ -1537,7 +1537,9 @@ void createFirstRoom(Scene* scena1) {
     wallModel3 = std::make_unique<Prefab>("res/models/wall3.glb");
 
     // Podloga i sufit
-    CreateStaticObject(scena1, floorModel.get(), ourShader.get(), "PodlogawLazience",  glm::vec3(0, 0, 0),   glm::vec3(100, 1, 100));
+    GameObject* floor = CreateStaticObject(scena1, floorModel.get(), ourShader.get(),
+    "PodlogawLazience", glm::vec3(0, 0, 0), glm::vec3(100, 1, 100));
+    floor->GetComponent<ColliderComponent>()->isWalkable = true;
     CreateStaticObject(scena1, floorModel.get(), ourShader.get(), "SufitWKiblu",       glm::vec3(0, 20, 0),  glm::vec3(100, 1, 100), glm::vec3(0), glm::vec3(100, 1, 100));
 
     // Sciany
