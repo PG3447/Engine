@@ -1538,7 +1538,7 @@ void createFirstRoom(Scene* scena1) {
 
     // Podloga i sufit
     GameObject* floor = CreateStaticObject(scena1, floorModel.get(), ourShader.get(),
-    "PodlogawLazience", glm::vec3(0, 0, 0), glm::vec3(100, 1, 100));
+    "PodlogawLazience", glm::vec3(25, 0, -60), glm::vec3(50, 1, 50));
     floor->GetComponent<ColliderComponent>()->isWalkable = true;
     CreateStaticObject(scena1, floorModel.get(), ourShader.get(), "SufitWKiblu",       glm::vec3(0, 20, 0),  glm::vec3(100, 1, 100), glm::vec3(0), glm::vec3(100, 1, 100));
 
