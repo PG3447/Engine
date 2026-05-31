@@ -230,7 +230,7 @@ GameObject* tablicaPapierowKibel[6];
 std::unordered_set<GameObject*> rotatableObjects;
 std::unordered_set<GameObject*> unlockedDoors;
 std::unordered_set<GameObject*> majorDoors;
-bool can_open_door_1 = false;
+bool can_open_door_1 = true;
 
 bool isCabinetButtonPushed = false;
 
@@ -1518,7 +1518,7 @@ void connectAllModels() {
     sinkModel        = std::make_unique<Prefab>("res/models/sink_2.glb");
     toiletModel      = std::make_unique<Prefab>("res/models/toilet_f.glb");
     doorsToiletModel = std::make_unique<Prefab>("res/models/doors_toliet_tex6.glb");
-    toiletPaperModel = std::make_unique<Prefab>("res/models/toilet_paper_mystery_2.glb");
+    toiletPaperModel = std::make_unique<Prefab>("res/models/papier1.glb");
     mirrorModel1     = std::make_unique<Prefab>("res/models/glass1_v2.glb");
     mirrorModel2     = std::make_unique<Prefab>("res/models/glass2_v2.glb");
     mirrorModel3     = std::make_unique<Prefab>("res/models/glass3_v2.glb");
