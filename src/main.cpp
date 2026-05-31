@@ -230,7 +230,7 @@ GameObject* tablicaPapierowKibel[6];
 std::unordered_set<GameObject*> rotatableObjects;
 std::unordered_set<GameObject*> unlockedDoors;
 std::unordered_set<GameObject*> majorDoors;
-bool can_open_door_1 = true;
+bool can_open_door_1 = false;
 
 bool isCabinetButtonPushed = false;
 
