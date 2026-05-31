@@ -1452,6 +1452,7 @@ int main(int, char**)
 
             float step = 90.0f * deltaTime;
             if (step > it->second) step = it->second;
+            transform->isDirty = true;
 
             transform->rotation.z -= step;
             it->second -= step;
@@ -1459,6 +1460,7 @@ int main(int, char**)
             if (it->second <= 0.0f)
             {
                 spdlog::info("Rotated to: {:.2f}", transform->rotation.z);
+                transform->isDirty = false;
                 it = rotatingObjects.erase(it);
                 checkKibelUstawienia();
             }
