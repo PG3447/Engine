@@ -1073,7 +1073,8 @@ int main(int, char**)
 
     RenderHelper::SetMaterial(obb3, brickMat);
 
-    GameObject* camera1 = groundModel->Instantiate(*scena1, nullptr, ourShader.get());
+    //GameObject* camera1 = groundModel->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* camera1 = scena1->CreateGameObject(nullptr);
     CameraComponent* camCompLeft = camera1->AddComponent<CameraComponent>();
     ColliderComponent* camera1collider = camera1->AddComponent<ColliderComponent>();
     RigidbodyComponent* rigidBodyCamera1 = camera1->AddComponent<RigidbodyComponent>();

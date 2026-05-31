@@ -83,8 +83,8 @@ void main() {
 
     //Grain
 
-        float noise = fract(sin(dot(TexCoords + time * 0.1, vec2(12.9898, 78.233))) * 43758.5453);
-        playerColor += noise * 0.1;
+        //float noise = fract(sin(dot(TexCoords + time * 0.1, vec2(12.9898, 78.233))) * 43758.5453);
+        //playerColor += noise * 0.1;
 
 
 
