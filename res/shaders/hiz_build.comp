@@ -3,10 +3,8 @@ layout(local_size_x = 8, local_size_y = 8) in;
 
 // MIP 0: depth source (GL_DEPTH_COMPONENT32F) - bezposrednio z FBO
 layout(binding = 0) uniform sampler2D depthSrc;
-// Zapis mip0 HiZ (kopia depth -> R32F)
-layout(r32f, binding = 1) uniform image2D hizMip0;
 // Zapis aktualnego mipa (downsampling)
-layout(r32f, binding = 2) uniform image2D currentMip;
+layout(r32f, binding = 1) uniform image2D currentMip;
 
 void main()
 {
@@ -22,13 +20,6 @@ void main()
     float d1 = texelFetch(depthSrc, min(srcCoord + ivec2(1,0), depthSize-1), 0).r;
     float d2 = texelFetch(depthSrc, min(srcCoord + ivec2(0,1), depthSize-1), 0).r;
     float d3 = texelFetch(depthSrc, min(srcCoord + ivec2(1,1), depthSize-1), 0).r;
-
-    // Kopiuj 4 piksele do mip0 (tylko jesli miescimy sie w granicach)
-    ivec2 mip0Size = imageSize(hizMip0);
-    if (srcCoord.x     < mip0Size.x && srcCoord.y     < mip0Size.y) imageStore(hizMip0, srcCoord + ivec2(0,0), vec4(d0));
-    if (srcCoord.x + 1 < mip0Size.x && srcCoord.y     < mip0Size.y) imageStore(hizMip0, srcCoord + ivec2(1,0), vec4(d1));
-    if (srcCoord.x     < mip0Size.x && srcCoord.y + 1 < mip0Size.y) imageStore(hizMip0, srcCoord + ivec2(0,1), vec4(d2));
-    if (srcCoord.x + 1 < mip0Size.x && srcCoord.y + 1 < mip0Size.y) imageStore(hizMip0, srcCoord + ivec2(1,1), vec4(d3));
 
     // Downsampling: max depth -> currentMip (mip1)
     imageStore(currentMip, texelCoord, vec4(max(max(d0, d1), max(d2, d3))));

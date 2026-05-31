@@ -1988,7 +1988,29 @@ void imgui_render(SceneManager& sceneManager)
     auto system = sceneManager.GetActiveScene()->GetECS().GetSystem<RenderSystem>();
     if (ImGui::Begin("Debug")) {
        
-        system->ShowDepthTextureImGui(system->depthTexturePrev, system->fboWidth, system->fboHeight, 0.1f, 1000.0f);
+        system->ShowDepthTextureImGui(system->sceneDepthTexture, system->fboWidth, system->fboHeight, 0.1f, 1000.0f);
+    }
+    ImGui::End();
+
+    if (ImGui::Begin("Debug DepthPrev")) {
+        int i = 0;
+        for (auto& [cam, hiz] : system->cameraHiZ) {
+            ImGui::Text("Kamera %d", i++);
+            if (hiz.depthPrev != 0)
+                system->ShowDepthTextureImGui(hiz.depthPrev, hiz.width, hiz.height, 0.1f, 1000.0f);
+        }
+    }
+    ImGui::End();
+
+    if (ImGui::Begin("Debug hizTexture")) {
+        static int debugMip = 0;
+        ImGui::SliderInt("Mip", &debugMip, 0, 8);
+        int i = 0;
+        for (auto& [cam, hiz] : system->cameraHiZ) {
+            ImGui::Text("Kamera %d", i++);
+            if (hiz.hizTexture != 0)
+                system->ShowR32FTextureImGui(hiz.hizTexture, hiz.width, hiz.height, debugMip);
+        }
     }
     ImGui::End();
 

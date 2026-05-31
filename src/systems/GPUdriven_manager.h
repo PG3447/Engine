@@ -128,10 +128,10 @@ public:
         spdlog::info("RendererManager: HiZ {}x{} mips={}", w, h, hizMipLevels);
     }
 
-    void AttachCameraHiZ(GLuint hizTexture, int hizMipLevels)
+    void AttachCameraHiZ(GLuint hizTexture, int hizMipLevels, int vpW, int vpH)
     {
         for (auto& entry : passes)
-            entry.renderer->AttachHiZ(hizTexture, hizMipLevels);
+            entry.renderer->AttachHiZ(hizTexture, hizMipLevels, vpW, vpH);
     }
 
     void InitPassesFromScene(Query<TransformComponent, RenderComponent>& renderQuery)
@@ -465,7 +465,7 @@ public:
 
         entry.renderer = std::make_unique<GPUDrivenRenderer>();
         entry.renderer->Init(screenWidth, screenHeight);
-        entry.renderer->AttachHiZ(hizTexture, hizMipLevels);
+        entry.renderer->AttachHiZ(hizTexture, hizMipLevels, screenWidth, screenHeight);
         entry.renderer->shaderHizCullCount = shaderCountInstance;
         entry.renderer->shaderPrefixSum = shaderPrefixSum;
         entry.renderer->shaderHizWritePass = shaderHizWritePass;

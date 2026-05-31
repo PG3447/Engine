@@ -17,6 +17,7 @@
 #include "GPUdriven_manager.h"
 
 
+
 struct PerCameraHiZ
 {
     GLuint hizTexture = 0;
@@ -43,8 +44,7 @@ struct PerCameraHiZ
         // depth-prev — kopia depth poprzedniej klatki tej kamery
         glGenTextures(1, &depthPrev);
         glBindTexture(GL_TEXTURE_2D, depthPrev);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, w, h, 0,
-            GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, w, h, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
         glTextureParameteri(depthPrev, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTextureParameteri(depthPrev, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glTextureParameteri(depthPrev, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -143,13 +143,13 @@ private:
 
     GLuint sceneFBO = 0;
     GLuint sceneColorTexture;
-    GLuint sceneDepthTexture;
 
 
 
 public:
     GPUDrivenManager drivenManager;
     //GLuint sceneDepthRBO = 0;
+    GLuint sceneDepthTexture;
     GLuint depthTexturePrev = 0;
     int fboWidth = 0, fboHeight = 0;
     
@@ -712,7 +712,7 @@ public:
             hiz.Destroy(); // tylko przy resize — nie co klatkę
             hiz.Init(vpW, vpH);
         }
-        drivenManager.AttachCameraHiZ(hiz.hizTexture, hiz.hizMipLevels);
+        drivenManager.AttachCameraHiZ(hiz.hizTexture, hiz.hizMipLevels, vpW, vpH);
 
         drivenManager.CollectAllPasses(*renderQuery, currentCameraPos);
         drivenManager.RenderFrame(vp, currentCameraPos, hiz.depthPrev);
@@ -720,7 +720,8 @@ public:
         
         int vpX = (int)(cam.viewport.x * width);
         int vpY = (int)(cam.viewport.y * height);
-
+        spdlog::info("CopyDepth cam vpX={} vpY={} vpW={} vpH={} fbo={}x{}",
+            vpX, vpY, vpW, vpH, width, height);
         if (hiz.depthPrev && sceneDepthTexture) {
             glCopyImageSubData(sceneDepthTexture, GL_TEXTURE_2D, 0, vpX, vpY, 0,
                 hiz.depthPrev, GL_TEXTURE_2D, 0, 0, 0, 0,
@@ -764,19 +765,20 @@ public:
 
     void ShowDepthTextureImGui(GLuint depthTex, int w, int h, float zNear, float zFar)
     {
-        static GLuint debugTex = 0;
-        if (!debugTex) {
+        // klucz = oryginalne ID tekstury depth
+        static std::unordered_map<GLuint, GLuint> debugTexMap;
+
+        GLuint& debugTex = debugTexMap[depthTex];
+        if (debugTex == 0) {
             glGenTextures(1, &debugTex);
             glBindTexture(GL_TEXTURE_2D, debugTex);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         }
 
-        // Pobierz depth z GPU
         std::vector<float> depth(w * h);
         glGetTextureImage(depthTex, 0, GL_DEPTH_COMPONENT, GL_FLOAT, w * h * sizeof(float), depth.data());
 
-        // Konwertuj na RGB (linearyzuj)
         std::vector<uint8_t> rgb(w * h * 3);
         for (int i = 0; i < w * h; i++) {
             float d = depth[i];
@@ -790,7 +792,47 @@ public:
         glBindTexture(GL_TEXTURE_2D, debugTex);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, rgb.data());
 
-        ImGui::Image((ImTextureID)(intptr_t)debugTex, ImVec2(320, 180));
+        ImGui::Image((ImTextureID)(intptr_t)debugTex, ImVec2(320, 180), ImVec2(0, 1), ImVec2(1, 0));
+    }
+
+    void ShowR32FTextureImGui(GLuint tex, int w, int h, int mip = 0)
+    {
+        static std::unordered_map<GLuint, GLuint> debugTexMap;
+
+        GLuint& debugTex = debugTexMap[tex];
+        if (debugTex == 0) {
+            glGenTextures(1, &debugTex);
+            glBindTexture(GL_TEXTURE_2D, debugTex);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        }
+
+        int mipW = std::max(1, w >> mip);
+        int mipH = std::max(1, h >> mip);
+
+        std::vector<float> data(mipW * mipH);
+        glGetTextureImage(tex, mip, GL_RED, GL_FLOAT, mipW * mipH * sizeof(float), data.data());
+
+        // znajdź min/max żeby znormalizować
+        float minV = FLT_MAX, maxV = -FLT_MAX;
+        for (float v : data) {
+            if (v > 0.0f) { minV = std::min(minV, v); maxV = std::max(maxV, v); }
+        }
+        if (minV >= maxV) minV = 0.0f;
+
+        std::vector<uint8_t> rgb(mipW * mipH * 3);
+        for (int i = 0; i < mipW * mipH; i++) {
+            float normalized = (maxV > minV) ? (data[i] - minV) / (maxV - minV) : 0.0f;
+            uint8_t v = (uint8_t)(normalized * 255.0f);
+            rgb[i * 3 + 0] = v;
+            rgb[i * 3 + 1] = v;
+            rgb[i * 3 + 2] = v;
+        }
+
+        glBindTexture(GL_TEXTURE_2D, debugTex);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, mipW, mipH, 0, GL_RGB, GL_UNSIGNED_BYTE, rgb.data());
+
+        ImGui::Image((ImTextureID)(intptr_t)debugTex, ImVec2(320, 180), ImVec2(0, 1), ImVec2(1, 0));
     }
 
     void RenderCamera(CameraComponent& cam, TransformComponent& transform, int width, int height) {
@@ -1143,7 +1185,11 @@ public:
     GLuint GetSceneTexture() const { return sceneColorTexture; }
 
   
-
+    GLuint GetFirstCameraDepthPrev() const
+    {
+        if (cameraHiZ.empty()) return 0;
+        return cameraHiZ.begin()->second.depthPrev;
+    }
 };
 
 #endif

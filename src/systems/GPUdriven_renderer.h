@@ -198,6 +198,9 @@ public:
     int hizMipLevels = 0;
     int screenWidth = 0, screenHeight = 0;
 
+
+    int vpWidth = 0, vpHeight = 0;
+
     ComputeShader* shaderHizCullCount = nullptr;
     ComputeShader* shaderPrefixSum = nullptr;
     ComputeShader* shaderHizWritePass = nullptr;
@@ -373,9 +376,11 @@ public:
         materialRegistry.clear();
     }
 
-    void AttachHiZ(GLuint tex, int mipLevels) {
+    void AttachHiZ(GLuint tex, int mipLevels, int vpW, int vpH) {
         hizTexture = tex;
         hizMipLevels = mipLevels;
+        vpWidth = vpW;
+        vpHeight = vpH;
     }
 
 
@@ -603,9 +608,10 @@ public:
     void DispatchWritePass(const glm::mat4& viewProj, uint32_t objectCount)
     {
         shaderHizWritePass->use();
-
+        spdlog::warn("hizMipLevels");
+        spdlog::warn(hizMipLevels);
         glUniformMatrix4fv(glGetUniformLocation(shaderHizWritePass->ID, "viewProjection"), 1, GL_FALSE, &viewProj[0][0]);
-        glUniform2f(glGetUniformLocation(shaderHizWritePass->ID, "screenSize"), (float)screenWidth, (float)screenHeight);
+        glUniform2f(glGetUniformLocation(shaderHizWritePass->ID, "screenSize"), (float)(vpWidth > 0 ? vpWidth : screenWidth), (float)(vpHeight > 0 ? vpHeight : screenHeight));
         glUniform1i(glGetUniformLocation(shaderHizWritePass->ID, "hizMipLevels"), hizTexture ? hizMipLevels : 0); // 0 = wyłącz HiZ
         glUniform1ui(glGetUniformLocation(shaderHizWritePass->ID, "objectCount"), objectCount);
         glUniform1i(glGetUniformLocation(shaderHizWritePass->ID, "enableFrustumCulling"), GL_TRUE);
@@ -648,36 +654,69 @@ public:
             screenWidth, screenHeight, 1);
     }
 
+    //void BuildHiZ(GLuint depthTexture)
+    //{
+    //    int w = vpWidth > 0 ? vpWidth : screenWidth;
+    //    int h = vpHeight > 0 ? vpHeight : screenHeight;
+
+    //    // Krok 0: skopiuj depth 1:1 do mip0 hizTexture
+    //    glCopyImageSubData(depthTexture, GL_TEXTURE_2D, 0, 0, 0, 0,
+    //        hizTexture, GL_TEXTURE_2D, 0, 0, 0, 0,
+    //        w, h, 1);
+    //    glMemoryBarrier(GL_TEXTURE_UPDATE_BARRIER_BIT);
+
+    //    // Krok 1+: downsampling mip1, mip2, ...
+    //    shaderHizDownsample->use();
+    //    glTextureParameteri(hizTexture, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+
+    //    int mw = w, mh = h;
+    //    for (int mip = 1; mip < hizMipLevels; mip++) {
+    //        mw = std::max(1, mw / 2);
+    //        mh = std::max(1, mh / 2);
+
+    //        glTextureParameteri(hizTexture, GL_TEXTURE_BASE_LEVEL, mip - 1);
+    //        glTextureParameteri(hizTexture, GL_TEXTURE_MAX_LEVEL, mip - 1);
+    //        glBindTextureUnit(0, hizTexture);                                             // prevMip
+    //        glBindImageTexture(1, hizTexture, mip, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F); // currentMip
+
+    //        glDispatchCompute((mw + 7) / 8, (mh + 7) / 8, 1);
+    //        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
+    //    }
+
+    //    glTextureParameteri(hizTexture, GL_TEXTURE_BASE_LEVEL, 0);
+    //    glTextureParameteri(hizTexture, GL_TEXTURE_MAX_LEVEL, hizMipLevels - 1);
+    //}
+
+
     void BuildHiZ(GLuint depthTexture)
     {
-        int w = screenWidth, h = screenHeight;
+        int w = vpWidth > 0 ? vpWidth : screenWidth;
+        int h = vpHeight > 0 ? vpHeight : screenHeight;
 
-        // --- Mip 1: specjalny shader — kopia depth->mip0 + downsampling do mip1 ---
         shaderHizDownsample->use();
 
-        glTextureParameteri(hizTexture, GL_TEXTURE_COMPARE_MODE, GL_NONE);
-        glBindTextureUnit(0, depthTexture);                                          // depthSrc
-        glBindImageTexture(1, hizTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);  // hizMip0
-        glBindImageTexture(2, hizTexture, 1, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);  // currentMip (mip1)
-
-        int mip1W = std::max(1, w / 2);
-        int mip1H = std::max(1, h / 2);
-        glDispatchCompute((mip1W + 7) / 8, (mip1H + 7) / 8, 1);
+        // Krok 0: depth texture → hiz mip0 przez compute (nie glCopyImageSubData!)
+        // depth ma GL_DEPTH_COMPONENT32F, hiz ma GL_R32F — różne klasy, copy jest GL_INVALID_OPERATION
+        glTextureParameteri(depthTexture, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+        glBindTextureUnit(0, depthTexture);
+        glBindImageTexture(1, hizTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
+        glDispatchCompute((w + 7) / 8, (h + 7) / 8, 1);
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
 
-        // --- Mip 2+: oryginalny hiz_build.comp (czyta z poprzedniego mipa) ---
-        w = mip1W; h = mip1H;
-        for (int mip = 2; mip < hizMipLevels; mip++) {
-            w = std::max(1, w / 2);
-            h = std::max(1, h / 2);
+        // Krok 1+: downsampling mip1, mip2, ...
+        glTextureParameteri(hizTexture, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+
+        int mw = w, mh = h;
+        for (int mip = 1; mip < hizMipLevels; mip++) {
+            mw = std::max(1, mw / 2);
+            mh = std::max(1, mh / 2);
 
             glTextureParameteri(hizTexture, GL_TEXTURE_BASE_LEVEL, mip - 1);
             glTextureParameteri(hizTexture, GL_TEXTURE_MAX_LEVEL, mip - 1);
-            glBindTextureUnit(0, hizTexture);                                            // prevMip
+            glBindTextureUnit(0, hizTexture);
+            glBindImageTexture(1, hizTexture, mip, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
 
-            glBindImageTexture(1, hizTexture, mip, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F); // currentMip
-
-            glDispatchCompute((w + 7) / 8, (h + 7) / 8, 1);
+            glDispatchCompute((mw + 7) / 8, (mh + 7) / 8, 1);
             glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
         }
 
@@ -789,6 +828,7 @@ public:
         Draw();
     }
 
+
     void DebugShowHiZ(int mipLevel = 0)
     {
         if (!hizTexture) return;
@@ -805,8 +845,8 @@ public:
         }
         mipLevel = selectedMip;
 
-        int mipW = std::max(1, screenWidth >> mipLevel);
-        int mipH = std::max(1, screenHeight >> mipLevel);
+        int mipW = std::max(1, (vpWidth > 0 ? vpWidth : screenWidth) >> mipLevel);
+        int mipH = std::max(1, (vpHeight > 0 ? vpHeight : screenHeight) >> mipLevel);
 
         // Pobierz dane — format musi zgadzac sie z formatem tekstury
         // hizTexture pochodzi z GPUDrivenManager::InitHiZ = GL_R32F
@@ -867,6 +907,7 @@ public:
 
         ImGui::End(); // dokładnie jedno End na Begin powyżej
     }
+
 
     void DebugPipelineState(uint32_t objCount)
     {
