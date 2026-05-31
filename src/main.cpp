@@ -188,6 +188,7 @@ std::unique_ptr<Prefab> mirrorModel2;
 std::unique_ptr<Prefab> mirrorModel3;
 std::unique_ptr<Prefab> washroomExit;
 std::unique_ptr<Prefab> urinModel;
+std::unique_ptr<Prefab> szafkaModel;
 //AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 std::unique_ptr<Prefab> floorModel;
 std::unique_ptr<Prefab> wallModel;
@@ -245,6 +246,20 @@ std::unordered_set<GameObject*> unlockedDoors;
 std::unordered_set<GameObject*> majorDoors;
 bool can_open_door_1 = false;
 
+bool isCabinetButtonPushed = false;
+
+struct CabinetState {
+    bool isOpen = false;
+    float currentAngle = 0.0f;
+    float targetAngle = 0.0f;
+    GameObject* leftDoor = nullptr;
+    GameObject* rightDoor = nullptr;
+
+    GameObject* button = nullptr;
+    glm::vec3 buttonStartPos;
+    glm::vec3 buttonTargetPos;
+};
+
 struct DoorState {
     bool isOpen = false;
     float currentAngle = 0.0f;
@@ -253,11 +268,16 @@ struct DoorState {
     float targetAngle = 0.0f;
     GameObject* hinge = nullptr;
     glm::vec3 originalOffset = glm::vec3(0.0f);
+    bool canBeClicked = true;
 };
+
+std::unordered_map<GameObject*, CabinetState> cabinetsMap;
 std::unordered_map<GameObject*, DoorState> toiletDoorsMap;
 std::unordered_set<GameObject*> pickupObjects;
 GameObject* p1HeldObject = nullptr;
 GameObject* p2HeldObject = nullptr;
+
+std::vector<GameObject*> mainRoomDoors;
 
 void updateFPS(float deltaTime) {
     frameTimes[index] = deltaTime;
@@ -402,17 +422,38 @@ void HandlePlayerInteraction(
                     }
                 }
             }
-
-
             // Otwieranie drzwi
             else if (toiletDoorsMap.count(hit.hitObject)) {
                 DoorState& state = toiletDoorsMap[hit.hitObject];
-                state.isOpen = !state.isOpen;
-                state.targetAngle = state.isOpen ? state.openAngle : state.closedAngle;
+                if (state.canBeClicked) {
+                    state.isOpen = !state.isOpen;
+                    state.targetAngle = state.isOpen ? state.openAngle : state.closedAngle;
 
-                if (auto col = hit.hitObject->GetComponent<ColliderComponent>()) {
-                    col->halfSize = state.isOpen ? glm::vec3{ 1.0f, 10.0f, 1.0f } : glm::vec3{ 0.8f, 10.0f, 4.0f };
-                    col->offset = state.isOpen ? glm::vec3(0.0f) : state.originalOffset;
+                    if (auto col = hit.hitObject->GetComponent<ColliderComponent>()) {
+                        col->halfSize = state.isOpen ? glm::vec3{ 1.0f, 10.0f, 1.0f } : glm::vec3{ 0.8f, 10.0f, 4.0f };
+                        col->offset = state.isOpen ? glm::vec3(0.0f) : state.originalOffset;
+                    }
+                }
+            }
+            // Otwieranie szafki
+            else if (cabinetsMap.count(hit.hitObject)) {
+                if (!isCabinetButtonPushed) {
+                    isCabinetButtonPushed = true;
+                    CabinetState& state = cabinetsMap[hit.hitObject];
+                    state.isOpen = true;
+                    state.targetAngle = 90.0f;
+
+                    for (GameObject* hinge : mainRoomDoors) {
+                        if (hinge && toiletDoorsMap.count(hinge)) {
+                            DoorState& dState = toiletDoorsMap[hinge];
+                            dState.isOpen = true;
+                            dState.targetAngle = dState.openAngle;
+
+                            if (auto col = hinge->GetComponent<ColliderComponent>()) {
+                                col->halfSize = glm::vec3(0.0f);
+                            }
+                        }
+                    }
                 }
             }
             // Podnoszenie (zabezpieczone przed wyrwaniem obiektu drugiemu graczowi)
@@ -455,7 +496,42 @@ void UpdateDoors(float deltaTime) {
     }
 }
 
-GameObject* CreateInteractableDoor(Scene* scene, Prefab* prefab, Shader* shader, const std::string& name, const glm::vec3& position, const glm::vec3& scale, const glm::vec3& pivotOffset, const glm::vec3& colliderHalfSize, float openAngle) {
+void UpdateCabinets(float deltaTime) {
+    float animSpeed = 180.0f;
+    float buttonSpeed = 5.0f;
+
+    for (auto& [buttonObj, state] : cabinetsMap) {
+        if (std::abs(state.currentAngle - state.targetAngle) > 0.1f) {
+            float direction = (state.targetAngle > state.currentAngle) ? 1.0f : -1.0f;
+            state.currentAngle += direction * animSpeed * deltaTime;
+
+            if ((direction > 0.0f && state.currentAngle > state.targetAngle) ||
+                (direction < 0.0f && state.currentAngle < state.targetAngle)) {
+                state.currentAngle = state.targetAngle;
+            }
+
+            if (state.leftDoor) {
+                TransformComponent* t = state.leftDoor->GetComponent<TransformComponent>();
+                if (t) { t->rotation.y = -state.currentAngle; t->isDirty = true; }
+            }
+            if (state.rightDoor) {
+                TransformComponent* t = state.rightDoor->GetComponent<TransformComponent>();
+                if (t) { t->rotation.y = state.currentAngle; t->isDirty = true; }
+            }
+        }
+
+        if (isCabinetButtonPushed && state.button) {
+            TransformComponent* btnTr = state.button->GetComponent<TransformComponent>();
+            btnTr->position = glm::mix(btnTr->position, state.buttonTargetPos, deltaTime * buttonSpeed);
+
+            if (glm::distance(btnTr->position, state.buttonTargetPos) > 0.01f) {
+                btnTr->isDirty = true;
+            }
+        }
+    }
+}
+
+GameObject* CreateInteractableDoor(Scene* scene, Prefab* prefab, Shader* shader, const std::string& name, const glm::vec3& position, const glm::vec3& scale, const glm::vec3& pivotOffset, const glm::vec3& colliderHalfSize, float openAngle, float baseRotationY = 90.0f) {
     GameObject* hinge = scene->CreateGameObject(nullptr);
     hinge->name = "Hinge_" + name;
     TransformComponent* hingeTr = hinge->AddComponent<TransformComponent>();
@@ -465,7 +541,7 @@ GameObject* CreateInteractableDoor(Scene* scene, Prefab* prefab, Shader* shader,
     door->name = name;
     TransformComponent* doorTr = door->GetComponent<TransformComponent>();
     doorTr->scale = scale;
-    doorTr->rotation = glm::vec3(0.0f, 90.0f, 0.0f);
+    doorTr->rotation = glm::vec3(0.0f, baseRotationY, 0.0f);
     doorTr->position = -pivotOffset;
 
     hinge->AddComponent<RigidbodyComponent>()->useGravity = false;
@@ -477,6 +553,9 @@ GameObject* CreateInteractableDoor(Scene* scene, Prefab* prefab, Shader* shader,
     DoorState state;
     state.hinge = hinge;
     state.openAngle = openAngle;
+    state.closedAngle = 0.0f;
+    state.currentAngle = 0.0f;
+    state.targetAngle = 0.0f;
     state.originalOffset = -pivotOffset;
     toiletDoorsMap[hinge] = state;
     return hinge;
@@ -811,6 +890,7 @@ int main(int, char**)
         cpuTimer.start();
 
         UpdateDoors(deltaTime);
+        UpdateCabinets(deltaTime);
 
         // --- CPU WORK START ---
 
@@ -842,7 +922,6 @@ int main(int, char**)
             ecs.GetSystem<AudioSystem>()->playSound(sound);
         }
 
-
         std::string hintText = "";
 
         if (player1Raycast->anyHit()) {
@@ -855,6 +934,9 @@ int main(int, char**)
                 }
                 else if (unlockedDoors.count(hit.hitObject)) {
                     hintText = "Open";
+                }
+                else if (cabinetsMap.count(hit.hitObject)) {
+                    hintText = "Open Cabinet";
                 }
                 else if (majorDoors.count(hit.hitObject)) {
                     hintText = "Unlock"; //placeholder poki co
@@ -877,6 +959,9 @@ int main(int, char**)
                 }
                 else if (unlockedDoors.count(hit.hitObject)) {
                     hintText2 = "Open";
+                }
+                else if (cabinetsMap.count(hit.hitObject)) {
+                    hintText2 = "Open Cabinet";
                 }
                 else if (majorDoors.count(hit.hitObject)) {
                     hintText2 = "Unlock"; //placeholder poki co
@@ -1705,6 +1790,7 @@ void connectAllModels() {
     //zaslonaModel   = std::make_unique<Prefab>("res/models/zaslona.glb");
     //roomModel = std::make_unique<Prefab>("res/models/room.glb");
     NormalDoor = std::make_unique<Prefab>("res/models/doors.glb");
+    szafkaModel = std::make_unique<Prefab>("res/models/szafka_rozszerzona.glb");
 }
 
 void createFirstRoom(Scene *scena1) {
@@ -2077,7 +2163,7 @@ void createFirstRoom(Scene *scena1) {
     wallObject13->GetComponent<TransformComponent>()->position.z = -200;*/
 }
 
-void createMainRooom(Scene *scena) {
+void createMainRooom(Scene* scena) {
     GameObject* groundObject2 = floorModel->Instantiate(*scena, nullptr, ourShader.get());
     groundObject2->name = "PodlogaMainRoom";
     groundObject2->GetComponent<TransformComponent>()->scale.x = 60;
@@ -2183,68 +2269,47 @@ void createMainRooom(Scene *scena) {
 
     wallObject6n->AddComponent<ColliderComponent>();
     wallObject6n->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 50, 65 };
-    GameObject* doorModelKrematorium = NormalDoor->Instantiate(*scena, nullptr, ourShader.get());
-    doorModelKrematorium->name = "DrzwiDoKrematorium";
-    doorModelKrematorium->GetComponent<TransformComponent>()->scale.x = 11;
-    doorModelKrematorium->GetComponent<TransformComponent>()->scale.y = 10;
-    doorModelKrematorium->GetComponent<TransformComponent>()->scale.z = 10;
-    doorModelKrematorium->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 90, 0 };
+    //GameObject* doorModelKrematorium = NormalDoor->Instantiate(*scena, nullptr, ourShader.get());
+    //doorModelKrematorium->name = "DrzwiDoKrematorium";
+    //doorModelKrematorium->GetComponent<TransformComponent>()->scale.x = 11;
+    //doorModelKrematorium->GetComponent<TransformComponent>()->scale.y = 10;
+    //doorModelKrematorium->GetComponent<TransformComponent>()->scale.z = 10;
+    //doorModelKrematorium->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 90, 0 };
 
 
-    doorModelKrematorium->AddComponent<RigidbodyComponent>();
-    doorModelKrematorium->AddComponent<ColliderComponent>();
+    //doorModelKrematorium->AddComponent<RigidbodyComponent>();
+    //doorModelKrematorium->AddComponent<ColliderComponent>();
 
-    doorModelKrematorium->GetComponent<RigidbodyComponent>()->useGravity = false;
-    doorModelKrematorium->GetComponent<RigidbodyComponent>()->isStatic = true;
+    //doorModelKrematorium->GetComponent<RigidbodyComponent>()->useGravity = false;
+    //doorModelKrematorium->GetComponent<RigidbodyComponent>()->isStatic = true;
 
-    //doorModelKrematorium->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 5, 20, 0.8 };
-    doorModelKrematorium->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 0.8, 20, 5 };
-    // doorModelTylne->GetComponent<ColliderComponent>()->affectsNavMesh = true;;
+    ////doorModelKrematorium->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 5, 20, 0.8 };
+    //doorModelKrematorium->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 0.8, 20, 5 };
+    //// doorModelTylne->GetComponent<ColliderComponent>()->affectsNavMesh = true;;
 
-    doorModelKrematorium->GetComponent<TransformComponent>()->position.x = 60;
-    doorModelKrematorium->GetComponent<TransformComponent>()->position.y = 2.750;
-    doorModelKrematorium->GetComponent<TransformComponent>()->position.z = -165.180;
+    //doorModelKrematorium->GetComponent<TransformComponent>()->position.x = 60;
+    //doorModelKrematorium->GetComponent<TransformComponent>()->position.y = 2.750;
+    //doorModelKrematorium->GetComponent<TransformComponent>()->position.z = -165.180;
 
-    /*GameObject* wallObject6 = wallModel2->Instantiate(*scena, nullptr, ourShader.get());
-    wallObject6->name = "ScianaLewaMainRoom";
-    wallObject6->GetComponent<TransformComponent>()->scale.x = 100;
-    wallObject6->GetComponent<TransformComponent>()->scale.y = 50;
-    wallObject6->GetComponent<TransformComponent>()->scale.z = 1;
-
-
-    wallObject6->AddComponent<RigidbodyComponent>();
-    wallObject6->AddComponent<ColliderComponent>();
-
-    wallObject6->GetComponent<RigidbodyComponent>()->useGravity = false;
-    wallObject6->GetComponent<RigidbodyComponent>()->isStatic = true;
-
-    wallObject6->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 50, 100 };
-    wallObject6->GetComponent<ColliderComponent>()->affectsNavMesh = true;;
-
-    wallObject6->GetComponent<TransformComponent>()->position.x = -60;
-    wallObject6->GetComponent<TransformComponent>()->position.y = 0;
-    wallObject6->GetComponent<TransformComponent>()->position.z = -200;
-    */
-
-    GameObject* doorModelTylne = NormalDoor->Instantiate(*scena, nullptr, ourShader.get());
-    doorModelTylne->name = "DrzwiDoRentgen";
-    doorModelTylne->GetComponent<TransformComponent>()->scale.x = 11;
-    doorModelTylne->GetComponent<TransformComponent>()->scale.y = 10;
-    doorModelTylne->GetComponent<TransformComponent>()->scale.z = 10;
+    //GameObject* doorModelTylne = NormalDoor->Instantiate(*scena, nullptr, ourShader.get());
+    //doorModelTylne->name = "DrzwiDoRentgen";
+    //doorModelTylne->GetComponent<TransformComponent>()->scale.x = 11;
+    //doorModelTylne->GetComponent<TransformComponent>()->scale.y = 10;
+    //doorModelTylne->GetComponent<TransformComponent>()->scale.z = 10;
 
 
-    doorModelTylne->AddComponent<RigidbodyComponent>();
-    doorModelTylne->AddComponent<ColliderComponent>();
+    //doorModelTylne->AddComponent<RigidbodyComponent>();
+    //doorModelTylne->AddComponent<ColliderComponent>();
 
-    doorModelTylne->GetComponent<RigidbodyComponent>()->useGravity = false;
-    doorModelTylne->GetComponent<RigidbodyComponent>()->isStatic = true;
+    //doorModelTylne->GetComponent<RigidbodyComponent>()->useGravity = false;
+    //doorModelTylne->GetComponent<RigidbodyComponent>()->isStatic = true;
 
-   doorModelTylne->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 5, 20, 0.8 };
-   // doorModelTylne->GetComponent<ColliderComponent>()->affectsNavMesh = true;;
+    //doorModelTylne->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 5, 20, 0.8 };
+    //// doorModelTylne->GetComponent<ColliderComponent>()->affectsNavMesh = true;;
 
-    doorModelTylne->GetComponent<TransformComponent>()->position.x = 5.440;
-    doorModelTylne->GetComponent<TransformComponent>()->position.y = 2.750;
-    doorModelTylne->GetComponent<TransformComponent>()->position.z = -217.800;
+    //doorModelTylne->GetComponent<TransformComponent>()->position.x = 5.440;
+    //doorModelTylne->GetComponent<TransformComponent>()->position.y = 2.750;
+    //doorModelTylne->GetComponent<TransformComponent>()->position.z = -217.800;
 
     GameObject* wallObject9 = wallModel->Instantiate(*scena, nullptr, ourShader.get());
     wallObject9->name = "GoraPrzejscieDoRentgena";
@@ -2328,27 +2393,91 @@ void createMainRooom(Scene *scena) {
     wallObject13->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1, 50, 65 };
 
 
-    GameObject* doorModelATOM = NormalDoor->Instantiate(*scena, nullptr, ourShader.get());
-    doorModelATOM->name = "DrzwiDoATOMU";
-    doorModelATOM->GetComponent<TransformComponent>()->scale.x = 11;
-    doorModelATOM->GetComponent<TransformComponent>()->scale.y = 10;
-    doorModelATOM->GetComponent<TransformComponent>()->scale.z = 10;
-    doorModelATOM->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 90, 0 };
+    //GameObject* doorModelATOM = NormalDoor->Instantiate(*scena, nullptr, ourShader.get());
+    //doorModelATOM->name = "DrzwiDoATOMU";
+    //doorModelATOM->GetComponent<TransformComponent>()->scale.x = 11;
+    //doorModelATOM->GetComponent<TransformComponent>()->scale.y = 10;
+    //doorModelATOM->GetComponent<TransformComponent>()->scale.z = 10;
+    //doorModelATOM->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 90, 0 };
 
 
-    doorModelATOM->AddComponent<RigidbodyComponent>();
-    doorModelATOM->AddComponent<ColliderComponent>();
+    //doorModelATOM->AddComponent<RigidbodyComponent>();
+    //doorModelATOM->AddComponent<ColliderComponent>();
 
-    doorModelATOM->GetComponent<RigidbodyComponent>()->useGravity = false;
-    doorModelATOM->GetComponent<RigidbodyComponent>()->isStatic = true;
+    //doorModelATOM->GetComponent<RigidbodyComponent>()->useGravity = false;
+    //doorModelATOM->GetComponent<RigidbodyComponent>()->isStatic = true;
 
-    doorModelATOM->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 0.8, 20, 5 };
-    // doorModelTylne->GetComponent<ColliderComponent>()->affectsNavMesh = true;;
+    //doorModelATOM->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 0.8, 20, 5 };
+    //// doorModelTylne->GetComponent<ColliderComponent>()->affectsNavMesh = true;;
 
-    doorModelATOM->GetComponent<TransformComponent>()->position.x = -60.440;
-    doorModelATOM->GetComponent<TransformComponent>()->position.y = 2.75;
-    doorModelATOM->GetComponent<TransformComponent>()->position.z = -165.180;
+    //doorModelATOM->GetComponent<TransformComponent>()->position.x = -60.440;
+    //doorModelATOM->GetComponent<TransformComponent>()->position.y = 2.75;
+    //doorModelATOM->GetComponent<TransformComponent>()->position.z = -165.180;
+
+    glm::vec3 scaleDoors = glm::vec3(11.0f, 10.0f, 10.0f);
+
+    GameObject* hingeKrematorium = CreateInteractableDoor(
+        scena, NormalDoor.get(), ourShader.get(), "DrzwiDoKrematorium",
+        glm::vec3(60.0f, 2.750f, -165.180f), scaleDoors,
+        glm::vec3(0.0f, 0.0f, -5.0f), glm::vec3(0.8f, 20.0f, 5.0f), -90.0f, 90.0f
+    );
+    toiletDoorsMap[hingeKrematorium].canBeClicked = false;
+    mainRoomDoors.push_back(hingeKrematorium);
+
+    GameObject* hingeRentgen = CreateInteractableDoor(
+        scena, NormalDoor.get(), ourShader.get(), "DrzwiDoRentgen",
+        glm::vec3(5.440f, 2.750f, -217.800f), scaleDoors,
+        glm::vec3(5.0f, 0.0f, 0.0f), glm::vec3(5.0f, 20.0f, 0.8f), 90.0f, 0.0f
+    );
+    toiletDoorsMap[hingeRentgen].canBeClicked = false;
+    mainRoomDoors.push_back(hingeRentgen);
+
+    GameObject* hingeATOM = CreateInteractableDoor(
+        scena, NormalDoor.get(), ourShader.get(), "DrzwiDoATOMU",
+        glm::vec3(-60.440f, 2.750f, -165.180f), scaleDoors,
+        glm::vec3(0.0f, 0.0f, -5.0f), glm::vec3(0.8f, 20.0f, 5.0f), -90.0f, 90.0f
+    );
+    toiletDoorsMap[hingeATOM].canBeClicked = false;
+    mainRoomDoors.push_back(hingeATOM);
+
+    GameObject* szafkaObj = szafkaModel->Instantiate(*scena, nullptr, ourShader.get());
+    szafkaObj->name = "Szafka";
+
+    TransformComponent* szafkaTr = szafkaObj->GetComponent<TransformComponent>();
+    szafkaTr->position = glm::vec3{ -56.6f, 5.6f, -140.0f };
+    szafkaTr->scale = glm::vec3{ 10.0f, 10.0f, 10.0f };
+    szafkaTr->rotation = glm::vec3{ 0.0f, 0.0f, 0.0f };
+
+    RigidbodyComponent* szafkaRb = szafkaObj->AddComponent<RigidbodyComponent>();
+    szafkaRb->useGravity = false;
+    szafkaRb->isStatic = true;
+
+    ColliderComponent* szafkaCol = szafkaObj->AddComponent<ColliderComponent>();
+    szafkaCol->affectsNavMesh = true;
+
+    szafkaCol->halfSize = glm::vec3{ 10.0f, 8.0f, 3.0f };
+    szafkaCol->offset = glm::vec3{ 0.0f, 6.0f, 0.0f };
+
+    CabinetState cabState;
+    szafkaObj->TraverseChildren([&](GameObject* go) {
+        if (go->name == "Left_Door")  cabState.leftDoor = go;
+        if (go->name == "Right_Door") cabState.rightDoor = go;
+        if (go->name == "Guzik") cabState.button = go;
+        });
+
+    if (cabState.button) {
+        ColliderComponent* btnCol = cabState.button->AddComponent<ColliderComponent>();
+        btnCol->halfSize = glm::vec3{ 1.0f, 1.0f, 1.0f };
+
+        TransformComponent* btnTr = cabState.button->GetComponent<TransformComponent>();
+        cabState.buttonStartPos = btnTr->position;
+
+        cabState.buttonTargetPos = cabState.buttonStartPos + glm::vec3{ 0.0f, 0.0f, -0.15f };
+
+        cabinetsMap[cabState.button] = cabState;
+    }
 }
+
 void createNuclearRooom(Scene * scena) {
     GameObject* groundObject2 = floorModel->Instantiate(*scena, nullptr, ourShader.get());
     groundObject2->name = "PodlogaNucearRoom";
