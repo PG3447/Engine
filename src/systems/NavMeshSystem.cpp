@@ -6,6 +6,7 @@
 #include <cmath>
 #include <limits>
 #include <unordered_set>
+#include <random>
 
 //  NavMeshComponent - metody
 
@@ -69,9 +70,9 @@ void NavMeshSystem::Update(ECS& /*ecs*/, float /*dt*/) {
 
         glm::vec4 col = tri.walkable ? nm->colorEdge : nm->colorUnwalkable;
 
-      /*  DebugDrawSystem::AddLine(ao, bo, col);
+        DebugDrawSystem::AddLine(ao, bo, col);
         DebugDrawSystem::AddLine(bo, co, col);
-        DebugDrawSystem::AddLine(co, ao, col);*/
+        DebugDrawSystem::AddLine(co, ao, col);
     }
 }
 
@@ -148,11 +149,11 @@ NavMeshSystem::CollectWalkableSurfaces(Scene& scene) {
         if (!col->isWalkable) continue;
 
         // Pozycja ze swiata (uzywamy modelMatrix jesli dostepna, inaczej position)
-        glm::vec3 worldPos = glm::vec3(tr->modelMatrix[3]);
+        glm::vec3 worldPos = tr->position;
         glm::vec3 scale    = tr->scale;
 
         // Rzeczywisty polrozmar w przestrzeni swiata
-        glm::vec3 half = col->halfSize;
+        glm::vec3 half   = col->halfSize;
         glm::vec3 center = worldPos + col->offset;
 
         WalkableSurface surf;
@@ -169,31 +170,33 @@ NavMeshSystem::CollectWalkableSurfaces(Scene& scene) {
 
 //  Krok 2: Generuj punkty probkowania (siatka XZ)
 
-std::vector<glm::vec3>
-NavMeshSystem::GenerateSamplePoints(
+std::vector<glm::vec3> NavMeshSystem::GenerateSamplePoints(
     const std::vector<WalkableSurface>& surfaces,
     float voxelSize)
 {
+    static std::mt19937 rng(42); // stały seed = deterministyczny bake
+    std::uniform_real_distribution<float> jitter(
+        -voxelSize * 0.3f,
+         voxelSize * 0.3f
+    );
+
     std::vector<glm::vec3> points;
 
-    // Upewnij sie ze voxelSize > 0
-    if (voxelSize <= 0.0f) voxelSize = 1.0f;
-
     for (const auto& surf : surfaces) {
-        float xMin = surf.min.x;
-        float xMax = surf.max.x;
-        float zMin = surf.min.z;
-        float zMax = surf.max.z;
+        float xMin = surf.min.x, xMax = surf.max.x;
+        float zMin = surf.min.z, zMax = surf.max.z;
         float y    = surf.yTop;
 
-        // Iteruj po siatce XZ z krokiem voxelSize
         for (float x = xMin; x <= xMax + 1e-4f; x += voxelSize) {
             for (float z = zMin; z <= zMax + 1e-4f; z += voxelSize) {
-                points.push_back(glm::vec3(
-                    std::min(x, xMax),
-                    y,
-                    std::min(z, zMax)
-                ));
+                float px = std::min(x, xMax) + jitter(rng);
+                float pz = std::min(z, zMax) + jitter(rng);
+
+                // Upewnij się że punkt nie wyszedł poza surface
+                px = std::clamp(px, xMin, xMax);
+                pz = std::clamp(pz, zMin, zMax);
+
+                points.push_back(glm::vec3(px, y, pz));
             }
         }
     }
@@ -232,10 +235,10 @@ NavMeshSystem::CollectObstacles(Scene& scene) {
         // Przeszkoda = affectsNavMesh=true ALE isWalkable=false
         if (!col->affectsNavMesh || col->isWalkable) continue;
 
-        glm::vec3 worldPos = glm::vec3(tr->modelMatrix[3]);
+        glm::vec3 worldPos = tr->position;
         glm::vec3 scale    = tr->scale;
-        glm::vec3 half     = col->halfSize;
-        glm::vec3 center   = worldPos + col->offset;
+        glm::vec3 half   = col->halfSize;
+        glm::vec3 center = worldPos + col->offset;
 
         Obstacle obs;
         obs.min = center - half;

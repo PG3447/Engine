@@ -4,6 +4,7 @@
 #include "systems/PostProcessingSystem.h"
 #include "systems/NavMeshSystem.h"
 #include "systems/NavPathSystem.h"
+#include "systems/NpcSystem.h"
 #include "systems/raycastSystem.h"
 
 
@@ -54,11 +55,15 @@ void Scene::Update(float deltaTime) {
         obj->Update(ecs, deltaTime);
     }
 
+    if (auto* ns = ecs.GetSystem<NpcSystem>())
+        ns->Update(ecs, deltaTime);
+
     if (auto* pps = ecs.GetSystem<PostProcessingSystem>())
         pps->Update(ecs, deltaTime);
 
     if (auto* ss = ecs.GetSystem<SpriteSystem>())
         ss->Update(ecs, deltaTime);
+
 
     //if (auto* as = ecs.GetSystem<AudioSystem>())
         //as->Update(ecs, deltaTime);

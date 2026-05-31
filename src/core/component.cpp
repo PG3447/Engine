@@ -20,5 +20,6 @@ void ColliderComponent::OnEnable(GameObject* owner) {
     {
         this->halfSize = (renderComponent->localObjectAABB.max - renderComponent->localObjectAABB.min) * 0.5f;
         this->halfSize *= transformComponent->scale;
+        //this->halfSize = renderComponent->localObjectAABB.max * transformComponent->scale;
     }
 }
