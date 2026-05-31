@@ -16,6 +16,57 @@
 #include "../compute_shader.h"
 #include "GPUdriven_manager.h"
 
+
+struct PerCameraHiZ
+{
+    GLuint hizTexture = 0;
+    GLuint depthPrev = 0;
+    int    hizMipLevels = 0;
+    int    width = 0;
+    int    height = 0;
+
+    void Init(int w, int h)
+    {
+        width = w;
+        height = h;
+        hizMipLevels = static_cast<int>(std::floor(std::log2(std::max(w, h)))) + 1;
+
+        // HiZ — R32F z mipami, taki sam format jak w GPUDrivenManager::InitHiZ
+        glGenTextures(1, &hizTexture);
+        glBindTexture(GL_TEXTURE_2D, hizTexture);
+        glTexStorage2D(GL_TEXTURE_2D, hizMipLevels, GL_R32F, w, h);
+        glTextureParameteri(hizTexture, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+        glTextureParameteri(hizTexture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTextureParameteri(hizTexture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTextureParameteri(hizTexture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+        // depth-prev — kopia depth poprzedniej klatki tej kamery
+        glGenTextures(1, &depthPrev);
+        glBindTexture(GL_TEXTURE_2D, depthPrev);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, w, h, 0,
+            GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+        glTextureParameteri(depthPrev, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTextureParameteri(depthPrev, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTextureParameteri(depthPrev, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTextureParameteri(depthPrev, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        spdlog::info("PerCameraHiZ::Init {}x{} mips={}", w, h, hizMipLevels);
+    }
+
+    // Wywoływane tylko przy resize okna — glTexStorage2D jest immutable
+    void Destroy()
+    {
+        if (hizTexture) { glDeleteTextures(1, &hizTexture); hizTexture = 0; }
+        if (depthPrev) { glDeleteTextures(1, &depthPrev);  depthPrev = 0; }
+        width = height = hizMipLevels = 0;
+    }
+
+    bool IsValid() const { return hizTexture != 0 && depthPrev != 0; }
+};
+
+
 class RenderSystem : public System {
 private:
     using GroupKey = std::tuple<RenderMesh*, Material*>;
@@ -102,6 +153,8 @@ public:
     GLuint depthTexturePrev = 0;
     int fboWidth = 0, fboHeight = 0;
     
+    std::unordered_map<CameraComponent*, PerCameraHiZ> cameraHiZ;
+
     void IssueOcclusionQuery(size_t entityIdx, const glm::mat4& modelMatrix, const AABB& localAABB) {
         OcclusionData& data = occlusionMap[entityIdx];
         if (data.queryId == 0) glGenQueries(1, &data.queryId);
@@ -650,15 +703,36 @@ public:
         
         auto cullStart = std::chrono::high_resolution_clock::now();
 
-        drivenManager.CollectAllPasses(*renderQuery, currentCameraPos);
-        drivenManager.RenderFrame(vp, currentCameraPos, depthTexturePrev);
+        int vpW = std::max(1, (int)(cam.viewport.width * width));
+        int vpH = std::max(1, (int)(cam.viewport.height * height));
 
-        if (depthTexturePrev && sceneDepthTexture) {
-            glCopyImageSubData(sceneDepthTexture, GL_TEXTURE_2D, 0, 0, 0, 0,
-                depthTexturePrev, GL_TEXTURE_2D, 0, 0, 0, 0,
-                width, height, 1);
-            //drivenManager.BuildHiZ();
+        PerCameraHiZ& hiz = cameraHiZ[&cam];
+        if (hiz.width != vpW || hiz.height != vpH)
+        {
+            hiz.Destroy(); // tylko przy resize — nie co klatkę
+            hiz.Init(vpW, vpH);
         }
+        drivenManager.AttachCameraHiZ(hiz.hizTexture, hiz.hizMipLevels);
+
+        drivenManager.CollectAllPasses(*renderQuery, currentCameraPos);
+        drivenManager.RenderFrame(vp, currentCameraPos, hiz.depthPrev);
+        //drivenManager.RenderFrame(vp, currentCameraPos, depthTexturePrev);
+        
+        int vpX = (int)(cam.viewport.x * width);
+        int vpY = (int)(cam.viewport.y * height);
+
+        if (hiz.depthPrev && sceneDepthTexture) {
+            glCopyImageSubData(sceneDepthTexture, GL_TEXTURE_2D, 0, vpX, vpY, 0,
+                hiz.depthPrev, GL_TEXTURE_2D, 0, 0, 0, 0,
+                vpW, vpH, 1);
+        }
+
+        //if (depthTexturePrev && sceneDepthTexture) {
+        //    glCopyImageSubData(sceneDepthTexture, GL_TEXTURE_2D, 0, 0, 0, 0,
+        //        depthTexturePrev, GL_TEXTURE_2D, 0, 0, 0, 0,
+        //        width, height, 1);
+        //    //drivenManager.BuildHiZ();
+        //}
 
         auto cullEnd = std::chrono::high_resolution_clock::now();
         stats.cullingTimeMs += std::chrono::duration<float, std::milli>(cullEnd - cullStart).count();
@@ -1029,16 +1103,19 @@ public:
             glDeleteTextures(1, &sceneColorTexture);
             glDeleteTextures(1, &sceneDepthTexture);
 
-            if (depthTexturePrev) {
-                glDeleteTextures(1, &depthTexturePrev);
-                depthTexturePrev = 0;
-            }
+            //if (depthTexturePrev) {
+            //    glDeleteTextures(1, &depthTexturePrev);
+            //    depthTexturePrev = 0;
+            //}
+
+            for (auto& [cam, hiz] : cameraHiZ)
+                hiz.Destroy();
+            cameraHiZ.clear();
         }
 
         glGenFramebuffers(1, &sceneFBO);
         glBindFramebuffer(GL_FRAMEBUFFER, sceneFBO);
 
-        // Textura koloru
         glGenTextures(1, &sceneColorTexture);
         glBindTexture(GL_TEXTURE_2D, sceneColorTexture);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
@@ -1046,7 +1123,6 @@ public:
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, sceneColorTexture, 0);
 
-        // depth jako tekstura — potrzebna do glCopyImageSubData
         glGenTextures(1, &sceneDepthTexture);
         glBindTexture(GL_TEXTURE_2D, sceneDepthTexture);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, w, h, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
@@ -1060,16 +1136,9 @@ public:
             spdlog::error("SceneFBO incomplete!");
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-        // depthTexturePrev — ten sam format, glCopyImageSubData depth→depth działa
-        glGenTextures(1, &depthTexturePrev);
-        glBindTexture(GL_TEXTURE_2D, depthTexturePrev);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, w, h, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glBindTexture(GL_TEXTURE_2D, 0);
     }
+
 
     GLuint GetSceneTexture() const { return sceneColorTexture; }
 

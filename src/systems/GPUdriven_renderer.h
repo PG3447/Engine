@@ -858,7 +858,12 @@ public:
 
         float dispW = std::min((float)mipW, 512.0f);
         float dispH = dispW * ((float)mipH / (float)mipW);
-        ImGui::Image((ImTextureID)(intptr_t)debugTex, ImVec2(dispW, dispH));
+        ImGui::Image(
+            (ImTextureID)(intptr_t)debugTex,
+            ImVec2(dispW, dispH),
+            ImVec2(0, 1),   // uv0 — lewy górny = dół tekstury
+            ImVec2(1, 0)    // uv1 — prawy dolny = góra tekstury
+        );
 
         ImGui::End(); // dokładnie jedno End na Begin powyżej
     }

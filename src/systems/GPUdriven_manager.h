@@ -128,6 +128,12 @@ public:
         spdlog::info("RendererManager: HiZ {}x{} mips={}", w, h, hizMipLevels);
     }
 
+    void AttachCameraHiZ(GLuint hizTexture, int hizMipLevels)
+    {
+        for (auto& entry : passes)
+            entry.renderer->AttachHiZ(hizTexture, hizMipLevels);
+    }
+
     void InitPassesFromScene(Query<TransformComponent, RenderComponent>& renderQuery)
     {
         auto& renderers = std::get<1>(renderQuery.componentsVectors);
