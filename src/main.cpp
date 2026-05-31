@@ -1544,11 +1544,11 @@ void createFirstRoom(Scene* scena1) {
 
     // Sciany
     CreateStaticObject(scena1, wallModel.get(),  ourShader.get(), "ScianaTylnaKibel",           glm::vec3(0, 0, -10),    glm::vec3(50, 50, 1),  glm::vec3(0), glm::vec3(50, 50, 1));
-    CreateStaticObject(scena1, wallModel2.get(), ourShader.get(), "ScianaKiblowa",              glm::vec3(50, 0, 0),     glm::vec3(100, 50, 1));
-    CreateStaticObject(scena1, wallModel2.get(), ourShader.get(), "ScianaSinkowa",              glm::vec3(-25, 0, 0),    glm::vec3(100, 50, 1));
-    CreateStaticObject(scena1, wallModel.get(),  ourShader.get(), "ScianaDrzwiDoMainRoomPrawa", glm::vec3(110, 0, -100), glm::vec3(100, 50, 1), glm::vec3(0), glm::vec3(-1.0f), true);
-    CreateStaticObject(scena1, wallModel.get(),  ourShader.get(), "ScianaDrzwiDoMainRoomLewa",  glm::vec3(-110, 0, -100),glm::vec3(100, 50, 1), glm::vec3(0), glm::vec3(-1.0f), true);
-    CreateStaticObject(scena1, wallModel.get(),  ourShader.get(), "GoraPrzejscieDoMainRoom",    glm::vec3(0, 70, -100),  glm::vec3(100, 50, 1), glm::vec3(0), glm::vec3(-1.0f), true);
+    CreateStaticObject(scena1, wallModel2.get(), ourShader.get(), "ScianaKiblowa",              glm::vec3(50, 0, 0),     glm::vec3(100, 50, 1), glm::vec3(0,90,0), glm::vec3(1, 50, 100));
+    CreateStaticObject(scena1, wallModel2.get(), ourShader.get(), "ScianaSinkowa",              glm::vec3(-25, 0, 0),    glm::vec3(100, 50, 1), glm::vec3(0,90,0), glm::vec3(1, 50, 100));
+    CreateStaticObject(scena1, wallModel.get(),  ourShader.get(), "ScianaDrzwiDoMainRoomPrawa", glm::vec3(110, 0, -100), glm::vec3(100, 50, 1), glm::vec3(0), glm::vec3(100,50,1), true);
+    CreateStaticObject(scena1, wallModel.get(),  ourShader.get(), "ScianaDrzwiDoMainRoomLewa",  glm::vec3(-110, 0, -100),glm::vec3(100, 50, 1), glm::vec3(0), glm::vec3(100,50,1), true);
+    CreateStaticObject(scena1, wallModel.get(),  ourShader.get(), "GoraPrzejscieDoMainRoom",    glm::vec3(0, 70, -100),  glm::vec3(100, 50, 1), glm::vec3(0), glm::vec3(100,50,1), true);
 
     // Kibel
     GameObject* tablicaKibli[6];
