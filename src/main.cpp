@@ -1335,13 +1335,13 @@ int main(int, char**)
                     hintText = "Rotate";
                 }
                  else if (unlockedDoors.count(hit.hitObject)) {
-                     hintText = "Open";
+                     hintText = "Open/Close";
                  }
                  else if (majorDoors.count(hit.hitObject)) {
                      hintText = "Unlock"; //placeholder poki co
                  }
                  else if (pickupObjects.count(hit.hitObject)) {
-                    hintText = (hit.hitObject == p2HeldObject) ? "Held by Player2" : "Pick up";
+                    //hintText = (hit.hitObject == p2HeldObject) ? "Held by Player2" : "Pick up";
                 }
             }
         }
@@ -1357,13 +1357,13 @@ int main(int, char**)
                     hintText2 = "Rotate";
                 }
                 else if (unlockedDoors.count(hit.hitObject)) {
-                    hintText2 = "Open";
+                    hintText2 = "Open/Close";
                 }
                 else if (majorDoors.count(hit.hitObject)) {
                     hintText2 = "Unlock"; //placeholder poki co
                 }
                 else if (pickupObjects.count(hit.hitObject)) {
-                    hintText = (hit.hitObject == p1HeldObject) ? "Held by Player1" : "Pick up";
+                    //hintText = (hit.hitObject == p1HeldObject) ? "Held by Player1" : "Pick up";
                 }
             }
         }
@@ -1534,7 +1534,7 @@ bool init()
     }
 
     glfwMakeContextCurrent(window);
-    glfwSwapInterval(0); // Enable VSync - fixes FPS at the refresh rate of your screen
+    glfwSwapInterval(1); // Enable VSync - fixes FPS at the refresh rate of your screen
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
