@@ -55,6 +55,8 @@
 #include "utils/render_helper.h"
 #include "utils/animation_helper.h"
 
+#include "gameplay/crematorium_puzzle.h"
+
 
 static void glfw_error_callback(int error, const char* description)
 {
@@ -135,6 +137,8 @@ bool   autoRotation = false;
 unsigned int cubemapTexture;
 unsigned int skyboxVAO;
 
+CrematoriumPuzzle crematoriumPuzzle;
+
 GLuint VBO;
 GLuint VAO;
 GLuint texture;
@@ -190,6 +194,7 @@ std::unique_ptr<Prefab> mirrorModel3;
 std::unique_ptr<Prefab> washroomExit;
 std::unique_ptr<Prefab> urinModel;
 std::unique_ptr<Prefab> szafkaModel;
+std::unique_ptr<Prefab> ruraModel;
 //AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 std::unique_ptr<Prefab> floorModel;
 std::unique_ptr<Prefab> wallModel;
@@ -471,6 +476,10 @@ void HandlePlayerInteraction(
                     rb->useGravity = false;
                     rb->isStatic = true;
                 }
+            }
+			// zagadka z trumnami
+            else if (hit.hitObject->name.find("Coffin") != std::string::npos) {
+                crematoriumPuzzle.ToggleCoffin(hit.hitObject);
             }
         }
     }
@@ -984,6 +993,9 @@ int main(int, char**)
                 else if (pickupObjects.count(hit.hitObject)) {
                     hintText = (hit.hitObject == p2HeldObject) ? "Held by Player2" : "Pick up";
                 }
+                else if (hit.hitObject->name.find("Coffin") != std::string::npos) {
+                    hintText = "Pull Coffin";
+                }
             }
         }
         player1InteractionInfo->text = hintText;
@@ -1101,6 +1113,7 @@ int main(int, char**)
 
         auto logicStart = std::chrono::high_resolution_clock::now();
         sceneManager.Update(deltaTime);
+        crematoriumPuzzle.Update(deltaTime);
         // Update game objects' state here
         update();
 
@@ -1831,6 +1844,7 @@ void connectAllModels() {
     //roomModel = std::make_unique<Prefab>("res/models/room.glb");
     NormalDoor = std::make_unique<Prefab>("res/models/doors.glb");
     szafkaModel = std::make_unique<Prefab>("res/models/szafka_rozszerzona.glb");
+    ruraModel = std::make_unique<Prefab>("res/models/placeholder_rura_wysuwana.glb");
 }
 
 void createFirstRoom(Scene *scena1) {
@@ -2076,6 +2090,29 @@ void createCrematorium(Scene* scena) {
     CreateStaticObject(scena, floorModel.get(), ourShader.get(), "SufitCrematorium", glm::vec3(120, 20, -180), glm::vec3(60, 1, 80));
     CreateStaticObject(scena, wallModel2.get(), ourShader.get(), "ScianaKoncowaKrematorium", glm::vec3(180, 0, -180), glm::vec3(80, 50, 1), std::nullopt, glm::vec3(1, 50, 80));
     CreateStaticObject(scena, wallModel.get(), ourShader.get(), "ScianaKremLewa", glm::vec3(120.180, 0, -259.680), glm::vec3(60, 50, 1), std::nullopt, glm::vec3(60, 100, 1));
+
+    crematoriumPuzzle.coffinScale = glm::vec3(1.55f, 1.05f, 32.0f);
+    crematoriumPuzzle.spacingHorizontal = 6.0f;
+    crematoriumPuzzle.spacingVertical = 3.5f;
+
+    crematoriumPuzzle.minExtensionDistance = 12.0f;
+    crematoriumPuzzle.maxExtensionDistance = 40.5f;
+
+    crematoriumPuzzle.wallOffset = 35.0f;
+
+    crematoriumPuzzle.w1_buildDirX = -1.0f;
+    crematoriumPuzzle.w1_extendDirZ = 1.0f;
+    crematoriumPuzzle.w2_buildDirZ = 1.0f;
+    crematoriumPuzzle.w2_extendDirX = -1.0f;
+
+    glm::vec3 cornerPosition(175.0f, 5.0f, -255.0f);
+
+    if (ruraModel != nullptr && ruraModel->rootModel != nullptr) {
+        crematoriumPuzzle.Init(scena, ruraModel->rootModel, cornerPosition);
+    }
+    else {
+        spdlog::error("Model rury nie zostal poprawnie zaladowany!");
+    }
 }
 
 void createRentgenRoom(Scene* scena) {
