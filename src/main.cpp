@@ -1520,9 +1520,9 @@ void connectAllModels() {
     doorsToiletModel = std::make_unique<Prefab>("res/models/doors_toliet_tex6.glb");
     toiletPaperModel = std::make_unique<Prefab>("res/models/papier1.glb");
     mirrorModel1     = std::make_unique<Prefab>("res/models/glass1_v2.glb");
-    mirrorModel2     = std::make_unique<Prefab>("res/models/glass2_v2.glb");
-    mirrorModel3     = std::make_unique<Prefab>("res/models/glass3_v2.glb");
-    mirrorModel4     = std::make_unique<Prefab>("res/models/lustro_puste.glb");
+    mirrorModel2     = std::make_unique<Prefab>("res/models/lustro_puste.glb");
+    mirrorModel3     = std::make_unique<Prefab>("res/models/glass2_v2.glb");
+    mirrorModel4     = std::make_unique<Prefab>("res/models/glass3_v2.glb");
     washroomExit     = std::make_unique<Prefab>("res/models/door_other_2.glb");
     urinModel        = std::make_unique<Prefab>("res/models/uniral_v2.glb");
     NormalDoor       = std::make_unique<Prefab>("res/models/doors.glb");
@@ -1553,24 +1553,43 @@ void createFirstRoom(Scene* scena1) {
     // Kibel
     GameObject* tablicaKibli[8];
     for (int i = 0; i < 8; i++) {
-        tablicaKibli[i] = toiletModel->Instantiate(*scena1, nullptr, ourShader.get());
-        tablicaKibli[i]->name = "Kibel" + std::to_string(i);
-        tablicaKibli[i]->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1.5, 1.5, 1.5 };
-        tablicaKibli[i]->AddComponent<RigidbodyComponent>();
-        tablicaKibli[i]->AddComponent<ColliderComponent>();
-        tablicaKibli[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
-        tablicaKibli[i]->GetComponent<RigidbodyComponent>()->isStatic   = true;
-        tablicaKibli[i]->GetComponent<ColliderComponent>()->halfSize     = glm::vec3{ 2.5, 4, 2.5 };
-        tablicaKibli[i]->GetComponent<ColliderComponent>()->offset       = glm::vec3{ 0, 4, 0 };
-        tablicaKibli[i]->GetComponent<TransformComponent>()->position    = glm::vec3{ 45, 0.5f, -25 + (-10 * i) };
-        tablicaKibli[i]->GetComponent<TransformComponent>()->rotation    = glm::vec3{ 0, 90, 0 };
-        tablicaKibli[i]->GetComponent<ColliderComponent>()->isWalkable     = false;
-        tablicaKibli[i]->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+        if (i !=2 && i != 3) {
+            tablicaKibli[i] = toiletModel->Instantiate(*scena1, nullptr, ourShader.get());
+            tablicaKibli[i]->name = "Kibel" + std::to_string(i);
+            tablicaKibli[i]->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1.5, 1.5, 1.5 };
+            tablicaKibli[i]->AddComponent<RigidbodyComponent>();
+            tablicaKibli[i]->AddComponent<ColliderComponent>();
+            tablicaKibli[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
+            tablicaKibli[i]->GetComponent<RigidbodyComponent>()->isStatic   = true;
+            tablicaKibli[i]->GetComponent<ColliderComponent>()->halfSize     = glm::vec3{ 2.5, 4, 2.5 };
+            tablicaKibli[i]->GetComponent<ColliderComponent>()->offset       = glm::vec3{ 0, 4, 0 };
+            tablicaKibli[i]->GetComponent<TransformComponent>()->position    = glm::vec3{ 45, 0.5f, -25 + (-10 * i) };
+            tablicaKibli[i]->GetComponent<TransformComponent>()->rotation    = glm::vec3{ 0, 90, 0 };
+            tablicaKibli[i]->GetComponent<ColliderComponent>()->isWalkable     = false;
+            tablicaKibli[i]->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+        }
+
+        if (i == 2 || i == 3) {
+            tablicaKibli[i] = urinModel->Instantiate(*scena1, nullptr, ourShader.get());
+            tablicaKibli[i]->name = "Kibel" + std::to_string(i);
+            tablicaKibli[i]->GetComponent<TransformComponent>()->scale    = glm::vec3{ 12, 12, 12 };
+            tablicaKibli[i]->AddComponent<RigidbodyComponent>();
+            tablicaKibli[i]->AddComponent<ColliderComponent>();
+            tablicaKibli[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
+            tablicaKibli[i]->GetComponent<RigidbodyComponent>()->isStatic   = true;
+            tablicaKibli[i]->GetComponent<ColliderComponent>()->halfSize     = glm::vec3{ 2.5, 4, 2.5 };
+            tablicaKibli[i]->GetComponent<ColliderComponent>()->offset       = glm::vec3{ 0, 4, 0 };
+            tablicaKibli[i]->GetComponent<TransformComponent>()->position    = glm::vec3{ 47.6, 2.0f, -25 + (-10 * i) };
+            tablicaKibli[i]->GetComponent<TransformComponent>()->rotation    = glm::vec3{ 0, 270, 0 };
+            tablicaKibli[i]->GetComponent<ColliderComponent>()->isWalkable     = false;
+            tablicaKibli[i]->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+        }
     }
 
     // Zaslony
     GameObject* tablicaZaslon[9];
     for (int i = 0; i < 9; i++) {
+
         tablicaZaslon[i] = wallModel3->Instantiate(*scena1, nullptr, ourShader.get());
         tablicaZaslon[i]->GetComponent<TransformComponent>()->scale = glm::vec3{ 0.3, 30, 20 };
         tablicaZaslon[i]->name = "Zaslona" + std::to_string(i);
@@ -1582,21 +1601,27 @@ void createFirstRoom(Scene* scena1) {
         tablicaZaslon[i]->GetComponent<TransformComponent>()->position    = glm::vec3{ 50, 0, -20 + (-10 * i) };
         tablicaZaslon[i]->GetComponent<ColliderComponent>()->isWalkable     = false;
         tablicaZaslon[i]->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+
+        if (i==3) {
+            tablicaZaslon[i]->GetComponent<TransformComponent>()->position    = glm::vec3{ 5000, 0, -20 + (-10 * i) };
+        }
     }
 
     // Drzwi do kibla
     for (int i = 0; i < 8; i++) {
-        glm::vec3 doorPos      = glm::vec3{ 30.0f, 6.0f, -24.0f + (-10.0f * i) };
-        glm::vec3 doorScale    = glm::vec3{ 11.0f, 10.0f, 16.0f };
-        glm::vec3 pivotOffset  = glm::vec3(0.2f, 0.0f, 3.8f);
-        glm::vec3 colliderSize = glm::vec3{ 0.9f, 10.0f, 4.5f };
+        if (i != 2 && i != 3) {
+            glm::vec3 doorPos      = glm::vec3{ 30.0f, 6.0f, -24.65f + (-10.0f * i) };
+            glm::vec3 doorScale    = glm::vec3{ 11.0f, 10.0f, 16.0f };
+            glm::vec3 pivotOffset  = glm::vec3(0.2f, 0.0f, 3.8f);
+            glm::vec3 colliderSize = glm::vec3{ 0.9f, 10.0f, 4.5f };
 
-        GameObject* hinge = CreateInteractableDoor(
-            scena1, doorsToiletModel.get(), ourShader.get(),
-            "ToiletDoor_" + std::to_string(i),
-            doorPos, doorScale, pivotOffset, colliderSize, 90.0f
-        );
-        unlockedDoors.insert(hinge);
+            GameObject* hinge = CreateInteractableDoor(
+                scena1, doorsToiletModel.get(), ourShader.get(),
+                "ToiletDoor_" + std::to_string(i),
+                doorPos, doorScale, pivotOffset, colliderSize, 90.0f
+            );
+            unlockedDoors.insert(hinge);
+        }
     }
 
     // Papier toaletowy
