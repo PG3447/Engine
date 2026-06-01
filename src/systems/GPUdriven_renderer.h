@@ -687,42 +687,102 @@ public:
     //    glTextureParameteri(hizTexture, GL_TEXTURE_MAX_LEVEL, hizMipLevels - 1);
     //}
     
+    // ================================================================
+// Wklej to do GPUdriven_renderer.h w miejsce obecnej BuildHiZ()
+// ================================================================
+
     void BuildHiZ(GLuint depthTexture)
     {
         int w = vpWidth > 0 ? vpWidth : screenWidth;
         int h = vpHeight > 0 ? vpHeight : screenHeight;
 
         shaderHizDownsample->use();
-        glTextureParameteri(depthTexture, GL_TEXTURE_COMPARE_MODE, GL_NONE);
 
-        // Krok 0: depth → mip0, kopiuj 1:1
+        // Upewnij się, że depth texture nie używa porównania (depth compare)
+        glTextureParameteri(depthTexture, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+        // hizTexture musi być w pełni dostępna dla samplera (wszystkie mipy)
+        glTextureParameteri(hizTexture, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+        glTextureParameteri(hizTexture, GL_TEXTURE_BASE_LEVEL, 0);
+        glTextureParameteri(hizTexture, GL_TEXTURE_MAX_LEVEL, hizMipLevels - 1);
+
+        // ── Krok 0: depth → hizTexture mip 0, kopiuj 1:1 ───────────────
         glUniform1i(glGetUniformLocation(shaderHizDownsample->ID, "isMip0"), GL_TRUE);
+        glUniform1i(glGetUniformLocation(shaderHizDownsample->ID, "srcMipLevel"), 0); // nieużywane przy isMip0, ale ustaw dla porządku
+
         glBindTextureUnit(0, depthTexture);
         glBindImageTexture(1, hizTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
+
         glDispatchCompute((w + 7) / 8, (h + 7) / 8, 1);
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
 
-        // Krok 1+: downsampling
+        // ── Krok 1+: downsampling mip1, mip2, ... ───────────────────────
         glUniform1i(glGetUniformLocation(shaderHizDownsample->ID, "isMip0"), GL_FALSE);
-        glTextureParameteri(hizTexture, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+
+        // Od teraz czytamy z hizTexture (nie z depth)
+        glBindTextureUnit(0, hizTexture);
 
         int mw = w, mh = h;
-        for (int mip = 1; mip < hizMipLevels; mip++) {
+        for (int mip = 1; mip < hizMipLevels; mip++)
+        {
             mw = std::max(1, mw / 2);
             mh = std::max(1, mh / 2);
 
-            glTextureParameteri(hizTexture, GL_TEXTURE_BASE_LEVEL, mip - 1);
-            glTextureParameteri(hizTexture, GL_TEXTURE_MAX_LEVEL, mip - 1);
-            glBindTextureUnit(0, hizTexture);
+            // Przekaż który mip ma czytać shader (poprzedni = mip - 1)
+            // texelFetch ignoruje BASE_LEVEL/MAX_LEVEL — potrzebuje absolutnego poziomu
+            glUniform1i(glGetUniformLocation(shaderHizDownsample->ID, "srcMipLevel"), mip - 1);
+
+            // UWAGA: NIE ustawiaj BASE_LEVEL/MAX_LEVEL wewnątrz pętli —
+            // texelFetch i tak tego nie respektuje, a zmiana parametrów
+            // tekstury w trakcie pracy może powodować problemy na AMD/Intel.
+
             glBindImageTexture(1, hizTexture, mip, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
 
             glDispatchCompute((mw + 7) / 8, (mh + 7) / 8, 1);
             glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
         }
 
+        // Przywróć pełny zakres mipów dla samplera używanego w culling pass
         glTextureParameteri(hizTexture, GL_TEXTURE_BASE_LEVEL, 0);
         glTextureParameteri(hizTexture, GL_TEXTURE_MAX_LEVEL, hizMipLevels - 1);
     }
+
+
+    //void BuildHiZ(GLuint depthTexture)
+    //{
+    //    int w = vpWidth > 0 ? vpWidth : screenWidth;
+    //    int h = vpHeight > 0 ? vpHeight : screenHeight;
+
+    //    shaderHizDownsample->use();
+    //    glTextureParameteri(depthTexture, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+
+    //    // Krok 0: depth → mip0, kopiuj 1:1
+    //    glUniform1i(glGetUniformLocation(shaderHizDownsample->ID, "isMip0"), GL_TRUE);
+    //    glBindTextureUnit(0, depthTexture);
+    //    glBindImageTexture(1, hizTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
+    //    glDispatchCompute((w + 7) / 8, (h + 7) / 8, 1);
+    //    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
+
+    //    // Krok 1+: downsampling
+    //    glUniform1i(glGetUniformLocation(shaderHizDownsample->ID, "isMip0"), GL_FALSE);
+    //    glTextureParameteri(hizTexture, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+
+    //    int mw = w, mh = h;
+    //    for (int mip = 1; mip < hizMipLevels; mip++) {
+    //        mw = std::max(1, mw / 2);
+    //        mh = std::max(1, mh / 2);
+
+    //        glTextureParameteri(hizTexture, GL_TEXTURE_BASE_LEVEL, mip - 1);
+    //        glTextureParameteri(hizTexture, GL_TEXTURE_MAX_LEVEL, mip - 1);
+    //        glBindTextureUnit(0, hizTexture);
+    //        glBindImageTexture(1, hizTexture, mip, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
+
+    //        glDispatchCompute((mw + 7) / 8, (mh + 7) / 8, 1);
+    //        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
+    //    }
+
+    //    glTextureParameteri(hizTexture, GL_TEXTURE_BASE_LEVEL, 0);
+    //    glTextureParameteri(hizTexture, GL_TEXTURE_MAX_LEVEL, hizMipLevels - 1);
+    //}
 
     //void BuildHiZ(GLuint depthTexture)
     //{

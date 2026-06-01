@@ -5,6 +5,7 @@ layout(binding = 0) uniform sampler2D depthSrc;
 layout(r32f, binding = 1) uniform image2D currentMip;
 
 uniform bool isMip0;
+uniform int  srcMipLevel; // nowy uniform: który mip czytamy (mip - 1)
 
 void main()
 {
@@ -23,12 +24,15 @@ void main()
     {
         // rozmiar poprzedniego mipa = aktualny * 2
         ivec2 srcCoord = texelCoord * 2;
-        ivec2 prevSize = imageSize(currentMip) * 2;
 
-        float d0 = texelFetch(depthSrc, min(srcCoord + ivec2(0,0), prevSize-1), 0).r;
-        float d1 = texelFetch(depthSrc, min(srcCoord + ivec2(1,0), prevSize-1), 0).r;
-        float d2 = texelFetch(depthSrc, min(srcCoord + ivec2(0,1), prevSize-1), 0).r;
-        float d3 = texelFetch(depthSrc, min(srcCoord + ivec2(1,1), prevSize-1), 0).r;
+        // prevSize liczymy z rozmiaru tekstury na danym mipie przez textureSize
+        ivec2 prevSize = textureSize(depthSrc, srcMipLevel);
+
+        // texelFetch wymaga absolutnego poziomu mipa — przekazujemy go jako uniform
+        float d0 = texelFetch(depthSrc, min(srcCoord + ivec2(0, 0), prevSize - 1), srcMipLevel).r;
+        float d1 = texelFetch(depthSrc, min(srcCoord + ivec2(1, 0), prevSize - 1), srcMipLevel).r;
+        float d2 = texelFetch(depthSrc, min(srcCoord + ivec2(0, 1), prevSize - 1), srcMipLevel).r;
+        float d3 = texelFetch(depthSrc, min(srcCoord + ivec2(1, 1), prevSize - 1), srcMipLevel).r;
 
         result = max(max(d0, d1), max(d2, d3));
     }
