@@ -2015,14 +2015,14 @@ void imgui_render(SceneManager& sceneManager)
     ImGui::End();
 
     // Osobno — cały ImGui
-    static int debugMip = 0;
-    ImGui::Begin("HiZ Debug Controls");
-    auto* renderer = system->drivenManager.GetRenderer(0);
-    ImGui::SliderInt("Mip", &debugMip, 0, renderer->hizMipLevels - 1);
-    ImGui::End();
+    //static int debugMip = 0;
+    //ImGui::Begin("HiZ Debug Controls");
+    //auto* renderer = system->drivenManager.GetRenderer(0);
+    //ImGui::SliderInt("Mip", &debugMip, 0, renderer->hizMipLevels - 1);
+    //ImGui::End();
 
-    // Pobierz renderer żeby wywołać debug
-    if (renderer) renderer->DebugShowHiZ(debugMip);
+    //// Pobierz renderer żeby wywołać debug
+    //if (renderer) renderer->DebugShowHiZ(debugMip);
 
     ImGui::Begin("Performance");
 

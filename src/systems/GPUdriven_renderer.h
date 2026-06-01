@@ -497,7 +497,7 @@ public:
         glBufferData(GL_SHADER_STORAGE_BUFFER, meshCount * sizeof(DrawElementsIndirectCommand), nullptr, GL_DYNAMIC_DRAW);
 
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-        spdlog::critical("Dane sie wysylaja");
+        spdlog::warn("Dane sie wysylaja");
     }
 
     void UploadMaterials()
@@ -505,7 +505,7 @@ public:
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, materialSSBO);
         glBufferData(GL_SHADER_STORAGE_BUFFER, materials.size() * sizeof(GPUMaterial), materials.data(), GL_STATIC_DRAW);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-        spdlog::critical("Materialy sie wysylaja");
+        spdlog::warn("Materialy sie wysylaja");
     }
 
     //size_t prevSizeLights = 0;
@@ -608,8 +608,7 @@ public:
     void DispatchWritePass(const glm::mat4& viewProj, uint32_t objectCount)
     {
         shaderHizWritePass->use();
-        spdlog::warn("hizMipLevels");
-        spdlog::warn(hizMipLevels);
+
         glUniformMatrix4fv(glGetUniformLocation(shaderHizWritePass->ID, "viewProjection"), 1, GL_FALSE, &viewProj[0][0]);
         glUniform2f(glGetUniformLocation(shaderHizWritePass->ID, "screenSize"), (float)(vpWidth > 0 ? vpWidth : screenWidth), (float)(vpHeight > 0 ? vpHeight : screenHeight));
         glUniform1i(glGetUniformLocation(shaderHizWritePass->ID, "hizMipLevels"), hizTexture ? hizMipLevels : 0); // 0 = wyłącz HiZ
@@ -938,7 +937,7 @@ public:
         glGetTextureLevelParameteriv(hizTexture, mipLevel, GL_TEXTURE_COMPRESSED, &compressed);
         glGetTextureLevelParameteriv(hizTexture, mipLevel, GL_TEXTURE_INTERNAL_FORMAT, &internalFmt);
 
-        spdlog::warn("HiZ mip{}: {}x{}  fmt=0x{:X}  compressed={}", mipLevel, mipW, mipH, internalFmt, compressed);
+        //spdlog::warn("HiZ mip{}: {}x{}  fmt=0x{:X}  compressed={}", mipLevel, mipW, mipH, internalFmt, compressed);
         // Bufor z zapasem + GL_PACK_ALIGNMENT 1 żeby uniknąć out-of-bounds przy małych mipach
         glPixelStorei(GL_PACK_ALIGNMENT, 1);
         size_t bufSize = std::max((size_t)(mipW * mipH), (size_t)64);

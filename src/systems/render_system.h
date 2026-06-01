@@ -720,8 +720,8 @@ public:
         
         int vpX = (int)(cam.viewport.x * width);
         int vpY = (int)(cam.viewport.y * height);
-        spdlog::info("CopyDepth cam vpX={} vpY={} vpW={} vpH={} fbo={}x{}",
-            vpX, vpY, vpW, vpH, width, height);
+        //spdlog::info("CopyDepth cam vpX={} vpY={} vpW={} vpH={} fbo={}x{}",
+        //    vpX, vpY, vpW, vpH, width, height);
         if (hiz.depthPrev && sceneDepthTexture) {
             glCopyImageSubData(sceneDepthTexture, GL_TEXTURE_2D, 0, vpX, vpY, 0,
                 hiz.depthPrev, GL_TEXTURE_2D, 0, 0, 0, 0,
