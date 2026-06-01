@@ -58,3 +58,134 @@ void main()
 
     imageStore(currentMip, coord, vec4(result));
 }
+
+
+/*
+#version 460 core
+#extension GL_KHR_shader_subgroup_arithmetic : require
+
+layout(local_size_x = 256) in;  // 16×16 = 256 wątków per tile
+
+// Globalna tablica mip 5..N (mip0-4 trafia do shared memory)
+layout(r32f, binding = 0) uniform writeonly image2D mips[13];
+layout(binding = 1) uniform sampler2D srcDepth;
+
+// Licznik tile'ów — resetowany do 0 przed każdym dispatche'm
+layout(std430, binding = 2) buffer AtomicCounter { uint tileCounter; };
+
+// Shared memory: mip1..4 dla jednego tile'a 64×64
+shared float lds[32][32]; // mip1 = 32×32 pikseli z tile'a
+
+uniform ivec2 srcSize;
+uniform ivec2 vpOffset;
+uniform int mipCount;
+
+float maxOf4(float a, float b, float c, float d) {
+    return max(max(a, b), max(c, d));
+}
+
+// Pobierz i zredukuj blok 2×2 z mip0
+float sampleMip0(ivec2 base) {
+    ivec2 b = base + vpOffset;
+    ivec2 s = srcSize;
+    float d0 = texelFetch(srcDepth, min(b,               s-1), 0).r;
+    float d1 = texelFetch(srcDepth, min(b + ivec2(1,0),  s-1), 0).r;
+    float d2 = texelFetch(srcDepth, min(b + ivec2(0,1),  s-1), 0).r;
+    float d3 = texelFetch(srcDepth, min(b + ivec2(1,1),  s-1), 0).r;
+    return maxOf4(d0, d1, d2, d3);
+}
+
+void storeMip(int mip, ivec2 coord, float v) {
+    ivec2 sz = max(ivec2(1), srcSize >> mip);
+    if (coord.x < sz.x && coord.y < sz.y)
+        imageStore(mips[mip], coord, vec4(v));
+}
+
+void main() {
+    // Pozycja tile'a i wątku wewnątrz tile'a
+    ivec2 tileID   = ivec2(gl_WorkGroupID.xy);
+    ivec2 localID  = ivec2(gl_LocalInvocationID.x % 16,
+                           gl_LocalInvocationID.x / 16);
+    ivec2 basePixel = tileID * 64 + localID * 4; // każdy wątek pokrywa blok 4×4
+
+    // ── Mip 1: każdy wątek redukuje blok 4×4 mip0 → 1 piksel mip1
+    // (4 wywołania sampleMip0 pokrywa 4×4 = 16 pikseli)
+    float q0 = sampleMip0(basePixel + ivec2(0,0));
+    float q1 = sampleMip0(basePixel + ivec2(2,0));
+    float q2 = sampleMip0(basePixel + ivec2(0,2));
+    float q3 = sampleMip0(basePixel + ivec2(2,2));
+    float v = maxOf4(q0, q1, q2, q3);
+
+    ivec2 mip1Coord = tileID * 16 + localID;
+    storeMip(1, mip1Coord, v);
+    lds[localID.y][localID.x] = v;
+
+    groupMemoryBarrier(); barrier();
+
+    // ── Mip 2: co 4. wątek (bloki 2×2 w LDS)
+    if ((gl_LocalInvocationID.x & 3u) == 0u) {
+        ivec2 l = localID;
+        v = maxOf4(lds[l.y][l.x], lds[l.y][l.x+1],
+                   lds[l.y+1][l.x], lds[l.y+1][l.x+1]);
+        ivec2 mip2Coord = tileID * 8 + localID / 2;
+        storeMip(2, mip2Coord, v);
+        lds[l.y][l.x] = v;
+    }
+
+    groupMemoryBarrier(); barrier();
+
+    // ── Mip 3: co 16. wątek
+    if ((gl_LocalInvocationID.x & 15u) == 0u) {
+        ivec2 l = localID;
+        v = maxOf4(lds[l.y][l.x], lds[l.y][l.x+2],
+                   lds[l.y+2][l.x], lds[l.y+2][l.x+2]);
+        ivec2 mip3Coord = tileID * 4 + localID / 4;
+        storeMip(3, mip3Coord, v);
+        lds[l.y][l.x] = v;
+    }
+
+    groupMemoryBarrier(); barrier();
+
+    // ── Mip 4: co 64. wątek (tylko 4 wątki per tile = 2×2)
+    if ((gl_LocalInvocationID.x & 63u) == 0u) {
+        ivec2 l = localID;
+        v = maxOf4(lds[l.y][l.x], lds[l.y][l.x+4],
+                   lds[l.y+4][l.x], lds[l.y+4][l.x+4]);
+        ivec2 mip4Coord = tileID * 2 + localID / 8;
+        storeMip(4, mip4Coord, v);
+        lds[l.y][l.x] = v;
+    }
+
+    groupMemoryBarrier(); barrier();
+
+    // ── Mip 5: tylko wątek 0 per tile
+    if (gl_LocalInvocationID.x == 0u) {
+        v = maxOf4(lds[0][0], lds[0][8], lds[8][0], lds[8][8]);
+        storeMip(5, tileID, v);
+
+        // Zlicz tile'e atomicznie; ostatni tile redukuje mip 6..N
+        uint prev = atomicAdd(tileCounter, 1u);
+        uint total = uint(gl_NumWorkGroups.x * gl_NumWorkGroups.y);
+
+        if (prev == total - 1u) {
+            // Ten wątek widzi wyniki WSZYSTKICH tile'ów zapisane do mip5
+            // Redukuje dalej (mip5 jest mały, wystarczy jeden wątek na każdy piksel)
+            for (int mip = 6; mip < mipCount; mip++) {
+                ivec2 prevSz = max(ivec2(1), srcSize >> (mip-1));
+                ivec2 curSz  = max(ivec2(1), srcSize >> mip);
+                // Prosty sekwencyjny pass — rozmiar już < 64×64
+                for (int y = 0; y < curSz.y; y++) {
+                    for (int x = 0; x < curSz.x; x++) {
+                        ivec2 s = ivec2(x,y)*2;
+                        // czytamy z mip[mip-1] — tu trzeba użyć samplingu
+                        // (uproszczenie: w prawdziwym SPD korzysta z dedykowanego
+                        // read-back bufora zapisanego przez tile'e)
+                        storeMip(mip, ivec2(x,y), 0.0); // placeholder
+                    }
+                }
+            }
+            // Reset licznika na następną klatkę
+            tileCounter = 0u;
+        }
+    }
+}*/
