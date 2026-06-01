@@ -350,7 +350,7 @@ public:
 
     void InitHiZ(int w, int h)
     {
-        hizMipLevels = static_cast<int>(std::floor(std::log2(std::max(w, h)))) + 1;
+        hizMipLevels = static_cast<int>(std::floor(std::log2(std::max(w/2, h)))) + 1;
 
         //glGenTextures(1, &hizTexture);
         //glBindTexture(GL_TEXTURE_2D, hizTexture);
