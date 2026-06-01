@@ -200,10 +200,12 @@ public:
 
 
     int vpWidth = 0, vpHeight = 0;
+    int vpOffsetX = 0, vpOffsetY = 0;
 
     GLint locHiz_isMip0 = -1;
     GLint locHiz_currentSize = -1;
     GLint locHiz_prevSize = -1;
+    GLint locHiz_vpOffset = -1;
 
     ComputeShader* shaderHizCullCount = nullptr;
     ComputeShader* shaderPrefixSum = nullptr;
@@ -380,17 +382,20 @@ public:
         materialRegistry.clear();
     }
 
-    void AttachHiZ(GLuint tex, int mipLevels, int vpW, int vpH)
+    void AttachHiZ(GLuint tex, int mipLevels, int vpW, int vpH, int vpX = 0, int vpY = 0)
     {
         hizTexture = tex;
         hizMipLevels = mipLevels;
         vpWidth = vpW;
         vpHeight = vpH;
+        vpOffsetX = vpX;
+        vpOffsetY = vpY;
 
         if (shaderHizDownsample) {
             locHiz_isMip0 = glGetUniformLocation(shaderHizDownsample->ID, "isMip0");
             locHiz_currentSize = glGetUniformLocation(shaderHizDownsample->ID, "currentMipSize");
             locHiz_prevSize = glGetUniformLocation(shaderHizDownsample->ID, "prevMipSize");
+            locHiz_vpOffset = glGetUniformLocation(shaderHizDownsample->ID, "vpOffset");
         }
     }
 
@@ -745,6 +750,50 @@ public:
     //    glTextureParameteri(hizTexture, GL_TEXTURE_MAX_LEVEL, hizMipLevels - 1);
     //}
 
+    //void BuildHiZ(GLuint depthTexture)
+    //{
+    //    int w = vpWidth > 0 ? vpWidth : screenWidth;
+    //    int h = vpHeight > 0 ? vpHeight : screenHeight;
+
+    //    shaderHizDownsample->use();
+
+    //    // Raz przed całym buildem — nie trzeba powtarzać między mipami
+    //    glTextureParameteri(depthTexture, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+    //    glTextureParameteri(hizTexture, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+
+    //    // ── Krok 0: depth → hiz mip0 ────────────────────────────────────────────
+    //    glUniform1i(locHiz_isMip0, GL_TRUE);
+    //    glUniform2i(locHiz_currentSize, w, h);
+    //    // prevMipSize nieużywane w mip0, nie trzeba ustawiać
+
+    //    glBindTextureUnit(0, depthTexture);
+    //    glBindImageTexture(1, hizTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
+
+    //    glDispatchCompute((w + 15) / 16, (h + 7) / 8, 1);
+    //    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
+
+    //    // ── Krok 1+: hiz mip(N-1) → mip(N) ─────────────────────────────────────
+    //    glUniform1i(locHiz_isMip0, GL_FALSE);
+
+    //    int mw = w, mh = h;
+    //    for (int mip = 1; mip < hizMipLevels; mip++)
+    //    {
+    //        int prevW = mw, prevH = mh;
+    //        mw = std::max(1, mw / 2);
+    //        mh = std::max(1, mh / 2);
+
+    //        glUniform2i(locHiz_currentSize, mw, mh);
+    //        glUniform2i(locHiz_prevSize, prevW, prevH);
+
+    //        glBindImageTexture(0, hizTexture, mip - 1, GL_FALSE, 0, GL_READ_ONLY, GL_R32F);
+    //        glBindImageTexture(1, hizTexture, mip, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
+
+    //        glDispatchCompute((mw + 15) / 16, (mh + 7) / 8, 1);
+    //        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+    //    }
+    //    // glTextureParameteri BASE_LEVEL/MAX_LEVEL usunięte — nieistotne przy image bindings
+    //}
+
     void BuildHiZ(GLuint depthTexture)
     {
         int w = vpWidth > 0 ? vpWidth : screenWidth;
@@ -752,22 +801,22 @@ public:
 
         shaderHizDownsample->use();
 
-        // Raz przed całym buildem — nie trzeba powtarzać między mipami
+        glTextureParameteri(depthTexture, GL_DEPTH_STENCIL_TEXTURE_MODE, GL_DEPTH_COMPONENT);
         glTextureParameteri(depthTexture, GL_TEXTURE_COMPARE_MODE, GL_NONE);
         glTextureParameteri(hizTexture, GL_TEXTURE_COMPARE_MODE, GL_NONE);
 
-        // ── Krok 0: depth → hiz mip0 ────────────────────────────────────────────
+        // ── Krok 0: sceneDepthTexture → hiz mip0 (z offsetem viewportu)
         glUniform1i(locHiz_isMip0, GL_TRUE);
         glUniform2i(locHiz_currentSize, w, h);
-        // prevMipSize nieużywane w mip0, nie trzeba ustawiać
+        glUniform2i(locHiz_vpOffset, vpOffsetX, vpOffsetY);
 
         glBindTextureUnit(0, depthTexture);
-        glBindImageTexture(1, hizTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
+        glBindImageTexture(2, hizTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
 
         glDispatchCompute((w + 15) / 16, (h + 7) / 8, 1);
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
 
-        // ── Krok 1+: hiz mip(N-1) → mip(N) ─────────────────────────────────────
+        // ── Krok 1+: hiz mip(N-1) → mip(N) — bez zmian
         glUniform1i(locHiz_isMip0, GL_FALSE);
 
         int mw = w, mh = h;
@@ -780,15 +829,13 @@ public:
             glUniform2i(locHiz_currentSize, mw, mh);
             glUniform2i(locHiz_prevSize, prevW, prevH);
 
-            glBindImageTexture(0, hizTexture, mip - 1, GL_FALSE, 0, GL_READ_ONLY, GL_R32F);
-            glBindImageTexture(1, hizTexture, mip, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
+            glBindImageTexture(1, hizTexture, mip - 1, GL_FALSE, 0, GL_READ_ONLY, GL_R32F);
+            glBindImageTexture(2, hizTexture, mip, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
 
             glDispatchCompute((mw + 15) / 16, (mh + 7) / 8, 1);
             glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
         }
-        // glTextureParameteri BASE_LEVEL/MAX_LEVEL usunięte — nieistotne przy image bindings
     }
-
 
     //void BuildHiZ(GLuint depthTexture)
     //{

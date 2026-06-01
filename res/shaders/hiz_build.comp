@@ -1,13 +1,16 @@
 #version 460 core
-layout(local_size_x = 16, local_size_y = 8) in;  // 128 wątków zamiast 64
+layout(local_size_x = 16, local_size_y = 8) in;
 
-layout(binding = 0)        uniform sampler2D        depthSrc;
-layout(r32f, binding = 0)  uniform readonly image2D prevMip;
-layout(r32f, binding = 1)  uniform writeonly image2D currentMip;
+layout(binding = 0) uniform sampler2D depthSrc;// mip0: sceneDepthTexture (pełny FBO)
+layout(r32f, binding = 1)  uniform readonly image2D prevMip;    // mip1+: poprzedni mip HiZ
+layout(r32f, binding = 2)  uniform writeonly image2D currentMip;
 
 uniform bool  isMip0;
-uniform ivec2 currentMipSize; // zamiast imageSize(currentMip) w każdym wątku
-uniform ivec2 prevMipSize;    // zamiast imageSize(prevMip)    w każdym wątku
+uniform ivec2 currentMipSize;
+uniform ivec2 prevMipSize;
+uniform ivec2 vpOffset;     // ← NOWE: offset viewportu w sceneDepthTexture (dla split screen)
+                            //   dla mip0:  (vpX, vpY) z glViewport
+                            //   dla mip1+: nieużywane (może być (0,0))
 
 void main()
 {
@@ -18,7 +21,9 @@ void main()
 
     if (isMip0)
     {
-        result = texelFetch(depthSrc, coord, 0).r;
+        // Czytamy bezpośrednio z depth FBO z offsetem viewportu.
+        // NIE potrzebujemy glCopyImageSubData ani depthPrev.
+        result = texelFetch(depthSrc, coord + vpOffset, 0).r;
     }
     else
     {

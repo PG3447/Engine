@@ -26,7 +26,7 @@ struct PerCameraHiZ
     int    width = 0;
     int    height = 0;
 
-    void Init(int w, int h)
+    void Init(int w, int h, int screenW, int screenH)
     {
         width = w;
         height = h;
@@ -44,7 +44,7 @@ struct PerCameraHiZ
         // depth-prev — kopia depth poprzedniej klatki tej kamery
         glGenTextures(1, &depthPrev);
         glBindTexture(GL_TEXTURE_2D, depthPrev);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, w, h, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, screenW, screenH, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
         glTextureParameteri(depthPrev, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTextureParameteri(depthPrev, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glTextureParameteri(depthPrev, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -705,49 +705,36 @@ public:
 
         int vpW = std::max(1, (int)(cam.viewport.width * width));
         int vpH = std::max(1, (int)(cam.viewport.height * height));
+        int vpX = (int)(cam.viewport.x * width);
+        int vpY = (int)(cam.viewport.y * height);
 
         PerCameraHiZ& hiz = cameraHiZ[&cam];
         if (hiz.width != vpW || hiz.height != vpH)
         {
             hiz.Destroy(); // tylko przy resize — nie co klatkę
-            hiz.Init(vpW, vpH);
+            hiz.Init(vpW, vpH, width, height);
         }
-        drivenManager.AttachCameraHiZ(hiz.hizTexture, hiz.hizMipLevels, vpW, vpH);
+        drivenManager.AttachCameraHiZ(hiz.hizTexture, hiz.hizMipLevels, vpW, vpH, vpX, vpY);
 
         drivenManager.CollectAllPasses(*renderQuery, currentCameraPos);
-        drivenManager.RenderFrame(vp, currentCameraPos, hiz.depthPrev);
+        drivenManager.RenderFrame(vp, currentCameraPos, occlusionCullingEnabled ? hiz.depthPrev : 0);
         //drivenManager.RenderFrame(vp, currentCameraPos, depthTexturePrev);
         
-        int vpX = (int)(cam.viewport.x * width);
-        int vpY = (int)(cam.viewport.y * height);
+        std::swap(sceneDepthTexture, hiz.depthPrev);
+        // Re-attach nowy sceneDepthTexture do FBO
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, sceneDepthTexture, 0);
+
         //spdlog::info("CopyDepth cam vpX={} vpY={} vpW={} vpH={} fbo={}x{}",
         //    vpX, vpY, vpW, vpH, width, height);
-        if (hiz.depthPrev && sceneDepthTexture && occlusionCullingEnabled) {
-            glCopyImageSubData(sceneDepthTexture, GL_TEXTURE_2D, 0, vpX, vpY, 0,
-                hiz.depthPrev, GL_TEXTURE_2D, 0, 0, 0, 0,
-                vpW, vpH, 1);
-        }
+        //if (hiz.depthPrev && sceneDepthTexture && occlusionCullingEnabled) {
+        //    glCopyImageSubData(sceneDepthTexture, GL_TEXTURE_2D, 0, vpX, vpY, 0,
+        //        hiz.depthPrev, GL_TEXTURE_2D, 0, 0, 0, 0,
+        //        vpW, vpH, 1);
+        //}
 
 
         auto cullEnd = std::chrono::high_resolution_clock::now();
         stats.cullingTimeMs += std::chrono::duration<float, std::milli>(cullEnd - cullStart).count();
-
-       // if (gpuRendererReady) {
-
-       //     //std::vector<RenderData> objects = CollectRenderData();
-
-       // /*    gpuRenderer.shaderRender->use();
-       //     gpuRenderer.shaderRender->setMat4("viewProjection", vp);
-       //     gpuRenderer.shaderRender->setVec3("viewPos", currentCameraPos);
-       //     gpuRenderer.shaderRender->setBool("isAnimated", false);*/
-       //     // + światła jak w starym kodzie...
-       //    ;
-
-       //     // Skopiuj depth bieżącej klatki do depthTexturePrev dla następnej
-       ///*     std::vector<float> zeros(width * height, 0.0f);
-       //     glTextureSubImage2D(depthTexturePrev, 0, 0, 0, width, height,
-       //         GL_DEPTH_COMPONENT, GL_FLOAT, zeros.data());*/
-       // }
 
         DebugDrawSystem::Flush(vp);
 
@@ -755,6 +742,25 @@ public:
         
         skybox.Render(view, projection);
     }
+
+
+    // if (gpuRendererReady) {
+
+    //     //std::vector<RenderData> objects = CollectRenderData();
+
+    // /*    gpuRenderer.shaderRender->use();
+    //     gpuRenderer.shaderRender->setMat4("viewProjection", vp);
+    //     gpuRenderer.shaderRender->setVec3("viewPos", currentCameraPos);
+    //     gpuRenderer.shaderRender->setBool("isAnimated", false);*/
+    //     // + światła jak w starym kodzie...
+    //    ;
+
+    //     // Skopiuj depth bieżącej klatki do depthTexturePrev dla następnej
+    ///*     std::vector<float> zeros(width * height, 0.0f);
+    //     glTextureSubImage2D(depthTexturePrev, 0, 0, 0, width, height,
+    //         GL_DEPTH_COMPONENT, GL_FLOAT, zeros.data());*/
+    // }
+
 
 
     void ShowDepthTextureImGui(GLuint depthTex, int w, int h, float zNear, float zFar)
@@ -1155,6 +1161,7 @@ public:
         if (fboWidth == w && fboHeight == h) return; // bez zmian
         fboWidth = w; fboHeight = h;
 
+        spdlog::warn("FBO sie ustawia");
         if (sceneFBO) {
             glDeleteFramebuffers(1, &sceneFBO);
             glDeleteTextures(1, &sceneColorTexture);
@@ -1169,7 +1176,7 @@ public:
                 hiz.Destroy();
             cameraHiZ.clear();
         }
-
+        
         glGenFramebuffers(1, &sceneFBO);
         glBindFramebuffer(GL_FRAMEBUFFER, sceneFBO);
 
