@@ -690,7 +690,7 @@ public:
 
     //    return renderDataCache;
     //}
-    GLuint depthCopyFBO = 0;
+
     void RenderCameraGPUDriven(CameraComponent& cam, TransformComponent& transform, int width, int height)
     {
         ApplyViewport(cam.viewport, width, height);
@@ -722,28 +722,12 @@ public:
         int vpY = (int)(cam.viewport.y * height);
         //spdlog::info("CopyDepth cam vpX={} vpY={} vpW={} vpH={} fbo={}x{}",
         //    vpX, vpY, vpW, vpH, width, height);
-        //if (hiz.depthPrev && sceneDepthTexture) {
-        //    glCopyImageSubData(sceneDepthTexture, GL_TEXTURE_2D, 0, vpX, vpY, 0,
-        //        hiz.depthPrev, GL_TEXTURE_2D, 0, 0, 0, 0,
-        //        vpW, vpH, 1);
-        //}
-        if (hiz.depthPrev && sceneDepthTexture)
-        {
-            glBindFramebuffer(GL_READ_FRAMEBUFFER, sceneFBO);
-
-            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, depthCopyFBO);
-            glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
-                GL_TEXTURE_2D, hiz.depthPrev, 0);
-
-            glBlitFramebuffer(
-                vpX, vpY, vpX + vpW, vpY + vpH,  // src: region kamery w sceneDepth
-                0, 0, vpW, vpH,        // dst: cały depthPrev
-                GL_DEPTH_BUFFER_BIT, GL_NEAREST
-            );
-
-            // Przywróć sceneFBO jako aktywny do rysowania następnej kamery
-            glBindFramebuffer(GL_FRAMEBUFFER, sceneFBO);
+        if (hiz.depthPrev && sceneDepthTexture) {
+            glCopyImageSubData(sceneDepthTexture, GL_TEXTURE_2D, 0, vpX, vpY, 0,
+                hiz.depthPrev, GL_TEXTURE_2D, 0, 0, 0, 0,
+                vpW, vpH, 1);
         }
+
         //if (depthTexturePrev && sceneDepthTexture) {
         //    glCopyImageSubData(sceneDepthTexture, GL_TEXTURE_2D, 0, 0, 0, 0,
         //        depthTexturePrev, GL_TEXTURE_2D, 0, 0, 0, 0,
@@ -1191,9 +1175,7 @@ public:
                 hiz.Destroy();
             cameraHiZ.clear();
         }
-        if (depthCopyFBO) { glDeleteFramebuffers(1, &depthCopyFBO); depthCopyFBO = 0; }
-        if (!depthCopyFBO)
-            glGenFramebuffers(1, &depthCopyFBO);
+
         glGenFramebuffers(1, &sceneFBO);
         glBindFramebuffer(GL_FRAMEBUFFER, sceneFBO);
 
