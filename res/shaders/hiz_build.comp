@@ -1,17 +1,18 @@
 #version 460 core
-layout(local_size_x = 8, local_size_y = 8) in;
+layout(local_size_x = 16, local_size_y = 8) in;  // 128 wątków zamiast 64
 
-layout(binding = 0)        uniform sampler2D        depthSrc;    // mip0: depth texture
-layout(r32f, binding = 0)  uniform readonly image2D prevMip;     // mip1+: poprzedni mip hiz
-layout(r32f, binding = 1)  uniform writeonly image2D currentMip; // zawsze: aktualny mip hiz
+layout(binding = 0)        uniform sampler2D        depthSrc;
+layout(r32f, binding = 0)  uniform readonly image2D prevMip;
+layout(r32f, binding = 1)  uniform writeonly image2D currentMip;
 
-uniform bool isMip0;
+uniform bool  isMip0;
+uniform ivec2 currentMipSize; // zamiast imageSize(currentMip) w każdym wątku
+uniform ivec2 prevMipSize;    // zamiast imageSize(prevMip)    w każdym wątku
 
 void main()
 {
     ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
-    ivec2 size  = imageSize(currentMip);
-    if (coord.x >= size.x || coord.y >= size.y) return;
+    if (coord.x >= currentMipSize.x || coord.y >= currentMipSize.y) return;
 
     float result;
 
@@ -21,36 +22,31 @@ void main()
     }
     else
     {
-        ivec2 src      = coord * 2;
-        ivec2 prevSize = imageSize(prevMip);
+        ivec2 src = coord * 2;
 
-        float d0 = imageLoad(prevMip, min(src + ivec2(0, 0), prevSize - 1)).r;
-        float d1 = imageLoad(prevMip, min(src + ivec2(1, 0), prevSize - 1)).r;
-        float d2 = imageLoad(prevMip, min(src + ivec2(0, 1), prevSize - 1)).r;
-        float d3 = imageLoad(prevMip, min(src + ivec2(1, 1), prevSize - 1)).r;
-
+        float d0 = imageLoad(prevMip, min(src + ivec2(0, 0), prevMipSize - 1)).r;
+        float d1 = imageLoad(prevMip, min(src + ivec2(1, 0), prevMipSize - 1)).r;
+        float d2 = imageLoad(prevMip, min(src + ivec2(0, 1), prevMipSize - 1)).r;
+        float d3 = imageLoad(prevMip, min(src + ivec2(1, 1), prevMipSize - 1)).r;
         result = max(max(d0, d1), max(d2, d3));
 
-        // Dodatkowa kolumna gdy szerokość poprzedniego mipa była nieparzysta
-        if ((prevSize.x & 1) != 0)
+        if ((prevMipSize.x & 1) != 0)
         {
-            float ex0 = imageLoad(prevMip, min(src + ivec2(2, 0), prevSize - 1)).r;
-            float ex1 = imageLoad(prevMip, min(src + ivec2(2, 1), prevSize - 1)).r;
+            float ex0 = imageLoad(prevMip, min(src + ivec2(2, 0), prevMipSize - 1)).r;
+            float ex1 = imageLoad(prevMip, min(src + ivec2(2, 1), prevMipSize - 1)).r;
             result = max(result, max(ex0, ex1));
         }
 
-        // Dodatkowy rząd gdy wysokość poprzedniego mipa była nieparzysta
-        if ((prevSize.y & 1) != 0)
+        if ((prevMipSize.y & 1) != 0)
         {
-            float ey0 = imageLoad(prevMip, min(src + ivec2(0, 2), prevSize - 1)).r;
-            float ey1 = imageLoad(prevMip, min(src + ivec2(1, 2), prevSize - 1)).r;
+            float ey0 = imageLoad(prevMip, min(src + ivec2(0, 2), prevMipSize - 1)).r;
+            float ey1 = imageLoad(prevMip, min(src + ivec2(1, 2), prevMipSize - 1)).r;
             result = max(result, max(ey0, ey1));
         }
 
-        // Róg gdy oba wymiary nieparzyste
-        if ((prevSize.x & 1) != 0 && (prevSize.y & 1) != 0)
+        if ((prevMipSize.x & 1) != 0 && (prevMipSize.y & 1) != 0)
         {
-            float corner = imageLoad(prevMip, min(src + ivec2(2, 2), prevSize - 1)).r;
+            float corner = imageLoad(prevMip, min(src + ivec2(2, 2), prevMipSize - 1)).r;
             result = max(result, corner);
         }
     }
