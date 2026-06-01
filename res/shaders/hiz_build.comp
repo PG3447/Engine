@@ -11,7 +11,7 @@ uniform ivec2 prevMipSize;
 uniform ivec2 vpOffset;     // ← NOWE: offset viewportu w sceneDepthTexture (dla split screen)
                             //   dla mip0:  (vpX, vpY) z glViewport
                             //   dla mip1+: nieużywane (może być (0,0))
-
+//trzeba ogarnac  SPD (Single Pass Downsampler) 
 void main()
 {
     ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
