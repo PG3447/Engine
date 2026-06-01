@@ -17,7 +17,8 @@ void CrematoriumPuzzle::Init(Scene* scene, std::shared_ptr<Model> coffinModel, g
             glm::vec3 pos = posOnWall - glm::vec3(0.0f, 0.0f, (coffinDimensions.z + wallOffset) * w1_extendDirZ);
             transform->position = pos;
 
-            bool interactable = (configLeftWall[r][c] == 1);
+            int targetLvl = configLeftWall[r][c];
+            bool interactable = (targetLvl > 0);
 
             glm::vec3 coffinColor = interactable ? glm::vec3(1.0f, 0.0f, 0.0f) : glm::vec3(0.1f, 0.1f, 0.1f);
 
@@ -31,7 +32,7 @@ void CrematoriumPuzzle::Init(Scene* scene, std::shared_ptr<Model> coffinModel, g
             }
 
             auto* collider = obj->AddComponent<ColliderComponent>();
-            collider->halfSize = glm::vec3(coffinDimensions.x * 0.8f, coffinDimensions.y * 0.8f, coffinDimensions.z * 1.2f);
+            collider->halfSize = glm::vec3(coffinDimensions.x * 0.8f, coffinDimensions.y * 0.8f, coffinDimensions.z * 1.0f);
             collider->offset = glm::vec3(0.0f, 0.0f, coffinDimensions.z * 0.5f * w1_extendDirZ);
 
             CoffinData data;
@@ -40,6 +41,7 @@ void CrematoriumPuzzle::Init(Scene* scene, std::shared_ptr<Model> coffinModel, g
             data.row = r;
             data.col = c;
             data.isInteractable = interactable;
+            data.preDeterminedLevel = targetLvl;
             data.basePosition = pos;
             coffins.push_back(data);
         }
@@ -58,7 +60,8 @@ void CrematoriumPuzzle::Init(Scene* scene, std::shared_ptr<Model> coffinModel, g
             transform->position = pos;
             transform->rotation = glm::vec3(0.0f, -90.0f, 0.0f);
 
-            bool interactable = (configRightWall[r][c] == 1);
+            int targetLvl = configRightWall[r][c];
+            bool interactable = (targetLvl > 0);
 
             glm::vec3 coffinColor = interactable ? glm::vec3(0.0f, 1.0f, 0.0f) : glm::vec3(0.1f, 0.1f, 0.1f);
 
@@ -72,7 +75,7 @@ void CrematoriumPuzzle::Init(Scene* scene, std::shared_ptr<Model> coffinModel, g
             }
 
             auto* collider = obj->AddComponent<ColliderComponent>();
-            collider->halfSize = glm::vec3(coffinDimensions.z * 1.2f, coffinDimensions.y * 0.8f, coffinDimensions.x * 0.8f);
+            collider->halfSize = glm::vec3(coffinDimensions.z * 1.0f, coffinDimensions.y * 0.8f, coffinDimensions.x * 0.8f);
             collider->offset = glm::vec3(coffinDimensions.z * 0.5f * w2_extendDirX, 0.0f, 0.0f);
 
             CoffinData data;
@@ -81,6 +84,7 @@ void CrematoriumPuzzle::Init(Scene* scene, std::shared_ptr<Model> coffinModel, g
             data.row = r;
             data.col = c;
             data.isInteractable = interactable;
+            data.preDeterminedLevel = targetLvl;
             data.basePosition = pos;
             coffins.push_back(data);
         }
@@ -90,61 +94,60 @@ void CrematoriumPuzzle::Init(Scene* scene, std::shared_ptr<Model> coffinModel, g
 void CrematoriumPuzzle::ToggleCoffin(GameObject* clickedObject)
 {
     if (!clickedObject) return;
-    bool stateChanged = false;
 
+    CoffinData* clickedData = nullptr;
     for (auto& coffin : coffins) {
         if (coffin.gameObject == clickedObject) {
-
-            if (!coffin.isInteractable) return;
-
-            coffin.isActivated = !coffin.isActivated;
-            if (coffin.isActivated) {
-                coffin.activationOrder = activationCounter++;
-            }
-            else {
-                coffin.activationOrder = 0;
-                coffin.currentTargetLevel = 0;
-            }
-            stateChanged = true;
+            clickedData = &coffin;
             break;
         }
     }
 
-    if (stateChanged) {
-        std::vector<CoffinData*> activeCoffins;
-        for (auto& coffin : coffins) {
-            if (coffin.isActivated) activeCoffins.push_back(&coffin);
-        }
+    if (!clickedData || !clickedData->isInteractable) return;
 
-        std::sort(activeCoffins.begin(), activeCoffins.end(), [](CoffinData* a, CoffinData* b) {
-            return a->activationOrder < b->activationOrder;
-            });
+    if (clickedData->isActivated) {
+        clickedData->isActivated = false;
+        clickedData->isBouncingBack = false;
+        clickedData->currentTargetLevel = 0;
+    }
+    else {
+        clickedData->isActivated = true;
 
         std::vector<std::vector<std::vector<bool>>> gridOccupied(
             rows, std::vector<std::vector<bool>>(cols, std::vector<bool>(cols, false))
         );
 
-        for (auto* coffin : activeCoffins) {
-            int r = coffin->row;
-            int maxAllowedLevel = cols;
-
-            for (int step = 0; step < cols; ++step) {
-                int checkX = (coffin->wall == WallSide::Left) ? coffin->col : step;
-                int checkZ = (coffin->wall == WallSide::Right) ? coffin->col : step;
-
-                if (gridOccupied[r][checkX][checkZ]) {
-                    maxAllowedLevel = step;
-                    break;
+        for (auto& c : coffins) {
+            if (c.isActivated && !c.isBouncingBack && &c != clickedData) {
+                int r = c.row;
+                for (int step = 0; step < c.currentTargetLevel; ++step) {
+                    int markX = (c.wall == WallSide::Left) ? c.col : step;
+                    int markZ = (c.wall == WallSide::Right) ? c.col : step;
+                    gridOccupied[r][markX][markZ] = true;
                 }
             }
+        }
 
-            coffin->currentTargetLevel = maxAllowedLevel;
+        int r = clickedData->row;
+        int maxAllowedLevel = cols;
 
-            for (int step = 0; step < maxAllowedLevel; ++step) {
-                int markX = (coffin->wall == WallSide::Left) ? coffin->col : step;
-                int markZ = (coffin->wall == WallSide::Right) ? coffin->col : step;
-                gridOccupied[r][markX][markZ] = true;
+        for (int step = 0; step < cols; ++step) {
+            int checkX = (clickedData->wall == WallSide::Left) ? clickedData->col : step;
+            int checkZ = (clickedData->wall == WallSide::Right) ? clickedData->col : step;
+
+            if (gridOccupied[r][checkX][checkZ]) {
+                maxAllowedLevel = step;
+                break;
             }
+        }
+
+        if (maxAllowedLevel >= clickedData->preDeterminedLevel) {
+            clickedData->currentTargetLevel = clickedData->preDeterminedLevel;
+            clickedData->isBouncingBack = false;
+        }
+        else {
+            clickedData->currentTargetLevel = maxAllowedLevel;
+            clickedData->isBouncingBack = true;
         }
     }
 }
@@ -157,25 +160,39 @@ void CrematoriumPuzzle::Update(float deltaTime)
         if (!coffin.gameObject) continue;
 
         auto* transform = coffin.gameObject->GetComponent<TransformComponent>();
-        auto* render = coffin.gameObject->GetComponent<RenderComponent>();
 
-        float targetDistance = 0.0f;
+        if (coffin.isActivated) {
+            float targetDistance = 0.0f;
 
-        if (coffin.currentTargetLevel > 0) {
-            float t = static_cast<float>(coffin.currentTargetLevel - 1) / static_cast<float>(cols - 1);
+            if (coffin.currentTargetLevel > 0) {
+                float t = static_cast<float>(coffin.currentTargetLevel - 1) / static_cast<float>(cols - 1);
+                targetDistance = minExtensionDistance + t * (maxExtensionDistance - minExtensionDistance);
+            }
+            else {
+                targetDistance = minExtensionDistance * 0.4f;
+            }
 
-            targetDistance = minExtensionDistance + t * (maxExtensionDistance - minExtensionDistance);
+            if (coffin.currentExtensionAnim < targetDistance) {
+                coffin.currentExtensionAnim += animSpeed * deltaTime;
+
+                if (coffin.currentExtensionAnim >= targetDistance) {
+                    coffin.currentExtensionAnim = targetDistance;
+
+                    if (coffin.isBouncingBack) {
+                        coffin.isActivated = false;
+                        coffin.isBouncingBack = false;
+                        coffin.currentTargetLevel = 0;
+                    }
+                }
+            }
         }
-
-        if (coffin.currentExtensionAnim < targetDistance) {
-            coffin.currentExtensionAnim += animSpeed * deltaTime;
-            if (coffin.currentExtensionAnim > targetDistance)
-                coffin.currentExtensionAnim = targetDistance;
-        }
-        else if (coffin.currentExtensionAnim > targetDistance) {
-            coffin.currentExtensionAnim -= animSpeed * deltaTime;
-            if (coffin.currentExtensionAnim < targetDistance)
-                coffin.currentExtensionAnim = targetDistance;
+        else {
+            // Gdy nie jest aktywna (albo w³aœnie zaczê³a wracaæ po b³êdzie), zwijamy do zera
+            if (coffin.currentExtensionAnim > 0.0f) {
+                coffin.currentExtensionAnim -= animSpeed * deltaTime;
+                if (coffin.currentExtensionAnim < 0.0f)
+                    coffin.currentExtensionAnim = 0.0f;
+            }
         }
 
         float extensionDistance = coffin.currentExtensionAnim;

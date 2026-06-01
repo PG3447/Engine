@@ -17,7 +17,10 @@ struct CoffinData {
 
     bool isInteractable = true;
     bool isActivated = false;
-    uint64_t activationOrder = 0;
+    //uint64_t activationOrder = 0;
+
+    int preDeterminedLevel = 0;
+    bool isBouncingBack = false;
 
     int currentTargetLevel = 0;
     float currentExtensionAnim = 0.0f;
@@ -30,20 +33,20 @@ public:
     int rows = 4;
     int cols = 6;
 
-    // 1 - kolor, 0 - czarne
+    // 1+ - kolor (i poziom wysuniêia), 0 - czarne
     std::vector<std::vector<int>> configLeftWall = {
-        {1, 0, 1, 1, 0, 1}, // najnizszy
-        {0, 1, 1, 0, 1, 1},
-        {1, 1, 0, 1, 1, 0},
-        {1, 1, 1, 1, 0, 0} // najwyzszy
+            {6, 0, 4, 2, 0, 5}, // najnizszy
+            {0, 3, 5, 0, 1, 6},
+            {2, 4, 0, 6, 3, 0},
+            {5, 1, 2, 4, 0, 0}  // najwyzszy
     };
 
-    // 1 - kolor, 0 - czarne
+    // 1+ - kolor (i poziom wysuniêia), 0 - czarne
     std::vector<std::vector<int>> configRightWall = {
-        {0, 1, 0, 1, 1, 0},
-        {1, 0, 1, 1, 0, 1},
-        {1, 1, 1, 0, 1, 1},
-        {0, 1, 1, 1, 0, 1}
+        {0, 5, 0, 3, 1, 0},
+        {4, 0, 6, 2, 0, 5},
+        {1, 3, 2, 0, 4, 6},
+        {0, 6, 1, 5, 0, 2}
     };
 
     float spacingHorizontal = 6.0f;
@@ -57,7 +60,7 @@ public:
     glm::vec3 renderScale = glm::vec3(1.0f, 1.0f, 1.0f);
 
     // glownie dla collidera
-    glm::vec3 coffinDimensions = glm::vec3(1.55f, 1.05f, 32.0f);
+    glm::vec3 coffinDimensions = glm::vec3(1.0f, 1.0f, 28.0f);
 
     float w1_buildDirX = -1.0f;
     float w1_extendDirZ = 1.0f;
