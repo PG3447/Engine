@@ -681,7 +681,6 @@ public:
 
         shaderHizDownsample->use();
 
-        glTextureParameteri(depthTexture, GL_DEPTH_STENCIL_TEXTURE_MODE, GL_DEPTH_COMPONENT);
         glTextureParameteri(depthTexture, GL_TEXTURE_COMPARE_MODE, GL_NONE);
         glTextureParameteri(hizTexture, GL_TEXTURE_COMPARE_MODE, GL_NONE);
 
@@ -693,7 +692,7 @@ public:
         glBindTextureUnit(0, depthTexture);
         glBindImageTexture(2, hizTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
 
-        glDispatchCompute((w + 15) / 16, (h + 7) / 8, 1);
+        glDispatchCompute((w + 15) / 16, (h + 15) / 16, 1);
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
 
         // ── Krok 1+: hiz mip(N-1) → mip(N) — bez zmian
@@ -712,7 +711,7 @@ public:
             glBindImageTexture(1, hizTexture, mip - 1, GL_FALSE, 0, GL_READ_ONLY, GL_R32F);
             glBindImageTexture(2, hizTexture, mip, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
 
-            glDispatchCompute((mw + 15) / 16, (mh + 7) / 8, 1);
+            glDispatchCompute((mw + 15) / 16, (mh + 15) / 16, 1);
             glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
         }
     }
