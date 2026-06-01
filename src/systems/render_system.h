@@ -722,18 +722,12 @@ public:
         int vpY = (int)(cam.viewport.y * height);
         //spdlog::info("CopyDepth cam vpX={} vpY={} vpW={} vpH={} fbo={}x{}",
         //    vpX, vpY, vpW, vpH, width, height);
-        //if (hiz.depthPrev && sceneDepthTexture) {
-        //    glCopyImageSubData(sceneDepthTexture, GL_TEXTURE_2D, 0, vpX, vpY, 0,
-        //        hiz.depthPrev, GL_TEXTURE_2D, 0, 0, 0, 0,
-        //        vpW, vpH, 1);
-        //}
+        if (hiz.depthPrev && sceneDepthTexture && occlusionCullingEnabled) {
+            glCopyImageSubData(sceneDepthTexture, GL_TEXTURE_2D, 0, vpX, vpY, 0,
+                hiz.depthPrev, GL_TEXTURE_2D, 0, 0, 0, 0,
+                vpW, vpH, 1);
+        }
 
-        //if (depthTexturePrev && sceneDepthTexture) {
-        //    glCopyImageSubData(sceneDepthTexture, GL_TEXTURE_2D, 0, 0, 0, 0,
-        //        depthTexturePrev, GL_TEXTURE_2D, 0, 0, 0, 0,
-        //        width, height, 1);
-        //    //drivenManager.BuildHiZ();
-        //}
 
         auto cullEnd = std::chrono::high_resolution_clock::now();
         stats.cullingTimeMs += std::chrono::duration<float, std::milli>(cullEnd - cullStart).count();
