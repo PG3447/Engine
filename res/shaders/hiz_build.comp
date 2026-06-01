@@ -1,10 +1,10 @@
 #version 460 core
 layout(local_size_x = 8, local_size_y = 8) in;
 
-// MIP 0: depth source (GL_DEPTH_COMPONENT32F) - bezposrednio z FBO
 layout(binding = 0) uniform sampler2D depthSrc;
-// Zapis aktualnego mipa (downsampling)
 layout(r32f, binding = 1) uniform image2D currentMip;
+
+uniform bool isMip0;
 
 void main()
 {
@@ -12,15 +12,26 @@ void main()
     ivec2 size = imageSize(currentMip);
     if (texelCoord.x >= size.x || texelCoord.y >= size.y) return;
 
-    ivec2 srcCoord = texelCoord * 2;
-    ivec2 depthSize = textureSize(depthSrc, 0);
+    float result;
 
-    // Odczyt 2x2 pikseli z depth texture
-    float d0 = texelFetch(depthSrc, min(srcCoord + ivec2(0,0), depthSize-1), 0).r;
-    float d1 = texelFetch(depthSrc, min(srcCoord + ivec2(1,0), depthSize-1), 0).r;
-    float d2 = texelFetch(depthSrc, min(srcCoord + ivec2(0,1), depthSize-1), 0).r;
-    float d3 = texelFetch(depthSrc, min(srcCoord + ivec2(1,1), depthSize-1), 0).r;
+    if (isMip0)
+    {
+        // kopia 1:1 — depth ma ten sam rozmiar co mip0
+        result = texelFetch(depthSrc, texelCoord, 0).r;
+    }
+    else
+    {
+        // downsampling 2x2 — bierz max
+        ivec2 srcCoord = texelCoord * 2;
+        ivec2 depthSize = textureSize(depthSrc, 0);
 
-    // Downsampling: max depth -> currentMip (mip1)
-    imageStore(currentMip, texelCoord, vec4(max(max(d0, d1), max(d2, d3))));
+        float d0 = texelFetch(depthSrc, min(srcCoord + ivec2(0,0), depthSize-1), 0).r;
+        float d1 = texelFetch(depthSrc, min(srcCoord + ivec2(1,0), depthSize-1), 0).r;
+        float d2 = texelFetch(depthSrc, min(srcCoord + ivec2(0,1), depthSize-1), 0).r;
+        float d3 = texelFetch(depthSrc, min(srcCoord + ivec2(1,1), depthSize-1), 0).r;
+
+        result = max(max(d0, d1), max(d2, d3));
+    }
+
+    imageStore(currentMip, texelCoord, vec4(result));
 }

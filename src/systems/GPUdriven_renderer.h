@@ -330,7 +330,7 @@ public:
 
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-        InitHiZ(width, height);
+        //InitHiZ(width, height);
     }
 
     //void InitHiZ(int width, int height)
@@ -348,22 +348,22 @@ public:
     //    glBindTexture(GL_TEXTURE_2D, 0);
     //}
 
-    void InitHiZ(int w, int h)
-    {
-        hizMipLevels = static_cast<int>(std::floor(std::log2(std::max(w/2, h)))) + 1;
+    //void InitHiZ(int w, int h)
+    //{
+    //    hizMipLevels = static_cast<int>(std::floor(std::log2(std::max(w , h)))) + 1;
 
-        //glGenTextures(1, &hizTexture);
-        //glBindTexture(GL_TEXTURE_2D, hizTexture);
-        //glTexStorage2D(GL_TEXTURE_2D, hizMipLevels, GL_DEPTH_COMPONENT32F, w, h); // ← zmiana
-        //glTextureParameteri(hizTexture, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
-        //glTextureParameteri(hizTexture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        //glTextureParameteri(hizTexture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        //glTextureParameteri(hizTexture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        //glTextureParameteri(hizTexture, GL_TEXTURE_COMPARE_MODE, GL_NONE);
-        //glBindTexture(GL_TEXTURE_2D, 0);
+    //    //glGenTextures(1, &hizTexture);
+    //    //glBindTexture(GL_TEXTURE_2D, hizTexture);
+    //    //glTexStorage2D(GL_TEXTURE_2D, hizMipLevels, GL_DEPTH_COMPONENT32F, w, h); // ← zmiana
+    //    //glTextureParameteri(hizTexture, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+    //    //glTextureParameteri(hizTexture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    //    //glTextureParameteri(hizTexture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    //    //glTextureParameteri(hizTexture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    //    //glTextureParameteri(hizTexture, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+    //    //glBindTexture(GL_TEXTURE_2D, 0);
 
-        spdlog::info("RendererManager: HiZ {}x{} mips={}", w, h, hizMipLevels);
-    }
+    //    spdlog::info("RendererManager: HiZ {}x{} mips={}", w, h, hizMipLevels);
+    //}
 
     void clearRegisterAll()
     {
@@ -686,24 +686,24 @@ public:
     //    glTextureParameteri(hizTexture, GL_TEXTURE_BASE_LEVEL, 0);
     //    glTextureParameteri(hizTexture, GL_TEXTURE_MAX_LEVEL, hizMipLevels - 1);
     //}
-
-
+    
     void BuildHiZ(GLuint depthTexture)
     {
         int w = vpWidth > 0 ? vpWidth : screenWidth;
         int h = vpHeight > 0 ? vpHeight : screenHeight;
 
         shaderHizDownsample->use();
-
-        // Krok 0: depth texture → hiz mip0 przez compute (nie glCopyImageSubData!)
-        // depth ma GL_DEPTH_COMPONENT32F, hiz ma GL_R32F — różne klasy, copy jest GL_INVALID_OPERATION
         glTextureParameteri(depthTexture, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+
+        // Krok 0: depth → mip0, kopiuj 1:1
+        glUniform1i(glGetUniformLocation(shaderHizDownsample->ID, "isMip0"), GL_TRUE);
         glBindTextureUnit(0, depthTexture);
         glBindImageTexture(1, hizTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
         glDispatchCompute((w + 7) / 8, (h + 7) / 8, 1);
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
 
-        // Krok 1+: downsampling mip1, mip2, ...
+        // Krok 1+: downsampling
+        glUniform1i(glGetUniformLocation(shaderHizDownsample->ID, "isMip0"), GL_FALSE);
         glTextureParameteri(hizTexture, GL_TEXTURE_COMPARE_MODE, GL_NONE);
 
         int mw = w, mh = h;
@@ -723,6 +723,42 @@ public:
         glTextureParameteri(hizTexture, GL_TEXTURE_BASE_LEVEL, 0);
         glTextureParameteri(hizTexture, GL_TEXTURE_MAX_LEVEL, hizMipLevels - 1);
     }
+
+    //void BuildHiZ(GLuint depthTexture)
+    //{
+    //    int w = vpWidth > 0 ? vpWidth : screenWidth;
+    //    int h = vpHeight > 0 ? vpHeight : screenHeight;
+
+    //    shaderHizDownsample->use();
+
+    //    // Krok 0: depth texture → hiz mip0 przez compute (nie glCopyImageSubData!)
+    //    // depth ma GL_DEPTH_COMPONENT32F, hiz ma GL_R32F — różne klasy, copy jest GL_INVALID_OPERATION
+    //    glTextureParameteri(depthTexture, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+    //    glBindTextureUnit(0, depthTexture);
+    //    glBindImageTexture(1, hizTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
+    //    glDispatchCompute((w + 7) / 8, (h + 7) / 8, 1);
+    //    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
+
+    //    // Krok 1+: downsampling mip1, mip2, ...
+    //    glTextureParameteri(hizTexture, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+
+    //    int mw = w, mh = h;
+    //    for (int mip = 1; mip < hizMipLevels; mip++) {
+    //        mw = std::max(1, mw / 2);
+    //        mh = std::max(1, mh / 2);
+
+    //        glTextureParameteri(hizTexture, GL_TEXTURE_BASE_LEVEL, mip - 1);
+    //        glTextureParameteri(hizTexture, GL_TEXTURE_MAX_LEVEL, mip - 1);
+    //        glBindTextureUnit(0, hizTexture);
+    //        glBindImageTexture(1, hizTexture, mip, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
+
+    //        glDispatchCompute((mw + 7) / 8, (mh + 7) / 8, 1);
+    //        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
+    //    }
+
+    //    glTextureParameteri(hizTexture, GL_TEXTURE_BASE_LEVEL, 0);
+    //    glTextureParameteri(hizTexture, GL_TEXTURE_MAX_LEVEL, hizMipLevels - 1);
+    //}
 
     //void BuildHiZ()
     //{

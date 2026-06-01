@@ -136,13 +136,26 @@ bool hizCull(vec3 aabbMin, vec3 aabbMax, mat4 mvp)
 
     vec2 size = (uvMax - uvMin) * screenSize;
     float mip = ceil(log2(max(size.x, size.y)));
-    mip       = clamp(mip, 0.0, float(hizMipLevels - 1));
+    mip = clamp(mip, 0.0, float(hizMipLevels - 1));
 
     vec2  uvCenter = (uvMin + uvMax) * 0.5;
     float hizDepth = textureLod(hizCullingTexture, uvCenter, mip).r;
 
     return zMin > hizDepth;
 }
+
+/*
+float mip = ceil(log2(max(size.x, size.y))) + 1.0;
+*/
+
+/*
+float h0 = textureLod(hizCullingTexture, uvMin, mip).r;
+float h1 = textureLod(hizCullingTexture, uvMax, mip).r;
+float h2 = textureLod(hizCullingTexture, vec2(uvMin.x, uvMax.y), mip).r;
+float h3 = textureLod(hizCullingTexture, vec2(uvMax.x, uvMin.y), mip).r;
+float h4 = textureLod(hizCullingTexture, uvCenter, mip).r;
+float hizDepth = max(max(max(h0, h1), max(h2, h3)), h4);
+*/
 
 
 shared vec4 sharedPlanes[6];
