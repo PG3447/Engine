@@ -719,11 +719,11 @@ public:
         drivenManager.CollectAllPasses(*renderQuery, currentCameraPos);
         drivenManager.RenderFrame(vp, currentCameraPos, occlusionCullingEnabled ? hiz.depthPrev : 0);
         //drivenManager.RenderFrame(vp, currentCameraPos, depthTexturePrev);
-        
-        std::swap(sceneDepthTexture, hiz.depthPrev);
-        // Re-attach nowy sceneDepthTexture do FBO
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, sceneDepthTexture, 0);
-
+        if (hiz.depthPrev && sceneDepthTexture && occlusionCullingEnabled) {
+            std::swap(sceneDepthTexture, hiz.depthPrev);
+            // Re-attach nowy sceneDepthTexture do FBO
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, sceneDepthTexture, 0);
+        }
         //spdlog::info("CopyDepth cam vpX={} vpY={} vpW={} vpH={} fbo={}x{}",
         //    vpX, vpY, vpW, vpH, width, height);
         //if (hiz.depthPrev && sceneDepthTexture && occlusionCullingEnabled) {
