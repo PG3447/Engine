@@ -1,33 +1,60 @@
 #version 460 core
+layout(local_size_x = 16, local_size_y = 16) in;
 
-layout (local_size_x = 8, local_size_y = 8) in;
+layout(binding = 0) uniform sampler2D depthSrc;// mip0: sceneDepthTexture (pełny FBO)
+layout(r32f, binding = 1)  uniform readonly image2D prevMip;    // mip1+: poprzedni mip HiZ
+layout(r32f, binding = 2)  uniform writeonly image2D currentMip;
 
-// poprzedni mip poziom - do odczytu
-layout(binding = 0) uniform sampler2D prevMip;
-
-// aktualny mip poziom - do zapisu
-layout(r32f, binding = 1) uniform image2D currentMip;
+uniform bool  isMip0;
+uniform ivec2 currentMipSize;
+uniform ivec2 prevMipSize;
+uniform ivec2 vpOffset;     // ← NOWE: offset viewportu w sceneDepthTexture (dla split screen)
+                            //   dla mip0:  (vpX, vpY) z glViewport
+                            //   dla mip1+: nieużywane (może być (0,0))
 
 void main()
 {
-	ivec2 texelCoord = ivec2(gl_GlobalInvocationID.xy);
-	ivec2 size = imageSize(currentMip);
+    ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
+    if (coord.x >= currentMipSize.x || coord.y >= currentMipSize.y) return;
 
-	if (texelCoord.x >= size.x || texelCoord.y >= size.y)
-	{
-		return;
-	}
+    float result;
 
-	vec2 uv = (vec2(texelCoord) + 0.5) / vec2(size); //Znajdujemy srodek UV 2x2 na teksturze
-	vec2 texelSize = 1.0 / vec2(textureSize(prevMip, 0)); //Ustalamy wielkosc texel-a
+    if (isMip0)
+    {
+        // Czytamy bezpośrednio z depth FBO z offsetem viewportu.
+        // NIE potrzebujemy glCopyImageSubData ani depthPrev.
+        result = texelFetch(depthSrc, coord + vpOffset, 0).r;
+    }
+    else
+    {
+        ivec2 src = coord * 2;
 
-	float d0 = texture(prevMip, uv + vec2(-texelSize.x, -texelSize.y)).r; // lewy gorny piksel
-    float d1 = texture(prevMip, uv + vec2( texelSize.x, -texelSize.y)).r; // prawy gorny piksel
-    float d2 = texture(prevMip, uv + vec2(-texelSize.x,  texelSize.y)).r; // lewy dolny piksel
-    float d3 = texture(prevMip, uv + vec2( texelSize.x,  texelSize.y)).r; // prawy dolny piksel
+        float d0 = imageLoad(prevMip, min(src + ivec2(0, 0), prevMipSize - 1)).r;
+        float d1 = imageLoad(prevMip, min(src + ivec2(1, 0), prevMipSize - 1)).r;
+        float d2 = imageLoad(prevMip, min(src + ivec2(0, 1), prevMipSize - 1)).r;
+        float d3 = imageLoad(prevMip, min(src + ivec2(1, 1), prevMipSize - 1)).r;
+        result = max(max(d0, d1), max(d2, d3));
 
-	// max depth - najdalsza głębokości 
-	float maxDepth = max(max(d0, d1), max(d2, d3));
+        if ((prevMipSize.x & 1) != 0)
+        {
+            float ex0 = imageLoad(prevMip, min(src + ivec2(2, 0), prevMipSize - 1)).r;
+            float ex1 = imageLoad(prevMip, min(src + ivec2(2, 1), prevMipSize - 1)).r;
+            result = max(result, max(ex0, ex1));
+        }
 
-	imageStore(currentMip, texelCoord, vec4(maxDepth));
+        if ((prevMipSize.y & 1) != 0)
+        {
+            float ey0 = imageLoad(prevMip, min(src + ivec2(0, 2), prevMipSize - 1)).r;
+            float ey1 = imageLoad(prevMip, min(src + ivec2(1, 2), prevMipSize - 1)).r;
+            result = max(result, max(ey0, ey1));
+        }
+
+        if ((prevMipSize.x & 1) != 0 && (prevMipSize.y & 1) != 0)
+        {
+            float corner = imageLoad(prevMip, min(src + ivec2(2, 2), prevMipSize - 1)).r;
+            result = max(result, corner);
+        }
+    }
+
+    imageStore(currentMip, coord, vec4(result));
 }

@@ -16,6 +16,57 @@
 #include "../compute_shader.h"
 #include "GPUdriven_manager.h"
 
+
+
+struct PerCameraHiZ
+{
+    GLuint hizTexture = 0;
+    GLuint depthPrev = 0;
+    int    hizMipLevels = 0;
+    int    width = 0;
+    int    height = 0;
+
+    void Init(int w, int h, int screenW, int screenH)
+    {
+        width = w;
+        height = h;
+        hizMipLevels = static_cast<int>(std::floor(std::log2(std::max(w, h)))) + 1;
+
+        // HiZ — R32F z mipami, taki sam format jak w GPUDrivenManager::InitHiZ
+        glGenTextures(1, &hizTexture);
+        glBindTexture(GL_TEXTURE_2D, hizTexture);
+        glTexStorage2D(GL_TEXTURE_2D, hizMipLevels, GL_R32F, w, h);
+        glTextureParameteri(hizTexture, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+        glTextureParameteri(hizTexture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTextureParameteri(hizTexture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTextureParameteri(hizTexture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+        // depth-prev — kopia depth poprzedniej klatki tej kamery
+        glGenTextures(1, &depthPrev);
+        glBindTexture(GL_TEXTURE_2D, depthPrev);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, screenW, screenH, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+        glTextureParameteri(depthPrev, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTextureParameteri(depthPrev, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTextureParameteri(depthPrev, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTextureParameteri(depthPrev, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        spdlog::info("PerCameraHiZ::Init {}x{} mips={}", w, h, hizMipLevels);
+    }
+
+    // Wywoływane tylko przy resize okna — glTexStorage2D jest immutable
+    void Destroy()
+    {
+        if (hizTexture) { glDeleteTextures(1, &hizTexture); hizTexture = 0; }
+        if (depthPrev) { glDeleteTextures(1, &depthPrev);  depthPrev = 0; }
+        width = height = hizMipLevels = 0;
+    }
+
+    bool IsValid() const { return hizTexture != 0 && depthPrev != 0; }
+};
+
+
 class RenderSystem : public System {
 private:
     using GroupKey = std::tuple<RenderMesh*, Material*>;
@@ -89,14 +140,21 @@ private:
     glm::mat4 view;
     glm::vec3 currentCameraPos;
 
-    GPUDrivenManager drivenManager;
 
-    GLuint sceneFBO;
+    GLuint sceneFBO = 0;
     GLuint sceneColorTexture;
-    GLuint sceneDepthRBO;
-    int fboWidth = 0, fboHeight = 0;
+
+
 
 public:
+    GPUDrivenManager drivenManager;
+    //GLuint sceneDepthRBO = 0;
+    GLuint sceneDepthTexture;
+    GLuint depthTexturePrev = 0;
+    int fboWidth = 0, fboHeight = 0;
+    
+    std::unordered_map<CameraComponent*, PerCameraHiZ> cameraHiZ;
+
     void IssueOcclusionQuery(size_t entityIdx, const glm::mat4& modelMatrix, const AABB& localAABB) {
         OcclusionData& data = occlusionMap[entityIdx];
         if (data.queryId == 0) glGenQueries(1, &data.queryId);
@@ -343,94 +401,7 @@ public:
         groupsDirty = true;
     }
 
-    //void RebuildGameObjectInRenderer(GameObject* e) {
-    //    // Szukamy tego obiektu w renderQuery po wskaźniku
-    //    auto& gos = renderQuery->gameobjects;
-    //    auto& renderers = std::get<1>(renderQuery->componentsVectors);
 
-    //    for (size_t i = 0; i < gos.size(); ++i) {
-    //        if (gos[i] != e) continue;
-
-    //        RenderComponent* rc = renderers[i];
-    //        if (!rc) return;
-
-    //        // 1. Zarejestruj animator jeśli nowy
-    //        if (rc->animator &&
-    //            drivenManager.animatorIDMap.find(rc->animator) == drivenManager.animatorIDMap.end())
-    //        {
-    //            drivenManager.animatorIDMap[rc->animator] =
-    //                (uint32_t)drivenManager.animatorIDMap.size();
-    //        }
-
-    //        // 2. Dla każdego mesha sprawdź czy pass/mesh/materiał już istnieje
-    //        for (auto& mesh : rc->meshes) {
-    //            if (!mesh.cpuData || !mesh.material) continue;
-
-    //            MeshData* md = mesh.cpuData.get();
-    //            Material* mat = mesh.material.get();
-    //            Shader* shader = mat->shader ? mat->shader : drivenManager.defaultShaderRender;
-
-    //            uint32_t pid = drivenManager.GetOrCreatePass(shader, mat->surfaceType);
-    //            GPUDrivenRenderer* r = drivenManager.GetRenderer(pid);
-    //            if (!r) continue;
-
-    //            // RegisterMesh/RegisterMaterial są idempotentne —
-    //            // zwracają istniejące ID jeśli już zarejestrowane,
-    //            // a dodają nowy wpis tylko gdy go nie ma
-    //            bool meshIsNew = (r->GetMeshId(md) == UINT32_MAX);
-    //            bool materialIsNew = (r->GetMaterialId(mat) == UINT32_MAX);
-
-    //            if (meshIsNew)     r->RegisterMesh(md);
-    //            if (materialIsNew) r->RegisterMaterial(mat);
-
-    //            // Upload na GPU tylko jeśli faktycznie coś nowego trafiło do rejestrów
-    //            // UploadMeshes() to pełna realokacja VBO/EBO/meshDataSSBO — wywołujemy rzadko
-    //            if (meshIsNew)     r->UploadMeshes();
-    //            if (materialIsNew) r->UploadMaterials();
-
-    //            // Zawsze oznacz instancje jako brudne — nowy/zmieniony obiekt
-    //            // musi przejść przez BuildInstance przy następnym RenderFrame
-    //            r->dirtyInstance = true;
-    //        }
-
-    //        return; // obiekt znaleziony, kończymy
-    //    }
-    //}
-
-
-    /*void RebuildAllRegistries(Query<TransformComponent, RenderComponent>& renderQuery) {
-        for (auto& entry : passes)
-            entry.renderer->Reset();
-
-        animatorIDMap.clear();
-
-        // identyczne jak InitPassesFromScene
-        auto& renderers = std::get<1>(renderQuery.componentsVectors);
-        for (size_t i = 0; i < renderers.size(); i++) {
-            RenderComponent* rc = renderers[i];
-            if (!rc) continue;
-
-            if (rc->animator && animatorIDMap.find(rc->animator) == animatorIDMap.end())
-                animatorIDMap[rc->animator] = (uint32_t)animatorIDMap.size();
-
-            for (auto& mesh : rc->meshes) {
-                if (!mesh.cpuData || !mesh.material) continue;
-                Material* mat = mesh.material.get();
-                Shader* shader = mat->shader ? mat->shader : defaultShaderRender;
-                uint32_t pid = GetOrCreatePass(shader, mat->surfaceType);
-                GPUDrivenRenderer* r = GetRenderer(pid);
-                if (!r) continue;
-                r->RegisterMesh(mesh.cpuData.get());
-                r->RegisterMaterial(mat);
-            }
-        }
-
-        for (auto& entry : passes) {
-            entry.renderer->UploadMeshes();
-            entry.renderer->UploadMaterials();
-        }
-    }
-    */
     void Update(ECS& ecs, float dt) override {
         stats.Reset();
         gpuQuery.begin();
@@ -440,6 +411,10 @@ public:
         InitFBO(display_w, display_h);
 
         glBindFramebuffer(GL_FRAMEBUFFER, sceneFBO);
+        if (occlusionCullingEnabled)
+        {
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, sceneDepthTexture, 0);
+        }
         glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -501,138 +476,8 @@ public:
 
     //GPUDrivenRenderer gpuRenderer;
     bool gpuRendererReady = false;
-    GLuint depthTexturePrev = 0;
-    GLuint depthFBO = 0;
-
-    //std::unordered_map<AnimatorComponent*, uint32_t> animatorIDMap;
-
-    //void InitGPUDrivenRenderer(int width, int height)
-    //{
-    //    auto& renderers = std::get<1>(renderQuery->componentsVectors);
-    //    gpuRenderer.Init(width, height);
-
-    //    for (size_t i = 0; i < renderers.size(); i++) {
-    //        RenderComponent* r = renderers[i];
-    //        if (!r) continue;
-
-    //        if (r->animator && animatorIDMap.find(r->animator) == animatorIDMap.end())
-    //            animatorIDMap[r->animator] = (uint32_t)animatorIDMap.size();
-
-    //        for (auto& mesh : r->meshes) {
-    //            if (!mesh.gpuMesh || !mesh.material || !mesh.cpuData) continue;
-
-    //            MeshData* md = mesh.cpuData.get();
-    //            Material* mat = mesh.material.get();
-
-    //            gpuRenderer.RegisterMesh(md);
-    //            gpuRenderer.RegisterMaterial(mat);
-    //        }
-    //    }
 
 
-    //    gpuRenderer.UploadMeshes();
-    //    gpuRenderer.UploadMaterials();
-
-    //    // Depth texture — tworzona TYLKO RAZ
-    //    if (depthTexturePrev == 0) {
-    //        glGenTextures(1, &depthTexturePrev);
-    //        glBindTexture(GL_TEXTURE_2D, depthTexturePrev);
-    //        glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32F, width, height);
-    //        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    //        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    //        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    //        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    //        glBindTexture(GL_TEXTURE_2D, 0);
-    //    }
-
-
-    //    gpuRendererReady = true;
-    //}
-    //std::vector<RenderData> renderDataCache;
-    //std::vector<glm::mat4> boneMatricesCache;
-    //struct AnimCache { uint32_t slot; AnimatorComponent* anim; };
-
-    //std::vector<RenderData>& CollectRenderData()
-    //{
-    //    auto& transforms = std::get<0>(renderQuery->componentsVectors);
-    //    auto& renderers = std::get<1>(renderQuery->componentsVectors);
-
-    //    renderDataCache.clear();
-    //    renderDataCache.reserve(renderQuery->gameobjects.size());
-
-    //    const size_t objectCount = renderQuery->gameobjects.size();
-
-    //    // trzeba znalezc to co ustawia animatory w RenderComponent zeby pozbyc sie tej petli i robic to raz
-    //    // 1. najpierw zarejestruj nowe animatory
-    //    for (size_t i = 0; i < objectCount; ++i) {
-    //        const RenderComponent* r = renderers[i];
-    //        if (!r || !r->animator) continue;
-    //        if (animatorIDMap.find(r->animator) == animatorIDMap.end())
-    //            animatorIDMap[r->animator] = (uint32_t)animatorIDMap.size();
-    //    }
-
-    //    size_t requiredSize = animatorIDMap.size() * MAX_BONES_PER_SKELETON;
-    //    if (boneMatricesCache.size() != requiredSize)
-    //        boneMatricesCache.resize(requiredSize, glm::mat4(1.0f));
-
-    //    for (size_t i = 0; i < objectCount; ++i)
-    //    {
-    //        const TransformComponent* t = transforms[i];
-    //        const RenderComponent* r = renderers[i];
-
-    //        if (!t || !r)
-    //            continue;
-    //        const glm::mat4 model = t->modelMatrix;
-
-    //        
-    //        const auto& meshes = r->meshes;
-    //        auto animator = r->animator;
-
-    //        auto animIt = animator ? animatorIDMap.find(animator) : animatorIDMap.end();
-    //        if (animIt != animatorIDMap.end() && animator->currentSkeleton)
-    //        {
-    //            uint32_t slot = animIt->second;
-    //            uint32_t boneCount = (uint32_t)std::min(animator->finalBoneMatrices.size(), (size_t)MAX_BONES_PER_SKELETON);
-
-    //            std::copy(animator->finalBoneMatrices.begin(), animator->finalBoneMatrices.begin() + boneCount, boneMatricesCache.begin() + slot * MAX_BONES_PER_SKELETON);
-    //        }
-
-    //        for (const auto& mesh : meshes)
-    //        {
-    //            auto* gpuMesh = mesh.cpuData.get();
-    //            auto* material = mesh.material.get();
-
-    //            if (!gpuMesh || !material || !mesh.cpuData)
-    //                continue;
-
-    //            auto meshID = gpuRenderer.GetMeshId(gpuMesh);
-    //            if (meshID == UINT32_MAX)
-    //                continue;
-
-    //            auto matID = gpuRenderer.GetMaterialId(material);
-    //            if (matID == UINT32_MAX)
-    //                continue;
-
-
-    //            auto& aabb = mesh.cpuData->aabb;
-
-    //            renderDataCache.emplace_back(RenderData{
-    //                .modelMatrix = model,
-    //                .aabbMin = glm::vec4(aabb.min, 0.0f),
-    //                .aabbMax = glm::vec4(aabb.max, 0.0f),
-    //                .meshID = meshID,
-    //                .materialID = matID,
-    //                .skeletonID = animIt != animatorIDMap.end() ? animIt->second : NO_SKELETON,
-    //                .padding = 0
-    //                });            
-    //        }
-    //    }
-    //    
-    //    gpuRenderer.ResizeBoneBufferIfNeeded((uint32_t)animatorIDMap.size());
-    //    gpuRenderer.UploadAllBoneMatrices(boneMatricesCache);
-
-    //    return renderDataCache;
-    //}
 
     void RenderCameraGPUDriven(CameraComponent& cam, TransformComponent& transform, int width, int height)
     {
@@ -643,31 +488,39 @@ public:
 
         glm::mat4 vp = projection * view;
         currentCameraPos = transform.position;
-        drivenManager.CollectAllPasses(*renderQuery, currentCameraPos);
         
         auto cullStart = std::chrono::high_resolution_clock::now();
 
-        drivenManager.RenderFrame(vp, currentCameraPos, depthTexturePrev);
+        int vpW = std::max(1, (int)(cam.viewport.width * width));
+        int vpH = std::max(1, (int)(cam.viewport.height * height));
+        int vpX = (int)(cam.viewport.x * width);
+        int vpY = (int)(cam.viewport.y * height);
+
+        PerCameraHiZ& hiz = cameraHiZ[&cam];
+        if (hiz.width != vpW || hiz.height != vpH)
+        {
+            hiz.Destroy(); // tylko przy resize — nie co klatkę
+            hiz.Init(vpW, vpH, width, height);
+        }
+        drivenManager.AttachCameraHiZ(hiz.hizTexture, hiz.hizMipLevels, vpW, vpH, occlusionCullingEnabled, vpX, vpY);
+
+        drivenManager.CollectAllPasses(*renderQuery, currentCameraPos);
+        drivenManager.RenderFrame(vp, currentCameraPos, occlusionCullingEnabled ? hiz.depthPrev : 0);
+        //drivenManager.RenderFrame(vp, currentCameraPos, depthTexturePrev);
+        if (hiz.depthPrev && sceneDepthTexture && occlusionCullingEnabled) {
+            std::swap(sceneDepthTexture, hiz.depthPrev);
+        }
+        //spdlog::info("CopyDepth cam vpX={} vpY={} vpW={} vpH={} fbo={}x{}",
+        //    vpX, vpY, vpW, vpH, width, height);
+        //if (hiz.depthPrev && sceneDepthTexture && occlusionCullingEnabled) {
+        //    glCopyImageSubData(sceneDepthTexture, GL_TEXTURE_2D, 0, vpX, vpY, 0,
+        //        hiz.depthPrev, GL_TEXTURE_2D, 0, 0, 0, 0,
+        //        vpW, vpH, 1);
+        //}
+
 
         auto cullEnd = std::chrono::high_resolution_clock::now();
         stats.cullingTimeMs += std::chrono::duration<float, std::milli>(cullEnd - cullStart).count();
-
-       // if (gpuRendererReady) {
-
-       //     //std::vector<RenderData> objects = CollectRenderData();
-
-       // /*    gpuRenderer.shaderRender->use();
-       //     gpuRenderer.shaderRender->setMat4("viewProjection", vp);
-       //     gpuRenderer.shaderRender->setVec3("viewPos", currentCameraPos);
-       //     gpuRenderer.shaderRender->setBool("isAnimated", false);*/
-       //     // + światła jak w starym kodzie...
-       //    ;
-
-       //     // Skopiuj depth bieżącej klatki do depthTexturePrev dla następnej
-       ///*     std::vector<float> zeros(width * height, 0.0f);
-       //     glTextureSubImage2D(depthTexturePrev, 0, 0, 0, width, height,
-       //         GL_DEPTH_COMPONENT, GL_FLOAT, zeros.data());*/
-       // }
 
         DebugDrawSystem::Flush(vp);
 
@@ -676,6 +529,118 @@ public:
         skybox.Render(view, projection);
     }
 
+
+    // if (gpuRendererReady) {
+
+    //     //std::vector<RenderData> objects = CollectRenderData();
+
+    // /*    gpuRenderer.shaderRender->use();
+    //     gpuRenderer.shaderRender->setMat4("viewProjection", vp);
+    //     gpuRenderer.shaderRender->setVec3("viewPos", currentCameraPos);
+    //     gpuRenderer.shaderRender->setBool("isAnimated", false);*/
+    //     // + światła jak w starym kodzie...
+    //    ;
+
+    //     // Skopiuj depth bieżącej klatki do depthTexturePrev dla następnej
+    ///*     std::vector<float> zeros(width * height, 0.0f);
+    //     glTextureSubImage2D(depthTexturePrev, 0, 0, 0, width, height,
+    //         GL_DEPTH_COMPONENT, GL_FLOAT, zeros.data());*/
+    // }
+
+
+
+    void ShowDepthTextureImGui(GLuint depthTex, int w, int h, float zNear, float zFar)
+    {
+        // klucz = oryginalne ID tekstury depth
+        static std::unordered_map<GLuint, GLuint> debugTexMap;
+
+        GLuint& debugTex = debugTexMap[depthTex];
+        if (debugTex == 0) {
+            glGenTextures(1, &debugTex);
+            glBindTexture(GL_TEXTURE_2D, debugTex);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        }
+
+        std::vector<float> depth(w * h);
+        glGetTextureImage(depthTex, 0, GL_DEPTH_COMPONENT, GL_FLOAT, w * h * sizeof(float), depth.data());
+
+        std::vector<uint8_t> rgb(w * h * 3);
+        for (int i = 0; i < w * h; i++) {
+            float d = depth[i];
+            float linear = (2.0f * zNear) / (zFar + zNear - d * (zFar - zNear));
+            uint8_t v = (uint8_t)(linear * 255.0f);
+            rgb[i * 3 + 0] = v;
+            rgb[i * 3 + 1] = v;
+            rgb[i * 3 + 2] = v;
+        }
+
+        glBindTexture(GL_TEXTURE_2D, debugTex);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, rgb.data());
+
+        ImGui::Image((ImTextureID)(intptr_t)debugTex, ImVec2(320, 180), ImVec2(0, 1), ImVec2(1, 0));
+    }
+    void ShowR32FTextureImGui(GLuint tex, int mip = 0)
+    {
+        static std::unordered_map<GLuint, GLuint> debugTexMap;
+        GLuint& debugTex = debugTexMap[tex];
+        if (debugTex == 0) {
+            glGenTextures(1, &debugTex);
+            glBindTexture(GL_TEXTURE_2D, debugTex);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
+
+        // Pytaj GPU o rzeczywisty rozmiar mipa
+        GLint mipW = 0, mipH = 0;
+        glGetTextureLevelParameteriv(tex, mip, GL_TEXTURE_WIDTH, &mipW);
+        glGetTextureLevelParameteriv(tex, mip, GL_TEXTURE_HEIGHT, &mipH);
+        if (mipW == 0 || mipH == 0) return;
+
+        int pixelCount = mipW * mipH;
+        size_t bufSize = std::max(pixelCount, 64);
+
+        glPixelStorei(GL_PACK_ALIGNMENT, 1);
+        std::vector<float> data(bufSize, 0.0f);
+        glGetTextureImage(tex, mip, GL_RED, GL_FLOAT,
+            (GLsizei)(bufSize * sizeof(float)), data.data());
+        glPixelStorei(GL_PACK_ALIGNMENT, 4);
+
+        float minV = FLT_MAX, maxV = -FLT_MAX;
+        for (int i = 0; i < pixelCount; i++) {
+            if (data[i] > 0.0f) {
+                minV = std::min(minV, data[i]);
+                maxV = std::max(maxV, data[i]);
+            }
+        }
+        if (minV >= maxV) minV = 0.0f;
+
+        // RGBA — brak problemów z row alignment
+        std::vector<uint8_t> rgba(pixelCount * 4);
+        for (int i = 0; i < pixelCount; i++) {
+            float   n = (maxV > minV) ? (data[i] - minV) / (maxV - minV) : 0.0f;
+            uint8_t v = (uint8_t)(glm::clamp(n, 0.0f, 1.0f) * 255.0f);
+            rgba[i * 4 + 0] = v;
+            rgba[i * 4 + 1] = v;
+            rgba[i * 4 + 2] = v;
+            rgba[i * 4 + 3] = 255;
+        }
+
+        glBindTexture(GL_TEXTURE_2D, debugTex);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, mipW, mipH, 0,
+            GL_RGBA, GL_UNSIGNED_BYTE, rgba.data());
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        // Skaluj podgląd do 320px szerokości zachowując proporcje
+        float dispW = 320.0f;
+        float dispH = dispW * ((float)mipH / (float)mipW);
+        ImGui::Text("mip%d: %dx%d", mip, mipW, mipH);
+        ImGui::Image((ImTextureID)(intptr_t)debugTex,
+            ImVec2(dispW, dispH), ImVec2(0, 1), ImVec2(1, 0));
+    }
 
     void RenderCamera(CameraComponent& cam, TransformComponent& transform, int width, int height) {
         ApplyViewport(cam.viewport, width, height);
@@ -982,16 +947,25 @@ public:
         if (fboWidth == w && fboHeight == h) return; // bez zmian
         fboWidth = w; fboHeight = h;
 
+        spdlog::warn("FBO sie ustawia");
         if (sceneFBO) {
             glDeleteFramebuffers(1, &sceneFBO);
             glDeleteTextures(1, &sceneColorTexture);
-            glDeleteRenderbuffers(1, &sceneDepthRBO);
-        }
+            glDeleteTextures(1, &sceneDepthTexture);
 
+            //if (depthTexturePrev) {
+            //    glDeleteTextures(1, &depthTexturePrev);
+            //    depthTexturePrev = 0;
+            //}
+
+            for (auto& [cam, hiz] : cameraHiZ)
+                hiz.Destroy();
+            cameraHiZ.clear();
+        }
+        
         glGenFramebuffers(1, &sceneFBO);
         glBindFramebuffer(GL_FRAMEBUFFER, sceneFBO);
 
-        // Textura koloru
         glGenTextures(1, &sceneColorTexture);
         glBindTexture(GL_TEXTURE_2D, sceneColorTexture);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
@@ -999,25 +973,254 @@ public:
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, sceneColorTexture, 0);
 
-        // Renderbuffer dla depth+stencil
-        glGenRenderbuffers(1, &sceneDepthRBO);
-        glBindRenderbuffer(GL_RENDERBUFFER, sceneDepthRBO);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, w, h);
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, sceneDepthRBO);
+        glGenTextures(1, &sceneDepthTexture);
+        glBindTexture(GL_TEXTURE_2D, sceneDepthTexture);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, w, h, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, sceneDepthTexture, 0);
 
         if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-            spdlog::error("PostProcessing FBO incomplete!");
-
+            spdlog::error("SceneFBO incomplete!");
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        glBindTexture(GL_TEXTURE_2D, 0);
     }
+
 
     GLuint GetSceneTexture() const { return sceneColorTexture; }
 
   
-
+    GLuint GetFirstCameraDepthPrev() const
+    {
+        if (cameraHiZ.empty()) return 0;
+        return cameraHiZ.begin()->second.depthPrev;
+    }
 };
 
 #endif
+
+
+//void RebuildGameObjectInRenderer(GameObject* e) {
+//    // Szukamy tego obiektu w renderQuery po wskaźniku
+//    auto& gos = renderQuery->gameobjects;
+//    auto& renderers = std::get<1>(renderQuery->componentsVectors);
+
+//    for (size_t i = 0; i < gos.size(); ++i) {
+//        if (gos[i] != e) continue;
+
+//        RenderComponent* rc = renderers[i];
+//        if (!rc) return;
+
+//        // 1. Zarejestruj animator jeśli nowy
+//        if (rc->animator &&
+//            drivenManager.animatorIDMap.find(rc->animator) == drivenManager.animatorIDMap.end())
+//        {
+//            drivenManager.animatorIDMap[rc->animator] =
+//                (uint32_t)drivenManager.animatorIDMap.size();
+//        }
+
+//        // 2. Dla każdego mesha sprawdź czy pass/mesh/materiał już istnieje
+//        for (auto& mesh : rc->meshes) {
+//            if (!mesh.cpuData || !mesh.material) continue;
+
+//            MeshData* md = mesh.cpuData.get();
+//            Material* mat = mesh.material.get();
+//            Shader* shader = mat->shader ? mat->shader : drivenManager.defaultShaderRender;
+
+//            uint32_t pid = drivenManager.GetOrCreatePass(shader, mat->surfaceType);
+//            GPUDrivenRenderer* r = drivenManager.GetRenderer(pid);
+//            if (!r) continue;
+
+//            // RegisterMesh/RegisterMaterial są idempotentne —
+//            // zwracają istniejące ID jeśli już zarejestrowane,
+//            // a dodają nowy wpis tylko gdy go nie ma
+//            bool meshIsNew = (r->GetMeshId(md) == UINT32_MAX);
+//            bool materialIsNew = (r->GetMaterialId(mat) == UINT32_MAX);
+
+//            if (meshIsNew)     r->RegisterMesh(md);
+//            if (materialIsNew) r->RegisterMaterial(mat);
+
+//            // Upload na GPU tylko jeśli faktycznie coś nowego trafiło do rejestrów
+//            // UploadMeshes() to pełna realokacja VBO/EBO/meshDataSSBO — wywołujemy rzadko
+//            if (meshIsNew)     r->UploadMeshes();
+//            if (materialIsNew) r->UploadMaterials();
+
+//            // Zawsze oznacz instancje jako brudne — nowy/zmieniony obiekt
+//            // musi przejść przez BuildInstance przy następnym RenderFrame
+//            r->dirtyInstance = true;
+//        }
+
+//        return; // obiekt znaleziony, kończymy
+//    }
+//}
+
+
+/*void RebuildAllRegistries(Query<TransformComponent, RenderComponent>& renderQuery) {
+    for (auto& entry : passes)
+        entry.renderer->Reset();
+
+    animatorIDMap.clear();
+
+    // identyczne jak InitPassesFromScene
+    auto& renderers = std::get<1>(renderQuery.componentsVectors);
+    for (size_t i = 0; i < renderers.size(); i++) {
+        RenderComponent* rc = renderers[i];
+        if (!rc) continue;
+
+        if (rc->animator && animatorIDMap.find(rc->animator) == animatorIDMap.end())
+            animatorIDMap[rc->animator] = (uint32_t)animatorIDMap.size();
+
+        for (auto& mesh : rc->meshes) {
+            if (!mesh.cpuData || !mesh.material) continue;
+            Material* mat = mesh.material.get();
+            Shader* shader = mat->shader ? mat->shader : defaultShaderRender;
+            uint32_t pid = GetOrCreatePass(shader, mat->surfaceType);
+            GPUDrivenRenderer* r = GetRenderer(pid);
+            if (!r) continue;
+            r->RegisterMesh(mesh.cpuData.get());
+            r->RegisterMaterial(mat);
+        }
+    }
+
+    for (auto& entry : passes) {
+        entry.renderer->UploadMeshes();
+        entry.renderer->UploadMaterials();
+    }
+}
+*/
+
+//std::unordered_map<AnimatorComponent*, uint32_t> animatorIDMap;
+
+//void InitGPUDrivenRenderer(int width, int height)
+//{
+//    auto& renderers = std::get<1>(renderQuery->componentsVectors);
+//    gpuRenderer.Init(width, height);
+
+//    for (size_t i = 0; i < renderers.size(); i++) {
+//        RenderComponent* r = renderers[i];
+//        if (!r) continue;
+
+//        if (r->animator && animatorIDMap.find(r->animator) == animatorIDMap.end())
+//            animatorIDMap[r->animator] = (uint32_t)animatorIDMap.size();
+
+//        for (auto& mesh : r->meshes) {
+//            if (!mesh.gpuMesh || !mesh.material || !mesh.cpuData) continue;
+
+//            MeshData* md = mesh.cpuData.get();
+//            Material* mat = mesh.material.get();
+
+//            gpuRenderer.RegisterMesh(md);
+//            gpuRenderer.RegisterMaterial(mat);
+//        }
+//    }
+
+
+//    gpuRenderer.UploadMeshes();
+//    gpuRenderer.UploadMaterials();
+
+//    // Depth texture — tworzona TYLKO RAZ
+//    if (depthTexturePrev == 0) {
+//        glGenTextures(1, &depthTexturePrev);
+//        glBindTexture(GL_TEXTURE_2D, depthTexturePrev);
+//        glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32F, width, height);
+//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+//        glBindTexture(GL_TEXTURE_2D, 0);
+//    }
+
+
+//    gpuRendererReady = true;
+//}
+//std::vector<RenderData> renderDataCache;
+//std::vector<glm::mat4> boneMatricesCache;
+//struct AnimCache { uint32_t slot; AnimatorComponent* anim; };
+
+//std::vector<RenderData>& CollectRenderData()
+//{
+//    auto& transforms = std::get<0>(renderQuery->componentsVectors);
+//    auto& renderers = std::get<1>(renderQuery->componentsVectors);
+
+//    renderDataCache.clear();
+//    renderDataCache.reserve(renderQuery->gameobjects.size());
+
+//    const size_t objectCount = renderQuery->gameobjects.size();
+
+//    // trzeba znalezc to co ustawia animatory w RenderComponent zeby pozbyc sie tej petli i robic to raz
+//    // 1. najpierw zarejestruj nowe animatory
+//    for (size_t i = 0; i < objectCount; ++i) {
+//        const RenderComponent* r = renderers[i];
+//        if (!r || !r->animator) continue;
+//        if (animatorIDMap.find(r->animator) == animatorIDMap.end())
+//            animatorIDMap[r->animator] = (uint32_t)animatorIDMap.size();
+//    }
+
+//    size_t requiredSize = animatorIDMap.size() * MAX_BONES_PER_SKELETON;
+//    if (boneMatricesCache.size() != requiredSize)
+//        boneMatricesCache.resize(requiredSize, glm::mat4(1.0f));
+
+//    for (size_t i = 0; i < objectCount; ++i)
+//    {
+//        const TransformComponent* t = transforms[i];
+//        const RenderComponent* r = renderers[i];
+
+//        if (!t || !r)
+//            continue;
+//        const glm::mat4 model = t->modelMatrix;
+
+//        
+//        const auto& meshes = r->meshes;
+//        auto animator = r->animator;
+
+//        auto animIt = animator ? animatorIDMap.find(animator) : animatorIDMap.end();
+//        if (animIt != animatorIDMap.end() && animator->currentSkeleton)
+//        {
+//            uint32_t slot = animIt->second;
+//            uint32_t boneCount = (uint32_t)std::min(animator->finalBoneMatrices.size(), (size_t)MAX_BONES_PER_SKELETON);
+
+//            std::copy(animator->finalBoneMatrices.begin(), animator->finalBoneMatrices.begin() + boneCount, boneMatricesCache.begin() + slot * MAX_BONES_PER_SKELETON);
+//        }
+
+//        for (const auto& mesh : meshes)
+//        {
+//            auto* gpuMesh = mesh.cpuData.get();
+//            auto* material = mesh.material.get();
+
+//            if (!gpuMesh || !material || !mesh.cpuData)
+//                continue;
+
+//            auto meshID = gpuRenderer.GetMeshId(gpuMesh);
+//            if (meshID == UINT32_MAX)
+//                continue;
+
+//            auto matID = gpuRenderer.GetMaterialId(material);
+//            if (matID == UINT32_MAX)
+//                continue;
+
+
+//            auto& aabb = mesh.cpuData->aabb;
+
+//            renderDataCache.emplace_back(RenderData{
+//                .modelMatrix = model,
+//                .aabbMin = glm::vec4(aabb.min, 0.0f),
+//                .aabbMax = glm::vec4(aabb.max, 0.0f),
+//                .meshID = meshID,
+//                .materialID = matID,
+//                .skeletonID = animIt != animatorIDMap.end() ? animIt->second : NO_SKELETON,
+//                .padding = 0
+//                });            
+//        }
+//    }
+//    
+//    gpuRenderer.ResizeBoneBufferIfNeeded((uint32_t)animatorIDMap.size());
+//    gpuRenderer.UploadAllBoneMatrices(boneMatricesCache);
+
+//    return renderDataCache;
+//}
 
 
 

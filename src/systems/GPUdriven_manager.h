@@ -128,6 +128,12 @@ public:
         spdlog::info("RendererManager: HiZ {}x{} mips={}", w, h, hizMipLevels);
     }
 
+    void AttachCameraHiZ(GLuint hizTexture, int hizMipLevels, int vpW, int vpH, bool occlusionEnabled, int vpX = 0, int vpY = 0)
+    {
+        for (auto& entry : passes)
+            entry.renderer->AttachHiZ(hizTexture, hizMipLevels, vpW, vpH, vpX, vpY, occlusionEnabled);  // ← vpX, vpY
+    }
+
     void InitPassesFromScene(Query<TransformComponent, RenderComponent>& renderQuery)
     {
         auto& renderers = std::get<1>(renderQuery.componentsVectors);
@@ -459,13 +465,13 @@ public:
 
         entry.renderer = std::make_unique<GPUDrivenRenderer>();
         entry.renderer->Init(screenWidth, screenHeight);
-        entry.renderer->AttachHiZ(hizTexture, hizMipLevels);
         entry.renderer->shaderHizCullCount = shaderCountInstance;
         entry.renderer->shaderPrefixSum = shaderPrefixSum;
         entry.renderer->shaderHizWritePass = shaderHizWritePass;
         entry.renderer->shaderBuildCmds = shaderBuildCmds;
         entry.renderer->shaderHizDownsample = shaderHizDownsample;
         entry.renderer->shaderRender =  defaultShaderRender;//cfg.shader ? cfg.shader :
+        entry.renderer->AttachHiZ(hizTexture, hizMipLevels, screenWidth, screenHeight);
         spdlog::info("Add pass");
         passes.push_back(std::move(entry));
 
@@ -626,7 +632,7 @@ public:
     {
         for (auto& entry : passes) {
             if (entry.renderer->shaderHizDownsample) {
-                entry.renderer->BuildHiZ();
+                //entry.renderer->BuildHiZ();
                 return;
             }
         }

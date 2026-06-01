@@ -198,6 +198,15 @@ public:
     int hizMipLevels = 0;
     int screenWidth = 0, screenHeight = 0;
 
+
+    int vpWidth = 0, vpHeight = 0;
+    int vpOffsetX = 0, vpOffsetY = 0;
+
+    GLint locHiz_isMip0 = -1;
+    GLint locHiz_currentSize = -1;
+    GLint locHiz_prevSize = -1;
+    GLint locHiz_vpOffset = -1;
+
     ComputeShader* shaderHizCullCount = nullptr;
     ComputeShader* shaderPrefixSum = nullptr;
     ComputeShader* shaderHizWritePass = nullptr;
@@ -206,6 +215,7 @@ public:
     Shader* shaderRender = nullptr;
 
     bool dirtyInstance = true;
+    bool occlussionEnabled = false;
 
 	GPUDrivenRenderer() = default; 
 
@@ -327,24 +337,40 @@ public:
 
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-        InitHiZ(width, height);
+        //InitHiZ(width, height);
     }
 
-    void InitHiZ(int width, int height)
-    {
-        if (hizTexture) glDeleteTextures(1, &hizTexture);
+    //void InitHiZ(int width, int height)
+    //{
+    //    if (hizTexture) glDeleteTextures(1, &hizTexture);
+    //    hizMipLevels = 1 + (int)std::floor(std::log2(std::max(width, height)));
 
-        hizMipLevels = 1 + (int)std::floor(std::log2(std::max(width, height)));
+    //    glGenTextures(1, &hizTexture);
+    //    glBindTexture(GL_TEXTURE_2D, hizTexture);
+    //    glTexStorage2D(GL_TEXTURE_2D, hizMipLevels, GL_DEPTH_COMPONENT32F, width, height);
+    //    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+    //    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    //    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    //    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    //    glBindTexture(GL_TEXTURE_2D, 0);
+    //}
 
-        glGenTextures(1, &hizTexture);
-        glBindTexture(GL_TEXTURE_2D, hizTexture);
-        glTexStorage2D(GL_TEXTURE_2D, hizMipLevels, GL_R32F, width, height);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glBindTexture(GL_TEXTURE_2D, 0);
-    }
+    //void InitHiZ(int w, int h)
+    //{
+    //    hizMipLevels = static_cast<int>(std::floor(std::log2(std::max(w , h)))) + 1;
+
+    //    //glGenTextures(1, &hizTexture);
+    //    //glBindTexture(GL_TEXTURE_2D, hizTexture);
+    //    //glTexStorage2D(GL_TEXTURE_2D, hizMipLevels, GL_DEPTH_COMPONENT32F, w, h); // ← zmiana
+    //    //glTextureParameteri(hizTexture, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+    //    //glTextureParameteri(hizTexture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    //    //glTextureParameteri(hizTexture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    //    //glTextureParameteri(hizTexture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    //    //glTextureParameteri(hizTexture, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+    //    //glBindTexture(GL_TEXTURE_2D, 0);
+
+    //    spdlog::info("RendererManager: HiZ {}x{} mips={}", w, h, hizMipLevels);
+    //}
 
     void clearRegisterAll()
     {
@@ -357,10 +383,24 @@ public:
         materialRegistry.clear();
     }
 
-    void AttachHiZ(GLuint tex, int mipLevels) {
+    void AttachHiZ(GLuint tex, int mipLevels, int vpW, int vpH, int vpX = 0, int vpY = 0, bool occlusionEnabled = false)
+    {
         hizTexture = tex;
         hizMipLevels = mipLevels;
+        vpWidth = vpW;
+        vpHeight = vpH;
+        vpOffsetX = vpX;
+        vpOffsetY = vpY;
+        occlussionEnabled = occlusionEnabled;
+
+        if (shaderHizDownsample) {
+            locHiz_isMip0 = glGetUniformLocation(shaderHizDownsample->ID, "isMip0");
+            locHiz_currentSize = glGetUniformLocation(shaderHizDownsample->ID, "currentMipSize");
+            locHiz_prevSize = glGetUniformLocation(shaderHizDownsample->ID, "prevMipSize");
+            locHiz_vpOffset = glGetUniformLocation(shaderHizDownsample->ID, "vpOffset");
+        }
     }
+
 
 
     uint32_t RegisterMesh(MeshData* data)
@@ -476,7 +516,7 @@ public:
         glBufferData(GL_SHADER_STORAGE_BUFFER, meshCount * sizeof(DrawElementsIndirectCommand), nullptr, GL_DYNAMIC_DRAW);
 
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-        spdlog::critical("Dane sie wysylaja");
+        spdlog::warn("Dane sie wysylaja");
     }
 
     void UploadMaterials()
@@ -484,7 +524,7 @@ public:
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, materialSSBO);
         glBufferData(GL_SHADER_STORAGE_BUFFER, materials.size() * sizeof(GPUMaterial), materials.data(), GL_STATIC_DRAW);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-        spdlog::critical("Materialy sie wysylaja");
+        spdlog::warn("Materialy sie wysylaja");
     }
 
     //size_t prevSizeLights = 0;
@@ -589,11 +629,13 @@ public:
         shaderHizWritePass->use();
 
         glUniformMatrix4fv(glGetUniformLocation(shaderHizWritePass->ID, "viewProjection"), 1, GL_FALSE, &viewProj[0][0]);
-        glUniform2f(glGetUniformLocation(shaderHizWritePass->ID, "screenSize"), (float)screenWidth, (float)screenHeight);
-        glUniform1i(glGetUniformLocation(shaderHizWritePass->ID, "hizMipLevels"), hizMipLevels);
+        glUniform2f(glGetUniformLocation(shaderHizWritePass->ID, "screenSize"), (float)(vpWidth > 0 ? vpWidth : screenWidth), (float)(vpHeight > 0 ? vpHeight : screenHeight));
+        glUniform1i(glGetUniformLocation(shaderHizWritePass->ID, "hizMipLevels"), hizTexture ? hizMipLevels : 0); // 0 = wyłącz HiZ
         glUniform1ui(glGetUniformLocation(shaderHizWritePass->ID, "objectCount"), objectCount);
+        glUniform1i(glGetUniformLocation(shaderHizWritePass->ID, "enableOcclusion"), occlussionEnabled ? GL_TRUE : GL_FALSE); // 0 = wyłącz HiZ
         glUniform1i(glGetUniformLocation(shaderHizWritePass->ID, "enableFrustumCulling"), GL_TRUE);
 
+        glTextureParameteri(hizTexture, GL_TEXTURE_COMPARE_MODE, GL_NONE);
         glBindTextureUnit(0, hizTexture);
 
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, renderDataSSBO);
@@ -619,40 +661,163 @@ public:
         glMemoryBarrier(GL_COMMAND_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
     }
 
+    //void CopyDepthToHiZ(GLuint depthTexture)
+    //{
+    //    glCopyImageSubData(depthTexture, GL_TEXTURE_2D, 0, 0, 0, 0, hizTexture, GL_TEXTURE_2D, 0, 0, 0, 0, screenWidth, screenHeight, 1);
+    //}
+
     void CopyDepthToHiZ(GLuint depthTexture)
     {
-        glCopyImageSubData(depthTexture, GL_TEXTURE_2D, 0, 0, 0, 0, hizTexture, GL_TEXTURE_2D, 0, 0, 0, 0, screenWidth, screenHeight, 1);
+        glCopyImageSubData(depthTexture, GL_TEXTURE_2D, 0, 0, 0, 0,
+            hizTexture, GL_TEXTURE_2D, 0, 0, 0, 0,
+            screenWidth, screenHeight, 1);
     }
 
-    void BuildHiZ()
+
+    void BuildHiZ(GLuint depthTexture)
     {
+        int w = vpWidth > 0 ? vpWidth : screenWidth;
+        int h = vpHeight > 0 ? vpHeight : screenHeight;
+
         shaderHizDownsample->use();
 
-        int w = screenWidth, h = screenHeight;
+        glTextureParameteri(depthTexture, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+        glTextureParameteri(hizTexture, GL_TEXTURE_COMPARE_MODE, GL_NONE);
 
-        for (int mip = 1; mip < hizMipLevels; mip++) {
-            w = std::max(1, w / 2);
-            h = std::max(1, h / 2);
+        // ── Krok 0: sceneDepthTexture → hiz mip0 (z offsetem viewportu)
+        glUniform1i(locHiz_isMip0, GL_TRUE);
+        glUniform2i(locHiz_currentSize, w, h);
+        glUniform2i(locHiz_vpOffset, vpOffsetX, vpOffsetY);
 
-            // Poprzedni mip jako sampler (texture view na mip-1)
-            // Ograniczamy BASE/MAX żeby sampler czytał tylko ten poziom
-            glTextureParameteri(hizTexture, GL_TEXTURE_BASE_LEVEL, mip - 1);
-            glTextureParameteri(hizTexture, GL_TEXTURE_MAX_LEVEL, mip - 1);
-            glBindTextureUnit(0, hizTexture);
+        glBindTextureUnit(0, depthTexture);
+        glBindImageTexture(2, hizTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
 
-            // Aktualny mip jako image2D (zapis)
-            glBindImageTexture(1, hizTexture, mip, GL_FALSE, 0,
-                GL_WRITE_ONLY, GL_R32F);
+        glDispatchCompute((w + 15) / 16, (h + 15) / 16, 1);
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
 
-            glDispatchCompute((w + 7) / 8, (h + 7) / 8, 1);
-            glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT
-                | GL_TEXTURE_FETCH_BARRIER_BIT);
+        // ── Krok 1+: hiz mip(N-1) → mip(N) — bez zmian
+        glUniform1i(locHiz_isMip0, GL_FALSE);
+
+        int mw = w, mh = h;
+        for (int mip = 1; mip < hizMipLevels; mip++)
+        {
+            int prevW = mw, prevH = mh;
+            mw = std::max(1, mw / 2);
+            mh = std::max(1, mh / 2);
+
+            glUniform2i(locHiz_currentSize, mw, mh);
+            glUniform2i(locHiz_prevSize, prevW, prevH);
+
+            glBindImageTexture(1, hizTexture, mip - 1, GL_FALSE, 0, GL_READ_ONLY, GL_R32F);
+            glBindImageTexture(2, hizTexture, mip, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
+
+            glDispatchCompute((mw + 15) / 16, (mh + 15) / 16, 1);
+            glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
         }
-
-        // Przywróć pełny zakres mipów
-        glTextureParameteri(hizTexture, GL_TEXTURE_BASE_LEVEL, 0);
-        glTextureParameteri(hizTexture, GL_TEXTURE_MAX_LEVEL, hizMipLevels - 1);
     }
+
+    //void BuildHiZ(GLuint depthTexture)
+    //{
+    //    int w = vpWidth > 0 ? vpWidth : screenWidth;
+    //    int h = vpHeight > 0 ? vpHeight : screenHeight;
+
+    //    shaderHizDownsample->use();
+    //    glTextureParameteri(depthTexture, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+
+    //    // Krok 0: depth → mip0, kopiuj 1:1
+    //    glUniform1i(glGetUniformLocation(shaderHizDownsample->ID, "isMip0"), GL_TRUE);
+    //    glBindTextureUnit(0, depthTexture);
+    //    glBindImageTexture(1, hizTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
+    //    glDispatchCompute((w + 7) / 8, (h + 7) / 8, 1);
+    //    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
+
+    //    // Krok 1+: downsampling
+    //    glUniform1i(glGetUniformLocation(shaderHizDownsample->ID, "isMip0"), GL_FALSE);
+    //    glTextureParameteri(hizTexture, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+
+    //    int mw = w, mh = h;
+    //    for (int mip = 1; mip < hizMipLevels; mip++) {
+    //        mw = std::max(1, mw / 2);
+    //        mh = std::max(1, mh / 2);
+
+    //        glTextureParameteri(hizTexture, GL_TEXTURE_BASE_LEVEL, mip - 1);
+    //        glTextureParameteri(hizTexture, GL_TEXTURE_MAX_LEVEL, mip - 1);
+    //        glBindTextureUnit(0, hizTexture);
+    //        glBindImageTexture(1, hizTexture, mip, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
+
+    //        glDispatchCompute((mw + 7) / 8, (mh + 7) / 8, 1);
+    //        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
+    //    }
+
+    //    glTextureParameteri(hizTexture, GL_TEXTURE_BASE_LEVEL, 0);
+    //    glTextureParameteri(hizTexture, GL_TEXTURE_MAX_LEVEL, hizMipLevels - 1);
+    //}
+
+    //void BuildHiZ(GLuint depthTexture)
+    //{
+    //    int w = vpWidth > 0 ? vpWidth : screenWidth;
+    //    int h = vpHeight > 0 ? vpHeight : screenHeight;
+
+    //    shaderHizDownsample->use();
+
+    //    // Krok 0: depth texture → hiz mip0 przez compute (nie glCopyImageSubData!)
+    //    // depth ma GL_DEPTH_COMPONENT32F, hiz ma GL_R32F — różne klasy, copy jest GL_INVALID_OPERATION
+    //    glTextureParameteri(depthTexture, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+    //    glBindTextureUnit(0, depthTexture);
+    //    glBindImageTexture(1, hizTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
+    //    glDispatchCompute((w + 7) / 8, (h + 7) / 8, 1);
+    //    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
+
+    //    // Krok 1+: downsampling mip1, mip2, ...
+    //    glTextureParameteri(hizTexture, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+
+    //    int mw = w, mh = h;
+    //    for (int mip = 1; mip < hizMipLevels; mip++) {
+    //        mw = std::max(1, mw / 2);
+    //        mh = std::max(1, mh / 2);
+
+    //        glTextureParameteri(hizTexture, GL_TEXTURE_BASE_LEVEL, mip - 1);
+    //        glTextureParameteri(hizTexture, GL_TEXTURE_MAX_LEVEL, mip - 1);
+    //        glBindTextureUnit(0, hizTexture);
+    //        glBindImageTexture(1, hizTexture, mip, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
+
+    //        glDispatchCompute((mw + 7) / 8, (mh + 7) / 8, 1);
+    //        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
+    //    }
+
+    //    glTextureParameteri(hizTexture, GL_TEXTURE_BASE_LEVEL, 0);
+    //    glTextureParameteri(hizTexture, GL_TEXTURE_MAX_LEVEL, hizMipLevels - 1);
+    //}
+
+    //void BuildHiZ()
+    //{
+    //    shaderHizDownsample->use();
+
+    //    int w = screenWidth, h = screenHeight;
+
+    //    for (int mip = 1; mip < hizMipLevels; mip++) {
+    //        w = std::max(1, w / 2);
+    //        h = std::max(1, h / 2);
+
+    //        // Poprzedni mip jako sampler (texture view na mip-1)
+    //        // Ograniczamy BASE/MAX żeby sampler czytał tylko ten poziom
+    //        glTextureParameteri(hizTexture, GL_TEXTURE_BASE_LEVEL, mip - 1);
+    //        glTextureParameteri(hizTexture, GL_TEXTURE_MAX_LEVEL, mip - 1);
+    //        glBindTextureUnit(0, hizTexture);
+
+    //        // Aktualny mip jako image2D (zapis)
+    //        glBindImageTexture(1, hizTexture, mip, GL_FALSE, 0,
+    //            GL_WRITE_ONLY, GL_R32F);
+
+    //        glDispatchCompute((w + 7) / 8, (h + 7) / 8, 1);
+    //        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT
+    //            | GL_TEXTURE_FETCH_BARRIER_BIT);
+    //    }
+
+    //    // Przywróć pełny zakres mipów
+    //    glTextureParameteri(hizTexture, GL_TEXTURE_BASE_LEVEL, 0);
+    //    glTextureParameteri(hizTexture, GL_TEXTURE_MAX_LEVEL, hizMipLevels - 1);
+    //}
 
 
 
@@ -703,9 +868,10 @@ public:
         //DebugReadBuffers(objCount, (uint32_t)meshesData.size());
 
         // 1. Zbuduj HiZ z depth poprzedniej klatki
-  /*      CopyDepthToHiZ(depthTexturePrevFrame);
-        BuildHiZ();*/
-
+        if (depthTexturePrevFrame != 0) {
+            //CopyDepthToHiZ(depthTexturePrevFrame);
+            BuildHiZ(depthTexturePrevFrame);
+        }
         if (dirtyInstance)
             BuildInstance(objCount);
         //DebugPipelineState(objCount);
@@ -725,9 +891,98 @@ public:
         //DebugPipelineState(objCount);
         // 7. Rysuj
         Draw();
-
-
     }
+
+
+    void DebugShowHiZ(int mipLevel = 0)
+    {
+        if (!hizTexture) return;
+
+        static int    selectedMip = 0;
+        static GLuint debugTex = 0;
+        static int    debugW = 0;
+        static int    debugH = 0;
+
+        ImGui::Begin("HiZ Debug");
+
+        if (ImGui::SliderInt("Mip Level", &selectedMip, 0, hizMipLevels - 1))
+            debugW = debugH = 0;
+
+        mipLevel = selectedMip;
+
+        GLint mipW = 0, mipH = 0;
+        glGetTextureLevelParameteriv(hizTexture, mipLevel, GL_TEXTURE_WIDTH, &mipW);
+        glGetTextureLevelParameteriv(hizTexture, mipLevel, GL_TEXTURE_HEIGHT, &mipH);
+        if (mipW == 0 || mipH == 0) { ImGui::End(); return; }
+        // Sprawdź też czy tekstura w ogóle ma ten mip
+        GLint compressed = 0, internalFmt = 0;
+        glGetTextureLevelParameteriv(hizTexture, mipLevel, GL_TEXTURE_COMPRESSED, &compressed);
+        glGetTextureLevelParameteriv(hizTexture, mipLevel, GL_TEXTURE_INTERNAL_FORMAT, &internalFmt);
+
+        //spdlog::warn("HiZ mip{}: {}x{}  fmt=0x{:X}  compressed={}", mipLevel, mipW, mipH, internalFmt, compressed);
+        // Bufor z zapasem + GL_PACK_ALIGNMENT 1 żeby uniknąć out-of-bounds przy małych mipach
+        glPixelStorei(GL_PACK_ALIGNMENT, 1);
+        size_t bufSize = std::max((size_t)(mipW * mipH), (size_t)64);
+        std::vector<float> pixels(bufSize, 0.0f);
+        glGetTextureImage(hizTexture, mipLevel,
+            GL_RED, GL_FLOAT,
+            (GLsizei)(bufSize * sizeof(float)),
+            pixels.data());
+        glPixelStorei(GL_PACK_ALIGNMENT, 4);
+
+        int   pixelCount = mipW * mipH;
+        float dMin = *std::min_element(pixels.begin(), pixels.begin() + pixelCount);
+        float dMax = *std::max_element(pixels.begin(), pixels.begin() + pixelCount);
+        float range = (dMax - dMin) > 0.0001f ? (dMax - dMin) : 1.0f;
+
+        std::vector<uint8_t> rgba(pixelCount * 4);
+        for (int i = 0; i < pixelCount; i++) {
+            float   n = 1.0f - ((pixels[i] - dMin) / range);
+            uint8_t v = (uint8_t)(glm::clamp(n, 0.0f, 1.0f) * 255.0f);
+            rgba[i * 4 + 0] = v;
+            rgba[i * 4 + 1] = v;
+            rgba[i * 4 + 2] = v;
+            rgba[i * 4 + 3] = 255;
+        }
+
+        if (!debugTex) {
+            glGenTextures(1, &debugTex);
+            glBindTexture(GL_TEXTURE_2D, debugTex);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
+
+        glBindTexture(GL_TEXTURE_2D, debugTex);
+        if (debugW != (int)mipW || debugH != (int)mipH) {
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, mipW, mipH, 0,
+                GL_RGBA, GL_UNSIGNED_BYTE, rgba.data());
+            debugW = (int)mipW;
+            debugH = (int)mipH;
+        }
+        else {
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, mipW, mipH,
+                GL_RGBA, GL_UNSIGNED_BYTE, rgba.data());
+        }
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        ImGui::Text("Mip %d: %dx%d  depth [%.4f, %.4f]",
+            mipLevel, mipW, mipH, dMin, dMax);
+
+        float dispW = std::min((float)mipW * 2.0f, 512.0f);
+        float dispH = dispW * ((float)mipH / (float)mipW);
+        ImGui::Image(
+            (ImTextureID)(intptr_t)debugTex,
+            ImVec2(dispW, dispH),
+            ImVec2(0, 1),
+            ImVec2(1, 0)
+        );
+
+        ImGui::End();
+    }
+
     void DebugPipelineState(uint32_t objCount)
     {
         // ── 1. Czy w ogóle są meshe i obiekty? ───────────────────────

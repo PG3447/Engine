@@ -12,6 +12,7 @@ uniform mat4 viewProjection;
 uniform int  hizMipLevels;
 uniform uint  objectCount;
 uniform vec2 screenSize;
+uniform bool enableOcclusion;
 uniform bool enableFrustumCulling;
 
 struct RenderData {
@@ -114,8 +115,7 @@ bool frustumCull(vec3 aabbMin, vec3 aabbMax, mat4 model, vec4 planes[6])
 // -----------------------------------------------
 bool hizCull(vec3 aabbMin, vec3 aabbMax, mat4 mvp)
 {
-    // Oblicz screen-space AABB (NDC)
-    vec2 sMin = vec2( 1.0),  sMax = vec2(-1.0);
+    vec2 sMin = vec2( 1.0), sMax = vec2(-1.0);
     float zMin = 1.0;
 
     for (int i = 0; i < 8; i++) {
@@ -125,30 +125,38 @@ bool hizCull(vec3 aabbMin, vec3 aabbMax, mat4 mvp)
             (i & 4) != 0 ? aabbMax.z : aabbMin.z
         );
         vec4 p = mvp * vec4(c, 1.0);
-        if (p.w <= 0.0) return false; // za kamerą → nie culluj bezpiecznie
+        if (p.w <= 0.0) return false;
         vec3 ndc = p.xyz / p.w;
         sMin = min(sMin, ndc.xy);
         sMax = max(sMax, ndc.xy);
-        zMin = min(zMin, ndc.z * 0.5 + 0.5); // depth w [0,1]
+        zMin = min(zMin, ndc.z * 0.5 + 0.5);
     }
 
-    // UV tekstury HiZ
-    vec2 uvMin = sMin * 0.5 + 0.5;
-    vec2 uvMax = sMax * 0.5 + 0.5;
+    vec2 uvMin = clamp(sMin * 0.5 + 0.5, vec2(0.0), vec2(1.0));
+    vec2 uvMax = clamp(sMax * 0.5 + 0.5, vec2(0.0), vec2(1.0));
 
-    // Wybierz odpowiedni mip na podstawie rozmiaru footprintu
-    vec2 size   = (uvMax - uvMin) * screenSize;
-    float mip   = ceil(log2(max(size.x, size.y)));
-    mip         = clamp(mip, 0.0, float(hizMipLevels - 1));
+    vec2 size = (uvMax - uvMin) * screenSize;
+    float mip = ceil(log2(max(size.x, size.y)));
+    mip = clamp(mip, 0.0, float(hizMipLevels - 1));
 
-    // Próbkuj HiZ (przechowuje MAX depth w mipie)
-    vec2  uvCenter  = (uvMin + uvMax) * 0.5;
-    float hizDepth  = textureLod(hizCullingTexture, uvCenter, mip).r;
+    vec2  uvCenter = (uvMin + uvMax) * 0.5;
+    float hizDepth = textureLod(hizCullingTexture, uvCenter, mip).r;
 
-
-    // Obiekt jest za czymś innym → odrzuć
     return zMin > hizDepth;
 }
+
+/*
+float mip = ceil(log2(max(size.x, size.y))) + 1.0;
+*/
+
+/*
+float h0 = textureLod(hizCullingTexture, uvMin, mip).r;
+float h1 = textureLod(hizCullingTexture, uvMax, mip).r;
+float h2 = textureLod(hizCullingTexture, vec2(uvMin.x, uvMax.y), mip).r;
+float h3 = textureLod(hizCullingTexture, vec2(uvMax.x, uvMin.y), mip).r;
+float h4 = textureLod(hizCullingTexture, uvCenter, mip).r;
+float hizDepth = max(max(max(h0, h1), max(h2, h3)), h4);
+*/
 
 
 shared vec4 sharedPlanes[6];
@@ -166,6 +174,11 @@ void main()
     RenderData obj = objects[objID];
 
      if (enableFrustumCulling && frustumCull(obj.aabbMin.xyz, obj.aabbMax.xyz, obj.model, sharedPlanes))
+    {
+        return;
+    }
+
+    if (enableOcclusion && hizMipLevels > 0 && hizCull(obj.aabbMin.xyz, obj.aabbMax.xyz, viewProjection * obj.model))
     {
         return;
     }
