@@ -21,14 +21,14 @@ void main()
     }
     else
     {
-        // downsampling 2x2 — bierz max
+        // rozmiar poprzedniego mipa = aktualny * 2
         ivec2 srcCoord = texelCoord * 2;
-        ivec2 depthSize = textureSize(depthSrc, 0);
+        ivec2 prevSize = imageSize(currentMip) * 2;
 
-        float d0 = texelFetch(depthSrc, min(srcCoord + ivec2(0,0), depthSize-1), 0).r;
-        float d1 = texelFetch(depthSrc, min(srcCoord + ivec2(1,0), depthSize-1), 0).r;
-        float d2 = texelFetch(depthSrc, min(srcCoord + ivec2(0,1), depthSize-1), 0).r;
-        float d3 = texelFetch(depthSrc, min(srcCoord + ivec2(1,1), depthSize-1), 0).r;
+        float d0 = texelFetch(depthSrc, min(srcCoord + ivec2(0,0), prevSize-1), 0).r;
+        float d1 = texelFetch(depthSrc, min(srcCoord + ivec2(1,0), prevSize-1), 0).r;
+        float d2 = texelFetch(depthSrc, min(srcCoord + ivec2(0,1), prevSize-1), 0).r;
+        float d3 = texelFetch(depthSrc, min(srcCoord + ivec2(1,1), prevSize-1), 0).r;
 
         result = max(max(d0, d1), max(d2, d3));
     }
