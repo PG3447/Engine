@@ -1835,14 +1835,15 @@ void createCrematorium(Scene* scena) {
     CreateStaticObject(scena, wallModel2.get(), ourShader.get(), "ScianaKoncowaKrematorium", glm::vec3(180, 0, -180), glm::vec3(80, 50, 1), std::nullopt, glm::vec3(1, 50, 80));
     CreateStaticObject(scena, wallModel.get(),  ourShader.get(), "ScianaKremLewa",       glm::vec3(120.180, 0, -259.680), glm::vec3(60, 50, 1), std::nullopt, glm::vec3(60, 100, 1));
 
-    crematoriumPuzzle.coffinScale       = glm::vec3(1.55f, 1.05f, 32.0f);
     crematoriumPuzzle.spacingHorizontal = 6.0f;
     crematoriumPuzzle.spacingVertical   = 3.5f;
 
-    crematoriumPuzzle.minExtensionDistance = 12.0f;
-    crematoriumPuzzle.maxExtensionDistance = 40.5f;
+    crematoriumPuzzle.minExtensionDistance = 10.0f;
+    crematoriumPuzzle.maxExtensionDistance = 39.5f;
 
-    crematoriumPuzzle.wallOffset = 35.0f;
+    crematoriumPuzzle.coffinDimensions = glm::vec3(1.55f, 1.05f, 32.0f);
+
+    crematoriumPuzzle.wallOffset = 15.0f;
 
     crematoriumPuzzle.w1_buildDirX  = -1.0f;
     crematoriumPuzzle.w1_extendDirZ =  1.0f;

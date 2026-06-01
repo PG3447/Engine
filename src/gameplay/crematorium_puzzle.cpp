@@ -11,11 +11,10 @@ void CrematoriumPuzzle::Init(Scene* scene, std::shared_ptr<Model> coffinModel, g
             obj->name = "Coffin_L_" + std::to_string(r) + "_" + std::to_string(c);
 
             auto* transform = obj->AddComponent<TransformComponent>();
-            transform->scale = coffinScale;
+            transform->scale = renderScale;
 
             glm::vec3 posOnWall = cornerPosition + glm::vec3((c + 1) * spacingHorizontal * w1_buildDirX, r * spacingVertical, 0.0f);
-
-            glm::vec3 pos = posOnWall - glm::vec3(0.0f, 0.0f, (coffinScale.z + wallOffset) * w1_extendDirZ);
+            glm::vec3 pos = posOnWall - glm::vec3(0.0f, 0.0f, (coffinDimensions.z + wallOffset) * w1_extendDirZ);
             transform->position = pos;
 
             bool interactable = (configLeftWall[r][c] == 1);
@@ -32,8 +31,8 @@ void CrematoriumPuzzle::Init(Scene* scene, std::shared_ptr<Model> coffinModel, g
             }
 
             auto* collider = obj->AddComponent<ColliderComponent>();
-            collider->halfSize = glm::vec3(coffinScale.x, coffinScale.y, coffinScale.z * 1.5f);
-            collider->offset = glm::vec3(0.0f, 0.0f, coffinScale.z * 0.5f * w1_extendDirZ);
+            collider->halfSize = glm::vec3(coffinDimensions.x * 0.8f, coffinDimensions.y * 0.8f, coffinDimensions.z * 1.2f);
+            collider->offset = glm::vec3(0.0f, 0.0f, coffinDimensions.z * 0.5f * w1_extendDirZ);
 
             CoffinData data;
             data.gameObject = obj;
@@ -52,11 +51,10 @@ void CrematoriumPuzzle::Init(Scene* scene, std::shared_ptr<Model> coffinModel, g
             obj->name = "Coffin_R_" + std::to_string(r) + "_" + std::to_string(c);
 
             auto* transform = obj->AddComponent<TransformComponent>();
-            transform->scale = coffinScale;
+            transform->scale = renderScale;
 
             glm::vec3 posOnWall = cornerPosition + glm::vec3(0.0f, r * spacingVertical, (c + 1) * spacingHorizontal * w2_buildDirZ);
-
-            glm::vec3 pos = posOnWall - glm::vec3((coffinScale.z + wallOffset) * w2_extendDirX, 0.0f, 0.0f);
+            glm::vec3 pos = posOnWall - glm::vec3((coffinDimensions.z + wallOffset) * w2_extendDirX, 0.0f, 0.0f);
             transform->position = pos;
             transform->rotation = glm::vec3(0.0f, -90.0f, 0.0f);
 
@@ -74,8 +72,8 @@ void CrematoriumPuzzle::Init(Scene* scene, std::shared_ptr<Model> coffinModel, g
             }
 
             auto* collider = obj->AddComponent<ColliderComponent>();
-            collider->halfSize = glm::vec3(coffinScale.z * 1.5f, coffinScale.y, coffinScale.x);
-            collider->offset = glm::vec3(coffinScale.z * 0.5f * w2_extendDirX, 0.0f, 0.0f);
+            collider->halfSize = glm::vec3(coffinDimensions.z * 1.2f, coffinDimensions.y * 0.8f, coffinDimensions.x * 0.8f);
+            collider->offset = glm::vec3(coffinDimensions.z * 0.5f * w2_extendDirX, 0.0f, 0.0f);
 
             CoffinData data;
             data.gameObject = obj;

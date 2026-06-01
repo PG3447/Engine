@@ -54,7 +54,10 @@ public:
 
     float wallOffset = 18.0f;
 
-    glm::vec3 coffinScale = glm::vec3(1.55f, 1.05f, 32.0f);
+    glm::vec3 renderScale = glm::vec3(1.0f, 1.0f, 1.0f);
+
+    // glownie dla collidera
+    glm::vec3 coffinDimensions = glm::vec3(1.55f, 1.05f, 32.0f);
 
     float w1_buildDirX = -1.0f;
     float w1_extendDirZ = 1.0f;
