@@ -698,16 +698,13 @@ public:
 
         shaderHizDownsample->use();
 
-        // Upewnij się, że depth texture nie używa porównania (depth compare)
         glTextureParameteri(depthTexture, GL_TEXTURE_COMPARE_MODE, GL_NONE);
-        // hizTexture musi być w pełni dostępna dla samplera (wszystkie mipy)
         glTextureParameteri(hizTexture, GL_TEXTURE_COMPARE_MODE, GL_NONE);
         glTextureParameteri(hizTexture, GL_TEXTURE_BASE_LEVEL, 0);
         glTextureParameteri(hizTexture, GL_TEXTURE_MAX_LEVEL, hizMipLevels - 1);
 
-        // ── Krok 0: depth → hizTexture mip 0, kopiuj 1:1 ───────────────
+        // ── Krok 0: depth → hizTexture mip0 ────────────────────────────
         glUniform1i(glGetUniformLocation(shaderHizDownsample->ID, "isMip0"), GL_TRUE);
-        glUniform1i(glGetUniformLocation(shaderHizDownsample->ID, "srcMipLevel"), 0); // nieużywane przy isMip0, ale ustaw dla porządku
 
         glBindTextureUnit(0, depthTexture);
         glBindImageTexture(1, hizTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
@@ -715,11 +712,9 @@ public:
         glDispatchCompute((w + 7) / 8, (h + 7) / 8, 1);
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
 
-        // ── Krok 1+: downsampling mip1, mip2, ... ───────────────────────
+        // ── Krok 1+: hiz mip(N-1) → mip(N) ────────────────────────────
         glUniform1i(glGetUniformLocation(shaderHizDownsample->ID, "isMip0"), GL_FALSE);
 
-        // Od teraz czytamy z hizTexture (nie z depth)
-        glBindTextureUnit(0, hizTexture);
 
         int mw = w, mh = h;
         for (int mip = 1; mip < hizMipLevels; mip++)
@@ -727,21 +722,14 @@ public:
             mw = std::max(1, mw / 2);
             mh = std::max(1, mh / 2);
 
-            // Przekaż który mip ma czytać shader (poprzedni = mip - 1)
-            // texelFetch ignoruje BASE_LEVEL/MAX_LEVEL — potrzebuje absolutnego poziomu
-            glUniform1i(glGetUniformLocation(shaderHizDownsample->ID, "srcMipLevel"), mip - 1);
-
-            // UWAGA: NIE ustawiaj BASE_LEVEL/MAX_LEVEL wewnątrz pętli —
-            // texelFetch i tak tego nie respektuje, a zmiana parametrów
-            // tekstury w trakcie pracy może powodować problemy na AMD/Intel.
-
+            // prevMip (read) i currentMip (write) — różne poziomy, brak konfliktu
+            glBindImageTexture(0, hizTexture, mip - 1, GL_FALSE, 0, GL_READ_ONLY, GL_R32F);
             glBindImageTexture(1, hizTexture, mip, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
 
             glDispatchCompute((mw + 7) / 8, (mh + 7) / 8, 1);
-            glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
+            glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
         }
 
-        // Przywróć pełny zakres mipów dla samplera używanego w culling pass
         glTextureParameteri(hizTexture, GL_TEXTURE_BASE_LEVEL, 0);
         glTextureParameteri(hizTexture, GL_TEXTURE_MAX_LEVEL, hizMipLevels - 1);
     }
@@ -929,81 +917,90 @@ public:
     {
         if (!hizTexture) return;
 
-        // Slider PRZED odczytem — żeby mipLevel byl aktualny
-        static int selectedMip = 0;
+        static int    selectedMip = 0;
+        static GLuint debugTex = 0;
+        static int    debugW = 0;
+        static int    debugH = 0;
+
         ImGui::Begin("HiZ Debug");
+
         if (ImGui::SliderInt("Mip Level", &selectedMip, 0, hizMipLevels - 1))
-        {
-            // zmiana mipa — debugW/H reset żeby wymusic realloc tekstury
-            static int& dW = *([]() -> int* { static int x = 0; return &x; }());
-            static int& dH = *([]() -> int* { static int x = 0; return &x; }());
-            dW = dH = 0;
-        }
+            debugW = debugH = 0;
+
         mipLevel = selectedMip;
 
-        int mipW = std::max(1, (vpWidth > 0 ? vpWidth : screenWidth) >> mipLevel);
-        int mipH = std::max(1, (vpHeight > 0 ? vpHeight : screenHeight) >> mipLevel);
+        GLint mipW = 0, mipH = 0;
+        glGetTextureLevelParameteriv(hizTexture, mipLevel, GL_TEXTURE_WIDTH, &mipW);
+        glGetTextureLevelParameteriv(hizTexture, mipLevel, GL_TEXTURE_HEIGHT, &mipH);
+        if (mipW == 0 || mipH == 0) { ImGui::End(); return; }
+        // Sprawdź też czy tekstura w ogóle ma ten mip
+        GLint compressed = 0, internalFmt = 0;
+        glGetTextureLevelParameteriv(hizTexture, mipLevel, GL_TEXTURE_COMPRESSED, &compressed);
+        glGetTextureLevelParameteriv(hizTexture, mipLevel, GL_TEXTURE_INTERNAL_FORMAT, &internalFmt);
 
-        // Pobierz dane — format musi zgadzac sie z formatem tekstury
-        // hizTexture pochodzi z GPUDrivenManager::InitHiZ = GL_R32F
-        // wiec czytamy GL_RED, nie GL_DEPTH_COMPONENT
-        std::vector<float> pixels(mipW * mipH);
+        spdlog::warn("HiZ mip{}: {}x{}  fmt=0x{:X}  compressed={}", mipLevel, mipW, mipH, internalFmt, compressed);
+        // Bufor z zapasem + GL_PACK_ALIGNMENT 1 żeby uniknąć out-of-bounds przy małych mipach
+        glPixelStorei(GL_PACK_ALIGNMENT, 1);
+        size_t bufSize = std::max((size_t)(mipW * mipH), (size_t)64);
+        std::vector<float> pixels(bufSize, 0.0f);
         glGetTextureImage(hizTexture, mipLevel,
-            GL_RED, GL_FLOAT,   // ← GL_RED dla R32F
-            (GLsizei)(pixels.size() * sizeof(float)),
+            GL_RED, GL_FLOAT,
+            (GLsizei)(bufSize * sizeof(float)),
             pixels.data());
+        glPixelStorei(GL_PACK_ALIGNMENT, 4);
 
-        float dMin = *std::min_element(pixels.begin(), pixels.end());
-        float dMax = *std::max_element(pixels.begin(), pixels.end());
+        int   pixelCount = mipW * mipH;
+        float dMin = *std::min_element(pixels.begin(), pixels.begin() + pixelCount);
+        float dMax = *std::max_element(pixels.begin(), pixels.begin() + pixelCount);
         float range = (dMax - dMin) > 0.0001f ? (dMax - dMin) : 1.0f;
 
-        std::vector<uint8_t> rgb(mipW * mipH * 3);
-        for (int i = 0; i < mipW * mipH; i++) {
-            float n = 1.0f - ((pixels[i] - dMin) / range);
+        std::vector<uint8_t> rgba(pixelCount * 4);
+        for (int i = 0; i < pixelCount; i++) {
+            float   n = 1.0f - ((pixels[i] - dMin) / range);
             uint8_t v = (uint8_t)(glm::clamp(n, 0.0f, 1.0f) * 255.0f);
-            rgb[i * 3 + 0] = v;
-            rgb[i * 3 + 1] = v;
-            rgb[i * 3 + 2] = v;
+            rgba[i * 4 + 0] = v;
+            rgba[i * 4 + 1] = v;
+            rgba[i * 4 + 2] = v;
+            rgba[i * 4 + 3] = 255;
         }
 
-        static GLuint debugTex = 0;
-        static int debugW = 0, debugH = 0;
         if (!debugTex) {
             glGenTextures(1, &debugTex);
             glBindTexture(GL_TEXTURE_2D, debugTex);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
             glBindTexture(GL_TEXTURE_2D, 0);
         }
 
         glBindTexture(GL_TEXTURE_2D, debugTex);
-        if (debugW != mipW || debugH != mipH) {
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, mipW, mipH, 0,
-                GL_RGB, GL_UNSIGNED_BYTE, rgb.data());
-            debugW = mipW;
-            debugH = mipH;
+        if (debugW != (int)mipW || debugH != (int)mipH) {
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, mipW, mipH, 0,
+                GL_RGBA, GL_UNSIGNED_BYTE, rgba.data());
+            debugW = (int)mipW;
+            debugH = (int)mipH;
         }
         else {
             glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, mipW, mipH,
-                GL_RGB, GL_UNSIGNED_BYTE, rgb.data());
+                GL_RGBA, GL_UNSIGNED_BYTE, rgba.data());
         }
         glBindTexture(GL_TEXTURE_2D, 0);
 
         ImGui::Text("Mip %d: %dx%d  depth [%.4f, %.4f]",
             mipLevel, mipW, mipH, dMin, dMax);
 
-        float dispW = std::min((float)mipW, 512.0f);
+        float dispW = std::min((float)mipW * 2.0f, 512.0f);
         float dispH = dispW * ((float)mipH / (float)mipW);
         ImGui::Image(
             (ImTextureID)(intptr_t)debugTex,
             ImVec2(dispW, dispH),
-            ImVec2(0, 1),   // uv0 — lewy górny = dół tekstury
-            ImVec2(1, 0)    // uv1 — prawy dolny = góra tekstury
+            ImVec2(0, 1),
+            ImVec2(1, 0)
         );
 
-        ImGui::End(); // dokładnie jedno End na Begin powyżej
+        ImGui::End();
     }
-
 
     void DebugPipelineState(uint32_t objCount)
     {

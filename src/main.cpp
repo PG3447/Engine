@@ -2004,12 +2004,12 @@ void imgui_render(SceneManager& sceneManager)
 
     if (ImGui::Begin("Debug hizTexture")) {
         static int debugMip = 0;
-        ImGui::SliderInt("Mip", &debugMip, 0, 8);
+        ImGui::SliderInt("Mip", &debugMip, 0, 10);
         int i = 0;
         for (auto& [cam, hiz] : system->cameraHiZ) {
             ImGui::Text("Kamera %d", i++);
             if (hiz.hizTexture != 0)
-                system->ShowR32FTextureImGui(hiz.hizTexture, hiz.width, hiz.height, debugMip);
+                system->ShowR32FTextureImGui(hiz.hizTexture, debugMip);
         }
     }
     ImGui::End();

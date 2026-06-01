@@ -794,45 +794,66 @@ public:
 
         ImGui::Image((ImTextureID)(intptr_t)debugTex, ImVec2(320, 180), ImVec2(0, 1), ImVec2(1, 0));
     }
-
-    void ShowR32FTextureImGui(GLuint tex, int w, int h, int mip = 0)
+    void ShowR32FTextureImGui(GLuint tex, int mip = 0)
     {
         static std::unordered_map<GLuint, GLuint> debugTexMap;
-
         GLuint& debugTex = debugTexMap[tex];
         if (debugTex == 0) {
             glGenTextures(1, &debugTex);
             glBindTexture(GL_TEXTURE_2D, debugTex);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glBindTexture(GL_TEXTURE_2D, 0);
         }
 
-        int mipW = std::max(1, w >> mip);
-        int mipH = std::max(1, h >> mip);
+        // Pytaj GPU o rzeczywisty rozmiar mipa
+        GLint mipW = 0, mipH = 0;
+        glGetTextureLevelParameteriv(tex, mip, GL_TEXTURE_WIDTH, &mipW);
+        glGetTextureLevelParameteriv(tex, mip, GL_TEXTURE_HEIGHT, &mipH);
+        if (mipW == 0 || mipH == 0) return;
 
-        std::vector<float> data(mipW * mipH);
-        glGetTextureImage(tex, mip, GL_RED, GL_FLOAT, mipW * mipH * sizeof(float), data.data());
+        int pixelCount = mipW * mipH;
+        size_t bufSize = std::max(pixelCount, 64);
 
-        // znajdź min/max żeby znormalizować
+        glPixelStorei(GL_PACK_ALIGNMENT, 1);
+        std::vector<float> data(bufSize, 0.0f);
+        glGetTextureImage(tex, mip, GL_RED, GL_FLOAT,
+            (GLsizei)(bufSize * sizeof(float)), data.data());
+        glPixelStorei(GL_PACK_ALIGNMENT, 4);
+
         float minV = FLT_MAX, maxV = -FLT_MAX;
-        for (float v : data) {
-            if (v > 0.0f) { minV = std::min(minV, v); maxV = std::max(maxV, v); }
+        for (int i = 0; i < pixelCount; i++) {
+            if (data[i] > 0.0f) {
+                minV = std::min(minV, data[i]);
+                maxV = std::max(maxV, data[i]);
+            }
         }
         if (minV >= maxV) minV = 0.0f;
 
-        std::vector<uint8_t> rgb(mipW * mipH * 3);
-        for (int i = 0; i < mipW * mipH; i++) {
-            float normalized = (maxV > minV) ? (data[i] - minV) / (maxV - minV) : 0.0f;
-            uint8_t v = (uint8_t)(normalized * 255.0f);
-            rgb[i * 3 + 0] = v;
-            rgb[i * 3 + 1] = v;
-            rgb[i * 3 + 2] = v;
+        // RGBA — brak problemów z row alignment
+        std::vector<uint8_t> rgba(pixelCount * 4);
+        for (int i = 0; i < pixelCount; i++) {
+            float   n = (maxV > minV) ? (data[i] - minV) / (maxV - minV) : 0.0f;
+            uint8_t v = (uint8_t)(glm::clamp(n, 0.0f, 1.0f) * 255.0f);
+            rgba[i * 4 + 0] = v;
+            rgba[i * 4 + 1] = v;
+            rgba[i * 4 + 2] = v;
+            rgba[i * 4 + 3] = 255;
         }
 
         glBindTexture(GL_TEXTURE_2D, debugTex);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, mipW, mipH, 0, GL_RGB, GL_UNSIGNED_BYTE, rgb.data());
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, mipW, mipH, 0,
+            GL_RGBA, GL_UNSIGNED_BYTE, rgba.data());
+        glBindTexture(GL_TEXTURE_2D, 0);
 
-        ImGui::Image((ImTextureID)(intptr_t)debugTex, ImVec2(320, 180), ImVec2(0, 1), ImVec2(1, 0));
+        // Skaluj podgląd do 320px szerokości zachowując proporcje
+        float dispW = 320.0f;
+        float dispH = dispW * ((float)mipH / (float)mipW);
+        ImGui::Text("mip%d: %dx%d", mip, mipW, mipH);
+        ImGui::Image((ImTextureID)(intptr_t)debugTex,
+            ImVec2(dispW, dispH), ImVec2(0, 1), ImVec2(1, 0));
     }
 
     void RenderCamera(CameraComponent& cam, TransformComponent& transform, int width, int height) {
