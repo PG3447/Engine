@@ -401,94 +401,7 @@ public:
         groupsDirty = true;
     }
 
-    //void RebuildGameObjectInRenderer(GameObject* e) {
-    //    // Szukamy tego obiektu w renderQuery po wskaźniku
-    //    auto& gos = renderQuery->gameobjects;
-    //    auto& renderers = std::get<1>(renderQuery->componentsVectors);
 
-    //    for (size_t i = 0; i < gos.size(); ++i) {
-    //        if (gos[i] != e) continue;
-
-    //        RenderComponent* rc = renderers[i];
-    //        if (!rc) return;
-
-    //        // 1. Zarejestruj animator jeśli nowy
-    //        if (rc->animator &&
-    //            drivenManager.animatorIDMap.find(rc->animator) == drivenManager.animatorIDMap.end())
-    //        {
-    //            drivenManager.animatorIDMap[rc->animator] =
-    //                (uint32_t)drivenManager.animatorIDMap.size();
-    //        }
-
-    //        // 2. Dla każdego mesha sprawdź czy pass/mesh/materiał już istnieje
-    //        for (auto& mesh : rc->meshes) {
-    //            if (!mesh.cpuData || !mesh.material) continue;
-
-    //            MeshData* md = mesh.cpuData.get();
-    //            Material* mat = mesh.material.get();
-    //            Shader* shader = mat->shader ? mat->shader : drivenManager.defaultShaderRender;
-
-    //            uint32_t pid = drivenManager.GetOrCreatePass(shader, mat->surfaceType);
-    //            GPUDrivenRenderer* r = drivenManager.GetRenderer(pid);
-    //            if (!r) continue;
-
-    //            // RegisterMesh/RegisterMaterial są idempotentne —
-    //            // zwracają istniejące ID jeśli już zarejestrowane,
-    //            // a dodają nowy wpis tylko gdy go nie ma
-    //            bool meshIsNew = (r->GetMeshId(md) == UINT32_MAX);
-    //            bool materialIsNew = (r->GetMaterialId(mat) == UINT32_MAX);
-
-    //            if (meshIsNew)     r->RegisterMesh(md);
-    //            if (materialIsNew) r->RegisterMaterial(mat);
-
-    //            // Upload na GPU tylko jeśli faktycznie coś nowego trafiło do rejestrów
-    //            // UploadMeshes() to pełna realokacja VBO/EBO/meshDataSSBO — wywołujemy rzadko
-    //            if (meshIsNew)     r->UploadMeshes();
-    //            if (materialIsNew) r->UploadMaterials();
-
-    //            // Zawsze oznacz instancje jako brudne — nowy/zmieniony obiekt
-    //            // musi przejść przez BuildInstance przy następnym RenderFrame
-    //            r->dirtyInstance = true;
-    //        }
-
-    //        return; // obiekt znaleziony, kończymy
-    //    }
-    //}
-
-
-    /*void RebuildAllRegistries(Query<TransformComponent, RenderComponent>& renderQuery) {
-        for (auto& entry : passes)
-            entry.renderer->Reset();
-
-        animatorIDMap.clear();
-
-        // identyczne jak InitPassesFromScene
-        auto& renderers = std::get<1>(renderQuery.componentsVectors);
-        for (size_t i = 0; i < renderers.size(); i++) {
-            RenderComponent* rc = renderers[i];
-            if (!rc) continue;
-
-            if (rc->animator && animatorIDMap.find(rc->animator) == animatorIDMap.end())
-                animatorIDMap[rc->animator] = (uint32_t)animatorIDMap.size();
-
-            for (auto& mesh : rc->meshes) {
-                if (!mesh.cpuData || !mesh.material) continue;
-                Material* mat = mesh.material.get();
-                Shader* shader = mat->shader ? mat->shader : defaultShaderRender;
-                uint32_t pid = GetOrCreatePass(shader, mat->surfaceType);
-                GPUDrivenRenderer* r = GetRenderer(pid);
-                if (!r) continue;
-                r->RegisterMesh(mesh.cpuData.get());
-                r->RegisterMaterial(mat);
-            }
-        }
-
-        for (auto& entry : passes) {
-            entry.renderer->UploadMeshes();
-            entry.renderer->UploadMaterials();
-        }
-    }
-    */
     void Update(ECS& ecs, float dt) override {
         stats.Reset();
         gpuQuery.begin();
@@ -498,6 +411,10 @@ public:
         InitFBO(display_w, display_h);
 
         glBindFramebuffer(GL_FRAMEBUFFER, sceneFBO);
+        if (occlusionCullingEnabled)
+        {
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, sceneDepthTexture, 0);
+        }
         glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -561,135 +478,6 @@ public:
     bool gpuRendererReady = false;
 
 
-    //std::unordered_map<AnimatorComponent*, uint32_t> animatorIDMap;
-
-    //void InitGPUDrivenRenderer(int width, int height)
-    //{
-    //    auto& renderers = std::get<1>(renderQuery->componentsVectors);
-    //    gpuRenderer.Init(width, height);
-
-    //    for (size_t i = 0; i < renderers.size(); i++) {
-    //        RenderComponent* r = renderers[i];
-    //        if (!r) continue;
-
-    //        if (r->animator && animatorIDMap.find(r->animator) == animatorIDMap.end())
-    //            animatorIDMap[r->animator] = (uint32_t)animatorIDMap.size();
-
-    //        for (auto& mesh : r->meshes) {
-    //            if (!mesh.gpuMesh || !mesh.material || !mesh.cpuData) continue;
-
-    //            MeshData* md = mesh.cpuData.get();
-    //            Material* mat = mesh.material.get();
-
-    //            gpuRenderer.RegisterMesh(md);
-    //            gpuRenderer.RegisterMaterial(mat);
-    //        }
-    //    }
-
-
-    //    gpuRenderer.UploadMeshes();
-    //    gpuRenderer.UploadMaterials();
-
-    //    // Depth texture — tworzona TYLKO RAZ
-    //    if (depthTexturePrev == 0) {
-    //        glGenTextures(1, &depthTexturePrev);
-    //        glBindTexture(GL_TEXTURE_2D, depthTexturePrev);
-    //        glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32F, width, height);
-    //        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    //        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    //        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    //        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    //        glBindTexture(GL_TEXTURE_2D, 0);
-    //    }
-
-
-    //    gpuRendererReady = true;
-    //}
-    //std::vector<RenderData> renderDataCache;
-    //std::vector<glm::mat4> boneMatricesCache;
-    //struct AnimCache { uint32_t slot; AnimatorComponent* anim; };
-
-    //std::vector<RenderData>& CollectRenderData()
-    //{
-    //    auto& transforms = std::get<0>(renderQuery->componentsVectors);
-    //    auto& renderers = std::get<1>(renderQuery->componentsVectors);
-
-    //    renderDataCache.clear();
-    //    renderDataCache.reserve(renderQuery->gameobjects.size());
-
-    //    const size_t objectCount = renderQuery->gameobjects.size();
-
-    //    // trzeba znalezc to co ustawia animatory w RenderComponent zeby pozbyc sie tej petli i robic to raz
-    //    // 1. najpierw zarejestruj nowe animatory
-    //    for (size_t i = 0; i < objectCount; ++i) {
-    //        const RenderComponent* r = renderers[i];
-    //        if (!r || !r->animator) continue;
-    //        if (animatorIDMap.find(r->animator) == animatorIDMap.end())
-    //            animatorIDMap[r->animator] = (uint32_t)animatorIDMap.size();
-    //    }
-
-    //    size_t requiredSize = animatorIDMap.size() * MAX_BONES_PER_SKELETON;
-    //    if (boneMatricesCache.size() != requiredSize)
-    //        boneMatricesCache.resize(requiredSize, glm::mat4(1.0f));
-
-    //    for (size_t i = 0; i < objectCount; ++i)
-    //    {
-    //        const TransformComponent* t = transforms[i];
-    //        const RenderComponent* r = renderers[i];
-
-    //        if (!t || !r)
-    //            continue;
-    //        const glm::mat4 model = t->modelMatrix;
-
-    //        
-    //        const auto& meshes = r->meshes;
-    //        auto animator = r->animator;
-
-    //        auto animIt = animator ? animatorIDMap.find(animator) : animatorIDMap.end();
-    //        if (animIt != animatorIDMap.end() && animator->currentSkeleton)
-    //        {
-    //            uint32_t slot = animIt->second;
-    //            uint32_t boneCount = (uint32_t)std::min(animator->finalBoneMatrices.size(), (size_t)MAX_BONES_PER_SKELETON);
-
-    //            std::copy(animator->finalBoneMatrices.begin(), animator->finalBoneMatrices.begin() + boneCount, boneMatricesCache.begin() + slot * MAX_BONES_PER_SKELETON);
-    //        }
-
-    //        for (const auto& mesh : meshes)
-    //        {
-    //            auto* gpuMesh = mesh.cpuData.get();
-    //            auto* material = mesh.material.get();
-
-    //            if (!gpuMesh || !material || !mesh.cpuData)
-    //                continue;
-
-    //            auto meshID = gpuRenderer.GetMeshId(gpuMesh);
-    //            if (meshID == UINT32_MAX)
-    //                continue;
-
-    //            auto matID = gpuRenderer.GetMaterialId(material);
-    //            if (matID == UINT32_MAX)
-    //                continue;
-
-
-    //            auto& aabb = mesh.cpuData->aabb;
-
-    //            renderDataCache.emplace_back(RenderData{
-    //                .modelMatrix = model,
-    //                .aabbMin = glm::vec4(aabb.min, 0.0f),
-    //                .aabbMax = glm::vec4(aabb.max, 0.0f),
-    //                .meshID = meshID,
-    //                .materialID = matID,
-    //                .skeletonID = animIt != animatorIDMap.end() ? animIt->second : NO_SKELETON,
-    //                .padding = 0
-    //                });            
-    //        }
-    //    }
-    //    
-    //    gpuRenderer.ResizeBoneBufferIfNeeded((uint32_t)animatorIDMap.size());
-    //    gpuRenderer.UploadAllBoneMatrices(boneMatricesCache);
-
-    //    return renderDataCache;
-    //}
 
     void RenderCameraGPUDriven(CameraComponent& cam, TransformComponent& transform, int width, int height)
     {
@@ -714,15 +502,13 @@ public:
             hiz.Destroy(); // tylko przy resize — nie co klatkę
             hiz.Init(vpW, vpH, width, height);
         }
-        drivenManager.AttachCameraHiZ(hiz.hizTexture, hiz.hizMipLevels, vpW, vpH, vpX, vpY);
+        drivenManager.AttachCameraHiZ(hiz.hizTexture, hiz.hizMipLevels, vpW, vpH, occlusionCullingEnabled, vpX, vpY);
 
         drivenManager.CollectAllPasses(*renderQuery, currentCameraPos);
         drivenManager.RenderFrame(vp, currentCameraPos, occlusionCullingEnabled ? hiz.depthPrev : 0);
         //drivenManager.RenderFrame(vp, currentCameraPos, depthTexturePrev);
         if (hiz.depthPrev && sceneDepthTexture && occlusionCullingEnabled) {
             std::swap(sceneDepthTexture, hiz.depthPrev);
-            // Re-attach nowy sceneDepthTexture do FBO
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, sceneDepthTexture, 0);
         }
         //spdlog::info("CopyDepth cam vpX={} vpY={} vpW={} vpH={} fbo={}x{}",
         //    vpX, vpY, vpW, vpH, width, height);
@@ -1215,6 +1001,226 @@ public:
 };
 
 #endif
+
+
+//void RebuildGameObjectInRenderer(GameObject* e) {
+//    // Szukamy tego obiektu w renderQuery po wskaźniku
+//    auto& gos = renderQuery->gameobjects;
+//    auto& renderers = std::get<1>(renderQuery->componentsVectors);
+
+//    for (size_t i = 0; i < gos.size(); ++i) {
+//        if (gos[i] != e) continue;
+
+//        RenderComponent* rc = renderers[i];
+//        if (!rc) return;
+
+//        // 1. Zarejestruj animator jeśli nowy
+//        if (rc->animator &&
+//            drivenManager.animatorIDMap.find(rc->animator) == drivenManager.animatorIDMap.end())
+//        {
+//            drivenManager.animatorIDMap[rc->animator] =
+//                (uint32_t)drivenManager.animatorIDMap.size();
+//        }
+
+//        // 2. Dla każdego mesha sprawdź czy pass/mesh/materiał już istnieje
+//        for (auto& mesh : rc->meshes) {
+//            if (!mesh.cpuData || !mesh.material) continue;
+
+//            MeshData* md = mesh.cpuData.get();
+//            Material* mat = mesh.material.get();
+//            Shader* shader = mat->shader ? mat->shader : drivenManager.defaultShaderRender;
+
+//            uint32_t pid = drivenManager.GetOrCreatePass(shader, mat->surfaceType);
+//            GPUDrivenRenderer* r = drivenManager.GetRenderer(pid);
+//            if (!r) continue;
+
+//            // RegisterMesh/RegisterMaterial są idempotentne —
+//            // zwracają istniejące ID jeśli już zarejestrowane,
+//            // a dodają nowy wpis tylko gdy go nie ma
+//            bool meshIsNew = (r->GetMeshId(md) == UINT32_MAX);
+//            bool materialIsNew = (r->GetMaterialId(mat) == UINT32_MAX);
+
+//            if (meshIsNew)     r->RegisterMesh(md);
+//            if (materialIsNew) r->RegisterMaterial(mat);
+
+//            // Upload na GPU tylko jeśli faktycznie coś nowego trafiło do rejestrów
+//            // UploadMeshes() to pełna realokacja VBO/EBO/meshDataSSBO — wywołujemy rzadko
+//            if (meshIsNew)     r->UploadMeshes();
+//            if (materialIsNew) r->UploadMaterials();
+
+//            // Zawsze oznacz instancje jako brudne — nowy/zmieniony obiekt
+//            // musi przejść przez BuildInstance przy następnym RenderFrame
+//            r->dirtyInstance = true;
+//        }
+
+//        return; // obiekt znaleziony, kończymy
+//    }
+//}
+
+
+/*void RebuildAllRegistries(Query<TransformComponent, RenderComponent>& renderQuery) {
+    for (auto& entry : passes)
+        entry.renderer->Reset();
+
+    animatorIDMap.clear();
+
+    // identyczne jak InitPassesFromScene
+    auto& renderers = std::get<1>(renderQuery.componentsVectors);
+    for (size_t i = 0; i < renderers.size(); i++) {
+        RenderComponent* rc = renderers[i];
+        if (!rc) continue;
+
+        if (rc->animator && animatorIDMap.find(rc->animator) == animatorIDMap.end())
+            animatorIDMap[rc->animator] = (uint32_t)animatorIDMap.size();
+
+        for (auto& mesh : rc->meshes) {
+            if (!mesh.cpuData || !mesh.material) continue;
+            Material* mat = mesh.material.get();
+            Shader* shader = mat->shader ? mat->shader : defaultShaderRender;
+            uint32_t pid = GetOrCreatePass(shader, mat->surfaceType);
+            GPUDrivenRenderer* r = GetRenderer(pid);
+            if (!r) continue;
+            r->RegisterMesh(mesh.cpuData.get());
+            r->RegisterMaterial(mat);
+        }
+    }
+
+    for (auto& entry : passes) {
+        entry.renderer->UploadMeshes();
+        entry.renderer->UploadMaterials();
+    }
+}
+*/
+
+//std::unordered_map<AnimatorComponent*, uint32_t> animatorIDMap;
+
+//void InitGPUDrivenRenderer(int width, int height)
+//{
+//    auto& renderers = std::get<1>(renderQuery->componentsVectors);
+//    gpuRenderer.Init(width, height);
+
+//    for (size_t i = 0; i < renderers.size(); i++) {
+//        RenderComponent* r = renderers[i];
+//        if (!r) continue;
+
+//        if (r->animator && animatorIDMap.find(r->animator) == animatorIDMap.end())
+//            animatorIDMap[r->animator] = (uint32_t)animatorIDMap.size();
+
+//        for (auto& mesh : r->meshes) {
+//            if (!mesh.gpuMesh || !mesh.material || !mesh.cpuData) continue;
+
+//            MeshData* md = mesh.cpuData.get();
+//            Material* mat = mesh.material.get();
+
+//            gpuRenderer.RegisterMesh(md);
+//            gpuRenderer.RegisterMaterial(mat);
+//        }
+//    }
+
+
+//    gpuRenderer.UploadMeshes();
+//    gpuRenderer.UploadMaterials();
+
+//    // Depth texture — tworzona TYLKO RAZ
+//    if (depthTexturePrev == 0) {
+//        glGenTextures(1, &depthTexturePrev);
+//        glBindTexture(GL_TEXTURE_2D, depthTexturePrev);
+//        glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32F, width, height);
+//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+//        glBindTexture(GL_TEXTURE_2D, 0);
+//    }
+
+
+//    gpuRendererReady = true;
+//}
+//std::vector<RenderData> renderDataCache;
+//std::vector<glm::mat4> boneMatricesCache;
+//struct AnimCache { uint32_t slot; AnimatorComponent* anim; };
+
+//std::vector<RenderData>& CollectRenderData()
+//{
+//    auto& transforms = std::get<0>(renderQuery->componentsVectors);
+//    auto& renderers = std::get<1>(renderQuery->componentsVectors);
+
+//    renderDataCache.clear();
+//    renderDataCache.reserve(renderQuery->gameobjects.size());
+
+//    const size_t objectCount = renderQuery->gameobjects.size();
+
+//    // trzeba znalezc to co ustawia animatory w RenderComponent zeby pozbyc sie tej petli i robic to raz
+//    // 1. najpierw zarejestruj nowe animatory
+//    for (size_t i = 0; i < objectCount; ++i) {
+//        const RenderComponent* r = renderers[i];
+//        if (!r || !r->animator) continue;
+//        if (animatorIDMap.find(r->animator) == animatorIDMap.end())
+//            animatorIDMap[r->animator] = (uint32_t)animatorIDMap.size();
+//    }
+
+//    size_t requiredSize = animatorIDMap.size() * MAX_BONES_PER_SKELETON;
+//    if (boneMatricesCache.size() != requiredSize)
+//        boneMatricesCache.resize(requiredSize, glm::mat4(1.0f));
+
+//    for (size_t i = 0; i < objectCount; ++i)
+//    {
+//        const TransformComponent* t = transforms[i];
+//        const RenderComponent* r = renderers[i];
+
+//        if (!t || !r)
+//            continue;
+//        const glm::mat4 model = t->modelMatrix;
+
+//        
+//        const auto& meshes = r->meshes;
+//        auto animator = r->animator;
+
+//        auto animIt = animator ? animatorIDMap.find(animator) : animatorIDMap.end();
+//        if (animIt != animatorIDMap.end() && animator->currentSkeleton)
+//        {
+//            uint32_t slot = animIt->second;
+//            uint32_t boneCount = (uint32_t)std::min(animator->finalBoneMatrices.size(), (size_t)MAX_BONES_PER_SKELETON);
+
+//            std::copy(animator->finalBoneMatrices.begin(), animator->finalBoneMatrices.begin() + boneCount, boneMatricesCache.begin() + slot * MAX_BONES_PER_SKELETON);
+//        }
+
+//        for (const auto& mesh : meshes)
+//        {
+//            auto* gpuMesh = mesh.cpuData.get();
+//            auto* material = mesh.material.get();
+
+//            if (!gpuMesh || !material || !mesh.cpuData)
+//                continue;
+
+//            auto meshID = gpuRenderer.GetMeshId(gpuMesh);
+//            if (meshID == UINT32_MAX)
+//                continue;
+
+//            auto matID = gpuRenderer.GetMaterialId(material);
+//            if (matID == UINT32_MAX)
+//                continue;
+
+
+//            auto& aabb = mesh.cpuData->aabb;
+
+//            renderDataCache.emplace_back(RenderData{
+//                .modelMatrix = model,
+//                .aabbMin = glm::vec4(aabb.min, 0.0f),
+//                .aabbMax = glm::vec4(aabb.max, 0.0f),
+//                .meshID = meshID,
+//                .materialID = matID,
+//                .skeletonID = animIt != animatorIDMap.end() ? animIt->second : NO_SKELETON,
+//                .padding = 0
+//                });            
+//        }
+//    }
+//    
+//    gpuRenderer.ResizeBoneBufferIfNeeded((uint32_t)animatorIDMap.size());
+//    gpuRenderer.UploadAllBoneMatrices(boneMatricesCache);
+
+//    return renderDataCache;
+//}
 
 
 

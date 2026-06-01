@@ -128,10 +128,10 @@ public:
         spdlog::info("RendererManager: HiZ {}x{} mips={}", w, h, hizMipLevels);
     }
 
-    void AttachCameraHiZ(GLuint hizTexture, int hizMipLevels, int vpW, int vpH, int vpX = 0, int vpY = 0)
+    void AttachCameraHiZ(GLuint hizTexture, int hizMipLevels, int vpW, int vpH, bool occlusionEnabled, int vpX = 0, int vpY = 0)
     {
         for (auto& entry : passes)
-            entry.renderer->AttachHiZ(hizTexture, hizMipLevels, vpW, vpH, vpX, vpY);  // ← vpX, vpY
+            entry.renderer->AttachHiZ(hizTexture, hizMipLevels, vpW, vpH, vpX, vpY, occlusionEnabled);  // ← vpX, vpY
     }
 
     void InitPassesFromScene(Query<TransformComponent, RenderComponent>& renderQuery)

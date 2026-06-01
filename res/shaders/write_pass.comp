@@ -12,6 +12,7 @@ uniform mat4 viewProjection;
 uniform int  hizMipLevels;
 uniform uint  objectCount;
 uniform vec2 screenSize;
+uniform bool enableOcclusion;
 uniform bool enableFrustumCulling;
 
 struct RenderData {
@@ -177,8 +178,10 @@ void main()
         return;
     }
 
-  if (hizMipLevels > 0 && hizCull(obj.aabbMin.xyz, obj.aabbMax.xyz, viewProjection * obj.model))
+    if (enableOcclusion && hizMipLevels > 0 && hizCull(obj.aabbMin.xyz, obj.aabbMax.xyz, viewProjection * obj.model))
+    {
         return;
+    }
 
     uint meshID  = obj.meshID;
     // Zarezerwuj slot — instanceOffset już ustawiony przez CPU prefix-sum
