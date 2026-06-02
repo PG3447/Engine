@@ -912,21 +912,6 @@ int main(int, char**)
         can_open_door_1 = allCorrect;
     };
 
-    // Karaluch center
-    glm::vec3 nestPos = glm::vec3(0.0f, 0.5f, -80.0f);
-
-    GameObject* leader = CreateCockroachLeader(*scena1, *placeholderModel, ourShader.get(), nestPos, 4.0f);
-
-    for (int i = 0; i < 3; i++) {
-        glm::vec3 offset = glm::vec3(
-            (float)(rand() % 6) - 3.0f, 0,
-            (float)(rand() % 6) - 3.0f
-        );
-        CreateCockroachFollower(
-            *scena1, *placeholderModel, ourShader.get(),
-            leader, nestPos + offset, 4.5f);
-    }
-
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
