@@ -265,6 +265,13 @@ GameObject* p2HeldObject = nullptr;
 
 std::vector<GameObject*> mainRoomDoors;
 
+//interfejs type situation
+float p1ShakeTimer = 0.0f;
+float p2ShakeTimer = 0.0f;
+const float SHAKE_DURATION = 0.5f;
+const glm::vec2 p1BasePos(480.0f, 640.0f);
+const glm::vec2 p2BasePos(1440.0f, 640.0f);
+
 void updateFPS(float deltaTime) {
     frameTimes[index] = deltaTime;
     index = (index + 1) % MAX_SAMPLES;
@@ -360,7 +367,8 @@ void HandlePlayerInteraction(
     GameObject*& myHeldObject,
     GameObject* otherPlayerHeldObject,
     Scene* scene,
-    std::unordered_map<GameObject*, float>& rotatingObjects
+    std::unordered_map<GameObject*, float>& rotatingObjects,
+    float& outShakeTimer
 ) {
     if (!ecs.GetSystem<HID>()->is_action_just_pressed(inputAction)) return;
 
@@ -393,11 +401,11 @@ void HandlePlayerInteraction(
             if (majorDoors.count(hit.hitObject)) {
                 if (can_open_door_1) {
                     for (GameObject* door : majorDoors) {
-                        TransformComponent* transform = door->GetComponent<TransformComponent>();
-                        if (transform != nullptr) {
-                            transform->position = glm::vec3(-1000.0f, -1000.0f, -1000.0f);
-                        }
+                        TransformComponent* t = door->GetComponent<TransformComponent>();
+                        if (t) t->position = glm::vec3(-1000.0f, -1000.0f, -1000.0f);
                     }
+                } else {
+                    outShakeTimer = SHAKE_DURATION;
                 }
             }
             // Otwieranie drzwi
@@ -910,7 +918,9 @@ int main(int, char**)
     // Karaluch center
     glm::vec3 nestPos = glm::vec3(0.0f, 0.5f, -80.0f);
 
-    GameObject* leader = CreateCockroachLeader(*scena1, *placeholderModel, ourShader.get(), nestPos, 4.0f);
+    // I LOVE THE TASE OF IRON
+    GameObject* Kurorushi = CreateCockroachLeader(*scena1, *placeholderModel, ourShader.get(), nestPos, 4.0f);
+    // I LOVE THE TASE OF IRON
 
     for (int i = 0; i < 3; i++) {
         glm::vec3 offset = glm::vec3(
@@ -919,8 +929,10 @@ int main(int, char**)
         );
         CreateCockroachFollower(
             *scena1, *placeholderModel, ourShader.get(),
-            leader, nestPos + offset, 4.5f);
+            Kurorushi, nestPos + offset, 4.5f); // I LOVE THE TASE OF IRON
     }
+
+    float p1Int = 0.0f, p2Int = 0.0f;
 
     // Main loop
     while (!glfwWindowShouldClose(window))
@@ -966,50 +978,45 @@ int main(int, char**)
 
         std::string hintText = "";
 
-        if (player1Raycast->anyHit()) {
+        if (p1HeldObject != nullptr) {
+            hintText = "Drop";
+        } else if (player1Raycast->anyHit()) {
             RaycastHit hit = player1Raycast->closestHit();
             if (hit.hitObject != nullptr) {
-                if (rotatableObjects.count(hit.hitObject)) {
+                if (rotatableObjects.count(hit.hitObject))
                     hintText = "Rotate";
-                }
-                else if (unlockedDoors.count(hit.hitObject)) {
-                    hintText = "Open";
-                }
-                else if (cabinetsMap.count(hit.hitObject)) {
-                    hintText = "Open Cabinet";
-                }
-                else if (majorDoors.count(hit.hitObject)) {
-                    hintText = "Unlock";
-                }
-                else if (pickupObjects.count(hit.hitObject)) {
-                    hintText = (hit.hitObject == p2HeldObject) ? "Held by Player2" : "Pick up";
-                }
-                else if (hit.hitObject->name.find("Coffin") != std::string::npos) {
+                else if (toiletDoorsMap.count(hit.hitObject))
+                    hintText = toiletDoorsMap[hit.hitObject].isOpen ? "Close" : "Open";
+                else if (cabinetsMap.count(hit.hitObject))
+                    hintText = isCabinetButtonPushed ? "..." : "Open Cabinet";
+                else if (majorDoors.count(hit.hitObject))
+                    hintText = can_open_door_1 ? "Open" : "Unlock";
+                else if (pickupObjects.count(hit.hitObject))
+                    hintText = (hit.hitObject == p2HeldObject) ? "Held by Player 2" : "Pick up";
+                else if (hit.hitObject->name.find("Coffin") != std::string::npos)
                     hintText = "Pull Coffin";
-                }
             }
         }
         player1InteractionInfo->text = hintText;
 
         std::string hintText2 = "";
-        if (player2Raycast->anyHit()) {
+        if (p1HeldObject != nullptr) {
+            hintText = "Drop";
+        } else if (player2Raycast->anyHit()) {
             RaycastHit hit = player2Raycast->closestHit();
             if (hit.hitObject != nullptr) {
-                if (rotatableObjects.count(hit.hitObject)) {
-                    hintText2 = "Rotate";
-                }
-                else if (unlockedDoors.count(hit.hitObject)) {
-                    hintText2 = "Open";
-                }
-                else if (cabinetsMap.count(hit.hitObject)) {
-                    hintText2 = "Open Cabinet";
-                }
-                else if (majorDoors.count(hit.hitObject)) {
-                    hintText2 = "Unlock";
-                }
-                else if (pickupObjects.count(hit.hitObject)) {
-                    hintText2 = (hit.hitObject == p1HeldObject) ? "Held by Player1" : "Pick up";
-                }
+                if (rotatableObjects.count(hit.hitObject))
+                    hintText = "Rotate";
+                else if (toiletDoorsMap.count(hit.hitObject))
+                    hintText = toiletDoorsMap[hit.hitObject].isOpen ? "Close" : "Open";
+                else if (cabinetsMap.count(hit.hitObject))
+                    hintText = isCabinetButtonPushed ? "..." : "Open Cabinet";
+                else if (majorDoors.count(hit.hitObject))
+                    hintText = can_open_door_1 ? "Open" : "Unlock";
+                else if (pickupObjects.count(hit.hitObject))
+                    hintText = (hit.hitObject == p2HeldObject) ? "Held by Player 2" : "Pick up";
+                else if (hit.hitObject->name.find("Coffin") != std::string::npos)
+                    hintText = "Pull Coffin";
             }
         }
         player2InteractionInfo->text = hintText2;
@@ -1035,8 +1042,8 @@ int main(int, char**)
             else ++it;
         }
 
-        HandlePlayerInteraction(ecs, "interact_p1", player1Raycast, camera1, p1HeldObject, p2HeldObject, scena1, rotatingObjects);
-        HandlePlayerInteraction(ecs, "interact_p2", player2Raycast, camera2, p2HeldObject, p1HeldObject, scena1, rotatingObjects);
+        HandlePlayerInteraction(ecs, "interact_p1", player1Raycast, camera1, p1HeldObject, p2HeldObject, scena1, rotatingObjects, p1ShakeTimer);
+        HandlePlayerInteraction(ecs, "interact_p2", player2Raycast, camera2, p2HeldObject, p1HeldObject, scena1, rotatingObjects, p1ShakeTimer);
 
         // testy animacji
         if (ecs.GetSystem<HID>()->is_action_just_pressed("anim_play_dying")) {
@@ -1077,6 +1084,31 @@ int main(int, char**)
             processCameraMouse(ecs, *camCompLeft, *camTransform1);
             processCameraGamepad(ecs, *camCompLeft,  *t0, 0);
             processCameraGamepad(ecs, *camCompRight, *t1, 1);
+        }
+
+        if (p1ShakeTimer > 0.0f) p1ShakeTimer -= deltaTime;
+        if (p2ShakeTimer > 0.0f) p2ShakeTimer -= deltaTime;
+
+        if (p1ShakeTimer > 0.0f) {
+            float t = currentFrame * 40.0f;
+            float strength = 6.0f;
+            player1InteractionInfo->screenPosition = p1BasePos + glm::vec2(
+                sin(t)        * strength,
+                sin(t * 1.3f) * strength * 0.5f
+            );
+        } else {
+            player1InteractionInfo->screenPosition = p1BasePos;
+        }
+
+        if (p2ShakeTimer > 0.0f) {
+            float t = currentFrame * 40.0f;
+            float strength = 6.0f;
+            player2InteractionInfo->screenPosition = p2BasePos + glm::vec2(
+                sin(t + 1.0f) * strength,
+                sin(t * 1.3f + 1.0f) * strength * 0.5f
+            );
+        } else {
+            player2InteractionInfo->screenPosition = p2BasePos;
         }
 
         auto inputEnd = std::chrono::high_resolution_clock::now();
