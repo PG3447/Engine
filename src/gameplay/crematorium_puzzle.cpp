@@ -294,7 +294,8 @@ void CrematoriumPuzzle::Update(float deltaTime)
     auto updatePanelColors = [&](GameObject* panel, WallSide side, glm::vec3 activeColor) {
         if (!panel) return;
 
-        std::vector<std::vector<bool>> grid(rows, std::vector<bool>(cols, false));
+        static std::vector<std::vector<bool>> grid(rows, std::vector<bool>(cols, false));
+        for (int r = 0; r < rows; ++r) std::fill(grid[r].begin(), grid[r].end(), false);
 
         for (auto& coffin : coffins) {
             if (coffin.wall == side && coffin.isActivated && !coffin.isBouncingBack) {
@@ -304,6 +305,25 @@ void CrematoriumPuzzle::Update(float deltaTime)
                 grid[mappedRow][mappedCol] = true;
             }
         }
+
+        static std::vector<std::vector<bool>> lastGridLeft(rows, std::vector<bool>(cols, false));
+        static std::vector<std::vector<bool>> lastGridRight(rows, std::vector<bool>(cols, false));
+        auto& lastGrid = (side == WallSide::Left) ? lastGridLeft : lastGridRight;
+
+        bool gridChanged = false;
+        for (int r = 0; r < rows; ++r) {
+            for (int c = 0; c < cols; ++c) {
+                if (grid[r][c] != lastGrid[r][c]) {
+                    gridChanged = true;
+                    break;
+                }
+            }
+            if (gridChanged) break;
+        }
+
+        if (!gridChanged) return;
+
+        lastGrid = grid;
 
         panel->TraverseChildren([&](GameObject* child) {
             auto* render = child->GetComponent<RenderComponent>();
@@ -371,8 +391,13 @@ void CrematoriumPuzzle::Update(float deltaTime)
     updatePanelColors(leftPanelObj, WallSide::Left, glm::vec3(1.0f, 0.0f, 0.0f));
     updatePanelColors(rightPanelObj, WallSide::Right, glm::vec3(0.0f, 1.0f, 0.0f));
 
-    std::vector<std::vector<bool>> gridLeft(rows, std::vector<bool>(cols, false));
-    std::vector<std::vector<bool>> gridRight(rows, std::vector<bool>(cols, false));
+    static std::vector<std::vector<bool>> gridLeft(rows, std::vector<bool>(cols, false));
+    static std::vector<std::vector<bool>> gridRight(rows, std::vector<bool>(cols, false));
+
+    for (int r = 0; r < rows; ++r) {
+        std::fill(gridLeft[r].begin(), gridLeft[r].end(), false);
+        std::fill(gridRight[r].begin(), gridRight[r].end(), false);
+    }
 
     for (auto& coffin : coffins) {
         if (coffin.isActivated && !coffin.isBouncingBack) {
@@ -391,8 +416,13 @@ void CrematoriumPuzzle::Update(float deltaTime)
     auto hasPath = [&](const std::vector<std::vector<bool>>& grid, std::pair<int, int> start, std::pair<int, int> end) -> bool {
         if (!grid[start.first][start.second] || !grid[end.first][end.second]) return false;
 
-        std::vector<std::vector<bool>> visited(rows, std::vector<bool>(cols, false));
-        std::vector<std::pair<int, int>> stack;
+        static std::vector<std::vector<bool>> visited(rows, std::vector<bool>(cols, false));
+        for (int r = 0; r < rows; ++r) {
+            std::fill(visited[r].begin(), visited[r].end(), false);
+        }
+
+        static std::vector<std::pair<int, int>> stack;
+        stack.clear();
 
         stack.push_back(start);
         visited[start.first][start.second] = true;
