@@ -189,6 +189,7 @@ std::unique_ptr<Prefab> washroomExit;
 std::unique_ptr<Prefab> urinModel;
 std::unique_ptr<Prefab> szafkaModel;
 std::unique_ptr<Prefab> ruraModel;
+std::unique_ptr<Prefab> panelModel;
 std::unique_ptr<Prefab> floorModel;
 std::unique_ptr<Prefab> wallModel;
 std::unique_ptr<Prefab> wallModel2;
@@ -1559,6 +1560,7 @@ void connectAllModels() {
     NormalDoor       = std::make_unique<Prefab>("res/models/doors.glb");
     szafkaModel      = std::make_unique<Prefab>("res/models/szafka_rozszerzona.glb");
     ruraModel        = std::make_unique<Prefab>("res/models/placeholder_rura_wysuwana.glb");
+    panelModel       = std::make_unique<Prefab>("res/models/Panel_5x5.glb");
 }
 
 void createFirstRoom(Scene* scena1) {
@@ -1862,32 +1864,32 @@ void createNuclearRooom(Scene* scena) {
 
 void createCrematorium(Scene* scena) {
     CreateStaticObject(scena, floorModel.get(), ourShader.get(), "PodlogaKrematorium",   glm::vec3(120, 0, -180),  glm::vec3(60, 1, 80));
-    CreateStaticObject(scena, floorModel.get(), ourShader.get(), "SufitCrematorium",     glm::vec3(120, 20, -180), glm::vec3(60, 1, 80));
+    CreateStaticObject(scena, floorModel.get(), ourShader.get(), "SufitCrematorium",     glm::vec3(120, 25, -180), glm::vec3(60, 1, 80));
     CreateStaticObject(scena, wallModel2.get(), ourShader.get(), "ScianaKoncowaKrematorium", glm::vec3(180, 0, -180), glm::vec3(80, 50, 1), std::nullopt, glm::vec3(1, 50, 80));
     CreateStaticObject(scena, wallModel.get(),  ourShader.get(), "ScianaKremLewa",       glm::vec3(120.180, 0, -259.680), glm::vec3(60, 50, 1), std::nullopt, glm::vec3(60, 100, 1));
 
     crematoriumPuzzle.spacingHorizontal = 6.0f;
-    crematoriumPuzzle.spacingVertical   = 3.5f;
+    crematoriumPuzzle.spacingVertical   = 4.5f;
 
-    crematoriumPuzzle.minExtensionDistance = 10.0f;
-    crematoriumPuzzle.maxExtensionDistance = 39.5f;
+    crematoriumPuzzle.minExtensionDistance = 9.5f;
+    crematoriumPuzzle.maxExtensionDistance = 34.0f;
 
-    crematoriumPuzzle.coffinDimensions = glm::vec3(1.55f, 1.05f, 32.0f);
+    crematoriumPuzzle.coffinDimensions = glm::vec3(1.25f, 1.0f, 30.0f);
 
-    crematoriumPuzzle.wallOffset = 15.0f;
+    crematoriumPuzzle.wallOffset = 17.0f;
 
     crematoriumPuzzle.w1_buildDirX  = -1.0f;
     crematoriumPuzzle.w1_extendDirZ =  1.0f;
     crematoriumPuzzle.w2_buildDirZ  =  1.0f;
     crematoriumPuzzle.w2_extendDirX = -1.0f;
 
-    glm::vec3 cornerPosition(175.0f, 5.0f, -255.0f);
+    glm::vec3 cornerPosition(175.0f, 4.0f, -255.0f);
 
-    if (ruraModel != nullptr && ruraModel->rootModel != nullptr) {
-        crematoriumPuzzle.Init(scena, ruraModel->rootModel, cornerPosition);
+    if (ruraModel != nullptr && panelModel != nullptr && ruraModel->rootModel != nullptr) {
+        crematoriumPuzzle.Init(scena, ruraModel->rootModel, panelModel.get(), ourShader.get(), cornerPosition);
     }
     else {
-        spdlog::error("Model rury nie zostal poprawnie zaladowany!");
+        spdlog::error("Model rury albo panelu nie zostal poprawnie zaladowany!");
     }
 }
 
