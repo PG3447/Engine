@@ -184,7 +184,6 @@ void main()
     }
 
     uint meshID  = obj.meshID;
-    // Zarezerwuj slot — instanceOffset już ustawiony przez CPU prefix-sum
     uint slot     = atomicAdd(meshMeta[meshID].instanceCount, 1u);
     uint writeIdx = meshMeta[meshID].instanceOffset + slot;
 
