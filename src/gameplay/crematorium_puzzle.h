@@ -32,47 +32,40 @@ struct CoffinData {
 
 class CrematoriumPuzzle {
 public:
-    //int rows = 4;
-    //int cols = 6;
-
-    //// 1+ - kolor (i poziom wysuniêia), 0 - czarne
-    //std::vector<std::vector<int>> configLeftWall = {
-    //        {6, 0, 4, 2, 0, 5}, // najnizszy
-    //        {0, 3, 5, 0, 1, 6},
-    //        {2, 4, 0, 6, 3, 0},
-    //        {5, 1, 2, 4, 0, 0}  // najwyzszy
-    //};
-
-    //// 1+ - kolor (i poziom wysuniêia), 0 - czarne
-    //std::vector<std::vector<int>> configRightWall = {
-    //    {0, 5, 0, 3, 1, 0},
-    //    {4, 0, 6, 2, 0, 5},
-    //    {1, 3, 2, 0, 4, 6},
-    //    {0, 6, 1, 5, 0, 2}
-    //};
-
-    int rows = 4;
-    int cols = 4;
+    int rows = 5;
+    int cols = 5;
 
     std::vector<std::vector<int>> configLeftWall = {
-        {4, 0, 2, 0},
-        {0, 3, 1, 4},
-        {2, 0, 4, 3},
-        {1, 2, 0, 0}
+        {3, 3, 2, 0, 0},
+        {5, 5, 4, 2, 1},
+        {2, 1, 4, 3, 2},
+        {4, 0, 2, 0, 1},
+        {4, 2, 3, 4, 3}
     };
 
     std::vector<std::vector<int>> configRightWall = {
-        {0, 4, 0, 3},
-        {2, 0, 4, 1},
-        {1, 3, 2, 0},
-        {0, 1, 0, 2}
+        {2, 3, 3, 5, 2},
+        {2, 0, 2, 0, 5},
+        {1, 3, 2, 0, 4},
+        {4, 4, 2, 5, 4},
+        {0, 2, 0, 5, 1}
     };
+
+    std::pair<int, int> leftStart = { 0, 0 };
+    std::pair<int, int> leftEnd = { 4, 4 };
+
+    std::pair<int, int> rightStart = { 4, 4 };
+    std::pair<int, int> rightEnd = { 0, 0 };
 
     std::unordered_map<GameObject*, std::shared_ptr<Material>> activeMaterials;
     std::unordered_map<GameObject*, std::shared_ptr<Material>> inactiveMaterials;
 
+    bool isLeftSolved = false;
+    bool isRightSolved = false;
+    bool isPuzzleSolved = false;
+
     float spacingHorizontal = 6.0f;
-    float spacingVertical = 3.5f;
+    float spacingVertical = 2.5f;
 
     float minExtensionDistance = 12.0f;
     float maxExtensionDistance = 40.5f;
