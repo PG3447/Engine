@@ -13,6 +13,7 @@ enum class WallSide {
 
 struct CoffinData {
     GameObject* gameObject = nullptr;
+    TransformComponent* transform = nullptr;
     WallSide wall;
     int row;
     int col;
