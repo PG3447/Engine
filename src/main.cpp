@@ -338,6 +338,7 @@ void processCameraInput(ECS& ecs, CameraComponent& cam, TransformComponent& tran
         dir = glm::normalize(dir);
         transform.position += dir * MovementSpeed * deltaTime;
         transform.isDirty   = true;
+        cam.dirty = true;
     }
 }
 
@@ -346,6 +347,11 @@ void processCameraMouse(ECS& ecs, CameraComponent& cam, TransformComponent& tran
     const auto& hid = ecs.GetSystem<HID>();
     float dx = hid->get_mouse_dx();
     float dy = hid->get_mouse_dy();
+    const float epsilon = 0.01f;
+
+    if (glm::abs(dx) < epsilon && glm::abs(dy) < epsilon)
+        return;
+
     CameraHelper::ProcessMouseMovement(cam, transform, dx, dy);
 }
 
@@ -1491,6 +1497,8 @@ void end_frame()
     glfwSwapBuffers(window);
 }
 
+float lookDeadzone = 0.0f;
+
 void processCameraGamepad(ECS& ecs, CameraComponent& cam, TransformComponent& transform, int gamepad_id)
 {
     const auto& hid = ecs.GetSystem<HID>();
@@ -1518,6 +1526,13 @@ void processCameraGamepad(ECS& ecs, CameraComponent& cam, TransformComponent& tr
 
     float rx = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_RIGHT_X, gamepad_id);
     float ry = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_RIGHT_Y, gamepad_id);
+
+
+    if (lookDeadzone <= 0.01f)
+        lookDeadzone += 0.0005f;
+    else if (glm::abs(rx) < lookDeadzone && glm::abs(ry) < lookDeadzone)
+        return;
+
 
     const float sensitivity = 600.0f;
     CameraHelper::ProcessMouseMovement(cam, transform,

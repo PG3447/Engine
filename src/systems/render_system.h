@@ -491,6 +491,8 @@ public:
         
         auto cullStart = std::chrono::high_resolution_clock::now();
 
+        drivenManager.CollectAllPasses(*renderQuery, currentCameraPos);
+        
         int vpW = std::max(1, (int)(cam.viewport.width * width));
         int vpH = std::max(1, (int)(cam.viewport.height * height));
         int vpX = (int)(cam.viewport.x * width);
@@ -502,9 +504,8 @@ public:
             hiz.Destroy(); // tylko przy resize — nie co klatkę
             hiz.Init(vpW, vpH, width, height);
         }
-        drivenManager.AttachCameraHiZ(hiz.hizTexture, hiz.hizMipLevels, vpW, vpH, occlusionCullingEnabled, vpX, vpY);
 
-        drivenManager.CollectAllPasses(*renderQuery, currentCameraPos);
+        drivenManager.AttachCameraHiZ(hiz.hizTexture, hiz.hizMipLevels, vpW, vpH, frustumCullingEnabled, occlusionCullingEnabled, vpX, vpY);
         drivenManager.RenderFrame(vp, currentCameraPos, occlusionCullingEnabled ? hiz.depthPrev : 0, cam.dirty);
         cam.dirty = false;
         //drivenManager.RenderFrame(vp, currentCameraPos, depthTexturePrev);
