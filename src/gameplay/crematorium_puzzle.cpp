@@ -425,7 +425,7 @@ void CrematoriumPuzzle::Update(float deltaTime)
     bool currentRightSolved = hasPath(gridRight, rightStart, rightEnd);
 
     if (currentLeftSolved && !isLeftSolved) {
-        spdlog::info("=== Lewa Sciana (Krematorium) Zostala Polaczona! ===");
+        spdlog::info("Lewa Sciana Zostala Polaczona");
         isLeftSolved = true;
     }
     else if (!currentLeftSolved && isLeftSolved) {
@@ -433,7 +433,7 @@ void CrematoriumPuzzle::Update(float deltaTime)
     }
 
     if (currentRightSolved && !isRightSolved) {
-        spdlog::info("=== Prawa Sciana (Krematorium) Zostala Polaczona! ===");
+        spdlog::info("Prawa Sciana Zostala Polaczona");
         isRightSolved = true;
     }
     else if (!currentRightSolved && isRightSolved) {
@@ -441,7 +441,7 @@ void CrematoriumPuzzle::Update(float deltaTime)
     }
 
     if (isLeftSolved && isRightSolved && !isPuzzleSolved) {
-        spdlog::warn("!!! ZAGADKA KREMATORIUM ZOSTALA ROZWIAZANA W PELNI !!!");
+        spdlog::warn("ZAGADKA KREMATORIUM ZOSTALA ROZWIAZANA W PELNI WOOOOOOOOOOOW");
         isPuzzleSolved = true;
     }
     else if ((!isLeftSolved || !isRightSolved) && isPuzzleSolved) {
