@@ -193,6 +193,7 @@ std::unique_ptr<Prefab> floorModel;
 std::unique_ptr<Prefab> wallModel;
 std::unique_ptr<Prefab> wallModel2;
 std::unique_ptr<Prefab> wallModel3;
+std::unique_ptr<Prefab> roomsModel;
 std::unique_ptr<Prefab> NormalDoor;
 
 std::unique_ptr<Prefab> dyingModelPrefab;
@@ -846,7 +847,9 @@ int main(int, char**)
     createNuclearRooom(scena1);
     createCrematorium(scena1);
     createRentgenRoom(scena1);
-
+    createRentgenRoom(scena1);
+    roomsModel = std::make_unique<Prefab>("res/models/room.glb");
+    CreateStaticObject(scena1, roomsModel.get(), ourShader.get(), "ScianaKiblowa", glm::vec3(36, 0, -29), glm::vec3(2, 2, 1), glm::vec3(0, 90, 90), glm::vec3(1, 1, 1));
     ecs.GetSystem<NavMeshSystem>()->Bake(*scena1);
 
     dyingModelPrefab   = std::make_unique<Prefab>("res/models/Dying.fbx");
