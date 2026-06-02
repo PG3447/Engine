@@ -1410,24 +1410,9 @@ void imgui_render(SceneManager& sceneManager)
         ImGui::Text("%s", name.c_str());
 
     ImGui::End();
-    auto system = sceneManager.GetActiveScene()->GetECS().GetSystem<RenderSystem>();
-    if (ImGui::Begin("Debug")) {
-       
-        system->ShowDepthTextureImGui(system->sceneDepthTexture, system->fboWidth, system->fboHeight, 0.1f, 1000.0f);
-    }
-    ImGui::End();
-
-    if (ImGui::Begin("Debug DepthPrev")) {
-        int i = 0;
-        for (auto& [cam, hiz] : system->cameraHiZ) {
-            ImGui::Text("Kamera %d", i++);
-            if (hiz.depthPrev != 0)
-                system->ShowDepthTextureImGui(hiz.depthPrev, hiz.width, hiz.height, 0.1f, 1000.0f);
-        }
-    }
-    ImGui::End();
 
     if (ImGui::Begin("Debug hizTexture")) {
+        auto system = sceneManager.GetActiveScene()->GetECS().GetSystem<RenderSystem>();
         static int debugMip = 0;
         ImGui::SliderInt("Mip", &debugMip, 0, 10);
         int i = 0;
@@ -1453,6 +1438,12 @@ void imgui_render(SceneManager& sceneManager)
 
     ImGui::Text("FPS: %.1f",        ImGui::GetIO().Framerate);
     ImGui::Text("Frame time: %.3f ms", 1000.0f / ImGui::GetIO().Framerate);
+
+    static bool vsyncEnabled = true;
+    if (ImGui::Checkbox("VSync", &vsyncEnabled))
+    {
+        glfwSwapInterval(vsyncEnabled ? 1 : 0);
+    }
 
     if (ImGui::CollapsingHeader("CPU")) {
         ImGui::Text("Total CPU: %.3f ms", perf.cpuFrameTime);
