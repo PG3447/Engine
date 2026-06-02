@@ -576,7 +576,7 @@ public:
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
     }
     // Główna pętla renderowania
-    void RenderFrame(const glm::mat4& viewProj, glm::vec3 cameraPos, GLuint prevDepth, float zNear = 0.1f, float zFar = 1000.0f)
+    void RenderFrame(const glm::mat4& viewProj, glm::vec3 cameraPos, GLuint prevDepth, bool cameraDirty, float zNear = 0.1f, float zFar = 1000.0f)
     {
         const int numLights = (int)gpuLights.size();
         UploadFrameUBO(viewProj, cameraPos, numLights, zNear, zFar);
@@ -593,7 +593,7 @@ public:
             ApplyPassState(entry.config);
             //cout << "renderuje sie " << endl;
            // cout << entry.objects.size() << endl;
-            entry.renderer->RenderFrame(viewProj, entry.objects, prevDepth, cameraPos);
+            entry.renderer->RenderFrame(viewProj, entry.objects, prevDepth, cameraPos, cameraDirty);
         }
 
         // Przywróć domyślny stan po wszystkich passach

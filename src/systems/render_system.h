@@ -30,7 +30,7 @@ struct PerCameraHiZ
     {
         width = w;
         height = h;
-        hizMipLevels = static_cast<int>(std::floor(std::log2(std::max(w, h))));// +1;
+        hizMipLevels = static_cast<int>(std::floor(std::log2(std::max(w, h)))) + 1;
 
         // HiZ — R32F z mipami, taki sam format jak w GPUDrivenManager::InitHiZ
         glGenTextures(1, &hizTexture);
@@ -505,7 +505,8 @@ public:
         drivenManager.AttachCameraHiZ(hiz.hizTexture, hiz.hizMipLevels, vpW, vpH, occlusionCullingEnabled, vpX, vpY);
 
         drivenManager.CollectAllPasses(*renderQuery, currentCameraPos);
-        drivenManager.RenderFrame(vp, currentCameraPos, occlusionCullingEnabled ? hiz.depthPrev : 0);
+        drivenManager.RenderFrame(vp, currentCameraPos, occlusionCullingEnabled ? hiz.depthPrev : 0, cam.dirty);
+        cam.dirty = false;
         //drivenManager.RenderFrame(vp, currentCameraPos, depthTexturePrev);
         if (hiz.depthPrev && sceneDepthTexture && occlusionCullingEnabled) {
             std::swap(sceneDepthTexture, hiz.depthPrev);

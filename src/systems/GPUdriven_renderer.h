@@ -856,9 +856,9 @@ public:
         DispatchPrefixSum(objectCount);
         dirtyInstance = false;
     }
+    
 
-
-    void RenderFrame(const glm::mat4& viewProj, const std::vector<RenderData>& objects, GLuint depthTexturePrevFrame, glm::vec3 currentCameraPos)
+    void RenderFrame(const glm::mat4& viewProj, const std::vector<RenderData>& objects, GLuint depthTexturePrevFrame, glm::vec3 currentCameraPos, bool cameraDirty)
     {
         uint32_t objCount = (uint32_t)objects.size();
 
@@ -868,7 +868,8 @@ public:
         //DebugReadBuffers(objCount, (uint32_t)meshesData.size());
 
         // 1. Zbuduj HiZ z depth poprzedniej klatki
-        if (depthTexturePrevFrame != 0) {
+        if (depthTexturePrevFrame != 0 && cameraDirty)
+        {
             //CopyDepthToHiZ(depthTexturePrevFrame);
             BuildHiZ(depthTexturePrevFrame);
         }
