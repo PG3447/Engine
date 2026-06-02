@@ -1,6 +1,8 @@
 #pragma once
 #include "core/scene.h"
 #include "model.h"
+#include "prefab.h"
+#include "shader.h"
 #include <vector>
 #include <algorithm>
 
@@ -30,24 +32,44 @@ struct CoffinData {
 
 class CrematoriumPuzzle {
 public:
+    //int rows = 4;
+    //int cols = 6;
+
+    //// 1+ - kolor (i poziom wysuniêia), 0 - czarne
+    //std::vector<std::vector<int>> configLeftWall = {
+    //        {6, 0, 4, 2, 0, 5}, // najnizszy
+    //        {0, 3, 5, 0, 1, 6},
+    //        {2, 4, 0, 6, 3, 0},
+    //        {5, 1, 2, 4, 0, 0}  // najwyzszy
+    //};
+
+    //// 1+ - kolor (i poziom wysuniêia), 0 - czarne
+    //std::vector<std::vector<int>> configRightWall = {
+    //    {0, 5, 0, 3, 1, 0},
+    //    {4, 0, 6, 2, 0, 5},
+    //    {1, 3, 2, 0, 4, 6},
+    //    {0, 6, 1, 5, 0, 2}
+    //};
+
     int rows = 4;
-    int cols = 6;
+    int cols = 4;
 
-    // 1+ - kolor (i poziom wysuniêia), 0 - czarne
     std::vector<std::vector<int>> configLeftWall = {
-            {6, 0, 4, 2, 0, 5}, // najnizszy
-            {0, 3, 5, 0, 1, 6},
-            {2, 4, 0, 6, 3, 0},
-            {5, 1, 2, 4, 0, 0}  // najwyzszy
+        {4, 0, 2, 0},
+        {0, 3, 1, 4},
+        {2, 0, 4, 3},
+        {1, 2, 0, 0}
     };
 
-    // 1+ - kolor (i poziom wysuniêia), 0 - czarne
     std::vector<std::vector<int>> configRightWall = {
-        {0, 5, 0, 3, 1, 0},
-        {4, 0, 6, 2, 0, 5},
-        {1, 3, 2, 0, 4, 6},
-        {0, 6, 1, 5, 0, 2}
+        {0, 4, 0, 3},
+        {2, 0, 4, 1},
+        {1, 3, 2, 0},
+        {0, 1, 0, 2}
     };
+
+    std::unordered_map<GameObject*, std::shared_ptr<Material>> activeMaterials;
+    std::unordered_map<GameObject*, std::shared_ptr<Material>> inactiveMaterials;
 
     float spacingHorizontal = 6.0f;
     float spacingVertical = 3.5f;
@@ -67,10 +89,13 @@ public:
     float w2_buildDirZ = 1.0f;
     float w2_extendDirX = -1.0f;
 
+    GameObject* leftPanelObj = nullptr;
+    GameObject* rightPanelObj = nullptr;
+
     std::vector<CoffinData> coffins;
     uint64_t activationCounter = 1;
 
-    void Init(Scene* scene, std::shared_ptr<Model> coffinModel, glm::vec3 cornerPosition);
+    void Init(Scene* scene, std::shared_ptr<Model> coffinModel, Prefab* panelPrefab, Shader* shader, glm::vec3 cornerPosition);
     void Update(float deltaTime);
     void ToggleCoffin(GameObject* clickedObject);
 };

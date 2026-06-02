@@ -189,6 +189,7 @@ std::unique_ptr<Prefab> washroomExit;
 std::unique_ptr<Prefab> urinModel;
 std::unique_ptr<Prefab> szafkaModel;
 std::unique_ptr<Prefab> ruraModel;
+std::unique_ptr<Prefab> panelModel;
 std::unique_ptr<Prefab> floorModel;
 std::unique_ptr<Prefab> wallModel;
 std::unique_ptr<Prefab> wallModel2;
@@ -1528,6 +1529,7 @@ void connectAllModels() {
     NormalDoor       = std::make_unique<Prefab>("res/models/doors.glb");
     szafkaModel      = std::make_unique<Prefab>("res/models/szafka_rozszerzona.glb");
     ruraModel        = std::make_unique<Prefab>("res/models/placeholder_rura_wysuwana.glb");
+    panelModel       = std::make_unique<Prefab>("res/models/Panel.glb");
 }
 
 void createFirstRoom(Scene* scena1) {
@@ -1852,11 +1854,11 @@ void createCrematorium(Scene* scena) {
 
     glm::vec3 cornerPosition(175.0f, 5.0f, -255.0f);
 
-    if (ruraModel != nullptr && ruraModel->rootModel != nullptr) {
-        crematoriumPuzzle.Init(scena, ruraModel->rootModel, cornerPosition);
+    if (ruraModel != nullptr && panelModel != nullptr && ruraModel->rootModel != nullptr) {
+        crematoriumPuzzle.Init(scena, ruraModel->rootModel, panelModel.get(), ourShader.get(), cornerPosition);
     }
     else {
-        spdlog::error("Model rury nie zostal poprawnie zaladowany!");
+        spdlog::error("Model rury albo panelu nie zostal poprawnie zaladowany!");
     }
 }
 
