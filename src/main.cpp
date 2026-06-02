@@ -932,7 +932,29 @@ int main(int, char**)
             Kurorushi, nestPos + offset, 4.5f); // I LOVE THE TASE OF IRON
     }
 
-    float p1Int = 0.0f, p2Int = 0.0f;
+    //interfejs sprite'y
+    // Crosshair P1
+    GameObject* crosshair1_obj = scena1->CreateGameObject(nullptr);
+    SpriteComponent* crosshair1 = crosshair1_obj->AddComponent<SpriteComponent>();
+    crosshair1->sprites         = { ResourceManager::LoadTexture("crosshair.png", "res/sprites/") };
+    crosshair1->screenPosition  = glm::vec2(480.0f - 16.0f, 540.0f - 16.0f); // centrum - half size
+    crosshair1->size            = glm::vec2(16.0f, 16.0f);
+    crosshair1->layer           = 2; // nad napisami
+    crosshair1->isVisible       = true;
+
+    // Crosshair P2
+    GameObject* crosshair2_obj = scena1->CreateGameObject(nullptr);
+    SpriteComponent* crosshair2 = crosshair2_obj->AddComponent<SpriteComponent>();
+    crosshair2->sprites         = { ResourceManager::LoadTexture("crosshair.png", "res/sprites/") };
+    crosshair2->screenPosition  = glm::vec2(1440.0f - 16.0f, 540.0f - 16.0f);
+    crosshair2->size            = glm::vec2(16.0f, 16.0f);
+    crosshair2->layer           = 2;
+    crosshair2->isVisible       = true;
+
+    const glm::vec2 CH_SIZE_NORMAL(16.0f, 16.0f);
+    const glm::vec2 CH_SIZE_BIG(32.0f, 32.0f);
+    const glm::vec2 CH1_CENTER(480.0f,  540.0f);
+    const glm::vec2 CH2_CENTER(1440.0f, 540.0f);
 
     // Main loop
     while (!glfwWindowShouldClose(window))
@@ -1110,6 +1132,37 @@ int main(int, char**)
         } else {
             player2InteractionInfo->screenPosition = p2BasePos;
         }
+
+        float p1Int = 0.0f, p2Int = 0.0f;
+
+        if (player1Raycast->anyHit()) {
+            auto hit = player1Raycast->closestHit();
+            if (hit.hitObject &&
+               (rotatableObjects.count(hit.hitObject) ||
+                toiletDoorsMap.count(hit.hitObject)   ||
+                cabinetsMap.count(hit.hitObject)       ||
+                majorDoors.count(hit.hitObject)        ||
+                pickupObjects.count(hit.hitObject)     ||
+                hit.hitObject->name.find("Coffin") != std::string::npos))
+                p1Int = 1.0f;
+        }
+        if (player2Raycast->anyHit()) {
+            auto hit = player2Raycast->closestHit();
+            if (hit.hitObject &&
+               (rotatableObjects.count(hit.hitObject) ||
+                toiletDoorsMap.count(hit.hitObject)   ||
+                cabinetsMap.count(hit.hitObject)       ||
+                majorDoors.count(hit.hitObject)        ||
+                pickupObjects.count(hit.hitObject)))
+                p2Int = 1.0f;
+        }
+
+        float chLerpSpeed = 10.0f;
+        crosshair1->size = glm::mix(crosshair1->size, p1Int > 0.5f ? CH_SIZE_BIG : CH_SIZE_NORMAL, deltaTime * chLerpSpeed);
+        crosshair2->size = glm::mix(crosshair2->size, p2Int > 0.5f ? CH_SIZE_BIG : CH_SIZE_NORMAL, deltaTime * chLerpSpeed);
+
+        crosshair1->screenPosition = CH1_CENTER - crosshair1->size * 0.5f;
+        crosshair2->screenPosition = CH2_CENTER - crosshair2->size * 0.5f;
 
         auto inputEnd = std::chrono::high_resolution_clock::now();
 
