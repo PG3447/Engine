@@ -505,7 +505,8 @@ public:
         drivenManager.AttachCameraHiZ(hiz.hizTexture, hiz.hizMipLevels, vpW, vpH, occlusionCullingEnabled, vpX, vpY);
 
         drivenManager.CollectAllPasses(*renderQuery, currentCameraPos);
-        drivenManager.RenderFrame(vp, currentCameraPos, occlusionCullingEnabled ? hiz.depthPrev : 0);
+        drivenManager.RenderFrame(vp, currentCameraPos, occlusionCullingEnabled ? hiz.depthPrev : 0, cam.dirty);
+        cam.dirty = false;
         //drivenManager.RenderFrame(vp, currentCameraPos, depthTexturePrev);
         if (hiz.depthPrev && sceneDepthTexture && occlusionCullingEnabled) {
             std::swap(sceneDepthTexture, hiz.depthPrev);

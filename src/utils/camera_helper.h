@@ -39,6 +39,7 @@ public:
 
     static void updateCameraVectors(CameraComponent& cam, TransformComponent& transform)
     {
+        cam.dirty = true;
         // calculate the new Front vector
         //glm::vec3 front;
         //front.x = cos(glm::radians(cam.yaw)) * cos(glm::radians(cam.pitch));
@@ -85,6 +86,7 @@ public:
     // processes input received from a mouse scroll-wheel event. Only requires input on the vertical wheel-axis
     void ProcessMouseScroll(CameraComponent& cam, float yoffset)
     {
+        cam.dirty = true;
         cam.fov -= yoffset;
         if (cam.fov < 1.0f)
             cam.fov = 1.0f;
