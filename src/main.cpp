@@ -196,6 +196,12 @@ std::unique_ptr<Prefab> wallModel2;
 std::unique_ptr<Prefab> wallModel3;
 std::unique_ptr<Prefab> NormalDoor;
 
+
+std::unique_ptr<Prefab> LewyDolny;
+std::unique_ptr<Prefab> PrawyDolny;
+std::unique_ptr<Prefab> PrawyGorny;
+std::unique_ptr<Prefab> LewyGorny;
+
 std::unique_ptr<Prefab> dyingModelPrefab;
 std::unique_ptr<Prefab> jumpSkeletonPrefab;
 
@@ -1561,6 +1567,11 @@ void connectAllModels() {
     szafkaModel      = std::make_unique<Prefab>("res/models/szafka_rozszerzona.glb");
     ruraModel        = std::make_unique<Prefab>("res/models/placeholder_rura_wysuwana.glb");
     panelModel       = std::make_unique<Prefab>("res/models/Panel_5x5.glb");
+    LewyDolny       = std::make_unique<Prefab>("res/models/LewyDolny.glb");
+    LewyGorny       = std::make_unique<Prefab>("res/models/LewyGorny.glb");
+    PrawyGorny       = std::make_unique<Prefab>("res/models/PrawyGorny.glb");
+    PrawyDolny       = std::make_unique<Prefab>("res/models/PrawyDolny.glb");
+
 }
 
 void createFirstRoom(Scene* scena1) {
@@ -1742,7 +1753,7 @@ void createFirstRoom(Scene* scena1) {
     lustro4->GetComponent<TransformComponent>()->position   = glm::vec3{ -23.5, 12.0, -25 + (-20 * 3) };
 
     // Drzwi wyjsciowe z lazienki (washroomExit)
-    GameObject* tablicaDrzwi[2];
+    /*GameObject* tablicaDrzwi[2];
     for (int i = 0; i < 2; i++) {
         tablicaDrzwi[i] = washroomExit->Instantiate(*scena1, nullptr, ourShader.get());
         tablicaDrzwi[i]->GetComponent<TransformComponent>()->scale    = glm::vec3{ 10, 11, 10 };
@@ -1757,6 +1768,7 @@ void createFirstRoom(Scene* scena1) {
         tablicaDrzwi[i]->GetComponent<ColliderComponent>()->isWalkable     = false;
         tablicaDrzwi[i]->GetComponent<ColliderComponent>()->affectsNavMesh = true;
     }
+    */
 
     // Kubek - kolider domyslny (bez jawnego halfSize)
     GameObject* cup = cupModel->Instantiate(*scena1, nullptr, ourShader.get());
@@ -1897,4 +1909,56 @@ void createRentgenRoom(Scene* scena) {
     CreateStaticObject(scena, floorModel.get(), ourShader.get(), "PodlogaRentgenRoom",    glm::vec3(0.040, 0, -257.800),  glm::vec3(60, 1, 40));
     CreateStaticObject(scena, floorModel.get(), ourShader.get(), "SufitRentgen",          glm::vec3(0.040, 20, -257.800), glm::vec3(60, 1, 40));
     CreateStaticObject(scena, wallModel.get(),  ourShader.get(), "KoncowaScianaRentgen",  glm::vec3(0, 0, -297),          glm::vec3(61, 50, 1));
+
+
+    /*if (i == 2 || i == 3) {
+        tablicaKibli[i] = urinModel->Instantiate(*scena1, nullptr, ourShader.get());
+        tablicaKibli[i]->name = "Kibel" + std::to_string(i);
+        tablicaKibli[i]->GetComponent<TransformComponent>()->scale    = glm::vec3{ 12, 12, 12 };
+        tablicaKibli[i]->AddComponent<RigidbodyComponent>();
+        tablicaKibli[i]->AddComponent<ColliderComponent>();
+        tablicaKibli[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
+        tablicaKibli[i]->GetComponent<RigidbodyComponent>()->isStatic   = true;
+        tablicaKibli[i]->GetComponent<ColliderComponent>()->halfSize     = glm::vec3{ 2.5, 4, 2.5 };
+        tablicaKibli[i]->GetComponent<ColliderComponent>()->offset       = glm::vec3{ 0, 4, 0 };
+        tablicaKibli[i]->GetComponent<TransformComponent>()->position    = glm::vec3{ 47.6, 2.0f, -25 + (-10 * i) };
+        tablicaKibli[i]->GetComponent<TransformComponent>()->rotation    = glm::vec3{ 0, 270, 0 };
+        tablicaKibli[i]->GetComponent<ColliderComponent>()->isWalkable     = false;
+        tablicaKibli[i]->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+    }*/
+    GameObject * lewyDolny = LewyDolny->Instantiate(*scena, nullptr, ourShader.get());
+    lewyDolny->name = "lewyDolny";
+    lewyDolny->GetComponent<TransformComponent>()->position = glm::vec3(4, 3, -16);
+    lewyDolny->AddComponent<RigidbodyComponent>();
+    lewyDolny->GetComponent<RigidbodyComponent>()->useGravity = true;
+    lewyDolny->GetComponent<RigidbodyComponent>()->isStatic = false;
+    lewyDolny->AddComponent<ColliderComponent>();
+    pickupObjects.insert(lewyDolny);
+
+    GameObject * lewyGorny = LewyGorny->Instantiate(*scena, nullptr, ourShader.get());
+    lewyGorny->name = "lewyGorny";
+    lewyGorny->GetComponent<TransformComponent>()->position = glm::vec3(4, 3, -18);
+    lewyGorny->AddComponent<RigidbodyComponent>();
+    lewyGorny->GetComponent<RigidbodyComponent>()->useGravity = true;
+    lewyGorny->GetComponent<RigidbodyComponent>()->isStatic = false;
+    lewyGorny->AddComponent<ColliderComponent>();
+    pickupObjects.insert(lewyGorny);
+
+    GameObject * prawyDolny = PrawyDolny->Instantiate(*scena, nullptr, ourShader.get());
+    prawyDolny->name = "prawyDolny";
+    prawyDolny->GetComponent<TransformComponent>()->position = glm::vec3(4, 3, -20);
+    prawyDolny->AddComponent<RigidbodyComponent>();
+    prawyDolny->GetComponent<RigidbodyComponent>()->useGravity = true;
+    prawyDolny->GetComponent<RigidbodyComponent>()->isStatic = false;
+    prawyDolny->AddComponent<ColliderComponent>();
+    pickupObjects.insert(prawyDolny);
+
+    GameObject * prawyGorny = PrawyGorny->Instantiate(*scena, nullptr, ourShader.get());
+    prawyGorny->name = "prawyGorny";
+    prawyGorny->GetComponent<TransformComponent>()->position = glm::vec3(4, 3, -22);
+    prawyGorny->AddComponent<RigidbodyComponent>();
+    prawyGorny->GetComponent<RigidbodyComponent>()->useGravity = true;
+    prawyGorny->GetComponent<RigidbodyComponent>()->isStatic = false;
+    prawyGorny->AddComponent<ColliderComponent>();
+    pickupObjects.insert(prawyGorny);
 }
