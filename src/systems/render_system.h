@@ -30,7 +30,7 @@ struct PerCameraHiZ
     {
         width = w;
         height = h;
-        hizMipLevels = static_cast<int>(std::floor(std::log2(std::max(w, h))));// +1;
+        hizMipLevels = static_cast<int>(std::floor(std::log2(std::max(w, h)))) + 1;
 
         // HiZ — R32F z mipami, taki sam format jak w GPUDrivenManager::InitHiZ
         glGenTextures(1, &hizTexture);
