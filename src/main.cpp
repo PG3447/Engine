@@ -345,6 +345,11 @@ void processCameraMouse(ECS& ecs, CameraComponent& cam, TransformComponent& tran
     const auto& hid = ecs.GetSystem<HID>();
     float dx = hid->get_mouse_dx();
     float dy = hid->get_mouse_dy();
+    const float epsilon = 0.01f;
+
+    if (glm::abs(dx) < epsilon && glm::abs(dy) < epsilon)
+        return;
+
     CameraHelper::ProcessMouseMovement(cam, transform, dx, dy);
 }
 
@@ -1494,6 +1499,8 @@ void processCameraGamepad(ECS& ecs, CameraComponent& cam, TransformComponent& tr
 {
     const auto& hid = ecs.GetSystem<HID>();
 
+    const float lookDeadzone = 0.01f;
+
     float lx = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_LEFT_X, gamepad_id);
     float ly = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_LEFT_Y, gamepad_id);
 
@@ -1517,6 +1524,9 @@ void processCameraGamepad(ECS& ecs, CameraComponent& cam, TransformComponent& tr
 
     float rx = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_RIGHT_X, gamepad_id);
     float ry = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_RIGHT_Y, gamepad_id);
+
+    if (glm::abs(rx) < lookDeadzone && glm::abs(ry) < lookDeadzone)
+        return;
 
     const float sensitivity = 600.0f;
     CameraHelper::ProcessMouseMovement(cam, transform,
