@@ -8,7 +8,7 @@ layout(r32f, binding = 2)  uniform writeonly image2D currentMip;
 uniform bool  isMip0;
 uniform ivec2 currentMipSize;
 uniform ivec2 prevMipSize;
-uniform ivec2 vpOffset;     // ← NOWE: offset viewportu w sceneDepthTexture (dla split screen)
+uniform ivec2 vpOffset;     //  offset viewportu w sceneDepthTexture (dla split screen)
                             //   dla mip0:  (vpX, vpY) z glViewport
                             //   dla mip1+: nieużywane (może być (0,0))
 
