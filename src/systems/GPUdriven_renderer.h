@@ -710,11 +710,11 @@ public:
         //DebugReadBuffers(objCount, (uint32_t)meshesData.size());
 
         // 1. Zbuduj HiZ z depth poprzedniej klatki
-        if (depthTexturePrevFrame != 0 && cameraDirty)
-        {
-            //CopyDepthToHiZ(depthTexturePrevFrame);
-            BuildHiZ(depthTexturePrevFrame);
-        }
+        //if (depthTexturePrevFrame != 0 && cameraDirty)
+        //{
+        //    //CopyDepthToHiZ(depthTexturePrevFrame);
+        //    BuildHiZ(depthTexturePrevFrame);
+        //}
         if (dirtyInstance)
             BuildInstance(objCount);
         //DebugPipelineState(objCount);
