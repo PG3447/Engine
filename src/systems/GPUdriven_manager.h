@@ -588,11 +588,16 @@ public:
         //    BuildHiZ();
         //}
         //spdlog::info("Renderowanie");
+        if (prevDepth != 0 && cameraDirty && !passes.empty())
+        {
+            passes[0].renderer->BuildHiZ(prevDepth);
+        }
+
+
         for (auto& entry : passes) {
             if (entry.objects.empty()) continue;
             ApplyPassState(entry.config);
-            //cout << "renderuje sie " << endl;
-           // cout << entry.objects.size() << endl;
+
             entry.renderer->RenderFrame(viewProj, entry.objects, prevDepth, cameraPos, cameraDirty);
         }
 

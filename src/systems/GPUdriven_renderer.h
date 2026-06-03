@@ -529,57 +529,6 @@ public:
         spdlog::warn("Materialy sie wysylaja");
     }
 
-    //size_t prevSizeLights = 0;
-
-    //void UpdateAndUploadLights(std::vector<LightComponent*>& lights, std::vector<TransformComponent*>& transforms)
-    //{
-    //    if (lights.empty()) return;
-
-    //    uint32_t count = std::min((uint32_t)lights.size(), (uint32_t)MAX_UBO_LIGHTS);
-    //    gpuLights.resize(count);
-
-    //    for (size_t i = 0; i < count; i++)
-    //    {
-    //        LightComponent* light = lights[i];
-    //        TransformComponent* transform = transforms[i];
-    //        if (!light || !transform) continue;
-
-    //        GPULight& g = gpuLights[i];
-
-    //        const bool on = light->isOn;
-
-    //        g.position = glm::vec4(transform->position, (float)light->type);
-    //        g.direction = (glm::length2(light->direction) < 0.0001f) ? glm::vec4(TransformHelper::getForward(*transform), 0.0f) : glm::vec4(light->direction, 0.0f);
-
-    //        const glm::vec3& zero = glm::vec3(0.0f);
-    //        g.ambient = glm::vec4(on ? light->ambient : zero, 0.0f);
-    //        g.diffuse = glm::vec4(on ? light->diffuse : zero, 0.0f);
-    //        g.specular = glm::vec4(on ? light->specular : zero, 0.0f);
-    //        g.params1 = glm::vec4(light->constant, light->linear, light->quadratic, 0.0f);
-    //        g.params2 = glm::vec4(light->cutOff, light->outerCutOff, on ? 1.0f : 0.0f, 0.0f);
-    //    }
-
-
-    //    glBindBuffer(GL_UNIFORM_BUFFER, lightsUBO);
-    //    glBufferSubData(GL_UNIFORM_BUFFER, 0, count * sizeof(GPULight), gpuLights.data());
-    //    glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
-    //    //if (prevSizeLights == gpuLights.size())
-    //    //{
-    //    //    glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightsSSBO);
-    //    //    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, gpuLights.size() * sizeof(GPULight), gpuLights.data());
-    //    //    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-    //    //}
-    //    //else
-    //    //{
-    //    //    glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightsSSBO);
-    //    //    glBufferData(GL_SHADER_STORAGE_BUFFER, gpuLights.size() * sizeof(GPULight), gpuLights.data(), GL_DYNAMIC_DRAW);
-    //    //    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-    //    //}
-
-    //    prevSizeLights = count;
-    //}
-
     void UploadAllBoneMatrices(const std::vector<glm::mat4>& allBones)
     {
         if (allBones.empty()) return;
@@ -663,11 +612,6 @@ public:
         glMemoryBarrier(GL_COMMAND_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
     }
 
-    //void CopyDepthToHiZ(GLuint depthTexture)
-    //{
-    //    glCopyImageSubData(depthTexture, GL_TEXTURE_2D, 0, 0, 0, 0, hizTexture, GL_TEXTURE_2D, 0, 0, 0, 0, screenWidth, screenHeight, 1);
-    //}
-
     void CopyDepthToHiZ(GLuint depthTexture)
     {
         glCopyImageSubData(depthTexture, GL_TEXTURE_2D, 0, 0, 0, 0,
@@ -718,37 +662,6 @@ public:
         }
     }
 
-    //void BuildHiZ()
-    //{
-    //    shaderHizDownsample->use();
-
-    //    int w = screenWidth, h = screenHeight;
-
-    //    for (int mip = 1; mip < hizMipLevels; mip++) {
-    //        w = std::max(1, w / 2);
-    //        h = std::max(1, h / 2);
-
-    //        // Poprzedni mip jako sampler (texture view na mip-1)
-    //        // Ograniczamy BASE/MAX żeby sampler czytał tylko ten poziom
-    //        glTextureParameteri(hizTexture, GL_TEXTURE_BASE_LEVEL, mip - 1);
-    //        glTextureParameteri(hizTexture, GL_TEXTURE_MAX_LEVEL, mip - 1);
-    //        glBindTextureUnit(0, hizTexture);
-
-    //        // Aktualny mip jako image2D (zapis)
-    //        glBindImageTexture(1, hizTexture, mip, GL_FALSE, 0,
-    //            GL_WRITE_ONLY, GL_R32F);
-
-    //        glDispatchCompute((w + 7) / 8, (h + 7) / 8, 1);
-    //        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT
-    //            | GL_TEXTURE_FETCH_BARRIER_BIT);
-    //    }
-
-    //    // Przywróć pełny zakres mipów
-    //    glTextureParameteri(hizTexture, GL_TEXTURE_BASE_LEVEL, 0);
-    //    glTextureParameteri(hizTexture, GL_TEXTURE_MAX_LEVEL, hizMipLevels - 1);
-    //}
-
-
 
     void BindForDraw()
     {
@@ -797,11 +710,11 @@ public:
         //DebugReadBuffers(objCount, (uint32_t)meshesData.size());
 
         // 1. Zbuduj HiZ z depth poprzedniej klatki
-        if (depthTexturePrevFrame != 0 && cameraDirty)
-        {
-            //CopyDepthToHiZ(depthTexturePrevFrame);
-            BuildHiZ(depthTexturePrevFrame);
-        }
+        //if (depthTexturePrevFrame != 0 && cameraDirty)
+        //{
+        //    //CopyDepthToHiZ(depthTexturePrevFrame);
+        //    BuildHiZ(depthTexturePrevFrame);
+        //}
         if (dirtyInstance)
             BuildInstance(objCount);
         //DebugPipelineState(objCount);
@@ -921,6 +834,86 @@ public:
 
 #endif
 
+//void BuildHiZ()
+//{
+//    shaderHizDownsample->use();
+
+//    int w = screenWidth, h = screenHeight;
+
+//    for (int mip = 1; mip < hizMipLevels; mip++) {
+//        w = std::max(1, w / 2);
+//        h = std::max(1, h / 2);
+
+//        // Poprzedni mip jako sampler (texture view na mip-1)
+//        // Ograniczamy BASE/MAX żeby sampler czytał tylko ten poziom
+//        glTextureParameteri(hizTexture, GL_TEXTURE_BASE_LEVEL, mip - 1);
+//        glTextureParameteri(hizTexture, GL_TEXTURE_MAX_LEVEL, mip - 1);
+//        glBindTextureUnit(0, hizTexture);
+
+//        // Aktualny mip jako image2D (zapis)
+//        glBindImageTexture(1, hizTexture, mip, GL_FALSE, 0,
+//            GL_WRITE_ONLY, GL_R32F);
+
+//        glDispatchCompute((w + 7) / 8, (h + 7) / 8, 1);
+//        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT
+//            | GL_TEXTURE_FETCH_BARRIER_BIT);
+//    }
+
+//    // Przywróć pełny zakres mipów
+//    glTextureParameteri(hizTexture, GL_TEXTURE_BASE_LEVEL, 0);
+//    glTextureParameteri(hizTexture, GL_TEXTURE_MAX_LEVEL, hizMipLevels - 1);
+//}
+
+    //size_t prevSizeLights = 0;
+
+    //void UpdateAndUploadLights(std::vector<LightComponent*>& lights, std::vector<TransformComponent*>& transforms)
+    //{
+    //    if (lights.empty()) return;
+
+    //    uint32_t count = std::min((uint32_t)lights.size(), (uint32_t)MAX_UBO_LIGHTS);
+    //    gpuLights.resize(count);
+
+    //    for (size_t i = 0; i < count; i++)
+    //    {
+    //        LightComponent* light = lights[i];
+    //        TransformComponent* transform = transforms[i];
+    //        if (!light || !transform) continue;
+
+    //        GPULight& g = gpuLights[i];
+
+    //        const bool on = light->isOn;
+
+    //        g.position = glm::vec4(transform->position, (float)light->type);
+    //        g.direction = (glm::length2(light->direction) < 0.0001f) ? glm::vec4(TransformHelper::getForward(*transform), 0.0f) : glm::vec4(light->direction, 0.0f);
+
+    //        const glm::vec3& zero = glm::vec3(0.0f);
+    //        g.ambient = glm::vec4(on ? light->ambient : zero, 0.0f);
+    //        g.diffuse = glm::vec4(on ? light->diffuse : zero, 0.0f);
+    //        g.specular = glm::vec4(on ? light->specular : zero, 0.0f);
+    //        g.params1 = glm::vec4(light->constant, light->linear, light->quadratic, 0.0f);
+    //        g.params2 = glm::vec4(light->cutOff, light->outerCutOff, on ? 1.0f : 0.0f, 0.0f);
+    //    }
+
+
+    //    glBindBuffer(GL_UNIFORM_BUFFER, lightsUBO);
+    //    glBufferSubData(GL_UNIFORM_BUFFER, 0, count * sizeof(GPULight), gpuLights.data());
+    //    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+    //    //if (prevSizeLights == gpuLights.size())
+    //    //{
+    //    //    glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightsSSBO);
+    //    //    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, gpuLights.size() * sizeof(GPULight), gpuLights.data());
+    //    //    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    //    //}
+    //    //else
+    //    //{
+    //    //    glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightsSSBO);
+    //    //    glBufferData(GL_SHADER_STORAGE_BUFFER, gpuLights.size() * sizeof(GPULight), gpuLights.data(), GL_DYNAMIC_DRAW);
+    //    //    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    //    //}
+
+    //    prevSizeLights = count;
+    //}
 
 
 //void ResetDrawCount() {
