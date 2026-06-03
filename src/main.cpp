@@ -194,6 +194,7 @@ std::unique_ptr<Prefab> wallModel;
 std::unique_ptr<Prefab> wallModel2;
 std::unique_ptr<Prefab> wallModel3;
 std::unique_ptr<Prefab> NormalDoor;
+std::unique_ptr<Prefab> szkloModel;
 
 std::unique_ptr<Prefab> dyingModelPrefab;
 std::unique_ptr<Prefab> jumpSkeletonPrefab;
@@ -703,6 +704,17 @@ int main(int, char**)
 
     groundModel = std::make_unique<Prefab>("res/models/podloze.glb");
     sunModel    = std::make_unique<Prefab>("res/models/Sun.glb");
+    szkloModel = std::make_unique<Prefab>("res/models/szklo.glb");
+    GameObject* szklo = szkloModel->Instantiate(*scena1, nullptr, ourShader.get());
+    szklo->name = "SZKLO";
+    for (auto& mesh : szklo->GetComponent<RenderComponent>()->meshes)
+    {
+        mesh.material->surfaceType = SurfaceType::Transparent;
+    
+    }
+    
+        
+
 
     GameObject* obb3 = sunModel->Instantiate(*scena1, nullptr, ourShader.get());
     obb3->GetComponent<TransformComponent>()->scale    = glm::vec3(25.0f);
