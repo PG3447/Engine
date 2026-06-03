@@ -214,8 +214,16 @@ unsigned int triangleVBO = 0;
 std::unique_ptr<Shader> triangleShader;
 
 const int MAX_SAMPLES = 100;
-float frameTimes[MAX_SAMPLES];
-int index = 0;
+float frameTimes[MAX_SAMPLES] = {};
+int frameIndex = 0;
+
+struct FrameSample {
+    float time;
+    float deltaTime;
+    float cpuTime;
+    float gpuTime;
+};
+const int PERF_BUFFER_SIZE = 18000;
 
 struct PerformanceData {
     float cpuFrameTime = 0.0f;
@@ -265,17 +273,6 @@ GameObject* p2HeldObject = nullptr;
 
 std::vector<GameObject*> mainRoomDoors;
 
-void updateFPS(float deltaTime) {
-    frameTimes[index] = deltaTime;
-    index = (index + 1) % MAX_SAMPLES;
-
-    float sum = 0.0f;
-    for (int i = 0; i < MAX_SAMPLES; i++)
-        sum += frameTimes[i];
-
-    float avg = sum / MAX_SAMPLES;
-    float fps = 1.0f / avg;
-}
 
 void updateFocus() {
     if (focused)
@@ -690,6 +687,9 @@ int main(int, char**)
     init_imgui();
     spdlog::info("Initialized ImGui.");
 
+    std::vector<FrameSample> perfBuffer;
+    perfBuffer.reserve(PERF_BUFFER_SIZE);
+
     ECS ecs;
     SceneManager sceneManager;
 
@@ -921,7 +921,21 @@ int main(int, char**)
         float currentFrame = static_cast<float>(glfwGetTime());
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
-        updateFPS(deltaTime);
+
+        frameTimes[frameIndex % MAX_SAMPLES] = deltaTime;
+        frameIndex++;
+
+        FrameSample sample;
+        sample.time      = currentFrame;
+        sample.deltaTime = deltaTime;
+        sample.cpuTime   = 0.0f; // wypełnimy po obliczeniu
+        sample.gpuTime   = 0.0f;
+        perfBuffer.push_back(sample);
+
+        const float WINDOW_SECONDS = 300.0f;
+        while (!perfBuffer.empty() && (currentFrame - perfBuffer.front().time) > WINDOW_SECONDS) {
+            perfBuffer.erase(perfBuffer.begin());
+        }
 
         CpuTimer cpuTimer;
         cpuTimer.start();
@@ -1072,6 +1086,57 @@ int main(int, char**)
             processCameraGamepad(ecs, *camCompRight, *t1, 1);
         }
 
+        if (ecs.GetSystem<HID>()->is_action_just_pressed("save_perf_stats")) {
+            if (!perfBuffer.empty()) {
+                float sumFps = 0.0f, sumCpu = 0.0f, sumGpu = 0.0f;
+                float minFrame = FLT_MAX, maxFrame = 0.0f;
+                int n = static_cast<int>(perfBuffer.size());
+
+                for (const auto& s : perfBuffer) {
+                    float fps = (s.deltaTime > 0.0f) ? (1.0f / s.deltaTime) : 0.0f;
+                    float frameMs = s.deltaTime * 1000.0f;
+                    sumFps += fps;
+                    sumCpu += s.cpuTime;
+                    sumGpu += s.gpuTime;
+                    if (frameMs < minFrame) minFrame = frameMs;
+                    if (frameMs > maxFrame) maxFrame = frameMs;
+                }
+
+                float avgFps = sumFps / n;
+                float avgCpu = sumCpu / n;
+                float avgGpu = sumGpu / n;
+                float spanSeconds = perfBuffer.back().time - perfBuffer.front().time;
+
+                std::ofstream perfFile("performance_stats.txt", std::ios::app);
+                if (perfFile.is_open()) {
+                    auto now = std::chrono::system_clock::now();
+                    std::time_t t = std::chrono::system_clock::to_time_t(now);
+                    char timeStr[64];
+                    std::strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", std::localtime(&t));
+
+                    perfFile << "=== Performance Snapshot [" << timeStr << "] ===\n";
+                    perfFile << "Okres pomiaru:    " << std::fixed << std::setprecision(1) << spanSeconds << " s (" << n << " klatek)\n";
+                    perfFile << "Srednie FPS:      " << std::fixed << std::setprecision(2) << avgFps << "\n";
+                    perfFile << "Najkrotsza klatka:" << std::fixed << std::setprecision(3) << minFrame << " ms\n";
+                    perfFile << "Najdluzsza klatka:" << std::fixed << std::setprecision(3) << maxFrame << " ms\n";
+                    perfFile << "Sredni CPU:       " << std::fixed << std::setprecision(3) << avgCpu << " ms\n";
+                    perfFile << "Sredni GPU:       " << std::fixed << std::setprecision(3) << avgGpu << " ms\n";
+                    perfFile << "\n";
+                    perfFile.close();
+
+                    spdlog::info("Zapisano statystyki z {:.0f}s ({} klatek), avg FPS: {:.1f}", spanSeconds, n, avgFps);
+                }
+                else {
+                    spdlog::error("Nie mozna otworzyc performance_stats.txt!");
+                }
+            }
+            else {
+                spdlog::warn("Brak danych do zapisania.");
+            }
+        }
+
+
+
         auto inputEnd = std::chrono::high_resolution_clock::now();
 
         auto logicStart = std::chrono::high_resolution_clock::now();
@@ -1085,6 +1150,11 @@ int main(int, char**)
         imgui_end();
 
         cpuTimer.stop();
+
+        if (!perfBuffer.empty()) {
+            perfBuffer.back().cpuTime = cpuTimer.getMilliseconds();
+            perfBuffer.back().gpuTime = renderSystem->gpuQuery.getLastResult();
+        }
 
         float cpuFrameTime = cpuTimer.getMilliseconds();
         float logicTime    = std::chrono::duration<float, std::milli>(logicEnd    - logicStart).count();
@@ -1461,7 +1531,7 @@ void imgui_render(SceneManager& sceneManager)
         ImGui::Text("Frustum culled:   %d", renderSystem->stats.frustumCulledSet.size());
         ImGui::Text("Occlusion culled: %d", renderSystem->stats.occlusionCulledSet.size());
     }
-    ImGui::PlotLines("Frame time", frameTimes, MAX_SAMPLES, index,
+    ImGui::PlotLines("Frame time", frameTimes, MAX_SAMPLES, frameIndex,
         nullptr, 0.0f, 1.0f, ImVec2(0, 60));
 
     ImGui::End();

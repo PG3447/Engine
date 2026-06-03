@@ -19,6 +19,7 @@ input:
     gamma_down: [GLFW_KEY_9]
     play_sound: [GLFW_KEY_H]
     interact_p1: [GLFW_KEY_E]
+    save_perf_stats: [GLFW_KEY_L]
   mouse:
     interact_p1: [GLFW_MOUSE_BUTTON_LEFT]
     right_click: [GLFW_MOUSE_BUTTON_RIGHT]
