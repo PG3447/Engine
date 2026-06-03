@@ -825,7 +825,7 @@ int main(int, char**)
     model1->GetComponent<TransformComponent>()->position.y = 100.0f;
     model1->GetComponent<TransformComponent>()->position.z = 20.0f;
 
-    model1->AddComponent<RigidbodyComponent>();
+    //model1->AddComponent<RigidbodyComponent>();
     model1->AddComponent<ColliderComponent>();
     model1->AddComponent<LightComponent>();
 
