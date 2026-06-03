@@ -1028,17 +1028,17 @@ int main(int, char**)
             RaycastHit hit = player2Raycast->closestHit();
             if (hit.hitObject != nullptr) {
                 if (rotatableObjects.count(hit.hitObject))
-                    hintText = "Rotate";
+                    hintText2 = "Rotate";
                 else if (toiletDoorsMap.count(hit.hitObject))
-                    hintText = toiletDoorsMap[hit.hitObject].isOpen ? "Close" : "Open";
+                    hintText2 = toiletDoorsMap[hit.hitObject].isOpen ? "Close" : "Open";
                 else if (cabinetsMap.count(hit.hitObject))
-                    hintText = isCabinetButtonPushed ? "..." : "Open Cabinet";
+                    hintText2 = isCabinetButtonPushed ? "..." : "Open Cabinet";
                 else if (majorDoors.count(hit.hitObject))
-                    hintText = can_open_door_1 ? "Open" : "Unlock";
+                    hintText2 = can_open_door_1 ? "Open" : "Unlock";
                 else if (pickupObjects.count(hit.hitObject))
-                    hintText = (hit.hitObject == p2HeldObject) ? "Held by Player 2" : "Pick up";
+                    hintText2 = (hit.hitObject == p2HeldObject) ? "Held by Player 2" : "Pick up";
                 else if (hit.hitObject->name.find("Coffin") != std::string::npos)
-                    hintText = "Pull Coffin";
+                    hintText2 = "Pull Coffin";
             }
         }
         player2InteractionInfo->text = hintText2;
