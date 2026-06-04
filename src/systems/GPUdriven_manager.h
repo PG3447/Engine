@@ -243,8 +243,8 @@ public:
                 // zwracają istniejące ID gdy zasób już jest zarejestrowany.
                 // Sprawdzamy przed wywołaniem czy coś faktycznie jest nowe,
                 // żeby wiedzieć czy należy re-uploadować.
-                bool meshIsNew = (r->GetMeshId(mesh.cpuData.get()) == UINT32_MAX);
-                bool materialIsNew = (r->GetMaterialId(mat) == UINT32_MAX);
+                bool meshIsNew = (mesh.cpuData.get()->meshID == UINT32_MAX); // (r->GetMeshId(mesh.cpuData.get()) == UINT32_MAX);
+                bool materialIsNew = (mat->materialID == UINT32_MAX); // (r->GetMaterialId(mat) == UINT32_MAX);
 
                 if (meshIsNew)     r->RegisterMesh(mesh.cpuData.get());
                 if (materialIsNew) r->RegisterMaterial(mat);
