@@ -357,14 +357,11 @@ public:
                 Shader* shader = mat->shader ? mat->shader : defaultShaderRender;
 
                 // Filtruj: ten pass obsługuje tylko swój shader i swój surfaceType
-                if (shader != passShader)     continue;
-                if (mat->surfaceType != filter) continue;
+                if (shader != passShader || mat->surfaceType != filter) continue;
 
                 uint32_t meshID = mesh.cpuData.get()->meshID;// r->GetMeshId(mesh.cpuData.get());
-                if (meshID == UINT32_MAX) continue;
-
                 uint32_t matID = mat->materialID;// r->GetMaterialId(mat);
-                if (matID == UINT32_MAX) continue;
+                if (meshID == UINT32_MAX || matID == UINT32_MAX) continue;
 
                 const auto& aabb = mesh.cpuData->aabb;
 
@@ -425,10 +422,10 @@ public:
             //auto animIt = animatorIDMap.find(rc->animator);
             //if (animIt == animatorIDMap.end()) continue;
 
-            const uint32_t slot = rc->animator->animatorID; //animIt->second;
+            //const uint32_t slot = rc->animator->animatorID; //animIt->second;
             const uint32_t boneCount = (uint32_t)std::min(rc->animator->finalBoneMatrices.size(), (size_t)MAX_BONES_PER_SKELETON);
 
-            std::memcpy(boneMatricesCache.data() + slot * MAX_BONES_PER_SKELETON, rc->animator->finalBoneMatrices.data(), boneCount * sizeof(glm::mat4));
+            std::memcpy(boneMatricesCache.data() + rc->animator->animatorID * MAX_BONES_PER_SKELETON, rc->animator->finalBoneMatrices.data(), boneCount * sizeof(glm::mat4));
         }
     }
 
