@@ -1,4 +1,4 @@
-﻿#ifndef GPUDRIVEN_MANAGER_H
+#ifndef GPUDRIVEN_MANAGER_H
 #define GPUDRIVEN_MANAGER_H
 
 #include <glm/glm.hpp>
@@ -281,8 +281,8 @@ public:
     {
         if (!rc) return;
 
-        if (rc->animator && animatorIDMap.find(rc->animator) == animatorIDMap.end())
-            animatorIDMap[rc->animator] = (uint32_t)animatorIDMap.size();
+        //if (rc->animator && animatorIDMap.find(rc->animator) == animatorIDMap.end())
+        //    animatorIDMap[rc->animator] = (uint32_t)animatorIDMap.size();
 
         for (auto& mesh : rc->meshes) {
             if (!mesh.cpuData || !mesh.material) continue;
@@ -339,9 +339,11 @@ public:
         entry->objects.reserve(count);
 
         for (size_t i = 0; i < count; ++i) {
-            const TransformComponent* t = transforms[i];
-            const RenderComponent* rc = renderers[i];
+            TransformComponent* t = transforms[i];
+            RenderComponent* rc = renderers[i];
             if (!t || !rc) continue;
+
+            // if !t->isDirty || !rc->isDirty continue 
 
             const glm::mat4 model = t->modelMatrix;
 
@@ -384,6 +386,8 @@ public:
                     entry->objects.push_back(rd);
                 }
             }
+
+            t->rendererDirty = false;
         }
 
         // ── 5. Transparent: sort back-to-front ────────────────────

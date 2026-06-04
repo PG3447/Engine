@@ -55,6 +55,7 @@ struct TransformComponent : Component {
     glm::mat4 modelMatrix{ 1.0f };
 
     bool isDirty = true;
+    bool rendererDirty = true;
 
     const char* GetTypeName() const override { return "Transform"; }
 
