@@ -323,7 +323,7 @@ public:
         PassEntry* entry = FindPass(passID);
         if (!entry) return;
 
-        GPUDrivenRenderer* r = entry->renderer.get();
+        //GPUDrivenRenderer* r = entry->renderer.get();
         const SurfaceType filter = PassTypeToSurface(entry->config.type);
         const bool isTransparent = (entry->config.type == RenderPassType::Transparent);
         Shader* passShader = entry->config.shader ? entry->config.shader : defaultShaderRender;
@@ -359,7 +359,7 @@ public:
                 // Filtruj: ten pass obsługuje tylko swój shader i swój surfaceType
                 if (shader != passShader || mat->surfaceType != filter) continue;
 
-                uint32_t meshID = mesh.cpuData.get()->meshID;// r->GetMeshId(mesh.cpuData.get());
+                uint32_t meshID = mesh.cpuData->meshID;// r->GetMeshId(mesh.cpuData.get());
                 uint32_t matID = mat->materialID;// r->GetMaterialId(mat);
                 if (meshID == UINT32_MAX || matID == UINT32_MAX) continue;
 
