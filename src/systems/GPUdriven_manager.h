@@ -293,8 +293,8 @@ public:
             GPUDrivenRenderer* r = GetRenderer(pid);
             if (!r) continue;
 
-            bool meshIsNew = (r->GetMeshId(mesh.cpuData.get()) == UINT32_MAX);
-            bool materialIsNew = (r->GetMaterialId(mat) == UINT32_MAX);
+            bool meshIsNew = (mesh.cpuData.get()->meshID == UINT32_MAX); //(r->GetMeshId(mesh.cpuData.get()) == UINT32_MAX);
+            bool materialIsNew = (mat->materialID == UINT32_MAX);// (r->GetMaterialId(mat)== UINT32_MAX);
 
             if (meshIsNew)     r->RegisterMesh(mesh.cpuData.get());
             if (materialIsNew) r->RegisterMaterial(mat);
@@ -365,10 +365,10 @@ public:
                 if (shader != passShader)     continue;
                 if (mat->surfaceType != filter) continue;
 
-                uint32_t meshID = r->GetMeshId(mesh.cpuData.get());
+                uint32_t meshID = mesh.cpuData.get()->meshID;// r->GetMeshId(mesh.cpuData.get());
                 if (meshID == UINT32_MAX) continue;
 
-                uint32_t matID = r->GetMaterialId(mat);
+                uint32_t matID = mat->materialID;// r->GetMaterialId(mat);
                 if (matID == UINT32_MAX) continue;
 
                 const auto& aabb = mesh.cpuData->aabb;

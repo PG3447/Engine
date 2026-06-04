@@ -17,6 +17,8 @@ public:
 
     SurfaceType surfaceType = SurfaceType::Opaque;
 
+    uint32_t materialID = UINT32_MAX;
+
     GLuint diffuseMap = 0;
     GLuint specularMap = 0;
     GLuint normalMap = 0;

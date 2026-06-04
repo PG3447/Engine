@@ -24,6 +24,7 @@ struct MeshData {
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
     AABB aabb;
+    uint32_t meshID = UINT32_MAX;
 };
 
 #endif

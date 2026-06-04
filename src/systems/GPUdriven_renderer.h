@@ -428,9 +428,10 @@ public:
         meshesData.push_back(meshData);
         uint32_t id = meshesData.size() - 1;
         meshRegistry[data] = id;
+        data->meshID = id;
+        
         spdlog::error("Zarejestrowano mesh");
         spdlog::info(allVertices.size());
-
         return (GLuint)id; //meshID
     }
 
@@ -459,6 +460,7 @@ public:
         uint32_t id = (uint32_t)materials.size();
         materials.push_back(gpu);
         materialRegistry[mat] = id;
+        mat->materialID = id;
 
         spdlog::error("Zarejestrowano material");
         spdlog::info(materialRegistry.size());
