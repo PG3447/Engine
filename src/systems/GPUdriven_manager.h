@@ -439,7 +439,8 @@ public:
 
         // ── Upload kości do każdego renderera ─────────────────────────
         for (auto& entry : passes) {
-            entry.renderer->ResizeBoneBufferIfNeeded((uint32_t)animatorIDMap.size());
+            //entry.renderer->ResizeBoneBufferIfNeeded((uint32_t)animatorIDMap.size());
+            entry.renderer->ResizeBoneBufferIfNeeded(staticCounterAnimator);
             entry.renderer->UploadAllBoneMatrices(boneMatricesCache);
         }
     }
