@@ -6,6 +6,7 @@ static uint32_t nextAnimatorID = 0;
 void AnimatorComponent::OnEnable(GameObject* owner) {
     //owner->GetComponent<RenderComponent>()->animator = this;
     animatorID = nextAnimatorID++;
+    staticCounterAnimator++;
     owner->TraverseChildren([this](GameObject* go) {
         auto* render = go->GetComponent<RenderComponent>();
         if (render) {

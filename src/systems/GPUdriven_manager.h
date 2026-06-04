@@ -345,7 +345,8 @@ public:
 
             const glm::mat4 model = t->modelMatrix;
 
-            auto animIt = rc->animator ? animatorIDMap.find(rc->animator) : animatorIDMap.end();
+            //auto animIt = rc->animator ? animatorIDMap.find(rc->animator) : animatorIDMap.end();
+            auto animIt = rc->animator ? rc->animator->animatorID : NO_SKELETON;
 
             //rc->animator->animatorID;
 
@@ -373,7 +374,7 @@ public:
                     .aabbMax = glm::vec4(aabb.max, 0.0f),
                     .meshID = meshID,
                     .materialID = matID,
-                    .skeletonID = (animIt != animatorIDMap.end() ? animIt->second : NO_SKELETON),
+                    .skeletonID = animIt, // (animIt != animatorIDMap.end() ? animIt->second : NO_SKELETON),
                     .padding = 0
                 };
 
@@ -413,8 +414,7 @@ public:
         //        animatorIDMap[rc->animator] = (uint32_t)animatorIDMap.size();
         //}
 
-
-        const size_t requiredBones = animatorIDMap.size() * MAX_BONES_PER_SKELETON;
+        const size_t requiredBones = staticCounterAnimator * MAX_BONES_PER_SKELETON;// animatorIDMap.size()* MAX_BONES_PER_SKELETON;
         if (boneMatricesCache.size() != requiredBones)
             boneMatricesCache.resize(requiredBones, glm::mat4(1.0f));
 
@@ -422,10 +422,10 @@ public:
             const RenderComponent* rc = renderers[i];
             if (!rc || !rc->animator || !rc->animator->currentSkeleton) continue;
 
-            auto animIt = animatorIDMap.find(rc->animator);
-            if (animIt == animatorIDMap.end()) continue;
+            //auto animIt = animatorIDMap.find(rc->animator);
+            //if (animIt == animatorIDMap.end()) continue;
 
-            const uint32_t slot = animIt->second;// rc->animator->animatorID
+            const uint32_t slot = rc->animator->animatorID; //animIt->second;
             const uint32_t boneCount = (uint32_t)std::min(rc->animator->finalBoneMatrices.size(), (size_t)MAX_BONES_PER_SKELETON);
 
             std::memcpy(boneMatricesCache.data() + slot * MAX_BONES_PER_SKELETON, rc->animator->finalBoneMatrices.data(), boneCount * sizeof(glm::mat4));

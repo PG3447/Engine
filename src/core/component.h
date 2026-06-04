@@ -29,6 +29,8 @@ struct NodeAnimCache {
     int lastScaleIndex = 0;
 };
 
+static uint32_t staticCounterAnimator = 1;
+
 struct Component {
     static constexpr bool Unique = false;
     virtual ~Component() {}
