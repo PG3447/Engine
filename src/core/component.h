@@ -351,6 +351,8 @@ struct AnimatorComponent : Component {
 
     static const int MAX_BONES = 200;
 
+    uint32_t animatorID = UINT32_MAX;
+
     Skeleton* currentSkeleton = nullptr;
     AnimationClip* currentAnimation = nullptr;
     float currentTime = 0.0f;

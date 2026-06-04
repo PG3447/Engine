@@ -332,14 +332,6 @@ public:
         auto& renderers = std::get<1>(renderQuery.componentsVectors);
         const size_t count = renderQuery.gameobjects.size();
 
-        // ── 1. Nowe animatory ─────────────────────────────────────
-        for (size_t i = 0; i < count; ++i) {
-            const RenderComponent* rc = renderers[i];
-            if (!rc || !rc->animator) continue;
-            if (animatorIDMap.find(rc->animator) == animatorIDMap.end())
-                animatorIDMap[rc->animator] = (uint32_t)animatorIDMap.size();
-        }
-
         // ── 4. Buduj RenderData ───────────────────────────────────
         std::vector<TransparentEntry> transparentBuffer;
 
@@ -354,6 +346,8 @@ public:
             const glm::mat4 model = t->modelMatrix;
 
             auto animIt = rc->animator ? animatorIDMap.find(rc->animator) : animatorIDMap.end();
+
+            //rc->animator->animatorID;
 
             for (const auto& mesh : rc->meshes) {
                 if (!mesh.cpuData || !mesh.material) continue;
@@ -379,8 +373,7 @@ public:
                     .aabbMax = glm::vec4(aabb.max, 0.0f),
                     .meshID = meshID,
                     .materialID = matID,
-                    .skeletonID = (animIt != animatorIDMap.end())
-                                   ? animIt->second : NO_SKELETON,
+                    .skeletonID = (animIt != animatorIDMap.end() ? animIt->second : NO_SKELETON),
                     .padding = 0
                 };
 
@@ -413,6 +406,14 @@ public:
         auto& renderers = std::get<1>(renderQuery.componentsVectors);
         const size_t count = renderQuery.gameobjects.size();
 
+        //for (size_t i = 0; i < count; ++i) {
+        //    const RenderComponent* rc = renderers[i];
+        //    if (!rc || !rc->animator) continue;
+        //    if (animatorIDMap.find(rc->animator) == animatorIDMap.end())
+        //        animatorIDMap[rc->animator] = (uint32_t)animatorIDMap.size();
+        //}
+
+
         const size_t requiredBones = animatorIDMap.size() * MAX_BONES_PER_SKELETON;
         if (boneMatricesCache.size() != requiredBones)
             boneMatricesCache.resize(requiredBones, glm::mat4(1.0f));
@@ -424,15 +425,10 @@ public:
             auto animIt = animatorIDMap.find(rc->animator);
             if (animIt == animatorIDMap.end()) continue;
 
-            const uint32_t slot = animIt->second;
-            const uint32_t boneCount = (uint32_t)std::min(
-                rc->animator->finalBoneMatrices.size(),
-                (size_t)MAX_BONES_PER_SKELETON);
+            const uint32_t slot = animIt->second;// rc->animator->animatorID
+            const uint32_t boneCount = (uint32_t)std::min(rc->animator->finalBoneMatrices.size(), (size_t)MAX_BONES_PER_SKELETON);
 
-            std::memcpy(
-                boneMatricesCache.data() + slot * MAX_BONES_PER_SKELETON,
-                rc->animator->finalBoneMatrices.data(),
-                boneCount * sizeof(glm::mat4));
+            std::memcpy(boneMatricesCache.data() + slot * MAX_BONES_PER_SKELETON, rc->animator->finalBoneMatrices.data(), boneCount * sizeof(glm::mat4));
         }
     }
 
