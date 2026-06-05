@@ -12,6 +12,7 @@
 
 enum class RenderPassType {
     Opaque,
+    Skybox,
     Transparent,
 };
 
@@ -23,11 +24,19 @@ struct RenderPassConfig {
     Shader* shader = nullptr;  // może być nullptr
 };
 
+struct TransparentEntry {
+    RenderData data;
+    float      distanceSq;
+};
+
+
 struct PassEntry {
     uint32_t passID;
     RenderPassConfig config;
     std::unique_ptr<GPUDrivenRenderer> renderer;
+    SkyboxRenderer* skyboxRenderer = nullptr;
     std::vector<RenderData> objects;
+    std::vector<TransparentEntry> transparentBuffer;
 };
 
 struct FrameUBO {
@@ -39,10 +48,6 @@ struct FrameUBO {
     int       _pad;
 };
 
-struct TransparentEntry {
-    RenderData data;
-    float      distanceSq;
-};
 
 class GPUDrivenManager {
 public:
@@ -67,6 +72,10 @@ public:
     // --- passy (posortowane po sortOrder) ---
     std::vector<GPULight> gpuLights;
     std::vector<PassEntry> passes;
+    //std::vector<std::vector<std::vector<int32_t>>> collectRenderSlots; // [entityIdx][meshIdx][passID] 
+    std::vector<int32_t> collectRenderSlots;
+    uint32_t collectMeshSlotCount = 0;
+    uint32_t collectPassCount = 0;
 
     std::unordered_map<Shader*, uint32_t> opaquePassByShader;
     std::unordered_map<Shader*, uint32_t> transparentPassByShader;
@@ -131,7 +140,10 @@ public:
     void AttachCameraHiZ(GLuint hizTexture, int hizMipLevels, int vpW, int vpH, bool frustumEnabled, bool occlusionEnabled, int vpX = 0, int vpY = 0)
     {
         for (auto& entry : passes)
+        {
+            if (!entry.renderer) continue;
             entry.renderer->AttachHiZ(hizTexture, hizMipLevels, vpW, vpH, vpX, vpY, frustumEnabled, occlusionEnabled);  // ← vpX, vpY
+        }
     }
 
     void InitPassesFromScene(Query<TransformComponent, RenderComponent>& renderQuery)
@@ -157,13 +169,15 @@ public:
                 GPUDrivenRenderer* r = GetRenderer(pid);
                 if (!r) continue;
 
-                r->RegisterMesh(mesh.cpuData.get());
-                r->RegisterMaterial(mat);
+                r->RegisterMesh(rc, mesh.cpuData.get());
+                r->RegisterMaterial(rc, mat);
             }
         }
 
         // Wyślij geometrię i materiały każdego pasa na GPU
         for (auto& entry : passes) {
+            if (!entry.renderer) continue;
+
             entry.renderer->UploadMeshes();
             entry.renderer->UploadMaterials();
         }
@@ -246,8 +260,8 @@ public:
                 bool meshIsNew = (mesh.cpuData.get()->meshID == UINT32_MAX); // (r->GetMeshId(mesh.cpuData.get()) == UINT32_MAX);
                 bool materialIsNew = (mat->materialID == UINT32_MAX); // (r->GetMaterialId(mat) == UINT32_MAX);
 
-                if (meshIsNew)     r->RegisterMesh(mesh.cpuData.get());
-                if (materialIsNew) r->RegisterMaterial(mat);
+                if (meshIsNew)     r->RegisterMesh(rc, mesh.cpuData.get());
+                if (materialIsNew) r->RegisterMaterial(rc, mat);
 
                 if (meshIsNew || materialIsNew)
                     meshDirty[pid] = true;
@@ -256,11 +270,15 @@ public:
             // Każda zmiana obiektu wymaga odbudowy instancji
             // (transform mógł się zmienić, obiekt mógł być dodany/usunięty)
             for (auto& entry : passes)
+            {
+                if (!entry.renderer) continue;
                 entry.renderer->dirtyInstance = true;
+            }
         }
 
         // Flush tylko passów które faktycznie dostały nowe zasoby
         for (auto& entry : passes) {
+            if (!entry.renderer) continue;
             auto it = meshDirty.find(entry.passID);
             if (it == meshDirty.end() || !it->second) continue;
 
@@ -274,7 +292,10 @@ public:
     void RebuildInstance()
     {
         for (auto& entry : passes)
+        {
+            if (!entry.renderer) continue;
             entry.renderer->dirtyInstance = true;
+        }
     }
 
     void AddGameObjectToRegistries(RenderComponent* rc)
@@ -296,18 +317,21 @@ public:
             bool meshIsNew = (mesh.cpuData.get()->meshID == UINT32_MAX); //(r->GetMeshId(mesh.cpuData.get()) == UINT32_MAX);
             bool materialIsNew = (mat->materialID == UINT32_MAX);// (r->GetMaterialId(mat)== UINT32_MAX);
 
-            if (meshIsNew)     r->RegisterMesh(mesh.cpuData.get());
-            if (materialIsNew) r->RegisterMaterial(mat);
+            if (meshIsNew)     r->RegisterMesh(rc, mesh.cpuData.get());
+            if (materialIsNew) r->RegisterMaterial(rc, mat);
 
             if (meshIsNew || materialIsNew)
                 meshDirty[pid] = true;
         }
 
         for (auto& entry : passes)
+        {
+            if (!entry.renderer) continue;
             entry.renderer->dirtyInstance = true;
-
+        }
         // Flush tylko passów które dostały nowe zasoby
         for (auto& entry : passes) {
+            if (!entry.renderer) continue;
             auto it = meshDirty.find(entry.passID);
             if (it == meshDirty.end() || !it->second) continue;
 
@@ -318,7 +342,9 @@ public:
         }
     }
 
-    void CollectRenderData(uint32_t passID, Query<TransformComponent, RenderComponent>& renderQuery, const glm::vec3& cameraPos)
+
+
+    void CollectRenderData(uint32_t passID, Query<TransformComponent, RenderComponent>& renderQuery, bool rebuildCollectData) //, const glm::vec3& cameraPos
     {
         PassEntry* entry = FindPass(passID);
         if (!entry) return;
@@ -333,26 +359,46 @@ public:
         const size_t count = renderQuery.gameobjects.size();
 
         // ── 4. Buduj RenderData ───────────────────────────────────
-        std::vector<TransparentEntry> transparentBuffer;
+        if (rebuildCollectData) {
+            entry->objects.clear();
+            entry->objects.reserve(count);
 
-        entry->objects.clear();
-        entry->objects.reserve(count);
+            //collectRenderSlots.resize(count);
+            //for (size_t i = 0; i < count; ++i) {
+            //    RenderComponent* rc = renderers[i];
+            //    if (!rc) continue;
+            //    // Rozszerz do liczby meshów tej encji
+            //    collectRenderSlots[i].resize(MeshNode::GetNextID(), std::vector<int32_t>(passes.size(), -1));
+            //}
+            //collectRenderSlots.resize(count, std::vector<int32_t>(std::vector<int32_t>(passes.size(), -1)))
+            //(MeshNode::GetNextID(), std::vector<int32_t>(passes.size(), -1));
+        }
 
+        entry->transparentBuffer.clear();
         for (size_t i = 0; i < count; ++i) {
-            TransformComponent* t = transforms[i];
+            const TransformComponent* t = transforms[i];
             RenderComponent* rc = renderers[i];
             if (!t || !rc) continue;
 
-            // if !t->isDirty || !rc->isDirty continue 
+
+            if (!rc->rendererDirty && !t->rendererDirty && !rebuildCollectData && !isTransparent)
+            {
+                //spdlog::error("OMIJAM");
+                continue;
+                
+                //spdlog::error("TRANSFORM NIE GIT");
+            } //&& animIt == NO_SKELETON
+
+            //spdlog::warn("NIE OMIJAM");
 
             const glm::mat4 model = t->modelMatrix;
 
-            //auto animIt = rc->animator ? animatorIDMap.find(rc->animator) : animatorIDMap.end();
             auto animIt = rc->animator ? rc->animator->animatorID : NO_SKELETON;
+            //auto animIt = rc->animator ? animatorIDMap.find(rc->animator) : animatorIDMap.end();
 
             //rc->animator->animatorID;
 
-            for (const auto& mesh : rc->meshes) {
+            for (auto& mesh : rc->meshes) {
                 if (!mesh.cpuData || !mesh.material) continue;
 
                 Material* mat = mesh.material.get();
@@ -377,34 +423,46 @@ public:
                     .padding = 0
                 };
 
+
                 if (isTransparent) {
-                    glm::vec3 worldCenter = glm::vec3(model * glm::vec4(aabb.centerLocal, 1.0f));
-                    float distSq = glm::length2(cameraPos - worldCenter);
-                    transparentBuffer.push_back({ rd, distSq });
+                    //glm::vec3 worldCenter = glm::vec3(model * glm::vec4(aabb.centerLocal, 1.0f));
+                    //float distSq = glm::length2(cameraPos - worldCenter);
+                    //transparentBuffer.push_back({ rd, distSq });
+                    entry->transparentBuffer.push_back({ rd, 0.0 });
                 }
                 else {
-                    entry->objects.push_back(rd);
+                    uint32_t idx = i * collectMeshSlotCount * collectPassCount + mesh.meshNodeID * collectPassCount + passID;
+                    if (rebuildCollectData)
+                    {
+                        collectRenderSlots[idx] = (int32_t)entry->objects.size();
+                        entry->objects.push_back(rd);
+                    }
+                    else
+                    {
+                        entry->objects[collectRenderSlots[idx]] = rd;
+                    }
                 }
             }
 
-            t->rendererDirty = false;
+            
         }
 
-        // ── 5. Transparent: sort back-to-front ────────────────────
-        if (isTransparent && !transparentBuffer.empty()) {
-            std::sort(transparentBuffer.begin(), transparentBuffer.end(),
-                [](const TransparentEntry& a, const TransparentEntry& b) {
-                    return a.distanceSq > b.distanceSq;
-                });
-            entry->objects.reserve(transparentBuffer.size());
-            for (auto& te : transparentBuffer)
-                entry->objects.push_back(te.data);
-        }
+        //// ── 5. Transparent: sort back-to-front ────────────────────
+        //if (isTransparent && !transparentBuffer.empty()) {
+        //    std::sort(transparentBuffer.begin(), transparentBuffer.end(),
+        //        [](const TransparentEntry& a, const TransparentEntry& b) {
+        //            return a.distanceSq > b.distanceSq;
+        //        });
+        //    entry->objects.reserve(transparentBuffer.size());
+        //    for (auto& te : transparentBuffer)
+        //        entry->objects.push_back(te.data);
+        //}
     }
 
 
     void UpdateBoneCache(Query<TransformComponent, RenderComponent>& renderQuery)
     {
+        auto& transforms = std::get<0>(renderQuery.componentsVectors);
         auto& renderers = std::get<1>(renderQuery.componentsVectors);
         const size_t count = renderQuery.gameobjects.size();
 
@@ -420,7 +478,10 @@ public:
             boneMatricesCache.resize(requiredBones, glm::mat4(1.0f));
 
         for (size_t i = 0; i < count; ++i) {
-            const RenderComponent* rc = renderers[i];
+            TransformComponent* t = transforms[i];
+            RenderComponent* rc = renderers[i];
+            t->rendererDirty = false;
+            rc->rendererDirty = false;
             if (!rc || !rc->animator || !rc->animator->currentSkeleton) continue;
 
             //auto animIt = animatorIDMap.find(rc->animator);
@@ -433,19 +494,63 @@ public:
         }
     }
 
-    void CollectAllPasses(Query<TransformComponent, RenderComponent>& renderQuery,  const glm::vec3& cameraPos)
+    void CollectAllPasses(Query<TransformComponent, RenderComponent>& renderQuery, bool rebuildCollectData) //,  const glm::vec3& cameraPos
     {
-        // ── Kości raz, nie N razy per pass ───────────────────────────
-        UpdateBoneCache(renderQuery);
+        if (rebuildCollectData)
+        {
+            collectMeshSlotCount = MeshNode::GetNextID();
+            collectPassCount = (uint32_t)passes.size();
+
+            collectRenderSlots.assign(renderQuery.gameobjects.size() * collectMeshSlotCount * collectPassCount, -1);
+        }
 
         for (auto& entry : passes)
-            CollectRenderData(entry.passID, renderQuery, cameraPos);
+            CollectRenderData(entry.passID, renderQuery, rebuildCollectData);// , cameraPos);
 
-        // ── Upload kości do każdego renderera ─────────────────────────
-        for (auto& entry : passes) {
-            //entry.renderer->ResizeBoneBufferIfNeeded((uint32_t)animatorIDMap.size());
+        // ── Kości raz, nie N razy per pass ───────────────────────────
+        UpdateBoneCache(renderQuery);
+        
+        for (auto& entry : passes)
+        {
+            if (!entry.renderer) continue;
             entry.renderer->ResizeBoneBufferIfNeeded(staticCounterAnimator);
             entry.renderer->UploadAllBoneMatrices(boneMatricesCache);
+        }
+        //// ── Upload kości do każdego renderera ─────────────────────────
+        //for (auto& entry : passes) {
+        //    //entry.renderer->ResizeBoneBufferIfNeeded((uint32_t)animatorIDMap.size());
+        //    entry.renderer->ResizeBoneBufferIfNeeded(staticCounterAnimator);
+        //    entry.renderer->UploadAllBoneMatrices(boneMatricesCache);
+        //}
+    }
+
+    void UploadPerCamera(const glm::vec3& cameraPos)
+    {
+        for (auto& entry : passes)
+        {
+            if (entry.config.type != RenderPassType::Transparent) continue;
+            if (!entry.transparentBuffer.empty()) {
+
+                // Najpierw przelicz dystans dla tej kamery
+                for (auto& te : entry.transparentBuffer) {
+                    glm::vec3 center = glm::vec3(te.data.modelMatrix * glm::vec4(0, 0, 0, 1));
+                    te.distanceSq = glm::length2(cameraPos - center);
+                }
+
+                // Dopiero teraz sortuj
+                std::sort(entry.transparentBuffer.begin(), entry.transparentBuffer.end(),
+                    [](const TransparentEntry& a, const TransparentEntry& b) {
+                        return a.distanceSq > b.distanceSq;
+                    });
+
+                // Przepisz do objects
+                entry.objects.clear();
+                entry.objects.reserve(entry.transparentBuffer.size());
+                for (auto& te : entry.transparentBuffer)
+                    entry.objects.push_back(te.data);
+            }
+
+            //entry.renderer->ResizeBoneBufferIfNeeded((uint32_t)animatorIDMap.size());
         }
     }
 
@@ -468,7 +573,7 @@ public:
         entry.renderer->shaderHizWritePass = shaderHizWritePass;
         entry.renderer->shaderBuildCmds = shaderBuildCmds;
         entry.renderer->shaderHizDownsample = shaderHizDownsample;
-        entry.renderer->shaderRender =  defaultShaderRender;//cfg.shader ? cfg.shader :
+        entry.renderer->shaderRender = cfg.shader ? cfg.shader : defaultShaderRender;
         entry.renderer->AttachHiZ(hizTexture, hizMipLevels, screenWidth, screenHeight);
         spdlog::info("Add pass");
         passes.push_back(std::move(entry));
@@ -478,6 +583,31 @@ public:
                 return a.config.sortOrder < b.config.sortOrder;
             });
 
+        return id;
+    }
+
+    uint32_t AddSkyboxPass(SkyboxRenderer* skybox)
+    {
+        RenderPassConfig cfg{
+            .type = RenderPassType::Skybox,
+            .sortOrder = 50,
+            .depthWrite = false,
+            .blendingEnabled = false,
+            .shader = nullptr
+        };
+
+        uint32_t id = nextPassID++;
+        PassEntry entry;
+        entry.passID = id;
+        entry.config = cfg;
+        entry.skyboxRenderer = skybox;
+        entry.renderer = nullptr;
+
+        passes.push_back(std::move(entry));
+        std::sort(passes.begin(), passes.end(),
+            [](const PassEntry& a, const PassEntry& b) {
+                return a.config.sortOrder < b.config.sortOrder;
+            });
         return id;
     }
 
@@ -499,18 +629,18 @@ public:
     }
 
     // Wygodne wrappery: rejestracja zasobu w konkretnym pasie
-    uint32_t RegisterMeshInPass(uint32_t passID, MeshData* d)
+    uint32_t RegisterMeshInPass(uint32_t passID, RenderComponent* rc, MeshData* d)
     {
         GPUDrivenRenderer* r = GetRenderer(passID);
         if (!r) return UINT32_MAX;
-        return r->RegisterMesh(d);
+        return r->RegisterMesh(rc, d);
     }
 
-    uint32_t RegisterMaterialInPass(uint32_t passID, Material* m)
+    uint32_t RegisterMaterialInPass(uint32_t passID, RenderComponent* rc, Material* m)
     {
         GPUDrivenRenderer* r = GetRenderer(passID);
         if (!r) return UINT32_MAX;
-        return r->RegisterMaterial(m);
+        return r->RegisterMaterial(rc, m);
     }
 
     // Wyślij geometrię i materiały danego pasa na GPU
@@ -573,8 +703,43 @@ public:
         glBufferSubData(GL_UNIFORM_BUFFER, 0, count * sizeof(GPULight), gpuLights.data());
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
     }
+
+    void DebugRenderFrameInput(const PassEntry& entry, const glm::vec3& cameraPos)
+    {
+        spdlog::info("=== PassID={} type={} objects={} transparentBuffer={} ===",
+            entry.passID,
+            entry.config.type == RenderPassType::Transparent ? "Transparent" : "Opaque",
+            entry.objects.size(),
+            entry.transparentBuffer.size()
+        );
+
+        for (size_t i = 0; i < entry.objects.size(); ++i)
+        {
+            const RenderData& rd = entry.objects[i];
+            glm::vec3 pos = glm::vec3(rd.modelMatrix[3]);
+
+            spdlog::info("  [{}] meshID={} matID={} skelID={} pos=({:.2f},{:.2f},{:.2f})",
+                i,
+                rd.meshID,
+                rd.materialID,
+                rd.skeletonID,
+                pos.x, pos.y, pos.z
+            );
+
+            if (rd.meshID == UINT32_MAX)
+                spdlog::error("    ^ meshID UINT32_MAX!");
+            if (rd.materialID == UINT32_MAX)
+                spdlog::error("    ^ materialID UINT32_MAX!");
+            if (rd.skeletonID != NO_SKELETON)
+                spdlog::info("    ^ animowany, skeletonID={}", rd.skeletonID);
+        }
+
+        if (entry.objects.empty())
+            spdlog::warn("  PUSTY — nic nie idzie do GPU!");
+    }
+
     // Główna pętla renderowania
-    void RenderFrame(const glm::mat4& viewProj, glm::vec3 cameraPos, GLuint prevDepth, bool cameraDirty, float zNear = 0.1f, float zFar = 1000.0f)
+    void RenderFrame(const glm::mat4& view, const glm::mat4& projection, const glm::mat4& viewProj, glm::vec3 cameraPos, GLuint prevDepth, bool cameraDirty, float zNear = 0.1f, float zFar = 1000.0f)
     {
         const int numLights = (int)gpuLights.size();
         UploadFrameUBO(viewProj, cameraPos, numLights, zNear, zFar);
@@ -596,7 +761,16 @@ public:
             if (entry.objects.empty()) continue;
             ApplyPassState(entry.config);
 
-            entry.renderer->RenderFrame(viewProj, entry.objects, prevDepth, cameraPos, cameraDirty);
+            if (entry.config.type == RenderPassType::Skybox) {
+                if (entry.skyboxRenderer)
+                    entry.skyboxRenderer->Render(view, projection); // ← view/projection trzeba przekazać
+                continue;
+            }
+
+
+            //DebugRenderFrameInput(entry, cameraPos);
+            if (entry.renderer);
+                entry.renderer->RenderFrame(viewProj, entry.objects, prevDepth, cameraPos, cameraDirty);
         }
 
         // Przywróć domyślny stan po wszystkich passach
@@ -634,6 +808,7 @@ public:
     void BuildHiZ()
     {
         for (auto& entry : passes) {
+            if (!entry.renderer) continue;
             if (entry.renderer->shaderHizDownsample) {
                 //entry.renderer->BuildHiZ();
                 return;

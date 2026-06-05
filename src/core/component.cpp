@@ -11,6 +11,7 @@ void AnimatorComponent::OnEnable(GameObject* owner) {
         auto* render = go->GetComponent<RenderComponent>();
         if (render) {
             render->animator = this;
+            render->rendererDirty = true;
             spdlog::info("animator przypisany do: {}", go->name);
         }
         });

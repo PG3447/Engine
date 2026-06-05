@@ -106,8 +106,7 @@ struct RenderComponent : Component {
     std::vector<MeshNode> meshes;
     AnimatorComponent* animator;
     AABB localObjectAABB;
-
-
+    bool rendererDirty = true;
     //std::vector<std::shared_ptr<Material>> materials; Fajnie jak bedzie xD
 
     //std::shared_ptr<Model> model;
