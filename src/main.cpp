@@ -1914,7 +1914,7 @@ void createCrematorium(Scene* scena) {
     glm::vec3 cornerPosition(175.0f, 4.0f, -255.0f);
 
     if (ruraModel != nullptr && panelModel != nullptr && ruraModel->rootModel != nullptr) {
-        crematoriumPuzzle.Init(scena, ruraModel->rootModel, panelModel.get(), ourShader.get(), cornerPosition);
+        crematoriumPuzzle.Init(scena, ruraModel->rootModel, panelModel.get(), nullptr, cornerPosition);
     }
     else {
         spdlog::error("Model rury albo panelu nie zostal poprawnie zaladowany!");
