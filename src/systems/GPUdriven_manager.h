@@ -751,7 +751,7 @@ public:
         //    BuildHiZ();
         //}
         //spdlog::info("Renderowanie");
-        if (prevDepth != 0 && cameraDirty && !passes.empty())
+        if (prevDepth != 0 && true && !passes.empty())
         {
             passes[0].renderer->BuildHiZ(prevDepth);
         }

@@ -1100,8 +1100,8 @@ int main(int, char**)
         auto inputEnd = std::chrono::high_resolution_clock::now();
 
         auto logicStart = std::chrono::high_resolution_clock::now();
-        sceneManager.Update(deltaTime);
         crematoriumPuzzle.Update(deltaTime);
+        sceneManager.Update(deltaTime);
         update();
         auto logicEnd = std::chrono::high_resolution_clock::now();
 
@@ -1534,6 +1534,7 @@ void processCameraGamepad(ECS& ecs, CameraComponent& cam, TransformComponent& tr
     if (glm::length(dir) > 0.0f) {
         dir = glm::normalize(dir);
         transform.position += dir * MovementSpeed * deltaTime;
+        cam.dirty = true;
     }
 
     float rx = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_RIGHT_X, gamepad_id);
