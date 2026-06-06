@@ -29,6 +29,8 @@ struct NodeAnimCache {
     int lastScaleIndex = 0;
 };
 
+static uint32_t staticCounterAnimator = 1;
+
 struct Component {
     static constexpr bool Unique = false;
     virtual ~Component() {}
@@ -53,6 +55,7 @@ struct TransformComponent : Component {
     glm::mat4 modelMatrix{ 1.0f };
 
     bool isDirty = true;
+    bool rendererDirty = true;
 
     const char* GetTypeName() const override { return "Transform"; }
 
@@ -103,8 +106,7 @@ struct RenderComponent : Component {
     std::vector<MeshNode> meshes;
     AnimatorComponent* animator;
     AABB localObjectAABB;
-
-
+    bool rendererDirty = true;
     //std::vector<std::shared_ptr<Material>> materials; Fajnie jak bedzie xD
 
     //std::shared_ptr<Model> model;
@@ -350,6 +352,8 @@ struct AnimatorComponent : Component {
     static constexpr bool Unique = true;
 
     static const int MAX_BONES = 200;
+
+    uint32_t animatorID = UINT32_MAX;
 
     Skeleton* currentSkeleton = nullptr;
     AnimationClip* currentAnimation = nullptr;

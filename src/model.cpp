@@ -18,6 +18,8 @@
 
 #include "resource_manager.h"
 
+uint32_t MeshNode::nextID = 0;
+
 Model::Model() : gammaCorrection(false)
 {
 }
@@ -307,6 +309,7 @@ MeshNode Model::processMesh(aiMesh* mesh, const aiScene* scene)
     std::shared_ptr<RenderMesh> gpuMesh = std::make_shared<RenderMesh>(*cpuData);
 
     MeshNode node;
+    node.meshNodeID = node.AllocID();
     node.cpuData = cpuData;
     node.gpuMesh = gpuMesh;
     node.material = myMaterial;

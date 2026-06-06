@@ -405,7 +405,7 @@ public:
 
 
 
-    uint32_t RegisterMesh(MeshData* data)
+    uint32_t RegisterMesh(RenderComponent* rc, MeshData* data)
     {
         auto it = meshRegistry.find(data);
         if (it != meshRegistry.end())
@@ -428,9 +428,11 @@ public:
         meshesData.push_back(meshData);
         uint32_t id = meshesData.size() - 1;
         meshRegistry[data] = id;
+        data->meshID = id;
+        rc->rendererDirty = true;
+        
         spdlog::error("Zarejestrowano mesh");
         spdlog::info(allVertices.size());
-
         return (GLuint)id; //meshID
     }
 
@@ -445,7 +447,7 @@ public:
     }
 
 
-    uint32_t RegisterMaterial(Material* mat) {
+    uint32_t RegisterMaterial(RenderComponent* rc, Material* mat) {
         auto it = materialRegistry.find(mat);
         if (it != materialRegistry.end()) return it->second;
 
@@ -459,6 +461,8 @@ public:
         uint32_t id = (uint32_t)materials.size();
         materials.push_back(gpu);
         materialRegistry[mat] = id;
+        mat->materialID = id;
+        rc->rendererDirty = true;
 
         spdlog::error("Zarejestrowano material");
         spdlog::info(materialRegistry.size());
@@ -703,7 +707,6 @@ public:
     void RenderFrame(const glm::mat4& viewProj, const std::vector<RenderData>& objects, GLuint depthTexturePrevFrame, glm::vec3 currentCameraPos, bool cameraDirty)
     {
         uint32_t objCount = (uint32_t)objects.size();
-
         // 0. Aktualizuj obiekty na GPU
         UploadObjects(objects);
         //UploadLights();
@@ -735,7 +738,6 @@ public:
         // 7. Rysuj
         Draw();
     }
-
 
     void DebugShowHiZ(int mipLevel = 0)
     {

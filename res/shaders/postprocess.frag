@@ -71,8 +71,8 @@ void main() {
 
     //Contrast
 
-        float contrast = 1.5;
-        playerColor = (playerColor - 0.5) * contrast + 0.5;
+//        float contrast = 1.5;
+//        playerColor = (playerColor - 0.5) * contrast + 0.5;
 
 
     //Lines
