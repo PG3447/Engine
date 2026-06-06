@@ -87,6 +87,7 @@ void CrematoriumPuzzle::Init(Scene* scene, std::shared_ptr<Model> coffinModel, P
 
             CoffinData data;
             data.gameObject = obj;
+            data.transform = transform;
             data.wall = WallSide::Right;
             data.row = r;
             data.col = c;

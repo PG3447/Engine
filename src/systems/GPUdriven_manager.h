@@ -460,6 +460,14 @@ public:
     }
 
 
+    /*
+                    if (matID == -1)
+                {
+                    matID = r->RegisterMaterial(rc, mat);
+                    r->UploadMaterials();
+                }
+    */
+
     void UpdateBoneCache(Query<TransformComponent, RenderComponent>& renderQuery)
     {
         auto& transforms = std::get<0>(renderQuery.componentsVectors);
