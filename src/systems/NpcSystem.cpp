@@ -252,22 +252,25 @@ void NpcSystem::UpdateFollower(
         break;
     }
 
-    case FollowerState::Idle: {
+        case FollowerState::Idle: {
         if (!leaderIsIdle || distToLeader > follower.followDistance * 2.0f) {
             follower.state = FollowerState::Follow;
             nav.path.clear();
             follower.hasActiveNavGoal = false;
             break;
         }
+
         follower.idleWaitTimer -= dt;
+
+        // Wander wokół własnej pozycji zamiast leaderPos
         if (follower.idleWaitTimer <= 0.0f && HasArrived(nav)) {
-            glm::vec3 wanderGoal = RandomPointAround(leaderPos, follower.idleWanderRadius);
+            glm::vec3 wanderGoal = RandomPointAround(myPos, follower.idleWanderRadius);
             SendTo(nav, wanderGoal);
             follower.idleWaitTimer = RandFloat(follower.idleWaitMin, follower.idleWaitMax);
             follower.hasActiveNavGoal = true;
         }
         break;
-    }
+        }
 
     }
 }
