@@ -947,10 +947,8 @@ int main(int, char**)
             (float)(rand() % 6) - 3.0f
         );
         CreateCockroachFollower(
-            *scena1, *placeholderModel, nullptr,
-            Kurorushi, nestPos + offset, 4.5f); // I LOVE THE TASE OF IRON
             *scena1, *cockroachModel, nullptr,
-            Kurorushi, nestPos + offset, 4.5f); //I LOVE THE TASTE OF IRON
+            Kurorushi, nestPos + offset, 4.5f); // I LOVE THE TASE OF IRON
     }
 
     //interfejs sprite'y
