@@ -196,6 +196,7 @@ std::unique_ptr<Prefab> wallModel2;
 std::unique_ptr<Prefab> wallModel3;
 std::unique_ptr<Prefab> NormalDoor;
 std::unique_ptr<Prefab> szkloModel;
+std::unique_ptr<Prefab> cockroachModel;
 
 std::unique_ptr<Prefab> dyingModelPrefab;
 std::unique_ptr<Prefab> jumpSkeletonPrefab;
@@ -928,7 +929,7 @@ int main(int, char**)
     // Karaluch center
     glm::vec3 nestPos = glm::vec3(0.0f, 0.5f, -80.0f);
 
-    GameObject* leader = CreateCockroachLeader(*scena1, *placeholderModel, nullptr, nestPos, 4.0f);
+    GameObject* leader = CreateCockroachLeader(*scena1, *cockroachModel, nullptr, nestPos, 4.0f);
 
     for (int i = 0; i < 3; i++) {
         glm::vec3 offset = glm::vec3(
@@ -936,7 +937,7 @@ int main(int, char**)
             (float)(rand() % 6) - 3.0f
         );
         CreateCockroachFollower(
-            *scena1, *placeholderModel, nullptr,
+            *scena1, *cockroachModel, nullptr,
             leader, nestPos + offset, 4.5f);
     }
 
@@ -1589,6 +1590,7 @@ void connectAllModels() {
     szafkaModel      = std::make_unique<Prefab>("res/models/szafka_rozszerzona.glb");
     ruraModel        = std::make_unique<Prefab>("res/models/placeholder_rura_wysuwana.glb");
     panelModel       = std::make_unique<Prefab>("res/models/Panel_5x5.glb");
+    cockroachModel   = std::make_unique<Prefab>("res/models/cockroach.glb");
 }
 
 void createFirstRoom(Scene* scena1) {
