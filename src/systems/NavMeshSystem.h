@@ -19,6 +19,7 @@
 //  Uzycie:
 //    1. Dodaj NavMeshComponent do dowolnego GameObject (np. root sceny)
 //    2. Upewnij sie ze obiekty podlogi maja ColliderComponent z isWalkable=true
+//       Statyczne sciany i obiekty (Rigidbody.isStatic) automatycznie ucina siatke
 //    3. Wywolaj ecs.GetSystem<NavMeshSystem>()->Bake(*scene)
 //    4. Debug draw dziala automatycznie jesli navMesh.debugDraw = true
 // ============================================================
@@ -70,6 +71,16 @@ private:
         float agentRadius,
         float agentHeight);
 
+    bool IsPointBlocked(
+        const glm::vec3& p,
+        const std::vector<Obstacle>& obstacles,
+        float agentRadius,
+        float agentHeight) const;
+    void MarkBlockedTriangles(
+        NavMeshData& data,
+        const std::vector<Obstacle>& obstacles,
+        float agentRadius,
+        float agentHeight) const;
     //  Krok 4: Triangulacja Delaunay'a (Bowyer-Watson 2D w XZ)
 
     // Punkt 2D dla triangulacji (ignorujemy Y, trzymamy index do 3D)

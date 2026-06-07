@@ -106,9 +106,20 @@ void NavPathSystem::Update(ECS& ecs, float dt)
 
         if (comp->debugDraw && !comp->path.empty()) {
             const float yOff = 0.1f;
+            const float markerSize = 0.25f;
+
             for (int j = 0; j + 1 < (int)comp->path.size(); j++) {
                 glm::vec3 a = comp->path[j]   + glm::vec3(0, yOff, 0);
                 glm::vec3 b = comp->path[j+1] + glm::vec3(0, yOff, 0);
+                DebugDrawSystem::AddLine(a, b, comp->colorPath);
+            }
+
+            if (comp->currentWaypoint >= 0 && comp->currentWaypoint < (int)comp->path.size()) {
+                glm::vec3 p = comp->path[comp->currentWaypoint] + glm::vec3(0, yOff, 0);
+                DebugDrawSystem::AddAABB(
+                    p - glm::vec3(markerSize, 0.0f, markerSize),
+                    p + glm::vec3(markerSize, markerSize * 2.0f, markerSize),
+                    comp->colorGoal);
             }
         }
     }
