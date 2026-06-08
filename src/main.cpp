@@ -1672,7 +1672,7 @@ void connectAllModels() {
     washroomExit     = std::make_unique<Prefab>("res/models/door_other_2.glb");
     urinModel        = std::make_unique<Prefab>("res/models/uniral_v2.glb");
     NormalDoor       = std::make_unique<Prefab>("res/models/doors.glb");
-    szafkaModel      = std::make_unique<Prefab>("res/models/szafka_rozszerzona.glb");
+    szafkaModel      = std::make_unique<Prefab>("res/models/szafka_pop_main.glb");
     ruraModel        = std::make_unique<Prefab>("res/models/placeholder_rura_wysuwana.glb");
     panelModel       = std::make_unique<Prefab>("res/models/Panel_5x5.glb");
     cockroachModel   = std::make_unique<Prefab>("res/models/cockroach.glb");
