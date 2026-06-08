@@ -13,7 +13,7 @@ void main() {
     //vec3 color = texture(screenTexture, uv).rgb;
 
     vec3 color = texture(screenTexture, TexCoords).rgb;
-    color = pow(color, vec3(2.2));
+    //color = pow(color, vec3(2.2));
     //vec3 negative = 1.0 - color;
     //FragColor = vec4(negative, 1.0);
 
@@ -132,6 +132,6 @@ void main() {
     playerColor = mix(playerColor, vec3(1.0), innerDot);
 
 
-    FragColor = vec4(playerColor, 1.0);
+    FragColor = vec4(color, 1.0);
 
 }

@@ -17,7 +17,7 @@ public:
 
     SurfaceType surfaceType = SurfaceType::Opaque;
 
-    uint32_t materialID = UINT32_MAX;
+    std::vector<uint32_t> materialID;
 
     GLuint diffuseMap = 0;
     GLuint specularMap = 0;
@@ -30,6 +30,33 @@ public:
 
     Material(Shader* s, GLuint diffuse = 0, GLuint specular = 0, GLuint normal = 0)
         : shader(s), diffuseMap(diffuse), specularMap(specular), normalMap(normal) {
+    }
+   
+
+    void setMaterialId(int passId, uint32_t id)
+    {
+        if (passId >= static_cast<int>(materialID.size()))
+            materialID.resize(passId + 1, UINT32_MAX);
+
+        materialID[passId] = id;
+    }
+
+    uint32_t getMaterialId(int passId) const
+    {
+        if (passId >= static_cast<int>(materialID.size()))
+            return UINT32_MAX;
+
+        return materialID[passId];
+    }
+
+    bool hasMaterial(int passId) const
+    {
+        return getMaterialId(passId) != UINT32_MAX;
+    }
+
+    void removeMaterial(int passId)
+    {
+        setMaterialId(passId, UINT32_MAX);
     }
 
     void Apply() const {

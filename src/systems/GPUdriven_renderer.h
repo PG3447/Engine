@@ -405,7 +405,7 @@ public:
 
 
 
-    uint32_t RegisterMesh(RenderComponent* rc, MeshData* data)
+    uint32_t RegisterMesh(uint32_t passID, RenderComponent* rc, MeshData* data)
     {
         auto it = meshRegistry.find(data);
         if (it != meshRegistry.end())
@@ -428,7 +428,7 @@ public:
         meshesData.push_back(meshData);
         uint32_t id = meshesData.size() - 1;
         meshRegistry[data] = id;
-        data->meshID = id;
+        data->setMeshId(passID, id);
         rc->rendererDirty = true;
         
         spdlog::error("Zarejestrowano mesh");
@@ -447,7 +447,7 @@ public:
     }
 
 
-    uint32_t RegisterMaterial(RenderComponent* rc, Material* mat) {
+    uint32_t RegisterMaterial(uint32_t passID, RenderComponent* rc, Material* mat) {
         auto it = materialRegistry.find(mat);
         if (it != materialRegistry.end()) return it->second;
 
@@ -461,7 +461,7 @@ public:
         uint32_t id = (uint32_t)materials.size();
         materials.push_back(gpu);
         materialRegistry[mat] = id;
-        mat->materialID = id;
+        mat->setMaterialId(passID, id);
         rc->rendererDirty = true;
 
         spdlog::error("Zarejestrowano material");

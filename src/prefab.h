@@ -83,7 +83,10 @@ private:
         //render->rootAnimator = currentAnimator;
 
         for (auto& mesh : render->meshes) {
-            if (mesh.material) mesh.material->shader = shader;
+            if (mesh.material) {
+                mesh.material = std::make_shared<Material>(*mesh.material);
+                mesh.material->shader = shader;
+            }
         }
 
         for (auto& child : model->children) {

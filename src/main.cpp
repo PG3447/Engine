@@ -137,7 +137,7 @@ GLuint VBO;
 GLuint VAO;
 GLuint texture;
 std::unique_ptr<Prefab> sunModel;
-//std::unique_ptr<Shader> ourShader;
+std::unique_ptr<Shader> pbrShader;
 std::unique_ptr<Shader> skyboxShader;
 //std::unique_ptr<Shader> reflectShader;
 //std::unique_ptr<Shader> refractShader;
@@ -700,22 +700,19 @@ int main(int, char**)
 
     addAllSystems(ecs);
 
-    //ourShader = std::make_unique<Shader>("res/shaders/gpu_driven.vert", "res/shaders/gpu_driven.frag");
-    //ourShader->use();
+    pbrShader = std::make_unique<Shader>("res/shaders/gpu_driven_PBR.vert", "res/shaders/gpu_driven_PBR.frag");
+    pbrShader->use();
     
     groundModel = std::make_unique<Prefab>("res/models/podloze.glb");
     sunModel    = std::make_unique<Prefab>("res/models/Sun.glb");
-    szkloModel = std::make_unique<Prefab>("res/models/szklo.glb");
-    GameObject* szklo = szkloModel->Instantiate(*scena1, nullptr, nullptr);
+    szkloModel = std::make_unique<Prefab>("res/models/samochod.glb");
+    
+    GameObject* szklo = szkloModel->Instantiate(*scena1, nullptr, pbrShader.get());
     szklo->name = "SZKLO";
-    for (auto& mesh : szklo->GetComponent<RenderComponent>()->meshes)
-    {
-        mesh.material->surfaceType = SurfaceType::Transparent;
-    
-    }
-    
-        
-
+    //for (auto& mesh : szklo->GetComponent<RenderComponent>()->meshes)
+    //{
+    //    //mesh.material->surfaceType = SurfaceType::Transparent;
+    //}
 
     GameObject* obb3 = sunModel->Instantiate(*scena1, nullptr, nullptr);
     obb3->GetComponent<TransformComponent>()->scale    = glm::vec3(25.0f);
@@ -760,7 +757,7 @@ int main(int, char**)
 
     camera1->GetComponent<RigidbodyComponent>()->useGravity = false;
     camera1->GetComponent<ColliderComponent>()->halfSize    = glm::vec3{ 1.0f, 9.0f, 1.0f };
-
+    
     GameObject* camera2 = scena1->CreateGameObject(nullptr);
     CameraComponent*    camCompRight     = camera2->AddComponent<CameraComponent>();
     ColliderComponent*  camera2collider  = camera2->AddComponent<ColliderComponent>();
@@ -844,6 +841,8 @@ int main(int, char**)
 
     sceneManager.Update(16);
     spdlog::info("Scena git.");
+
+
 
     focused = true;
     updateFocus();
@@ -1305,6 +1304,7 @@ void ShowLightEditor(LightComponent& light)
         ImGui::DragFloat("Constant",  &light.constant,  0.001f, 0.0f, 10.0f);
         ImGui::DragFloat("Linear",    &light.linear,    0.001f, 0.0f, 10.0f);
         ImGui::DragFloat("Quadratic", &light.quadratic, 0.001f, 0.0f, 10.0f);
+        ImGui::DragFloat("Range", &light.range, 0.001f, 0.0f, 10.0f);
     }
 
     if (light.type == Spot) {
