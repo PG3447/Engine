@@ -2190,7 +2190,7 @@ void createRentgenRoom(Scene* scena) {
     }*/
     GameObject * objPuzel1 = puzel1->Instantiate(*scena, nullptr, nullptr);
     objPuzel1->name = "puzel1";
-    objPuzel1->GetComponent<TransformComponent>()->position = glm::vec3(4, 3, -16);
+    objPuzel1->GetComponent<TransformComponent>()->position = glm::vec3(-10, 3, -280);
     objPuzel1->GetComponent<TransformComponent>()->rotation = glm::vec3(0, -90, 0);
     objPuzel1->AddComponent<RigidbodyComponent>();
     objPuzel1->GetComponent<RigidbodyComponent>()->useGravity = true;
@@ -2201,7 +2201,7 @@ void createRentgenRoom(Scene* scena) {
 
     GameObject * objPuzel2 = puzel2->Instantiate(*scena, nullptr, nullptr);
     objPuzel2->name = "puzel2";
-    objPuzel2->GetComponent<TransformComponent>()->position = glm::vec3(4, 3, -18);
+    objPuzel2->GetComponent<TransformComponent>()->position = glm::vec3(-5, 3, -280);
     objPuzel2->GetComponent<TransformComponent>()->rotation = glm::vec3(0, -90, 0);
     objPuzel2->AddComponent<RigidbodyComponent>();
     objPuzel2->GetComponent<RigidbodyComponent>()->useGravity = true;
@@ -2212,7 +2212,7 @@ void createRentgenRoom(Scene* scena) {
 
     GameObject * objPuzel3 = puzel3->Instantiate(*scena, nullptr, nullptr);
     objPuzel3->name = "puzel3";
-    objPuzel3->GetComponent<TransformComponent>()->position = glm::vec3(4, 3, -20);
+    objPuzel3->GetComponent<TransformComponent>()->position = glm::vec3(0, 3, -280);
     objPuzel3->GetComponent<TransformComponent>()->rotation = glm::vec3(0, -90, 0);
     objPuzel3->AddComponent<RigidbodyComponent>();
     objPuzel3->GetComponent<RigidbodyComponent>()->useGravity = true;
@@ -2223,7 +2223,7 @@ void createRentgenRoom(Scene* scena) {
 
     GameObject * objPuzel4 = puzel4->Instantiate(*scena, nullptr, nullptr);
     objPuzel4->name = "puzel4";
-    objPuzel4->GetComponent<TransformComponent>()->position = glm::vec3(4, 3, -22);
+    objPuzel4->GetComponent<TransformComponent>()->position = glm::vec3(5, 3, -280);
     objPuzel4->GetComponent<TransformComponent>()->rotation = glm::vec3(0, -90, 0);
     objPuzel4->AddComponent<RigidbodyComponent>();
     objPuzel4->GetComponent<RigidbodyComponent>()->useGravity = true;
@@ -2234,7 +2234,7 @@ void createRentgenRoom(Scene* scena) {
 
     GameObject * objPuzel5 = puzel5->Instantiate(*scena, nullptr, nullptr);
     objPuzel5->name = "puzel5";
-    objPuzel5->GetComponent<TransformComponent>()->position = glm::vec3(4, 3, -25);
+    objPuzel5->GetComponent<TransformComponent>()->position = glm::vec3(10, 3, -280);
     objPuzel5->GetComponent<TransformComponent>()->rotation = glm::vec3(0, -90, 0);
     objPuzel5->AddComponent<RigidbodyComponent>();
     objPuzel5->GetComponent<RigidbodyComponent>()->useGravity = true;
@@ -2245,7 +2245,7 @@ void createRentgenRoom(Scene* scena) {
 
     GameObject * objPuzel6 = puzel6->Instantiate(*scena, nullptr, nullptr);
     objPuzel6->name = "puzel6";
-    objPuzel6->GetComponent<TransformComponent>()->position = glm::vec3(4, 3, -28);
+    objPuzel6->GetComponent<TransformComponent>()->position = glm::vec3(15, 3, -280);
     objPuzel6->GetComponent<TransformComponent>()->rotation = glm::vec3(0, -90, 0);
     objPuzel6->AddComponent<RigidbodyComponent>();
     objPuzel6->GetComponent<RigidbodyComponent>()->useGravity = true;
