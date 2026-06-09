@@ -86,11 +86,14 @@ NavMeshComponent* NavMeshSystem::GetNavMesh() const {
 void NavMeshSystem::Bake(Scene& scene) {
     spdlog::info("[NavMesh] Bake start...");
 
+    // Znajdz lub stworz GameObject z NavMeshComponent
+    // Szukamy w scenie - jesli juz istnieje, resetujemy
     navMeshGO_ = scene.CreateGameObject(nullptr);
     navMeshGO_->name = "__NavMesh__";
     NavMeshComponent* nm = navMeshGO_->AddComponent<NavMeshComponent>();
     nm->data.Clear();
 
+    // --- Krok 1: Zbierz walkable surfaces ---
     auto surfaces = CollectWalkableSurfaces(scene);
     if (surfaces.empty()) {
         spdlog::warn("[NavMesh] Brak walkable surface'ow - upewnij sie ze podlogi maja ColliderComponent z isWalkable=true");
@@ -117,8 +120,10 @@ void NavMeshSystem::Bake(Scene& scene) {
         return;
     }
 
+    // --- Krok 4: Triangulacja Delaunay'a ---
     nm->data = BowyerWatson(filteredPoints);
 
+    // --- Krok 5: Sasiedztwo trojkatow ---
     ComputeNeighbors(nm->data);
 
     // --- Krok 6: Oznacz trojkaty nachodzace na przeszkody ---
@@ -132,6 +137,7 @@ void NavMeshSystem::Bake(Scene& scene) {
                  nm->data.vertices.size(), nm->data.triangles.size());
 }
 
+//  Krok 1: Zbierz walkable surfaces
 
 std::vector<NavMeshSystem::WalkableSurface>
 NavMeshSystem::CollectWalkableSurfaces(Scene& scene) {
@@ -167,6 +173,7 @@ NavMeshSystem::CollectWalkableSurfaces(Scene& scene) {
     return result;
 }
 
+//  Krok 2: Generuj punkty probkowania (siatka XZ)
 
 std::vector<glm::vec3> NavMeshSystem::GenerateSamplePoints(
     const std::vector<WalkableSurface>& surfaces,
@@ -216,6 +223,7 @@ std::vector<glm::vec3> NavMeshSystem::GenerateSamplePoints(
     return points;
 }
 
+//  Krok 3: Zbierz przeszkody i filtruj punkty
 
 std::vector<NavMeshSystem::Obstacle>
 NavMeshSystem::CollectObstacles(Scene& scene) {
@@ -287,6 +295,7 @@ NavMeshSystem::FilterBlockedPoints(
     }
     return result;
 }
+
 void NavMeshSystem::MarkBlockedTriangles(
     NavMeshData& data,
     const std::vector<Obstacle>& obstacles,
@@ -327,6 +336,8 @@ NavMeshSystem::ComputeCircumcircle(
     const Point2D& p1,
     const Point2D& p2) const
 {
+    // Wzor na okrag opisany trojkata
+    // Unikamy dzielenia przez zero dla zdegenerowanych trojkatow
     float ax = p1.x - p0.x;
     float ay = p1.z - p0.z;
     float bx = p2.x - p0.x;

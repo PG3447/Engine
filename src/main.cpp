@@ -198,12 +198,6 @@ std::unique_ptr<Prefab> NormalDoor;
 std::unique_ptr<Prefab> szkloModel;
 std::unique_ptr<Prefab> cockroachModel;
 
-
-std::unique_ptr<Prefab> LewyDolny;
-std::unique_ptr<Prefab> PrawyDolny;
-std::unique_ptr<Prefab> PrawyGorny;
-std::unique_ptr<Prefab> LewyGorny;
-
 std::unique_ptr<Prefab> dyingModelPrefab;
 std::unique_ptr<Prefab> jumpSkeletonPrefab;
 
@@ -373,54 +367,6 @@ void processCameraMouse(ECS& ecs, CameraComponent& cam, TransformComponent& tran
 void addAllSystems(ECS& ecs);
 void connectAllModels();
 
-struct PuzzleSlot {
-    glm::vec3 targetRotation;
-    GameObject* occupant       = nullptr;
-    GameObject* slotObject     = nullptr;
-    GameObject* expectedObject = nullptr;
-};
-
-GameObject* puzzleRewardObject = nullptr;
-
-
-void OnPuzzleSolved(Scene* scene) {
-    spdlog::info("Puzzle rozwiązany!");
-
-    // Zabezpieczenie przed wielokrotnym wywołaniem
-    if (puzzleRewardObject != nullptr) return;
-
-    if (placeholderModel == nullptr) {
-        spdlog::error("placeholderModel nie zaladowany!");
-        return;
-    }
-
-    puzzleRewardObject = placeholderModel->Instantiate(*scene, nullptr, ourShader.get());
-    puzzleRewardObject->name = "PuzzleReward";
-
-    TransformComponent* tr = puzzleRewardObject->GetComponent<TransformComponent>();
-    tr->position = glm::vec3(0.0f, 5.0f, -270.0f);
-    tr->scale    = glm::vec3(3.0f);
-    tr->isDirty  = true;
-
-    RigidbodyComponent* rb = puzzleRewardObject->AddComponent<RigidbodyComponent>();
-    rb->useGravity = false;
-    rb->isStatic   = true;
-
-    puzzleRewardObject->AddComponent<ColliderComponent>();
-}
-
-std::unordered_map<GameObject*, PuzzleSlot> puzzleSlotsMap; // klucz = slotObject
-std::unordered_map<GameObject*, glm::vec3>  objectOriginalRotations;
-
-bool IsPuzzleSolved() {
-    if (puzzleSlotsMap.empty()) return false;
-    for (auto& [slotGO, slot] : puzzleSlotsMap) {
-        if (slot.occupant == nullptr) return false;             // slot pusty
-        if (slot.occupant != slot.expectedObject) return false; // zła kostka
-    }
-    return true;
-}
-
 void HandlePlayerInteraction(
     ECS& ecs,
     const std::string& inputAction,
@@ -433,54 +379,23 @@ void HandlePlayerInteraction(
     float& outShakeTimer
 ) {
     if (!ecs.GetSystem<HID>()->is_action_just_pressed(inputAction)) return;
-    //upuszczanie
+
     if (myHeldObject != nullptr) {
+        // Upuszczanie
+        myHeldObject->SetParent(scene->GetRoot());
         TransformComponent* camTr   = playerCamera->GetComponent<TransformComponent>();
         TransformComponent* heldTr  = myHeldObject->GetComponent<TransformComponent>();
         CameraComponent*    camComp = playerCamera->GetComponent<CameraComponent>();
 
-        // Sprawdź czy raycast widzi slot
-        PuzzleSlot* targetSlot = nullptr;
-        if (playerRaycast->anyHit()) {
-            RaycastHit hit = playerRaycast->closestHit();
-            if (hit.hitObject && puzzleSlotsMap.count(hit.hitObject)) {
-                PuzzleSlot& slot = puzzleSlotsMap[hit.hitObject];
-                if (slot.occupant == nullptr)   // tylko wolny slot
-                    targetSlot = &slot;
-            }
+        heldTr->position = camTr->position + (camComp->state.Front * 3.0f);
+        heldTr->rotation = glm::vec3(0.0f);
+        heldTr->isDirty  = true;
+
+        if (auto rb = myHeldObject->GetComponent<RigidbodyComponent>()) {
+            rb->useGravity = true;
+            rb->isStatic   = false;
+            rb->velocity   = glm::vec3(0.0f);
         }
-
-        myHeldObject->SetParent(scene->GetRoot());
-
-        if (targetSlot != nullptr) {
-            // ── Gracz patrzy na wolny slot ──
-            TransformComponent* slotTr = targetSlot->slotObject
-                                             ->GetComponent<TransformComponent>();
-            heldTr->position = slotTr->position;
-            heldTr->rotation = targetSlot->targetRotation;
-            heldTr->isDirty  = true;
-            targetSlot->occupant = myHeldObject;
-
-            if (auto rb = myHeldObject->GetComponent<RigidbodyComponent>()) {
-                rb->useGravity = false;
-                rb->isStatic   = true;
-            }
-        }
-        else {
-            // ── Gracz patrzy gdzie indziej — normalne upuszczenie ──
-            heldTr->position = camTr->position + (camComp->state.Front * 3.0f);
-            heldTr->rotation = objectOriginalRotations.count(myHeldObject)
-                                   ? objectOriginalRotations[myHeldObject]
-                                   : glm::vec3(0.0f);
-            heldTr->isDirty  = true;
-
-            if (auto rb = myHeldObject->GetComponent<RigidbodyComponent>()) {
-                rb->useGravity = true;
-                rb->isStatic   = false;
-                rb->velocity   = glm::vec3(0.0f);
-            }
-        }
-
         myHeldObject = nullptr;
     }
     else if (playerRaycast->anyHit()) {
@@ -535,36 +450,9 @@ void HandlePlayerInteraction(
                     }
                 }
             }
-            if (puzzleSlotsMap.count(hit.hitObject)) {
-                PuzzleSlot& slot = puzzleSlotsMap[hit.hitObject];
-                if (slot.occupant != nullptr && slot.occupant != otherPlayerHeldObject) {
-                    myHeldObject = slot.occupant;
-                    slot.occupant = nullptr;
-
-                    myHeldObject->SetParent(playerCamera);
-
-                    TransformComponent* heldTr = myHeldObject->GetComponent<TransformComponent>();
-                    heldTr->position = glm::vec3(1.0f, -1.0f, -3.0f);
-                    heldTr->rotation = glm::vec3(0.0f);
-                    heldTr->isDirty  = true;
-
-                    if (auto rb = myHeldObject->GetComponent<RigidbodyComponent>()) {
-                        rb->useGravity = false;
-                        rb->isStatic   = true;
-                    }
-                }
-            }
             // Podnoszenie (zabezpieczone przed wyrwaniem obiektu drugiemu graczowi)
             else if (pickupObjects.count(hit.hitObject) && hit.hitObject != otherPlayerHeldObject) {
                 myHeldObject = hit.hitObject;
-
-                for (auto& [slotGO, slot] : puzzleSlotsMap) {
-                    if (slot.occupant == myHeldObject) {
-                        puzzleSlotsMap[slotGO].occupant = nullptr;
-                        break;
-                    }
-                }
-
                 myHeldObject->SetParent(playerCamera);
 
                 TransformComponent* heldTr = myHeldObject->GetComponent<TransformComponent>();
@@ -639,6 +527,7 @@ void UpdateCabinets(float deltaTime) {
         }
     }
 }
+
 GameObject* CreateInteractableDoor(Scene* scene, Prefab* prefab, Shader* shader,
     const std::string& name,
     const glm::vec3& position,
@@ -1138,38 +1027,14 @@ int main(int, char**)
             if (hit.hitObject != nullptr) {
                 if (rotatableObjects.count(hit.hitObject))
                     hintText = "Rotate";
-                }
-                else if (unlockedDoors.count(hit.hitObject)) {
-                    hintText = "Open";
-                }
-                else if (cabinetsMap.count(hit.hitObject)) {
-                    hintText = "Open Cabinet";
-                }
-                else if (majorDoors.count(hit.hitObject)) {
-                    hintText = "Unlock";
-                }
-                else if (puzzleSlotsMap.count(hit.hitObject) && p1HeldObject != nullptr) {
-                    PuzzleSlot& slot = puzzleSlotsMap[hit.hitObject];
-                    hintText = (slot.occupant == nullptr) ? "Place here" : "Slot occupied";
-                }
-                //gracz patrzy na kostkę w slocie
-                else if (pickupObjects.count(hit.hitObject)) {
-                    bool isInSlot = false;
-                    for (auto& [slotGO, slot] : puzzleSlotsMap) {
-                        if (slot.occupant == hit.hitObject) { isInSlot = true; break; }
-                    }
-                    if (isInSlot)
-                        hintText = "Pull out";
-                    else
-                        hintText = (hit.hitObject == p2HeldObject) ? "Held by Player2" : "Pick up";
-                }
-                else if (hit.hitObject->name.find("Coffin") != std::string::npos) {
                 else if (toiletDoorsMap.count(hit.hitObject))
                     hintText = toiletDoorsMap[hit.hitObject].isOpen ? "Close" : "Open";
                 else if (cabinetsMap.count(hit.hitObject))
                     hintText = isCabinetButtonPushed ? "..." : "Open Cabinet";
                 else if (majorDoors.count(hit.hitObject))
                     hintText = can_open_door_1 ? "Open" : "Unlock";
+                else if (pickupObjects.count(hit.hitObject))
+                    hintText = (hit.hitObject == p2HeldObject) ? "Held by Player 2" : "Pick up";
                 else if (hit.hitObject->name.find("Coffin") != std::string::npos)
                     hintText = "Pull Coffin";
             }
@@ -1184,37 +1049,14 @@ int main(int, char**)
             if (hit.hitObject != nullptr) {
                 if (rotatableObjects.count(hit.hitObject))
                     hintText2 = "Rotate";
-                }
-                else if (unlockedDoors.count(hit.hitObject)) {
-                    hintText2 = "Open";
-                }
-                else if (cabinetsMap.count(hit.hitObject)) {
-                    hintText2 = "Open Cabinet";
-                }
-                else if (majorDoors.count(hit.hitObject)) {
-                    hintText2 = "Unlock";
-                }
-                else if (puzzleSlotsMap.count(hit.hitObject) && p2HeldObject != nullptr) {
-                    PuzzleSlot& slot = puzzleSlotsMap[hit.hitObject];
-                    hintText2 = (slot.occupant == nullptr) ? "Place here" : "Slot occupied";
-                }
-                //gracz 2 patrzy na kostkę w slocie ──
-                else if (pickupObjects.count(hit.hitObject)) {
-                    bool isInSlot = false;
-                    for (auto& [slotGO, slot] : puzzleSlotsMap) {
-                        if (slot.occupant == hit.hitObject) { isInSlot = true; break; }
-                    }
-                    if (isInSlot)
-                        hintText = "Pull out";
-                    else
-                        hintText = (hit.hitObject == p2HeldObject) ? "Held by Player2" : "Pick up";
-                }
                 else if (toiletDoorsMap.count(hit.hitObject))
                     hintText2 = toiletDoorsMap[hit.hitObject].isOpen ? "Close" : "Open";
                 else if (cabinetsMap.count(hit.hitObject))
                     hintText2 = isCabinetButtonPushed ? "..." : "Open Cabinet";
                 else if (majorDoors.count(hit.hitObject))
                     hintText2 = can_open_door_1 ? "Open" : "Unlock";
+                else if (pickupObjects.count(hit.hitObject))
+                    hintText2 = (hit.hitObject == p2HeldObject) ? "Held by Player 2" : "Pick up";
                 else if (hit.hitObject->name.find("Coffin") != std::string::npos)
                     hintText2 = "Pull Coffin";
             }
@@ -1839,10 +1681,6 @@ void connectAllModels() {
     szafkaModel      = std::make_unique<Prefab>("res/models/szafka_pop_main.glb");
     ruraModel        = std::make_unique<Prefab>("res/models/placeholder_rura_wysuwana.glb");
     panelModel       = std::make_unique<Prefab>("res/models/Panel_5x5.glb");
-    LewyDolny       = std::make_unique<Prefab>("res/models/LewyDolny.glb");
-    LewyGorny       = std::make_unique<Prefab>("res/models/LewyGorny.glb");
-    PrawyGorny       = std::make_unique<Prefab>("res/models/PrawyGorny.glb");
-    PrawyDolny       = std::make_unique<Prefab>("res/models/PrawyDolny.glb");
     cockroachModel   = std::make_unique<Prefab>("res/models/cockroach.glb");
 }
 
@@ -2025,7 +1863,7 @@ void createFirstRoom(Scene* scena1) {
     lustro4->GetComponent<TransformComponent>()->position   = glm::vec3{ -23.5, 12.0, -25 + (-20 * 3) };
 
     // Drzwi wyjsciowe z lazienki (washroomExit)
-    /*GameObject* tablicaDrzwi[2];
+    GameObject* tablicaDrzwi[2];
     for (int i = 0; i < 2; i++) {
         tablicaDrzwi[i] = washroomExit->Instantiate(*scena1, nullptr, nullptr);
         tablicaDrzwi[i]->GetComponent<TransformComponent>()->scale    = glm::vec3{ 10, 11, 10 };
@@ -2040,7 +1878,6 @@ void createFirstRoom(Scene* scena1) {
         tablicaDrzwi[i]->GetComponent<ColliderComponent>()->isWalkable     = false;
         tablicaDrzwi[i]->GetComponent<ColliderComponent>()->affectsNavMesh = true;
     }
-    */
 
     // Kubek - kolider domyslny (bez jawnego halfSize)
     GameObject* cup = cupModel->Instantiate(*scena1, nullptr, nullptr);
@@ -2179,87 +2016,6 @@ void createCrematorium(Scene* scena) {
 }
 
 void createRentgenRoom(Scene* scena) {
-    /*if (i == 2 || i == 3) {
-        tablicaKibli[i] = urinModel->Instantiate(*scena1, nullptr, ourShader.get());
-        tablicaKibli[i]->name = "Kibel" + std::to_string(i);
-        tablicaKibli[i]->GetComponent<TransformComponent>()->scale    = glm::vec3{ 12, 12, 12 };
-        tablicaKibli[i]->AddComponent<RigidbodyComponent>();
-        tablicaKibli[i]->AddComponent<ColliderComponent>();
-        tablicaKibli[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
-        tablicaKibli[i]->GetComponent<RigidbodyComponent>()->isStatic   = true;
-        tablicaKibli[i]->GetComponent<ColliderComponent>()->halfSize     = glm::vec3{ 2.5, 4, 2.5 };
-        tablicaKibli[i]->GetComponent<ColliderComponent>()->offset       = glm::vec3{ 0, 4, 0 };
-        tablicaKibli[i]->GetComponent<TransformComponent>()->position    = glm::vec3{ 47.6, 2.0f, -25 + (-10 * i) };
-        tablicaKibli[i]->GetComponent<TransformComponent>()->rotation    = glm::vec3{ 0, 270, 0 };
-        tablicaKibli[i]->GetComponent<ColliderComponent>()->isWalkable     = false;
-        tablicaKibli[i]->GetComponent<ColliderComponent>()->affectsNavMesh = true;
-    }*/
-    GameObject * lewyDolny = LewyDolny->Instantiate(*scena, nullptr, ourShader.get());
-    lewyDolny->name = "lewyDolny";
-    lewyDolny->GetComponent<TransformComponent>()->position = glm::vec3(4, 3, -16);
-    lewyDolny->AddComponent<RigidbodyComponent>();
-    lewyDolny->GetComponent<RigidbodyComponent>()->useGravity = true;
-    lewyDolny->GetComponent<RigidbodyComponent>()->isStatic = false;
-    lewyDolny->AddComponent<ColliderComponent>();
-    objectOriginalRotations[lewyDolny] = glm::vec3(0.0f);
-    pickupObjects.insert(lewyDolny);
-
-    GameObject * lewyGorny = LewyGorny->Instantiate(*scena, nullptr, ourShader.get());
-    lewyGorny->name = "lewyGorny";
-    lewyGorny->GetComponent<TransformComponent>()->position = glm::vec3(4, 3, -18);
-    lewyGorny->AddComponent<RigidbodyComponent>();
-    lewyGorny->GetComponent<RigidbodyComponent>()->useGravity = true;
-    lewyGorny->GetComponent<RigidbodyComponent>()->isStatic = false;
-    lewyGorny->AddComponent<ColliderComponent>();
-    objectOriginalRotations[lewyGorny] = glm::vec3(0.0f);
-    pickupObjects.insert(lewyGorny);
-
-    GameObject * prawyDolny = PrawyDolny->Instantiate(*scena, nullptr, ourShader.get());
-    prawyDolny->name = "prawyDolny";
-    prawyDolny->GetComponent<TransformComponent>()->position = glm::vec3(4, 3, -20);
-    prawyDolny->AddComponent<RigidbodyComponent>();
-    prawyDolny->GetComponent<RigidbodyComponent>()->useGravity = true;
-    prawyDolny->GetComponent<RigidbodyComponent>()->isStatic = false;
-    prawyDolny->AddComponent<ColliderComponent>();
-    objectOriginalRotations[prawyDolny] = glm::vec3(0.0f);
-    pickupObjects.insert(prawyDolny);
-
-    GameObject * prawyGorny = PrawyGorny->Instantiate(*scena, nullptr, ourShader.get());
-    prawyGorny->name = "prawyGorny";
-    prawyGorny->GetComponent<TransformComponent>()->position = glm::vec3(4, 3, -22);
-    prawyGorny->AddComponent<RigidbodyComponent>();
-    prawyGorny->GetComponent<RigidbodyComponent>()->useGravity = true;
-    prawyGorny->GetComponent<RigidbodyComponent>()->isStatic = false;
-    prawyGorny->AddComponent<ColliderComponent>();
-    objectOriginalRotations[prawyGorny] = glm::vec3(0.0f);
-    pickupObjects.insert(prawyGorny);
-
-    auto createPuzzleSlot = [&](const glm::vec3& pos, const glm::vec3& targetRot, GameObject* expected) {
-        GameObject* slotGO = scena->CreateGameObject(nullptr);
-        slotGO->name = "PuzzleSlot"+expected->name;
-
-        TransformComponent* tr = slotGO->AddComponent<TransformComponent>();
-        tr->position = pos;
-
-        ColliderComponent* col = slotGO->AddComponent<ColliderComponent>();
-        col->halfSize  = glm::vec3(2.0f);
-        col->isTrigger = true;
-
-        RigidbodyComponent* rb = slotGO->AddComponent<RigidbodyComponent>();
-        rb->useGravity = false;
-        rb->isStatic   = true;
-
-        PuzzleSlot slot;
-        slot.targetRotation = targetRot;
-        slot.slotObject     = slotGO;
-        slot.expectedObject = expected;
-        puzzleSlotsMap[slotGO] = slot;
-    };
-
-    createPuzzleSlot(glm::vec3(0.850, 11, -292.58), glm::vec3(90, 0,  0), lewyDolny);
-    createPuzzleSlot(glm::vec3(6, 11, -292.58), glm::vec3(90, 0, 0), lewyGorny);
-    createPuzzleSlot(glm::vec3(0.850, 5.14, -292.58), glm::vec3(90, 0, 0), prawyDolny);
-    createPuzzleSlot(glm::vec3(6, 5.14, -292.58), glm::vec3(90, 0,   0), prawyGorny);
     CreateStaticObject(scena, floorModel.get(), nullptr, "PodlogaRentgenRoom",    glm::vec3(0.040, 0, -257.800),  glm::vec3(60, 1, 40));
     CreateStaticObject(scena, floorModel.get(), nullptr, "SufitRentgen",          glm::vec3(0.040, 20, -257.800), glm::vec3(60, 1, 40));
     CreateStaticObject(scena, wallModel.get(),  nullptr, "KoncowaScianaRentgen",  glm::vec3(0, 0, -297),          glm::vec3(61, 50, 1));
