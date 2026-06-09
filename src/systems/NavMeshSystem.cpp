@@ -121,6 +121,11 @@ void NavMeshSystem::Bake(Scene& scene) {
 
     ComputeNeighbors(nm->data);
 
+    // --- Krok 6: Oznacz trojkaty nachodzace na przeszkody ---
+    // Usuniecie punktow probkowania nie wystarcza - Delaunay laczy wierzcholki
+    // wokol przeszkody, wiec trojkaty moga nadal przechodzic przez kolidery.
+    MarkBlockedTriangles(nm->data, obstacles, nm->agentRadius, nm->agentHeight);
+
     nm->data.isBaked = true;
 
     spdlog::info("[NavMesh] Bake zakończony: {} wierzcholkow, {} trojkatow",
@@ -224,8 +229,15 @@ NavMeshSystem::CollectObstacles(Scene& scene) {
         auto* col = cols[i];
         auto* tr  = trs[i];
 
-        // Przeszkoda = affectsNavMesh=true ALE isWalkable=false
-        if (!col->affectsNavMesh || col->isWalkable) continue;
+        if (col->isWalkable || col->isTrigger) continue;
+
+        // Jawna flaga albo dowolny statyczny kolider (sciany, meble itp.)
+        bool blocksNavMesh = col->affectsNavMesh;
+        if (!blocksNavMesh) {
+            auto* rb = gos[i]->GetComponent<RigidbodyComponent>();
+            blocksNavMesh = rb && rb->isStatic;
+        }
+        if (!blocksNavMesh) continue;
 
         glm::vec3 worldPos = tr->position;
         glm::vec3 scale    = tr->scale;
@@ -240,6 +252,25 @@ NavMeshSystem::CollectObstacles(Scene& scene) {
     return result;
 }
 
+bool NavMeshSystem::IsPointBlocked(
+    const glm::vec3& p,
+    const std::vector<Obstacle>& obstacles,
+    float agentRadius,
+    float agentHeight) const
+{
+    for (const auto& obs : obstacles) {
+        glm::vec3 expMin = obs.min - glm::vec3(agentRadius, 0.0f, agentRadius);
+        glm::vec3 expMax = obs.max + glm::vec3(agentRadius, 0.0f, agentRadius);
+
+        bool inXZ = p.x >= expMin.x && p.x <= expMax.x &&
+                    p.z >= expMin.z && p.z <= expMax.z;
+        bool inY  = obs.max.y > p.y && obs.min.y < (p.y + agentHeight);
+
+        if (inXZ && inY) return true;
+    }
+    return false;
+}
+
 std::vector<glm::vec3>
 NavMeshSystem::FilterBlockedPoints(
     const std::vector<glm::vec3>& points,
@@ -251,28 +282,41 @@ NavMeshSystem::FilterBlockedPoints(
     result.reserve(points.size());
 
     for (const auto& p : points) {
-        bool blocked = false;
+        if (!IsPointBlocked(p, obstacles, agentRadius, agentHeight))
+            result.push_back(p);
+    }
+    return result;
+}
+void NavMeshSystem::MarkBlockedTriangles(
+    NavMeshData& data,
+    const std::vector<Obstacle>& obstacles,
+    float agentRadius,
+    float agentHeight) const
+{
+    int blockedCount = 0;
 
-        for (const auto& obs : obstacles) {
-            // Rozszerz przeszkode o promien agenta
-            glm::vec3 expMin = obs.min - glm::vec3(agentRadius, 0.0f, agentRadius);
-            glm::vec3 expMax = obs.max + glm::vec3(agentRadius, 0.0f, agentRadius);
+    for (auto& tri : data.triangles) {
+        const glm::vec3& va = data.vertices[tri.v[0]].position;
+        const glm::vec3& vb = data.vertices[tri.v[1]].position;
+        const glm::vec3& vc = data.vertices[tri.v[2]].position;
 
-            bool inXZ = p.x >= expMin.x && p.x <= expMax.x &&
-                        p.z >= expMin.z && p.z <= expMax.z;
+        glm::vec3 samples[4] = {
+            tri.centroid,
+            (va + vb) * 0.5f,
+            (vb + vc) * 0.5f,
+            (vc + va) * 0.5f,
+        };
 
-            // Pionowo: przeszkoda jest powyzej punktu i blokuje przejscie
-            bool inY  = obs.max.y > p.y && obs.min.y < (p.y + agentHeight);
-
-            if (inXZ && inY) {
-                blocked = true;
+        for (const auto& sample : samples) {
+            if (IsPointBlocked(sample, obstacles, agentRadius, agentHeight)) {
+                tri.walkable = false;
+                ++blockedCount;
                 break;
             }
         }
-
-        if (!blocked) result.push_back(p);
     }
-    return result;
+
+    spdlog::info("[NavMesh] Oznaczono {} trojkatow jako niechodzalne", blockedCount);
 }
 
 //  Krok 4: Triangulacja Bowyer-Watson

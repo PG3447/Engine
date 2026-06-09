@@ -12,7 +12,6 @@
 #include "core/scene.h"
 #include "core/system.h"
 
-
 class NavMeshSystem : public System {
 public:
     explicit NavMeshSystem(ECS& ecs);
@@ -58,6 +57,17 @@ private:
         float agentRadius,
         float agentHeight);
 
+    bool IsPointBlocked(
+        const glm::vec3& p,
+        const std::vector<Obstacle>& obstacles,
+        float agentRadius,
+        float agentHeight) const;
+    void MarkBlockedTriangles(
+        NavMeshData& data,
+        const std::vector<Obstacle>& obstacles,
+        float agentRadius,
+        float agentHeight) const;
+    //  Krok 4: Triangulacja Delaunay'a (Bowyer-Watson 2D w XZ)
 
     struct Point2D {
         float x, z;

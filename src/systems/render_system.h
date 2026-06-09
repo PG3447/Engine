@@ -144,10 +144,10 @@ private:
     GLuint sceneFBO = 0;
     GLuint sceneColorTexture;
 
-
-
 public:
     GPUDrivenManager drivenManager;
+
+    float ambientStrength = 0.03f;
     //GLuint sceneDepthRBO = 0;
     GLuint sceneDepthTexture;
     GLuint depthTexturePrev = 0;
@@ -347,19 +347,20 @@ public:
         animatorQuery = ecs.CreateQuery<TransformComponent, RenderComponent, AnimatorComponent>();
 
         drivenManager = GPUDrivenManager();
-        int display_w, display_h;
-        glfwGetFramebufferSize(window, &display_w, &display_h);
-        drivenManager.Init(display_w, display_h);
 
         Init();
         DebugDrawSystem::Init();
     }
 
     void Init() {
+        int display_w, display_h;
+        glfwGetFramebufferSize(window, &display_w, &display_h);
+        drivenManager.Init(display_w, display_h);
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         skybox.Init();
+        drivenManager.AddSkyboxPass(&skybox);
 
         glGenQueries(2, gpuQuery.queries);
 
@@ -384,11 +385,13 @@ public:
         {
             pendingRegistration.push_back(e->GetComponent<RenderComponent>());  //drivenManager.RebuildAllRegistries(*renderQuery);
             groupsDirty = true;
+            rebuildCollectData = true;
         }
         if (resultAddRender == 2)
         {
             //komponent zostal usuniety
             drivenManager.RebuildInstance();
+            rebuildCollectData = true;
         }
         lightQuery->OnGameObjectUpdated(e);  // forward do query
         cameraQuery->OnGameObjectUpdated(e); // forward do query
@@ -444,7 +447,8 @@ public:
             (GLsizei)(vp.height * h)
         );
     }
-    bool gpuRendererInitialized = false;
+    //bool gpuRendererInitialized = false;
+    bool rebuildCollectData = true;
 
     void RenderAllCameras() {
         auto& transforms = std::get<0>(cameraQuery->componentsVectors);
@@ -463,6 +467,9 @@ public:
         auto& lights = std::get<1>(lightQuery->componentsVectors);
 
         drivenManager.UpdateAndUploadLights(lights, lightTransforms);
+        drivenManager.CollectAllPasses(*renderQuery, rebuildCollectData);
+        if (rebuildCollectData)
+            rebuildCollectData = false;
         //if (gpuRendererReady) {
         //    
         //}
@@ -491,6 +498,9 @@ public:
         
         auto cullStart = std::chrono::high_resolution_clock::now();
 
+        //drivenManager.CollectAllPasses(*renderQuery, currentCameraPos);
+        drivenManager.UploadPerCamera(currentCameraPos);
+        
         int vpW = std::max(1, (int)(cam.viewport.width * width));
         int vpH = std::max(1, (int)(cam.viewport.height * height));
         int vpX = (int)(cam.viewport.x * width);
@@ -502,10 +512,9 @@ public:
             hiz.Destroy(); // tylko przy resize — nie co klatkę
             hiz.Init(vpW, vpH, width, height);
         }
-        drivenManager.AttachCameraHiZ(hiz.hizTexture, hiz.hizMipLevels, vpW, vpH, occlusionCullingEnabled, vpX, vpY);
 
-        drivenManager.CollectAllPasses(*renderQuery, currentCameraPos);
-        drivenManager.RenderFrame(vp, currentCameraPos, occlusionCullingEnabled ? hiz.depthPrev : 0, cam.dirty);
+        drivenManager.AttachCameraHiZ(hiz.hizTexture, hiz.hizMipLevels, vpW, vpH, frustumCullingEnabled, occlusionCullingEnabled, vpX, vpY);
+        drivenManager.RenderFrame(view, projection, vp, currentCameraPos, ambientStrength, occlusionCullingEnabled ? hiz.depthPrev : 0, cam.dirty);
         cam.dirty = false;
         //drivenManager.RenderFrame(vp, currentCameraPos, depthTexturePrev);
         if (hiz.depthPrev && sceneDepthTexture && occlusionCullingEnabled) {
@@ -527,7 +536,7 @@ public:
 
         glBindVertexArray(0);
         
-        skybox.Render(view, projection);
+        //skybox.Render(view, projection);
     }
 
 

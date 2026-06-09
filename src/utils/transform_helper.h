@@ -1,4 +1,4 @@
-﻿#ifndef TRANSFORM_HELPER_H
+#ifndef TRANSFORM_HELPER_H
 #define TRANSFORM_HELPER_H
 
 #define GLM_ENABLE_EXPERIMENTAL
@@ -42,6 +42,7 @@ public:
 	{
 		comp.modelMatrix = getLocalModelMatrix(comp);
 		comp.isDirty = false;
+		comp.rendererDirty = true;
 	}
 
 	// Z macierzą rodzica
@@ -49,6 +50,7 @@ public:
 	{
 		comp.modelMatrix = parentGlobalModelMatrix * getLocalModelMatrix(comp);
 		comp.isDirty = false;
+		comp.rendererDirty = true;
 	}
 
 	// Ustawianie pozycji
