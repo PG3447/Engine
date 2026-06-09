@@ -13,16 +13,6 @@
 #include "core/system.h"
 
 
-// ============================================================
-//  NavMeshSystem
-//
-//  Uzycie:
-//    1. Dodaj NavMeshComponent do dowolnego GameObject (np. root sceny)
-//    2. Upewnij sie ze obiekty podlogi maja ColliderComponent z isWalkable=true
-//    3. Wywolaj ecs.GetSystem<NavMeshSystem>()->Bake(*scene)
-//    4. Debug draw dziala automatycznie jesli navMesh.debugDraw = true
-// ============================================================
-
 class NavMeshSystem : public System {
 public:
     explicit NavMeshSystem(ECS& ecs);
@@ -45,18 +35,16 @@ private:
     struct WalkableSurface {
         glm::vec3 min;
         glm::vec3 max;
-        float     yTop;     // Gorna powierzchnia kolizji (y + halfSize.y)
-        float     slopeY;   // Normalna Y (dla plaskich = 1.0)
+        float     yTop;
+        float     slopeY;
     };
 
     std::vector<WalkableSurface> CollectWalkableSurfaces(Scene& scene);
 
-    //  Krok 2: Wygeneruj punkty siatki na powierzchniach
     std::vector<glm::vec3> GenerateSamplePoints(
         const std::vector<WalkableSurface>& surfaces,
         float voxelSize);
 
-    //  Krok 3: Odfiltruj punkty zablokowane przez przeszkody
     struct Obstacle {
         glm::vec3 min;
         glm::vec3 max;
@@ -70,15 +58,12 @@ private:
         float agentRadius,
         float agentHeight);
 
-    //  Krok 4: Triangulacja Delaunay'a (Bowyer-Watson 2D w XZ)
 
-    // Punkt 2D dla triangulacji (ignorujemy Y, trzymamy index do 3D)
     struct Point2D {
         float x, z;
         int   idx3D; // Indeks w tablicy punktow 3D
     };
 
-    // Okrag opisany na trojkacie (circumcircle)
     struct Circumcircle {
         float cx, cz, r2; // Srodek i kwadrat promienia
     };
