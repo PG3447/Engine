@@ -142,6 +142,7 @@ std::unique_ptr<Shader> skyboxShader;
 //std::unique_ptr<Shader> reflectShader;
 //std::unique_ptr<Shader> refractShader;
 
+std::unique_ptr<Prefab> postacGracza;
 std::unique_ptr<Prefab> bed1Model;
 std::unique_ptr<Prefab> bed2Model;
 std::unique_ptr<Prefab> bed3Model;
@@ -713,10 +714,10 @@ int main(int, char**)
     pbrShader = std::make_unique<Shader>("res/shaders/gpu_driven_PBR.vert", "res/shaders/gpu_driven_PBR.frag");
     pbrShader->use();
     
-
+    postacGracza = std::make_unique<Prefab>("res/models/postac.glb");
     groundModel = std::make_unique<Prefab>("res/models/podloze.glb");
     sunModel    = std::make_unique<Prefab>("res/models/Sun.glb");
-    szkloModel = std::make_unique<Prefab>("res/models/samochod.glb");
+    szkloModel = std::make_unique<Prefab>("res/models/szklo.glb");
     
     GameObject* szklo = szkloModel->Instantiate(*scena1, nullptr, pbrShader.get());
     szklo->name = "SZKLO";
@@ -745,15 +746,29 @@ int main(int, char**)
 
     RenderHelper::SetMaterial(obb3, brickMat);
 
+    //Tworzenie gracza nr.1
+
+    GameObject* gracz1 = scena1->CreateGameObject(nullptr);
+    gracz1->name = "Gracz1";
+    
+    
     GameObject* camera1 = scena1->CreateGameObject(nullptr);//groundModel->Instantiate(*scena1, nullptr, ourShader.get());
-    CameraComponent* camCompLeft = camera1->AddComponent<CameraComponent>();
-    ColliderComponent* camera1collider = camera1->AddComponent<ColliderComponent>();
-    RigidbodyComponent* rigidBodyCamera1 = camera1->AddComponent<RigidbodyComponent>();
+    camera1->name = "Kamera";
+    camera1->SetParent(gracz1);
+
+    GameObject* modelPostac1 = postacGracza->Instantiate(*scena1, nullptr, nullptr);
+    modelPostac1->SetParent(gracz1);
+
+    gracz1->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 10.0f, -20.0f);
+    
+    CameraComponent* camCompLeft = gracz1->AddComponent<CameraComponent>();
+    ColliderComponent* camera1collider = gracz1->AddComponent<ColliderComponent>();
+    RigidbodyComponent* rigidBodyCamera1 = gracz1->AddComponent<RigidbodyComponent>();
     RaycastComponent*  player1Raycast   = camera1->AddComponent<RaycastComponent>();
     player1Raycast->debugDraw = false;
 
-    camera1->AddComponent<LightComponent>();
-    LightComponent* light2 = camera1->GetComponent<LightComponent>();
+    gracz1->AddComponent<LightComponent>();
+    LightComponent* light2 = gracz1->GetComponent<LightComponent>();
 
     light2->type      = Spot;
     light2->index     = 0;
@@ -766,9 +781,10 @@ int main(int, char**)
     light2->cutOff      = glm::cos(glm::radians(4.0f));
     light2->outerCutOff = glm::cos(glm::radians(16.0f));
 
-    camera1->GetComponent<RigidbodyComponent>()->useGravity = false;
-    camera1->GetComponent<ColliderComponent>()->halfSize    = glm::vec3{ 1.0f, 9.0f, 1.0f };
-    
+    gracz1->GetComponent<RigidbodyComponent>()->useGravity = false;
+    gracz1->GetComponent<ColliderComponent>()->halfSize    = glm::vec3{ 1.0f, 10.0f, 1.0f };
+
+
     GameObject* camera2 = scena1->CreateGameObject(nullptr);
     CameraComponent*    camCompRight     = camera2->AddComponent<CameraComponent>();
     ColliderComponent*  camera2collider  = camera2->AddComponent<ColliderComponent>();
@@ -792,10 +808,10 @@ int main(int, char**)
     light3->outerCutOff = glm::cos(glm::radians(16.0f));
 
     TransformComponent* camTransform1 = camera1->GetComponent<TransformComponent>();
-    camTransform1->position = glm::vec3(0.0f, 20.0f, -20.0f);
+    camTransform1->position = glm::vec3(0.0f, 0.0f, 0.0f);
     CameraHelper::InitialCamera(*camCompLeft, *camTransform1,
         glm::vec3(0.0f, 1.0f, 0.0f),
-        YAW, PITCH,
+        //YAW, PITCH,
         Viewport{ 0.0f, 0.0f, 0.5f, 1.0f }
     );
     camCompLeft->isActive = true;
@@ -804,7 +820,7 @@ int main(int, char**)
     camTransform2->position = glm::vec3(0.0f, 20.0f, -20.0f);
     CameraHelper::InitialCamera(*camCompRight, *camTransform2,
         glm::vec3(0.0f, 1.0f, 0.0f),
-        0.0f, -20.0f,
+        //0.0f, -20.0f,
         Viewport{ 0.5f, 0.0f, 0.5f, 1.0f }
     );
     camCompRight->isActive = true;
@@ -858,7 +874,7 @@ int main(int, char**)
     focused = true;
     updateFocus();
 
-    auto* t0 = camera1->GetComponent<TransformComponent>();
+    auto* t0 = gracz1->GetComponent<TransformComponent>();
     auto* t1 = camera2->GetComponent<TransformComponent>();
 
     renderSystem         = ecs.GetSystem<RenderSystem>();

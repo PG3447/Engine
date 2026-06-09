@@ -767,15 +767,15 @@ public:
 
 
         for (auto& entry : passes) {
-            if (entry.objects.empty()) continue;
-            ApplyPassState(entry.config);
-
             if (entry.config.type == RenderPassType::Skybox) {
                 if (entry.skyboxRenderer)
                     entry.skyboxRenderer->Render(view, projection); // ← view/projection trzeba przekazać
                 continue;
             }
 
+            if (entry.objects.empty()) continue;
+            ApplyPassState(entry.config);
+            
 
             if (entry.renderer);
             {
