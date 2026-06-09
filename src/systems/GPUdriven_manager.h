@@ -44,8 +44,8 @@ struct FrameUBO {
     glm::vec4 viewPos;   // xyz=kamera, w=unused
     float     zNear;
     float     zFar;
+    float     ambientStrength;
     int       numLights;
-    int       _pad;
 };
 
 
@@ -101,7 +101,7 @@ public:
         shaderHizWritePass = new ComputeShader("res/shaders/write_pass.comp");
         shaderBuildCmds = new ComputeShader("res/shaders/build_commands.comp");
         shaderHizDownsample = new ComputeShader("res/shaders/hiz_build.comp");
-        defaultShaderRender = new Shader("res/shaders/gpu_driven.vert", "res/shaders/gpu_driven.frag");
+        defaultShaderRender = new Shader("res/shaders/gpu_driven_PBR.vert", "res/shaders/gpu_driven_PBR.frag");
 
         glGenBuffers(1, &frameUBO);
         glBindBuffer(GL_UNIFORM_BUFFER, frameUBO);
@@ -169,8 +169,8 @@ public:
                 GPUDrivenRenderer* r = GetRenderer(pid);
                 if (!r) continue;
 
-                r->RegisterMesh(rc, mesh.cpuData.get());
-                r->RegisterMaterial(rc, mat);
+                r->RegisterMesh(pid, rc, mesh.cpuData.get());
+                r->RegisterMaterial(pid, rc, mat);
             }
         }
 
@@ -257,11 +257,13 @@ public:
                 // zwracają istniejące ID gdy zasób już jest zarejestrowany.
                 // Sprawdzamy przed wywołaniem czy coś faktycznie jest nowe,
                 // żeby wiedzieć czy należy re-uploadować.
-                bool meshIsNew = (mesh.cpuData.get()->meshID == UINT32_MAX); // (r->GetMeshId(mesh.cpuData.get()) == UINT32_MAX);
-                bool materialIsNew = (mat->materialID == UINT32_MAX); // (r->GetMaterialId(mat) == UINT32_MAX);
+                //bool meshIsNew = (r->GetMeshId(mesh.cpuData.get()) == UINT32_MAX);
+                //bool materialIsNew = (r->GetMaterialId(mat) == UINT32_MAX);
+                bool meshIsNew = (mesh.cpuData->getMeshId(pid) == UINT32_MAX); // (r->GetMeshId(mesh.cpuData.get()) == UINT32_MAX);
+                bool materialIsNew = (mat->getMaterialId(pid) == UINT32_MAX); // (r->GetMaterialId(mat) == UINT32_MAX);
 
-                if (meshIsNew)     r->RegisterMesh(rc, mesh.cpuData.get());
-                if (materialIsNew) r->RegisterMaterial(rc, mat);
+                if (meshIsNew)     r->RegisterMesh(pid, rc, mesh.cpuData.get());
+                if (materialIsNew) r->RegisterMaterial(pid, rc, mat);
 
                 if (meshIsNew || materialIsNew)
                     meshDirty[pid] = true;
@@ -313,25 +315,23 @@ public:
 
             GPUDrivenRenderer* r = GetRenderer(pid);
             if (!r) continue;
+            
+            //bool meshIsNew = (r->GetMeshId(mesh.cpuData.get()) == UINT32_MAX);
+            //bool materialIsNew = (r->GetMaterialId(mat) == UINT32_MAX);
+            bool meshIsNew = (mesh.cpuData->getMeshId(pid) == UINT32_MAX); //(r->GetMeshId(mesh.cpuData.get()) == UINT32_MAX);
+            bool materialIsNew = (mat->getMaterialId(pid) == UINT32_MAX);// (r->GetMaterialId(mat)== UINT32_MAX);
 
-            bool meshIsNew = (mesh.cpuData.get()->meshID == UINT32_MAX); //(r->GetMeshId(mesh.cpuData.get()) == UINT32_MAX);
-            bool materialIsNew = (mat->materialID == UINT32_MAX);// (r->GetMaterialId(mat)== UINT32_MAX);
-
-            if (meshIsNew)     r->RegisterMesh(rc, mesh.cpuData.get());
-            if (materialIsNew) r->RegisterMaterial(rc, mat);
+            if (meshIsNew)     r->RegisterMesh(pid, rc, mesh.cpuData.get());
+            if (materialIsNew) r->RegisterMaterial(pid, rc, mat);
 
             if (meshIsNew || materialIsNew)
                 meshDirty[pid] = true;
         }
 
-        for (auto& entry : passes)
-        {
-            if (!entry.renderer) continue;
-            entry.renderer->dirtyInstance = true;
-        }
         // Flush tylko passów które dostały nowe zasoby
         for (auto& entry : passes) {
             if (!entry.renderer) continue;
+            entry.renderer->dirtyInstance = true;
             auto it = meshDirty.find(entry.passID);
             if (it == meshDirty.end() || !it->second) continue;
 
@@ -348,6 +348,7 @@ public:
     {
         PassEntry* entry = FindPass(passID);
         if (!entry) return;
+        if (!entry->renderer.get()) return;
 
         //GPUDrivenRenderer* r = entry->renderer.get();
         const SurfaceType filter = PassTypeToSurface(entry->config.type);
@@ -389,7 +390,6 @@ public:
                 //spdlog::error("TRANSFORM NIE GIT");
             } //&& animIt == NO_SKELETON
 
-            //spdlog::warn("NIE OMIJAM");
 
             const glm::mat4 model = t->modelMatrix;
 
@@ -407,8 +407,8 @@ public:
                 // Filtruj: ten pass obsługuje tylko swój shader i swój surfaceType
                 if (shader != passShader || mat->surfaceType != filter) continue;
 
-                uint32_t meshID = mesh.cpuData->meshID;// r->GetMeshId(mesh.cpuData.get());
-                uint32_t matID = mat->materialID;// r->GetMaterialId(mat);
+                uint32_t meshID = mesh.cpuData->getMeshId(passID);// r->GetMeshId(mesh.cpuData.get());// mesh.cpuData->meshID;// r->GetMeshId(mesh.cpuData.get());
+                uint32_t matID = mat->getMaterialId(passID); //r->GetMaterialId(mat);  //mat->materialID;// r->GetMaterialId(mat);
                 if (meshID == UINT32_MAX || matID == UINT32_MAX) continue;
 
                 const auto& aabb = mesh.cpuData->aabb;
@@ -575,6 +575,7 @@ public:
         entry.config = cfg;
 
         entry.renderer = std::make_unique<GPUDrivenRenderer>();
+        entry.renderer->clearRegisterAll();
         entry.renderer->Init(screenWidth, screenHeight);
         entry.renderer->shaderHizCullCount = shaderCountInstance;
         entry.renderer->shaderPrefixSum = shaderPrefixSum;
@@ -641,14 +642,14 @@ public:
     {
         GPUDrivenRenderer* r = GetRenderer(passID);
         if (!r) return UINT32_MAX;
-        return r->RegisterMesh(rc, d);
+        return r->RegisterMesh(passID, rc, d);
     }
 
     uint32_t RegisterMaterialInPass(uint32_t passID, RenderComponent* rc, Material* m)
     {
         GPUDrivenRenderer* r = GetRenderer(passID);
         if (!r) return UINT32_MAX;
-        return r->RegisterMaterial(rc, m);
+        return r->RegisterMaterial(passID, rc, m);
     }
 
     // Wyślij geometrię i materiały danego pasa na GPU
@@ -703,8 +704,8 @@ public:
             g.ambient = glm::vec4(on ? light->ambient : zero, 0.0f);
             g.diffuse = glm::vec4(on ? light->diffuse : zero, 0.0f);
             g.specular = glm::vec4(on ? light->specular : zero, 0.0f);
-            g.params1 = glm::vec4(light->constant, light->linear, light->quadratic, 0.0f);
-            g.params2 = glm::vec4(light->cutOff, light->outerCutOff, on ? 1.0f : 0.0f, 0.0f);
+            g.params1 = glm::vec4(light->constant, light->linear, light->quadratic, light->intensity);
+            g.params2 = glm::vec4(light->cutOff, light->outerCutOff, on ? 1.0f : 0.0f, light->range);
         }
 
         glBindBuffer(GL_UNIFORM_BUFFER, lightsUBO);
@@ -747,10 +748,10 @@ public:
     }
 
     // Główna pętla renderowania
-    void RenderFrame(const glm::mat4& view, const glm::mat4& projection, const glm::mat4& viewProj, glm::vec3 cameraPos, GLuint prevDepth, bool cameraDirty, float zNear = 0.1f, float zFar = 1000.0f)
+    void RenderFrame(const glm::mat4& view, const glm::mat4& projection, const glm::mat4& viewProj, glm::vec3 cameraPos, float ambientStrength, GLuint prevDepth, bool cameraDirty, float zNear = 0.1f, float zFar = 1000.0f)
     {
         const int numLights = (int)gpuLights.size();
-        UploadFrameUBO(viewProj, cameraPos, numLights, zNear, zFar);
+        UploadFrameUBO(viewProj, cameraPos, ambientStrength, numLights, zNear, zFar);
 
         //if (prevDepth && hizTexture) {
         //    glCopyImageSubData(prevDepth, GL_TEXTURE_2D, 0, 0, 0, 0,
@@ -776,9 +777,11 @@ public:
             }
 
 
-            //DebugRenderFrameInput(entry, cameraPos);
             if (entry.renderer);
+            {
+                //DebugRenderFrameInput(entry, cameraPos);
                 entry.renderer->RenderFrame(viewProj, entry.objects, prevDepth, cameraPos, cameraDirty);
+            }
         }
 
         // Przywróć domyślny stan po wszystkich passach
@@ -798,13 +801,14 @@ public:
         }
     }
 
-    void UploadFrameUBO(const glm::mat4& viewProj, const glm::vec3& cameraPos, int numLights, float zNear, float zFar)
+    void UploadFrameUBO(const glm::mat4& viewProj, const glm::vec3& cameraPos, float ambientStrength, int numLights, float zNear, float zFar)
     {
         FrameUBO data{};
         data.viewProjection = viewProj;
         data.viewPos = glm::vec4(cameraPos, 1.0f);
         data.zNear = zNear;
         data.zFar = zFar;
+        data.ambientStrength = ambientStrength;
         data.numLights = numLights;
 
         glBindBuffer(GL_UNIFORM_BUFFER, frameUBO);

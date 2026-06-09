@@ -146,6 +146,8 @@ private:
 
 public:
     GPUDrivenManager drivenManager;
+
+    float ambientStrength = 0.03f;
     //GLuint sceneDepthRBO = 0;
     GLuint sceneDepthTexture;
     GLuint depthTexturePrev = 0;
@@ -512,7 +514,7 @@ public:
         }
 
         drivenManager.AttachCameraHiZ(hiz.hizTexture, hiz.hizMipLevels, vpW, vpH, frustumCullingEnabled, occlusionCullingEnabled, vpX, vpY);
-        drivenManager.RenderFrame(view, projection, vp, currentCameraPos, occlusionCullingEnabled ? hiz.depthPrev : 0, cam.dirty);
+        drivenManager.RenderFrame(view, projection, vp, currentCameraPos, ambientStrength, occlusionCullingEnabled ? hiz.depthPrev : 0, cam.dirty);
         cam.dirty = false;
         //drivenManager.RenderFrame(vp, currentCameraPos, depthTexturePrev);
         if (hiz.depthPrev && sceneDepthTexture && occlusionCullingEnabled) {

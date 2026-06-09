@@ -39,10 +39,13 @@ struct GPUMeshData
     uint32_t padding;
 };
 
+
 struct GPUMaterial
 {
     GLuint64 diffuseHandle;
     GLuint64 specularHandle;
+    GLuint64 metallicRoughnessMap;
+    GLuint64 aoHandle;
     GLuint64 normalHandle;
     uint32_t packedColor;
     float shininess;
@@ -50,7 +53,6 @@ struct GPUMaterial
     //uint32_t padding2;
     //glm::vec4 diffuseColorAndShininess;
 };
-
 
 struct GPULight
 {
@@ -405,7 +407,7 @@ public:
 
 
 
-    uint32_t RegisterMesh(RenderComponent* rc, MeshData* data)
+    uint32_t RegisterMesh(uint32_t passID, RenderComponent* rc, MeshData* data)
     {
         auto it = meshRegistry.find(data);
         if (it != meshRegistry.end())
@@ -428,7 +430,7 @@ public:
         meshesData.push_back(meshData);
         uint32_t id = meshesData.size() - 1;
         meshRegistry[data] = id;
-        data->meshID = id;
+        data->setMeshId(passID, id);
         rc->rendererDirty = true;
         
         spdlog::error("Zarejestrowano mesh");
@@ -447,13 +449,15 @@ public:
     }
 
 
-    uint32_t RegisterMaterial(RenderComponent* rc, Material* mat) {
+    uint32_t RegisterMaterial(uint32_t passID, RenderComponent* rc, Material* mat) {
         auto it = materialRegistry.find(mat);
         if (it != materialRegistry.end()) return it->second;
 
         GPUMaterial gpu;
         gpu.diffuseHandle = GetOrCreateHandle(mat->diffuseMap);
         gpu.specularHandle = GetOrCreateHandle(mat->specularMap);
+        gpu.metallicRoughnessMap = GetOrCreateHandle(mat->metallicRoughnessMap);
+        gpu.aoHandle = (!mat->aoInMetallicRoughness) ? GetOrCreateHandle(mat->aoMap) : GLuint64(0);
         gpu.normalHandle = GetOrCreateHandle(mat->normalMap);
         gpu.packedColor = packUnorm4x8(glm::vec4(mat->diffuseColor, 1.0f));
         gpu.shininess = mat->shininess;
@@ -461,7 +465,7 @@ public:
         uint32_t id = (uint32_t)materials.size();
         materials.push_back(gpu);
         materialRegistry[mat] = id;
-        mat->materialID = id;
+        mat->setMaterialId(passID, id);
         rc->rendererDirty = true;
 
         spdlog::error("Zarejestrowano material");

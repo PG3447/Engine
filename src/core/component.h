@@ -274,6 +274,8 @@ struct LightComponent : Component {
     float constant = 1.0f;
     float linear = 0.09f;
     float quadratic = 0.032f;
+    float intensity = 1.0f;
+    float range = 0.0f;
 
     // Spot
     float cutOff = glm::cos(glm::radians(12.5f));
@@ -299,6 +301,8 @@ struct LightComponent : Component {
         node["constant"] = constant;
         node["linear"] = linear;
         node["quadratic"] = quadratic;
+        node["intensity"] = intensity;
+        node["range"] = range;
 
         node["cutOff"] = cutOff;
         node["outerCutOff"] = outerCutOff;
@@ -338,6 +342,12 @@ struct LightComponent : Component {
 
         if (node["quadratic"])
             quadratic = node["quadratic"].as<float>();
+
+        if (node["intensity"])
+            intensity = node["intensity"].as<float>();
+
+        if (node["range"])
+            range = node["range"].as<float>();
 
         if (node["cutOff"])
             cutOff = node["cutOff"].as<float>();
