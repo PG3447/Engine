@@ -383,6 +383,7 @@ struct PuzzleSlot {
     GameObject* occupant       = nullptr;
     GameObject* slotObject     = nullptr;
     GameObject* expectedObject = nullptr;
+    GameObject* lightObject    = nullptr;
 };
 
 GameObject* puzzleRewardObject = nullptr;
@@ -1104,6 +1105,34 @@ int main(int, char**)
 
         CpuTimer cpuTimer;
         cpuTimer.start();
+
+        bool allFilled = !puzzleSlotsMap.empty() && std::all_of(
+    puzzleSlotsMap.begin(), puzzleSlotsMap.end(),
+    [](const auto& pair) { return pair.second.occupant != nullptr; }
+);
+
+        for (auto& [slotGO, slot] : puzzleSlotsMap) {
+            if (slot.lightObject == nullptr) continue;
+            LightComponent* light = slot.lightObject->GetComponent<LightComponent>();
+            if (light == nullptr) continue;
+
+            if (!allFilled) {
+                light->isOn    = false;
+                light->diffuse = glm::vec3(0.0f);
+                light->ambient = glm::vec3(0.0f);
+                light->specular = glm::vec3(0.0f);
+            } else if (slot.occupant == slot.expectedObject) {
+                light->isOn     = true;
+                light->diffuse  = glm::vec3(0.0f, 1.0f, 0.0f);
+                light->ambient  = glm::vec3(0.0f, 0.1f, 0.0f);
+                light->specular = glm::vec3(0.0f, 0.5f, 0.0f);
+            } else {
+                light->isOn     = true;
+                light->diffuse  = glm::vec3(1.0f, 0.0f, 0.0f);
+                light->ambient  = glm::vec3(0.1f, 0.0f, 0.0f);
+                light->specular = glm::vec3(0.5f, 0.0f, 0.0f);
+            }
+        }
 
         UpdateDoors(deltaTime);
         UpdateCabinets(deltaTime);
@@ -2343,9 +2372,11 @@ void createRentgenRoom(Scene* scena) {
     rentgen->GetComponent<RigidbodyComponent>()->useGravity = false;
     rentgen->GetComponent<RigidbodyComponent>()->isStatic = true;
 
+
+    int puzzleLightIndex = 4;
     auto createPuzzleSlot = [&](const glm::vec3& pos, const glm::vec3& targetRot, GameObject* expected) {
         GameObject* slotGO = scena->CreateGameObject(nullptr);
-        slotGO->name = "PuzzleSlot"+expected->name;
+        slotGO->name = "PuzzleSlot_" + expected->name;
 
         TransformComponent* tr = slotGO->AddComponent<TransformComponent>();
         tr->position = pos;
@@ -2358,10 +2389,30 @@ void createRentgenRoom(Scene* scena) {
         rb->useGravity = false;
         rb->isStatic   = true;
 
+        GameObject* lightGO = scena->CreateGameObject(nullptr);
+        lightGO->name = "PuzzleLight_" + expected->name;
+
+        TransformComponent* lightTr = lightGO->AddComponent<TransformComponent>();
+        lightTr->position = pos + glm::vec3(0.0f, 2.0f, 1.0);
+
+        LightComponent* light = lightGO->AddComponent<LightComponent>();
+        light->type      = Point;
+        light->index = puzzleLightIndex++;
+        light->isOn      = false;
+        light->ambient   = glm::vec3(0.0f);
+        light->diffuse   = glm::vec3(0.0f);
+        light->specular  = glm::vec3(0.0f);
+        light->constant  = 15.0f;
+        light->linear    = 0.3f;
+        light->quadratic = 0.05f;
+        light->range     = 15.0f;
+        light->intensity = 20;
+
         PuzzleSlot slot;
         slot.targetRotation = targetRot;
         slot.slotObject     = slotGO;
         slot.expectedObject = expected;
+        slot.lightObject    = lightGO;
         puzzleSlotsMap[slotGO] = slot;
     };
 
