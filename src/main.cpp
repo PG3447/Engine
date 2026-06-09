@@ -1722,6 +1722,60 @@ void imgui_render(SceneManager& sceneManager)
         nullptr, 0.0f, 1.0f, ImVec2(0, 60));
 
     ImGui::End();
+
+    ImGui::Begin("Puzzle Debug");
+
+    if (puzzleSlotsMap.empty()) {
+        ImGui::TextColored(ImVec4(1,1,0,1), "Brak slotów puzzle");
+    } else {
+        int i = 0;
+        for (auto& [slotGO, slot] : puzzleSlotsMap) {
+            ImGui::PushID(i++);
+
+            std::string slotName = slotGO ? slotGO->name : "???";
+            std::string expectedName = slot.expectedObject ? slot.expectedObject->name : "???";
+            std::string occupantName = slot.occupant       ? slot.occupant->name       : "(pusty)";
+
+            bool isEmpty   = (slot.occupant == nullptr);
+            bool isCorrect = (!isEmpty && slot.occupant == slot.expectedObject);
+
+            // Kolor: zielony = dobry, czerwony = zły, szary = pusty
+            ImVec4 color = isEmpty
+                ? ImVec4(0.5f, 0.5f, 0.5f, 1.0f)   // szary
+                : isCorrect
+                    ? ImVec4(0.0f, 1.0f, 0.0f, 1.0f) // zielony
+                    : ImVec4(1.0f, 0.3f, 0.3f, 1.0f); // czerwony
+
+            const char* status = isEmpty ? "[PUSTY]" : isCorrect ? "[OK]" : "[ZLE]";
+
+            ImGui::TextColored(color, "%s  Slot: %-20s  Oczekiwany: %-10s  Aktualny: %-10s",
+                status,
+                slotName.c_str(),
+                expectedName.c_str(),
+                occupantName.c_str()
+            );
+
+            ImGui::PopID();
+        }
+
+        ImGui::Separator();
+
+        // Podsumowanie
+        int correct = 0, filled = 0;
+        for (auto& [slotGO, slot] : puzzleSlotsMap) {
+            if (slot.occupant != nullptr) filled++;
+            if (slot.occupant != nullptr && slot.occupant == slot.expectedObject) correct++;
+        }
+        int total = (int)puzzleSlotsMap.size();
+
+        ImGui::Text("Wypełnione: %d / %d", filled, total);
+        ImGui::Text("Poprawne:   %d / %d", correct, total);
+
+        if (correct == total)
+            ImGui::TextColored(ImVec4(0,1,0,1), ">> PUZZLE ROZWIAZANY! <<");
+    }
+
+    ImGui::End();
 }
 
 void imgui_end()
@@ -2303,10 +2357,10 @@ void createRentgenRoom(Scene* scena) {
         puzzleSlotsMap[slotGO] = slot;
     };
 
-    createPuzzleSlot(glm::vec3(-2, 15, -295.9), glm::vec3(180, 90,  90), objPuzel1);
-    createPuzzleSlot(glm::vec3(4, 15, -295.9), glm::vec3(180, 90, 90), objPuzel2);
-    createPuzzleSlot(glm::vec3(11, 15, -295.9), glm::vec3(180, 90, 90), objPuzel3);
-    createPuzzleSlot(glm::vec3(-2, 9, -295.9), glm::vec3(180, 90, 90), objPuzel4);
-    createPuzzleSlot(glm::vec3(4, 9, -295.9), glm::vec3(180, 90, 90), objPuzel5);
-    createPuzzleSlot(glm::vec3(11, 9, -295.9), glm::vec3(180, 90, 90), objPuzel6);
+    createPuzzleSlot(glm::vec3(-2, 15, -295.9), glm::vec3(180, 90,  90), objPuzel2);
+    createPuzzleSlot(glm::vec3(4, 15, -295.9), glm::vec3(180, 90, 90), objPuzel6);
+    createPuzzleSlot(glm::vec3(11, 15, -295.9), glm::vec3(180, 90, 90), objPuzel4);
+    createPuzzleSlot(glm::vec3(-2, 9, -295.9), glm::vec3(180, 90, 90), objPuzel1);
+    createPuzzleSlot(glm::vec3(4, 9, -295.9), glm::vec3(180, 90, 90), objPuzel3);
+    createPuzzleSlot(glm::vec3(11, 9, -295.9), glm::vec3(180, 90, 90), objPuzel5);
 }
