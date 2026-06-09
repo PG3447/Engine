@@ -95,20 +95,36 @@ public:
     //          Height : 1080
     
     template <typename T>
-    T get(const std::vector<std::string>& keys, const T& defaultValue = T()) {
-        if (keys.empty()) return defaultValue;
-
+    T get(const std::vector<std::string>& keys, const T& defaultValue = T())
+    {
         YAML::Node currentNode = rootNode;
-        for (const auto& key : keys) {
-            if (!currentNode || !currentNode[key]) {
-                return defaultValue;
-            }
 
-            currentNode.reset(currentNode[key]);
+        for (const auto& key : keys)
+        {
+            if (!currentNode[key])
+                return defaultValue;
+
+            currentNode = currentNode[key];
         }
 
         return currentNode.as<T>(defaultValue);
     }
+
+    //template <typename T>
+    //T get(const std::vector<std::string>& keys, const T& defaultValue = T()) {
+    //    if (keys.empty()) return defaultValue;
+
+    //    YAML::Node currentNode = rootNode;
+    //    for (const auto& key : keys) {
+    //        if (!currentNode || !currentNode[key]) {
+    //            return defaultValue;
+    //        }
+
+    //        currentNode.reset(currentNode[key]);
+    //    }
+
+    //    return currentNode.as<T>(defaultValue);
+    //}
 
     template <typename T>
     void set(const std::vector<std::string>& keys, const T& value) {

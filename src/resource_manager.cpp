@@ -1,4 +1,4 @@
-#include "resource_manager.h"
+﻿#include "resource_manager.h"
 #include <stb_image.h>
 #include <iostream>
 
@@ -12,10 +12,12 @@
 #endif
 
 std::unordered_map<std::string, GLuint> ResourceManager::Textures;
+std::unordered_map<std::string, std::shared_ptr<Model>> ResourceManager::Models;
 
 GLuint ResourceManager::LoadTexture(const std::string& path, const std::string& directory, const aiTexture* aiTex)
 {
     std::string fullPath = path;
+
     if (!directory.empty() && !aiTex) {
         fullPath = directory + '/' + path;
     }
@@ -31,21 +33,30 @@ GLuint ResourceManager::LoadTexture(const std::string& path, const std::string& 
 
     GLuint textureID = loadTextureFromFile(path, directory, aiTex);
 
+    spdlog::info("==== TEXTURE CACHE DUMP ====");
+    spdlog::info("Total textures: {}", Textures.size());
+
+    for (const auto& [path, id] : Textures)
+    {
+        spdlog::info("Texture: {} | ID: {}", path, id);
+    }
+
+    spdlog::info("============================");
     if (textureID != 0) {
         Textures[fullPath] = textureID;
     }
 
+
     return textureID;
 }
 
-std::unordered_map<std::string, std::weak_ptr<Model>> ResourceManager::Models;
 
 std::shared_ptr<Model> ResourceManager::LoadModel(const std::string& path)
 {
     auto it = Models.find(path);
     if (it != Models.end())
     {
-        if (std::shared_ptr<Model> sharedModel = it->second.lock())
+        if (std::shared_ptr<Model> sharedModel = it->second)
         {
             return sharedModel;
         }
@@ -166,6 +177,91 @@ GLuint ResourceManager::CreateTextureFromColor(const std::string& name, const gl
     spdlog::info("ResourceManager: Created color texture {}", name);
 
     return tex;
+}
+
+
+GLuint ResourceManager::CreateTextureMaterialFromColor(const std::string& name, const glm::vec3& color)
+{
+    auto it = Textures.find(name);
+    if (it != Textures.end())
+        return it->second;
+
+    unsigned char data[3] = {
+        (unsigned char)(glm::clamp(color.r, 0.0f, 1.0f) * 255),
+        (unsigned char)(glm::clamp(color.g, 0.0f, 1.0f) * 255),
+        (unsigned char)(glm::clamp(color.b, 0.0f, 1.0f) * 255)
+    };
+
+    GLuint tex = 0;
+    glGenTextures(1, &tex);
+
+    glBindTexture(GL_TEXTURE_2D, tex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    GLfloat maxAnisotropy;
+    glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAnisotropy);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, maxAnisotropy);
+
+    Textures[name] = tex;
+
+    spdlog::info("ResourceManager: Created color texture {}", name);
+
+    return tex;
+}
+
+/*
+#include <functional>
+
+std::string id = relPath.string();
+size_t hashID = std::hash<std::string>{}(id);
+*/
+
+void ResourceManager::SaveAsset()
+{
+    YamlConfig cfg;
+
+    YAML::Node assetsNode;
+
+    int i = 0;
+
+    for (auto& [modelPath, model] : ResourceManager::Models)
+    {
+        if (!model)
+            continue;
+
+        YAML::Node modelNode;
+        modelNode["path"] = modelPath;
+
+        assetsNode["Assets"]["Models"][i++] = modelNode;
+    }
+
+    cfg.getRoot() = assetsNode;
+    cfg.save("assets.yaml");
+}
+
+void ResourceManager::LoadAssets(std::string& path)
+{
+    YamlConfig cfg;
+
+    cfg.load(path);
+
+    YAML::Node root = cfg.getRoot();
+
+    if (!root["Assets"]["Models"])
+        return;
+
+    for (auto node : root["Assets"]["Models"])
+    {
+        std::string modelPath = node["path"].as<std::string>();
+
+        ResourceManager::LoadModel(modelPath);
+    }
 }
 
 void ResourceManager::Clear()

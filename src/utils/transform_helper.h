@@ -1,4 +1,4 @@
-﻿#ifndef TRANSFORM_HELPER_H
+#ifndef TRANSFORM_HELPER_H
 #define TRANSFORM_HELPER_H
 
 #define GLM_ENABLE_EXPERIMENTAL
@@ -12,29 +12,29 @@
 class TransformHelper {
 protected:
 
-	//static glm::mat4 getLocalModelMatrix(const TransformComponent& comp)
-	//{
-	//	const glm::mat4 transformX = glm::rotate(glm::mat4(1.0f), glm::radians(comp.rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
-	//	const glm::mat4 transformY = glm::rotate(glm::mat4(1.0f), glm::radians(comp.rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
-	//	const glm::mat4 transformZ = glm::rotate(glm::mat4(1.0f), glm::radians(comp.rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
-	//
-	//	// Y * X * Z
-	//	const glm::mat4 rotationMatrix = transformY * transformX * transformZ;
-	//
-	//	// translation * rotation * scale (TRS matrix)
-	//	return glm::translate(glm::mat4(1.0f), comp.position) * rotationMatrix * glm::scale(glm::mat4(1.0f), comp.scale);
-	//}
-
 	static glm::mat4 getLocalModelMatrix(const TransformComponent& comp)
 	{
-		glm::mat4 m(1.0f);
-
-		m = glm::translate(m, comp.position);
-		m *= glm::toMat4(glm::quat(glm::radians(comp.rotation)));
-		m = glm::scale(m, comp.scale);
-
-		return m;
+		const glm::mat4 transformX = glm::rotate(glm::mat4(1.0f), glm::radians(comp.rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+		const glm::mat4 transformY = glm::rotate(glm::mat4(1.0f), glm::radians(comp.rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+		const glm::mat4 transformZ = glm::rotate(glm::mat4(1.0f), glm::radians(comp.rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+	
+		// Y * X * Z
+		const glm::mat4 rotationMatrix = transformY * transformX * transformZ;
+	
+		// translation * rotation * scale (TRS matrix)
+		return glm::translate(glm::mat4(1.0f), comp.position) * rotationMatrix * glm::scale(glm::mat4(1.0f), comp.scale);
 	}
+
+	//static glm::mat4 getLocalModelMatrix(const TransformComponent& comp)
+	//{
+	//	glm::mat4 m(1.0f);
+
+	//	m = glm::translate(m, comp.position);
+	//	m *= glm::toMat4(glm::quat(glm::radians(comp.rotation)));
+	//	m = glm::scale(m, comp.scale);
+
+	//	return m;
+	//}
 
 public:
 
@@ -42,6 +42,7 @@ public:
 	{
 		comp.modelMatrix = getLocalModelMatrix(comp);
 		comp.isDirty = false;
+		comp.rendererDirty = true;
 	}
 
 	// Z macierzą rodzica
@@ -49,24 +50,25 @@ public:
 	{
 		comp.modelMatrix = parentGlobalModelMatrix * getLocalModelMatrix(comp);
 		comp.isDirty = false;
+		comp.rendererDirty = true;
 	}
 
 	// Ustawianie pozycji
-	void setLocalPosition(TransformComponent& comp, const glm::vec3& newPosition)
+	static void setLocalPosition(TransformComponent& comp, const glm::vec3& newPosition)
 	{
 		comp.position = newPosition;
 		comp.isDirty = true;
 	}
 
 	// Ustawianie rotacji
-	void setLocalRotation(TransformComponent& comp, const glm::vec3& newRotation)
+	static void setLocalRotation(TransformComponent& comp, const glm::vec3& newRotation)
 	{
 		comp.rotation = newRotation;
 		comp.isDirty = true;
 	}
 
 	// Ustawianie skali
-	void setLocalScale(TransformComponent& comp, const glm::vec3& newScale)
+	static void setLocalScale(TransformComponent& comp, const glm::vec3& newScale)
 	{
 		comp.scale = newScale;
 		comp.isDirty = true;
@@ -98,17 +100,17 @@ public:
 		comp.isDirty = true;
 	}
 
-	const glm::vec3& getLocalPosition(const TransformComponent& comp) const
+	static const glm::vec3& getLocalPosition(const TransformComponent& comp)
 	{
 		return comp.position;
 	}
 
-	const glm::vec3& getLocalRotation(const TransformComponent& comp) const
+	static const glm::vec3& getLocalRotation(const TransformComponent& comp)
 	{
 		return comp.rotation;
 	}
 
-	const glm::vec3& getLocalScale(const TransformComponent& comp) const
+	static const glm::vec3& getLocalScale(const TransformComponent& comp)
 	{
 		return comp.scale;
 	}

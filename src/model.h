@@ -43,12 +43,21 @@ struct Texture {
 struct MeshNode {
     //bool instancingPrepared = false;
     //unsigned int instanceVBO = 0;
-
+    uint32_t meshNodeID = UINT32_MAX;
     std::shared_ptr<MeshData> cpuData;
     std::shared_ptr<RenderMesh> gpuMesh;
     std::shared_ptr<Material> material;
-    AABB aabb;
     //int indexMaterial;
+
+    static uint32_t nextID;
+
+    static uint32_t AllocID() {
+        return nextID++;
+    }
+
+    static uint32_t GetNextID() {
+        return nextID;
+    }
 };
 
 
@@ -81,8 +90,8 @@ public:
     //std::vector<MeshNode> nodes;
     //Transform transform;
     //vector<std::unique_ptr<Model>> children;
-    string name;
     string directory;
+    string fullPath;
     bool gammaCorrection;
     //bool instancingPrepared = false;
     //unsigned int instanceVBO = 0;

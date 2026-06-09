@@ -14,8 +14,11 @@
 #include <algorithm>
 
 #include <iostream>
+#include <filesystem>
 
 #include "resource_manager.h"
+
+uint32_t MeshNode::nextID = 0;
 
 Model::Model() : gammaCorrection(false)
 {
@@ -104,7 +107,7 @@ void Model::loadModel(string const& path)
     }
 
     directory = path.substr(0, path.find_last_of('/'));
-    name = path;
+    fullPath = path;
 
     std::shared_ptr<ModelNode> rootNode = processNode(scene->mRootNode, scene);
     this->rootNode = std::move(rootNode);
@@ -140,6 +143,7 @@ std::shared_ptr<ModelNode> Model::processNode(aiNode* node, const aiScene* scene
     node->mTransformation.Decompose(scale, rot, pos);
 
     model->name = node->mName.C_Str();
+    spdlog::warn(model->name);
     //model->directory = this->directory;
 
     model->transform.setLocalPosition({ pos.x, pos.y, pos.z });
@@ -167,6 +171,40 @@ std::shared_ptr<ModelNode> Model::processNode(aiNode* node, const aiScene* scene
 
     return model;
 }
+
+//// diffuse
+//vector<Texture> diffuseMaps = loadMaterialTextures(aiMat, aiTextureType_DIFFUSE, "texture_diffuse", scene);
+//if (diffuseMaps.empty()) {
+//
+//    @@ - 218, 16 + 219, 27 @@ MeshNode Model::processMesh(aiMesh * mesh, const aiScene * scene)
+//}
+//if (!diffuseMaps.empty()) {
+//    myMaterial->diffuseMap = diffuseMaps[0].id;
+//
+//    if (diffuseMaps[0].hasAlpha)
+//        myMaterial->transparent = true;
+//}
+//else {
+//    aiColor4D color(1.0f, 1.0f, 1.0f, 1.0f);
+//    if (aiGetMaterialColor(aiMat, AI_MATKEY_BASE_COLOR, &color) == AI_SUCCESS ||
+//        aiGetMaterialColor(aiMat, AI_MATKEY_COLOR_DIFFUSE, &color) == AI_SUCCESS)
+//        if (aiGetMaterialColor(aiMat, AI_MATKEY_BASE_COLOR, &color) == AI_SUCCESS || aiGetMaterialColor(aiMat, AI_MATKEY_COLOR_DIFFUSE, &color) == AI_SUCCESS)
+//        {
+//            myMaterial->diffuseColor = glm::vec3(color.r, color.g, color.b);
+//            myMaterial->baseColor = glm::vec4(color.r, color.g, color.b, color.a);
+//        }
+//}
+//
+//float opacity = 1.0f;
+//aiGetMaterialFloat(aiMat, AI_MATKEY_OPACITY, &opacity);
+//
+//int blendMode = aiBlendMode_Default;
+//aiGetMaterialInteger(aiMat, AI_MATKEY_BLEND_FUNC, &blendMode);
+//
+//myMaterial->transparent = (!diffuseMaps.empty() && diffuseMaps[0].hasAlpha) || (opacity < 1.0f) || (blendMode != aiBlendMode_Default);
+
+
+// specul
 
 MeshNode Model::processMesh(aiMesh* mesh, const aiScene* scene)
 {
@@ -228,7 +266,7 @@ MeshNode Model::processMesh(aiMesh* mesh, const aiScene* scene)
         for (unsigned int j = 0; j < face.mNumIndices; j++)
             indices.push_back(face.mIndices[j]);
     }
-
+    spdlog::warn("ekstracja kosc licze aabb");
     ExtractBoneWeightForVertices(vertices, mesh, scene);
 
     // process materials
@@ -256,6 +294,41 @@ MeshNode Model::processMesh(aiMesh* mesh, const aiScene* scene)
     vector<Texture> specularMaps = loadMaterialTextures(aiMat, aiTextureType_SPECULAR, "texture_specular", scene);
     if (!specularMaps.empty()) myMaterial->specularMap = specularMaps[0].id;
 
+    //metallic roughness
+    bool hasMRTexture = false;
+    vector<Texture> metallicRoughnessMaps = loadMaterialTextures(aiMat, aiTextureType_UNKNOWN, "texture_metallic_roughness", scene);
+    if (metallicRoughnessMaps.empty())
+        metallicRoughnessMaps = loadMaterialTextures(aiMat, aiTextureType_METALNESS, "texture_metallic_roughness", scene);
+    if (!metallicRoughnessMaps.empty()) {
+        myMaterial->metallicRoughnessMap = metallicRoughnessMaps[0].id;
+        hasMRTexture = true;
+    }
+    else {
+        float metallic = 0.0f, roughness = 0.5f;
+        aiGetMaterialFloat(aiMat, AI_MATKEY_METALLIC_FACTOR, &metallic);
+        aiGetMaterialFloat(aiMat, AI_MATKEY_ROUGHNESS_FACTOR, &roughness);
+        myMaterial->metallicRoughnessMap = ResourceManager::CreateTextureFromColor(fullPath + "_mat" + std::to_string(mesh->mMaterialIndex), glm::vec3(1.0f, roughness, metallic));
+        //myMaterial->metallic = metallic;
+        //myMaterial->roughness = roughness;
+    }
+
+    // AO
+    vector<Texture> aoMaps = loadMaterialTextures(aiMat, aiTextureType_LIGHTMAP, "texture_ao", scene);
+    if (aoMaps.empty())
+        aoMaps = loadMaterialTextures(aiMat, aiTextureType_AMBIENT_OCCLUSION, "texture_ao", scene);
+
+    if (!aoMaps.empty())
+    {
+        if (hasMRTexture && aoMaps[0].id == myMaterial->metallicRoughnessMap)
+        {
+            myMaterial->aoInMetallicRoughness = true;
+        }
+        else {
+            myMaterial->aoMap = aoMaps[0].id;
+        }
+    }
+
+
     // normal
     vector<Texture> normalMaps = loadMaterialTextures(aiMat, aiTextureType_HEIGHT, "texture_normal", scene);
     if (normalMaps.empty()) {
@@ -271,17 +344,21 @@ MeshNode Model::processMesh(aiMesh* mesh, const aiScene* scene)
     std::shared_ptr<RenderMesh> gpuMesh = std::make_shared<RenderMesh>(*cpuData);
 
     MeshNode node;
+    node.meshNodeID = node.AllocID();
     node.cpuData = cpuData;
     node.gpuMesh = gpuMesh;
     node.material = myMaterial;
-
+    spdlog::warn("uwaga licze aabb");
     AABB aabb;
+    aabb.min = glm::vec3(FLT_MAX);
+    aabb.max = glm::vec3(-FLT_MAX);
+
     for (auto& v : cpuData->vertices) {
         aabb.min = glm::min(aabb.min, v.Position);
         aabb.max = glm::max(aabb.max, v.Position);
     }
-    node.aabb = aabb;
-
+    aabb.centerLocal = (aabb.min + aabb.max) * 0.5f;
+    node.cpuData->aabb = aabb;
     return node;
 }
 
@@ -332,10 +409,10 @@ vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType type,
         Texture texture;
 
         const aiTexture* embeddedTexture = scene->GetEmbeddedTexture(str.C_Str());
-
+        
         if (embeddedTexture)
         {
-            texture.id = ResourceManager::LoadTexture(str.C_Str(), "", embeddedTexture);
+            texture.id = ResourceManager::LoadTexture(this->fullPath + str.C_Str(), "", embeddedTexture);
         }
         else
         {
@@ -348,6 +425,7 @@ vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType type,
     }
     return textures;
 }
+
 
 void Model::SetVertexBoneDataToDefault(Vertex& vertex)
 {

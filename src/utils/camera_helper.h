@@ -8,7 +8,7 @@
 
 constexpr float YAW = -90.0f;
 constexpr float PITCH = 0.0f;
-constexpr  float MovementSpeed = 12.5f;
+constexpr  float MovementSpeed = 22.5f;
 constexpr  float MouseSensitivity = 0.1f;
 
 class CameraHelper {
@@ -16,8 +16,8 @@ public:
     static void InitialCamera(CameraComponent& cam, TransformComponent& transform, glm::vec3 up, float yaw, float pitch, Viewport vp)
     {
         cam.state.WorldUp = up;
-        cam.yaw = yaw;
-        cam.pitch = pitch;
+        //cam.yaw = yaw;
+        //cam.pitch = pitch;
         cam.viewport = vp;
 
         updateCameraVectors(cam, transform);
@@ -39,6 +39,7 @@ public:
 
     static void updateCameraVectors(CameraComponent& cam, TransformComponent& transform)
     {
+        cam.dirty = true;
         // calculate the new Front vector
         //glm::vec3 front;
         //front.x = cos(glm::radians(cam.yaw)) * cos(glm::radians(cam.pitch));
@@ -85,6 +86,7 @@ public:
     // processes input received from a mouse scroll-wheel event. Only requires input on the vertical wheel-axis
     void ProcessMouseScroll(CameraComponent& cam, float yoffset)
     {
+        cam.dirty = true;
         cam.fov -= yoffset;
         if (cam.fov < 1.0f)
             cam.fov = 1.0f;

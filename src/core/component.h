@@ -1,10 +1,12 @@
-﻿#ifndef COMPONENT_H
+#ifndef COMPONENT_H
 #define COMPONENT_H
 
 #include <glm/glm.hpp>
 #include <memory>
 #include <string>
 #include "../unused/camera.h"
+#include "yaml_config.h"
+#include "mesh_data.h"
 
 class GameObject;
 class MeshNode;
@@ -27,8 +29,19 @@ struct NodeAnimCache {
     int lastScaleIndex = 0;
 };
 
+static uint32_t staticCounterAnimator = 1;
+
 struct Component {
+    static constexpr bool Unique = false;
     virtual ~Component() {}
+
+    virtual void OnEnable(GameObject* owner) {}
+    virtual void OnDisable(GameObject* owner) {}
+
+    virtual const char* GetTypeName() const { return "Component"; }
+
+    virtual void Serialize(YAML::Node& node) {}
+    virtual void Deserialize(const YAML::Node& node) {}
 };
 
 
@@ -42,6 +55,30 @@ struct TransformComponent : Component {
     glm::mat4 modelMatrix{ 1.0f };
 
     bool isDirty = true;
+    bool rendererDirty = true;
+
+    const char* GetTypeName() const override { return "Transform"; }
+
+    void Serialize(YAML::Node& node) override
+    {
+        node["position"] = position;
+        node["rotation"] = rotation;
+        node["scale"] = scale;
+    }
+
+    void Deserialize(const YAML::Node& node) override
+    {
+        if (node["position"])
+            position = node["position"].as<glm::vec3>();
+
+        if (node["rotation"])
+            rotation = node["rotation"].as<glm::vec3>();
+
+        if (node["scale"])
+            scale = node["scale"].as<glm::vec3>();
+
+        isDirty = true;
+    }
 };
 
 //struct ModelNode
@@ -67,7 +104,9 @@ struct RenderComponent : Component {
     static constexpr uint64_t ComponentBit = 1ull << 1;
 
     std::vector<MeshNode> meshes;
-    
+    AnimatorComponent* animator;
+    AABB localObjectAABB;
+    bool rendererDirty = true;
     //std::vector<std::shared_ptr<Material>> materials; Fajnie jak bedzie xD
 
     //std::shared_ptr<Model> model;
@@ -114,12 +153,13 @@ struct CameraComponent : Component {
 
     //TransformComponent transform;
 
-    float yaw = -90.0f;
-    float pitch = 0.0f;
+  /*  float yaw = -90.0f;
+    float pitch = 0.0f;*/
 
     float fov = 45.0f;
     float nearPlane = 0.1f;
     float farPlane = 10000.0f;
+    bool dirty = true;
 
     //Viewport
     Viewport viewport;
@@ -153,8 +193,12 @@ struct SpriteComponent : Component {
     std::string text = "";
     std::string fontPath = "res/textures/fonts/arial.ttf";
     float fontSize = 32.0f;
-    glm::vec3 textColor = { 0.0f, 0.0f, 0.0f };
+    glm::vec3 textColor = { 255.0f, 255.0f, 255.0f };
     glm::vec2 textOffset = { 0.0f, 0.0f };
+    bool textOutlineEnabled = false;
+    float textOutlineSize = 1.5f;
+    glm::vec3 textOutlineColor = { 0.0f, 0.0f, 0.0f };
+    bool textCentered = true;
 
     unsigned int currentTextureID() const {
         if (sprites.empty() || !sprites[currentSprite]) return 0;
@@ -162,7 +206,9 @@ struct SpriteComponent : Component {
     }
 
     int totalFrames() const { return (int)sprites.size(); }
+
 };
+
 
 
 struct ColliderComponent : Component {
@@ -175,10 +221,34 @@ struct ColliderComponent : Component {
     glm::vec3 halfSize{ 0.5f, 0.5f, 0.5f };
 
     bool isTrigger = false;
+    bool affectsNavMesh = false;
+    bool isWalkable = false;
+    
+    const char* GetTypeName() const override { return "Collider"; }
 
-    bool affectsNavMesh = true;
-    bool isWalkable = true;
+    void OnEnable(GameObject* owner) override;
+
+    void Serialize(YAML::Node& node) override
+    {
+        node["offset"] = offset;
+        node["halfSize"] = halfSize;
+        node["isTrigger"] = isTrigger;
+    }
+
+    void Deserialize(const YAML::Node& node) override
+    {
+        if (node["offset"])
+            offset = node["offset"].as<glm::vec3>();
+
+        if (node["halfSize"])
+            halfSize = node["halfSize"].as<glm::vec3>();
+
+        if (node["isTrigger"])
+            isTrigger = node["isTrigger"].as<bool>();
+    }
+
 };
+
 enum LightType {
     Directional = 0,
     Point = 1,
@@ -187,8 +257,6 @@ enum LightType {
 
 struct LightComponent : Component {
     static constexpr uint64_t ComponentBit = 1ull << 6;
-
-
 
     // wspólne
     int index = 0;
@@ -206,17 +274,96 @@ struct LightComponent : Component {
     float constant = 1.0f;
     float linear = 0.09f;
     float quadratic = 0.032f;
+    float intensity = 1.0f;
+    float range = 0.0f;
 
     // Spot
     float cutOff = glm::cos(glm::radians(12.5f));
     float outerCutOff = glm::cos(glm::radians(17.5f));
 
+    const char* GetTypeName() const override { return "Light"; }
+
+    void Serialize(YAML::Node& node) override
+    {
+        node["type"] = "Light";
+
+        node["index"] = index;
+        node["isOn"] = isOn;
+
+        node["lightType"] = static_cast<int>(type);
+
+        node["ambient"] = ambient;
+        node["diffuse"] = diffuse;
+        node["specular"] = specular;
+
+        node["direction"] = direction;
+
+        node["constant"] = constant;
+        node["linear"] = linear;
+        node["quadratic"] = quadratic;
+        node["intensity"] = intensity;
+        node["range"] = range;
+
+        node["cutOff"] = cutOff;
+        node["outerCutOff"] = outerCutOff;
+    }
+
+
+    void Deserialize(const YAML::Node& node) override
+    {
+        if (node["index"])
+            index = node["index"].as<int>();
+
+        if (node["isOn"])
+            isOn = node["isOn"].as<bool>();
+
+        if (node["lightType"])
+            type = static_cast<LightType>(
+                node["lightType"].as<int>()
+                );
+
+        if (node["ambient"])
+            ambient = node["ambient"].as<glm::vec3>();
+
+        if (node["diffuse"])
+            diffuse = node["diffuse"].as<glm::vec3>();
+
+        if (node["specular"])
+            specular = node["specular"].as<glm::vec3>();
+
+        if (node["direction"])
+            direction = node["direction"].as<glm::vec3>();
+
+        if (node["constant"])
+            constant = node["constant"].as<float>();
+
+        if (node["linear"])
+            linear = node["linear"].as<float>();
+
+        if (node["quadratic"])
+            quadratic = node["quadratic"].as<float>();
+
+        if (node["intensity"])
+            intensity = node["intensity"].as<float>();
+
+        if (node["range"])
+            range = node["range"].as<float>();
+
+        if (node["cutOff"])
+            cutOff = node["cutOff"].as<float>();
+
+        if (node["outerCutOff"])
+            outerCutOff = node["outerCutOff"].as<float>();
+    }
 };
 
 struct AnimatorComponent : Component {
     static constexpr uint64_t ComponentBit = 1ull << 7;
+    static constexpr bool Unique = true;
 
     static const int MAX_BONES = 200;
+
+    uint32_t animatorID = UINT32_MAX;
 
     Skeleton* currentSkeleton = nullptr;
     AnimationClip* currentAnimation = nullptr;
@@ -233,7 +380,10 @@ struct AnimatorComponent : Component {
     {
         finalBoneMatrices.resize(MAX_BONES, glm::mat4(1.0f));
     }
+
+    void OnEnable(GameObject* owner) override;
 };
+
 struct RaycastHit {
     bool hit = false;
     float distance = 0.0f; //odleglosc
@@ -277,9 +427,164 @@ struct RaycastComponent : Component {
     }
 
     //debug
-    bool debugDraw = true;
+    bool debugDraw = false;
     glm::vec4 colorMiss = {0.0f, 1.0f, 0.0f, 1.0f}; // zielony  = brak trafienia
     glm::vec4 colorHit  = {1.0f, 0.3f, 0.0f, 1.0f}; // pomarańczowy = trafienie
 
 };
+struct NavVertex {
+    glm::vec3 position;
+};
+
+// Trojkat siatki nawigacyjnej
+struct NavTriangle {
+    int v[3];
+    int neighbors[3];
+
+    glm::vec3 centroid;
+    bool walkable = true;
+
+    NavTriangle() {
+        v[0] = v[1] = v[2] = -1;
+        neighbors[0] = neighbors[1] = neighbors[2] = -1;
+        centroid = glm::vec3(0.0f);
+    }
+    NavTriangle(int a, int b, int c) {
+        v[0] = a; v[1] = b; v[2] = c;
+        neighbors[0] = neighbors[1] = neighbors[2] = -1;
+        centroid = glm::vec3(0.0f);
+    }
+};
+// Zbior danych wynikowych po bake
+struct NavMeshData {
+    std::vector<NavVertex>   vertices;
+    std::vector<NavTriangle> triangles;
+    bool isBaked = false;
+
+    void Clear() {
+        vertices.clear();
+        triangles.clear();
+        isBaked = false;
+    }
+};
+struct NavMeshComponent : Component {
+    static constexpr uint64_t ComponentBit = 1ull << 10;
+
+    NavMeshData data;
+
+    // Parametry bake
+    float agentRadius   = 0.5f;   // Promien agenta (margines przy przeszkodach)
+    float agentHeight   = 2.0f;   // Wysokosc agenta
+    float voxelSize     = 5.0f;   // Rozmiar voksela dla siatki punktow probkowania
+    float maxSlopeAngle = 45.0f;  // Max kat nachylenia (w stopniach) - powyzej = niechodzalne
+
+    // Debug
+    bool debugDraw = false;
+    glm::vec4 colorWalkable    = glm::vec4(0.0f, 0.8f, 0.2f, 0.4f); // zielony
+    glm::vec4 colorUnwalkable  = glm::vec4(0.8f, 0.1f, 0.1f, 0.4f); // czerwony
+    glm::vec4 colorEdge        = glm::vec4(0.0f, 1.0f, 0.5f, 1.0f); // jasny zielony
+
+    // Znajdz trojkat zawierajacy punkt (XZ), zwraca indeks lub -1
+    int FindTriangle(const glm::vec3& worldPos) const;
+
+    // Czy punkt jest na navmeshu
+    bool IsPointWalkable(const glm::vec3& worldPos) const;
+};
+
+enum class NavAgentState {
+    Idle,
+    RequestingPath,
+    Moving,
+    Arrived,
+    ExternalControl,
+};
+
+struct NavPathComponent : Component {
+    static constexpr uint64_t ComponentBit = 1ull << 11;
+
+    glm::vec3 goalPosition{ 0.0f };
+    std::vector<glm::vec3> path;
+    int currentWaypoint = 0;
+
+    float moveSpeed      = 5.0f;
+    float waypointRadius = 0.5f;
+    float arrivalRadius  = 1.0f;
+
+    float idleTimeMin = 0.5f;
+    float idleTimeMax = 2.0f;
+    float idleTimer   = 0.0f;
+
+    NavAgentState state = NavAgentState::Idle;
+
+    float stuckCheckInterval = 1.5f;
+    float stuckCheckTimer    = 0.0f;
+    float stuckThreshold     = 1.0f;
+    glm::vec3 lastCheckedPos { 0.0f };
+
+    bool debugDraw = false;
+    glm::vec4 colorPath     = glm::vec4(1.0f, 1.0f, 0.0f, 1.0f);
+    glm::vec4 colorGoal     = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+    glm::vec4 colorWaypoint = glm::vec4(0.0f, 0.5f, 1.0f, 1.0f);
+};
+
+enum class LeaderState {
+    Idle,
+    Explore,
+    WalkBackHome,
+    Escape,
+};
+
+enum class FollowerState {
+    Follow,
+    Idle,
+};
+
+
+struct CockroachLeaderComponent : Component {
+    static constexpr uint64_t ComponentBit = 1ull << 12;
+
+    glm::vec3 homePosition      { 0.0f };
+    float     homeRadius        = 15.0f;
+    float     homeTimeRequired  = 8.0f;
+    float     homeTimeAccum     = 0.0f;
+
+    float exploreRadius   = 50.0f;
+    float exploreDuration = 20.0f;
+    float exploreTimer    = 0.0f;
+
+    float idleWanderRadius = 8.0f;
+    float idleWaitMin      = 1.0f;
+    float idleWaitMax      = 3.0f;
+    float idleWaitTimer    = 0.0f;
+
+    float detectionRadius = 25.0f;
+    float escapeRadius    = 35.0f;
+    float escapeDuration  = 5.0f;
+    float escapeTimer     = 0.0f;
+
+    LeaderState state = LeaderState::Idle;
+
+    bool hasActiveNavGoal = false;
+};
+
+struct CockroachFollowerComponent : Component {
+    static constexpr uint64_t ComponentBit = 1ull << 13;
+
+    void* leaderGameObject = nullptr;
+
+    float followDistance     = 6.0f;
+    float followStopDistance = 2.0f;
+
+    float idleWanderRadius = 6.0f;
+    float idleWaitMin      = 0.5f;
+    float idleWaitMax      = 2.0f;
+    float idleWaitTimer    = 0.0f;
+
+    FollowerState state = FollowerState::Follow;
+
+    bool hasActiveNavGoal = false;
+};
+
+
+
 #endif

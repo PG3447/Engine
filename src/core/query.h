@@ -4,12 +4,17 @@
 #include <vector>
 #include <tuple>
 #include <algorithm>
-
+#include <unordered_map>
+#include "gameobject.h"
 
 class QueryBase {
 public:
     virtual ~QueryBase() {}
-    virtual void OnGameObjectUpdated(GameObject* e) = 0;
+    //return 0 został dodany nowy komponent
+    //return 1 juz istnieje komponent
+    //return 2 zostal usuniety komponent
+    //return 3 nie pasuje komponent
+    virtual int OnGameObjectUpdated(GameObject* e) = 0;
 };
 
 
@@ -19,12 +24,12 @@ public:
     // Struktura SoA
     std::vector<GameObject*> gameobjects;
     std::tuple<std::vector<Components*>...> componentsVectors;
-    std::unordered_map<size_t, size_t> indexMap; // id -> index w gameobjects
+    std::unordered_map<size_t, size_t> indexMap;
     uint64_t requiredMask = 0;
 
     Query() : requiredMask((Components::ComponentBit | ...)) {}
 
-    void OnGameObjectUpdated(GameObject* e) override {
+    int OnGameObjectUpdated(GameObject* e) override {
         // Sprawdzenie, czy wszystkie wymagane komponenty s� obecne przez bitmask�
         bool match = (e->componentMask & requiredMask) == requiredMask;
 
@@ -38,8 +43,10 @@ public:
                 gameobjects.push_back(e);
                 indexMap[e->id] = newIndex;
 
-                (..., (std::get<std::vector<Components*>>(componentsVectors).push_back(e->GetComponent<Components>())));
+                (..., (std::get<std::vector<Components*>>(componentsVectors).push_back(e->template GetComponent<Components>())));
+                return 0;
             }
+            return 1;
         }
         else if (currentIndex != size_t(-1)) {
             size_t last = gameobjects.size() - 1;
@@ -57,7 +64,10 @@ public:
 
             indexMap[lastObj->id] = currentIndex;
             indexMap.erase(e->id);
+            return 2;
         }
+
+        return 3;
     }
 };
 

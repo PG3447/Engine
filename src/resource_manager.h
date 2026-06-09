@@ -16,7 +16,7 @@ class ResourceManager
 public:
     static std::unordered_map<std::string, GLuint> Textures;
 
-    static std::unordered_map<std::string, std::weak_ptr<Model>> Models;
+    static std::unordered_map<std::string, std::shared_ptr<Model>> Models;
 
     static GLuint LoadTexture(const std::string& path, const std::string& directory = "", const aiTexture* aiTex = nullptr);
 
@@ -25,6 +25,12 @@ public:
     static void Clear();
 
     static GLuint CreateTextureFromColor(const std::string& name, const glm::vec3& color);
+
+    static GLuint CreateTextureMaterialFromColor(const std::string& name, const glm::vec3& color);
+
+    static void SaveAsset();
+
+    static void LoadAssets(std::string& path);
 
 private:
     static unsigned int loadTextureFromFile(const std::string& path, const std::string& directory, const aiTexture* aiTex);

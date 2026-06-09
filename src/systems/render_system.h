@@ -1,4 +1,4 @@
-﻿#ifndef RENDER_SYSTEM_H
+#ifndef RENDER_SYSTEM_H
 #define RENDER_SYSTEM_H
 
 #include "core/ecs.h"
@@ -11,7 +11,60 @@
 #include "skybox_renderer.h"
 #include "../utils/camera_helper.h"
 #include "../utils/light_helper.h"
+#include "../utils/render_helper.h"
 #include <glm/gtc/type_ptr.hpp>
+#include "../compute_shader.h"
+#include "GPUdriven_manager.h"
+
+
+
+struct PerCameraHiZ
+{
+    GLuint hizTexture = 0;
+    GLuint depthPrev = 0;
+    int    hizMipLevels = 0;
+    int    width = 0;
+    int    height = 0;
+
+    void Init(int w, int h, int screenW, int screenH)
+    {
+        width = w;
+        height = h;
+        hizMipLevels = static_cast<int>(std::floor(std::log2(std::max(w, h)))) + 1;
+
+        // HiZ — R32F z mipami, taki sam format jak w GPUDrivenManager::InitHiZ
+        glGenTextures(1, &hizTexture);
+        glBindTexture(GL_TEXTURE_2D, hizTexture);
+        glTexStorage2D(GL_TEXTURE_2D, hizMipLevels, GL_R32F, w, h);
+        glTextureParameteri(hizTexture, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+        glTextureParameteri(hizTexture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTextureParameteri(hizTexture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTextureParameteri(hizTexture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+        // depth-prev — kopia depth poprzedniej klatki tej kamery
+        glGenTextures(1, &depthPrev);
+        glBindTexture(GL_TEXTURE_2D, depthPrev);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, screenW, screenH, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+        glTextureParameteri(depthPrev, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTextureParameteri(depthPrev, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTextureParameteri(depthPrev, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTextureParameteri(depthPrev, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        spdlog::info("PerCameraHiZ::Init {}x{} mips={}", w, h, hizMipLevels);
+    }
+
+    // Wywoływane tylko przy resize okna — glTexStorage2D jest immutable
+    void Destroy()
+    {
+        if (hizTexture) { glDeleteTextures(1, &hizTexture); hizTexture = 0; }
+        if (depthPrev) { glDeleteTextures(1, &depthPrev);  depthPrev = 0; }
+        width = height = hizMipLevels = 0;
+    }
+
+    bool IsValid() const { return hizTexture != 0 && depthPrev != 0; }
+};
 
 
 class RenderSystem : public System {
@@ -25,21 +78,55 @@ private:
         }
     };
 
+    //struct GroupKeyHash {
+    //    size_t operator()(const GroupKey& k) const {
+    //        return std::hash<void*>()(std::get<0>(k))
+    //            ^ (std::hash<void*>()(std::get<1>(k)) << 1);
+    //    }
+    //};
+
+
     struct OcclusionData {
         GLuint queryId = 0;
         bool isVisible = true;
         bool queryActive = false;
         int    hiddenFrames = 0;
-        static constexpr int HIDE_THRESHOLD = 10;
+        static constexpr int HIDE_THRESHOLD = 3;
     };
     std::unordered_map<size_t, OcclusionData> occlusionMap;
-    float occluderThreshold = 5.0f;
-
+    float occluderThreshold = 3.0f;
+public:
     Query<TransformComponent, RenderComponent>* renderQuery;
+
+private:
     Query<TransformComponent, LightComponent>* lightQuery;
     Query<TransformComponent, CameraComponent>* cameraQuery;
+    Query<TransformComponent, RenderComponent, AnimatorComponent>* animatorQuery;
 
-    std::unordered_map<GroupKey, std::vector<size_t>, group_hash> instancedGroups;
+
+    std::unordered_map<GroupKey, std::vector<size_t>, group_hash> instancedGroupsOpaque;
+    //std::unordered_map<GroupKey, std::vector<TransparentMesh>, group_hash> instancedGroupsTransparent;
+
+    struct TransparentMesh
+    {
+        size_t index;
+        float distance;
+    };
+
+    struct InsancedTransparent
+    {
+        GroupKey key;
+        std::vector<TransparentMesh> objects;
+    };
+
+    std::unordered_map<GroupKey, size_t, group_hash> instancedTransparentLookup;
+    std::vector<InsancedTransparent> instancedTransparentVector;
+
+    //using GroupKey = std::tuple<RenderMesh*, Material*>;
+
+
+    //std::vector<TransparentGroup> groups;
+    //std::unordered_map<GroupKey, size_t, GroupKeyHash> lookup;
 
     bool groupsDirty = true;
 
@@ -53,17 +140,25 @@ private:
     glm::mat4 view;
     glm::vec3 currentCameraPos;
 
-    GLuint sceneFBO;
+
+    GLuint sceneFBO = 0;
     GLuint sceneColorTexture;
-    GLuint sceneDepthRBO;
-    int fboWidth = 0, fboHeight = 0;
 
 public:
+    GPUDrivenManager drivenManager;
+
+    float ambientStrength = 0.03f;
+    //GLuint sceneDepthRBO = 0;
+    GLuint sceneDepthTexture;
+    GLuint depthTexturePrev = 0;
+    int fboWidth = 0, fboHeight = 0;
+    
+    std::unordered_map<CameraComponent*, PerCameraHiZ> cameraHiZ;
+
     void IssueOcclusionQuery(size_t entityIdx, const glm::mat4& modelMatrix, const AABB& localAABB) {
         OcclusionData& data = occlusionMap[entityIdx];
         if (data.queryId == 0) glGenQueries(1, &data.queryId);
 
-        // Transformuj rogi lokalnego AABB na world space — identycznie jak AABBInFrustum
         const glm::vec3 localCorners[8] = {
             {localAABB.min.x, localAABB.min.y, localAABB.min.z},
             {localAABB.max.x, localAABB.min.y, localAABB.min.z},
@@ -86,13 +181,17 @@ public:
         glDepthMask(GL_FALSE);
 
         glBeginQuery(GL_ANY_SAMPLES_PASSED, data.queryId);
-        // Teraz worldMin/worldMax są w world space, vp = projection*view bez modelMatrix
         DebugDrawSystem::DrawAABBSolid(worldMin, worldMax, projection * view);
         glEndQuery(GL_ANY_SAMPLES_PASSED);
 
         glDepthMask(GL_TRUE);
         glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
         data.queryActive = true;
+
+        glm::vec4 color = data.isVisible
+            ? glm::vec4(0, 1, 0, 1)  // zielony = widoczny
+            : glm::vec4(1, 0, 0, 1); // czerwony = culled
+        DebugDrawSystem::AddAABB(worldMin, worldMax, color);
     }
 
     bool frustumCullingEnabled = true;
@@ -119,7 +218,6 @@ public:
             int prev = current;
             current = (current + 1) % 2;
 
-            // Wymuś odczyt — może lekko stallować ale zawsze aktualny
             GLuint64 time = 0;
             glGetQueryObjectui64v(queries[prev], GL_QUERY_RESULT, &time);
             lastResult = time / 1000000.0f;
@@ -136,14 +234,15 @@ public:
         int renderedObjects = 0;
         int triangles = 0;
         int stateChanges = 0;
-        int culledByFrustum = 0;
-        int culledByOcclusion = 0;
+        std::unordered_set<size_t> frustumCulledSet;
+        std::unordered_set<size_t> occlusionCulledSet;
         float cullingTimeMs = 0.0f;
         float drawSubmitTimeMs = 0.0f;
 
         void Reset() {
             drawCalls = renderedObjects = triangles = stateChanges = 0;
-            culledByFrustum = culledByOcclusion = 0;
+           frustumCulledSet.clear();
+            occlusionCulledSet.clear();
             cullingTimeMs = drawSubmitTimeMs = 0.0f;
         }
     };
@@ -245,14 +344,23 @@ public:
         renderQuery = ecs.CreateQuery<TransformComponent, RenderComponent>();
         lightQuery = ecs.CreateQuery<TransformComponent, LightComponent>();
         cameraQuery = ecs.CreateQuery<TransformComponent, CameraComponent>();
+        animatorQuery = ecs.CreateQuery<TransformComponent, RenderComponent, AnimatorComponent>();
+
+        drivenManager = GPUDrivenManager();
 
         Init();
         DebugDrawSystem::Init();
     }
 
     void Init() {
+        int display_w, display_h;
+        glfwGetFramebufferSize(window, &display_w, &display_h);
+        drivenManager.Init(display_w, display_h);
         glEnable(GL_DEPTH_TEST);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         skybox.Init();
+        drivenManager.AddSkyboxPass(&skybox);
 
         glGenQueries(2, gpuQuery.queries);
 
@@ -269,17 +377,33 @@ public:
         }
     }
 
+    std::vector<RenderComponent*> pendingRegistration;
+
     void OnGameObjectUpdated(GameObject* e) override {
-        renderQuery->OnGameObjectUpdated(e); // forward do query
+        int resultAddRender = renderQuery->OnGameObjectUpdated(e);
+        if (resultAddRender <= 1) // && gpuRendererInitialized
+        {
+            pendingRegistration.push_back(e->GetComponent<RenderComponent>());  //drivenManager.RebuildAllRegistries(*renderQuery);
+            groupsDirty = true;
+            rebuildCollectData = true;
+        }
+        if (resultAddRender == 2)
+        {
+            //komponent zostal usuniety
+            drivenManager.RebuildInstance();
+            rebuildCollectData = true;
+        }
         lightQuery->OnGameObjectUpdated(e);  // forward do query
         cameraQuery->OnGameObjectUpdated(e); // forward do query
+        animatorQuery->OnGameObjectUpdated(e); 
+        
+    }
 
+    void MarkDirty()
+    {
         groupsDirty = true;
     }
 
-    void MarkDirty() {
-        groupsDirty = true;
-    }
 
     void Update(ECS& ecs, float dt) override {
         stats.Reset();
@@ -290,10 +414,22 @@ public:
         InitFBO(display_w, display_h);
 
         glBindFramebuffer(GL_FRAMEBUFFER, sceneFBO);
+        if (occlusionCullingEnabled)
+        {
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, sceneDepthTexture, 0);
+        }
         glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        BuildGroups();
+        if (groupsDirty)
+        {
+            for (RenderComponent* e : pendingRegistration)
+                drivenManager.AddGameObjectToRegistries(e);
+            pendingRegistration.clear();
+            groupsDirty = false;
+        }
+
+        //BuildGroups();
         RenderAllCameras();
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -311,6 +447,8 @@ public:
             (GLsizei)(vp.height * h)
         );
     }
+    //bool gpuRendererInitialized = false;
+    bool rebuildCollectData = true;
 
     void RenderAllCameras() {
         auto& transforms = std::get<0>(cameraQuery->componentsVectors);
@@ -319,12 +457,199 @@ public:
         int display_w, display_h;
         glfwGetFramebufferSize(window, &display_w, &display_h);
 
+        //if (!gpuRendererInitialized) { // && renderQuery->gameobjects.size() > 50
+        //    //InitGPUDrivenRenderer(display_w, display_h);
+        //    //drivenManager.InitPassesFromScene(*renderQuery);
+        //    gpuRendererInitialized = true;
+        //    gpuRendererReady = true;
+        //}
+        auto& lightTransforms = std::get<0>(lightQuery->componentsVectors);
+        auto& lights = std::get<1>(lightQuery->componentsVectors);
+
+        drivenManager.UpdateAndUploadLights(lights, lightTransforms);
+        drivenManager.CollectAllPasses(*renderQuery, rebuildCollectData);
+        if (rebuildCollectData)
+            rebuildCollectData = false;
+        //if (gpuRendererReady) {
+        //    
+        //}
         for (size_t i = 0; i < cameras.size(); i++) {
             if (!cameras[i]->isActive)
                 continue;
-
-            RenderCamera(*cameras[i], *transforms[i], display_w, display_h);
+            RenderCameraGPUDriven(*cameras[i], *transforms[i], display_w, display_h);
+            //RenderCamera(*cameras[i], *transforms[i], display_w, display_h);
         }
+    }
+
+    //GPUDrivenRenderer gpuRenderer;
+    bool gpuRendererReady = false;
+
+
+
+    void RenderCameraGPUDriven(CameraComponent& cam, TransformComponent& transform, int width, int height)
+    {
+        ApplyViewport(cam.viewport, width, height);
+
+        view = CameraHelper::getViewMatrix(cam, transform);
+        projection = CameraHelper::getProjectionMatrix(cam, width, height);
+
+        glm::mat4 vp = projection * view;
+        currentCameraPos = transform.position;
+        
+        auto cullStart = std::chrono::high_resolution_clock::now();
+
+        //drivenManager.CollectAllPasses(*renderQuery, currentCameraPos);
+        drivenManager.UploadPerCamera(currentCameraPos);
+        
+        int vpW = std::max(1, (int)(cam.viewport.width * width));
+        int vpH = std::max(1, (int)(cam.viewport.height * height));
+        int vpX = (int)(cam.viewport.x * width);
+        int vpY = (int)(cam.viewport.y * height);
+
+        PerCameraHiZ& hiz = cameraHiZ[&cam];
+        if (hiz.width != vpW || hiz.height != vpH)
+        {
+            hiz.Destroy(); // tylko przy resize — nie co klatkę
+            hiz.Init(vpW, vpH, width, height);
+        }
+
+        drivenManager.AttachCameraHiZ(hiz.hizTexture, hiz.hizMipLevels, vpW, vpH, frustumCullingEnabled, occlusionCullingEnabled, vpX, vpY);
+        drivenManager.RenderFrame(view, projection, vp, currentCameraPos, ambientStrength, occlusionCullingEnabled ? hiz.depthPrev : 0, cam.dirty);
+        cam.dirty = false;
+        //drivenManager.RenderFrame(vp, currentCameraPos, depthTexturePrev);
+        if (hiz.depthPrev && sceneDepthTexture && occlusionCullingEnabled) {
+            std::swap(sceneDepthTexture, hiz.depthPrev);
+        }
+        //spdlog::info("CopyDepth cam vpX={} vpY={} vpW={} vpH={} fbo={}x{}",
+        //    vpX, vpY, vpW, vpH, width, height);
+        //if (hiz.depthPrev && sceneDepthTexture && occlusionCullingEnabled) {
+        //    glCopyImageSubData(sceneDepthTexture, GL_TEXTURE_2D, 0, vpX, vpY, 0,
+        //        hiz.depthPrev, GL_TEXTURE_2D, 0, 0, 0, 0,
+        //        vpW, vpH, 1);
+        //}
+
+
+        auto cullEnd = std::chrono::high_resolution_clock::now();
+        stats.cullingTimeMs += std::chrono::duration<float, std::milli>(cullEnd - cullStart).count();
+
+        DebugDrawSystem::Flush(vp);
+
+        glBindVertexArray(0);
+        
+        //skybox.Render(view, projection);
+    }
+
+
+    // if (gpuRendererReady) {
+
+    //     //std::vector<RenderData> objects = CollectRenderData();
+
+    // /*    gpuRenderer.shaderRender->use();
+    //     gpuRenderer.shaderRender->setMat4("viewProjection", vp);
+    //     gpuRenderer.shaderRender->setVec3("viewPos", currentCameraPos);
+    //     gpuRenderer.shaderRender->setBool("isAnimated", false);*/
+    //     // + światła jak w starym kodzie...
+    //    ;
+
+    //     // Skopiuj depth bieżącej klatki do depthTexturePrev dla następnej
+    ///*     std::vector<float> zeros(width * height, 0.0f);
+    //     glTextureSubImage2D(depthTexturePrev, 0, 0, 0, width, height,
+    //         GL_DEPTH_COMPONENT, GL_FLOAT, zeros.data());*/
+    // }
+
+
+
+    void ShowDepthTextureImGui(GLuint depthTex, int w, int h, float zNear, float zFar)
+    {
+        // klucz = oryginalne ID tekstury depth
+        static std::unordered_map<GLuint, GLuint> debugTexMap;
+
+        GLuint& debugTex = debugTexMap[depthTex];
+        if (debugTex == 0) {
+            glGenTextures(1, &debugTex);
+            glBindTexture(GL_TEXTURE_2D, debugTex);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        }
+
+        std::vector<float> depth(w * h);
+        glGetTextureImage(depthTex, 0, GL_DEPTH_COMPONENT, GL_FLOAT, w * h * sizeof(float), depth.data());
+
+        std::vector<uint8_t> rgb(w * h * 3);
+        for (int i = 0; i < w * h; i++) {
+            float d = depth[i];
+            float linear = (2.0f * zNear) / (zFar + zNear - d * (zFar - zNear));
+            uint8_t v = (uint8_t)(linear * 255.0f);
+            rgb[i * 3 + 0] = v;
+            rgb[i * 3 + 1] = v;
+            rgb[i * 3 + 2] = v;
+        }
+
+        glBindTexture(GL_TEXTURE_2D, debugTex);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, rgb.data());
+
+        ImGui::Image((ImTextureID)(intptr_t)debugTex, ImVec2(320, 180), ImVec2(0, 1), ImVec2(1, 0));
+    }
+    void ShowR32FTextureImGui(GLuint tex, int mip = 0)
+    {
+        static std::unordered_map<GLuint, GLuint> debugTexMap;
+        GLuint& debugTex = debugTexMap[tex];
+        if (debugTex == 0) {
+            glGenTextures(1, &debugTex);
+            glBindTexture(GL_TEXTURE_2D, debugTex);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
+
+        // Pytaj GPU o rzeczywisty rozmiar mipa
+        GLint mipW = 0, mipH = 0;
+        glGetTextureLevelParameteriv(tex, mip, GL_TEXTURE_WIDTH, &mipW);
+        glGetTextureLevelParameteriv(tex, mip, GL_TEXTURE_HEIGHT, &mipH);
+        if (mipW == 0 || mipH == 0) return;
+
+        int pixelCount = mipW * mipH;
+        size_t bufSize = std::max(pixelCount, 64);
+
+        glPixelStorei(GL_PACK_ALIGNMENT, 1);
+        std::vector<float> data(bufSize, 0.0f);
+        glGetTextureImage(tex, mip, GL_RED, GL_FLOAT,
+            (GLsizei)(bufSize * sizeof(float)), data.data());
+        glPixelStorei(GL_PACK_ALIGNMENT, 4);
+
+        float minV = FLT_MAX, maxV = -FLT_MAX;
+        for (int i = 0; i < pixelCount; i++) {
+            if (data[i] > 0.0f) {
+                minV = std::min(minV, data[i]);
+                maxV = std::max(maxV, data[i]);
+            }
+        }
+        if (minV >= maxV) minV = 0.0f;
+
+        // RGBA — brak problemów z row alignment
+        std::vector<uint8_t> rgba(pixelCount * 4);
+        for (int i = 0; i < pixelCount; i++) {
+            float   n = (maxV > minV) ? (data[i] - minV) / (maxV - minV) : 0.0f;
+            uint8_t v = (uint8_t)(glm::clamp(n, 0.0f, 1.0f) * 255.0f);
+            rgba[i * 4 + 0] = v;
+            rgba[i * 4 + 1] = v;
+            rgba[i * 4 + 2] = v;
+            rgba[i * 4 + 3] = 255;
+        }
+
+        glBindTexture(GL_TEXTURE_2D, debugTex);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, mipW, mipH, 0,
+            GL_RGBA, GL_UNSIGNED_BYTE, rgba.data());
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        // Skaluj podgląd do 320px szerokości zachowując proporcje
+        float dispW = 320.0f;
+        float dispH = dispW * ((float)mipH / (float)mipW);
+        ImGui::Text("mip%d: %dx%d", mip, mipW, mipH);
+        ImGui::Image((ImTextureID)(intptr_t)debugTex,
+            ImVec2(dispW, dispH), ImVec2(0, 1), ImVec2(1, 0));
     }
 
     void RenderCamera(CameraComponent& cam, TransformComponent& transform, int width, int height) {
@@ -349,10 +674,14 @@ public:
 
     void BuildGroups() {
         if (!groupsDirty) return;
+        auto& transfoms = std::get<0>(renderQuery->componentsVectors);
         auto& renderers = std::get<1>(renderQuery->componentsVectors);
-        instancedGroups.clear();
+        instancedGroupsOpaque.clear();
+        instancedTransparentLookup.clear();
+        instancedTransparentVector.clear();
 
         for (size_t i = 0; i < renderQuery->gameobjects.size(); i++) {
+            TransformComponent* t = transfoms[i];
             RenderComponent* r = renderers[i];
             if (!r) continue;
 
@@ -366,23 +695,60 @@ public:
                     mesh.material.get()
                 };
 
-                instancedGroups[key].push_back(i);
+
+                //Opaque
+                if (mesh.material->surfaceType == SurfaceType::Opaque)
+                {
+                    instancedGroupsOpaque[key].push_back(i);
+                }
+
+                //Transparent
+                if (mesh.material->surfaceType == SurfaceType::Transparent)
+                {
+                    glm::vec3 worldCenter = glm::vec3(t->modelMatrix * glm::vec4(mesh.cpuData->aabb.centerLocal, 1.0f));
+                    float distance = glm::length2(currentCameraPos - worldCenter);
+
+                    auto it = instancedTransparentLookup.find(key);
+
+                    if (it == instancedTransparentLookup.end())
+                    {
+                        size_t newIndex = instancedTransparentVector.size();
+                        instancedTransparentVector.push_back({});
+                        instancedTransparentVector.back().key = key;
+
+                        instancedTransparentLookup[key] = newIndex;
+                        it = instancedTransparentLookup.find(key);
+                    }
+
+                    instancedTransparentVector[it->second].objects.push_back({ i, distance });
+                }
             }
         }
+
+        //SortTransparent();
 
         groupsDirty = false;
     }
 
+    void SortTransparent()
+    {
 
-    //if (!r || !r->model) continue;
+        for (auto& transparentVector : instancedTransparentVector)
+        {
+            std::sort(transparentVector.objects.begin(), transparentVector.objects.end(),
+                [](const TransparentMesh& a, const TransparentMesh& b)
+                {
+                    return a.distance > b.distance;
+                });
+        }
 
-    //if (r->shader) {
-    //    r->model->SetShader(r->shader);
-    //}
+        std::sort(instancedTransparentVector.begin(), instancedTransparentVector.end(),
+            [](const InsancedTransparent& a, const InsancedTransparent& b)
+            {
+                return a.objects.front().distance > b.objects.front().distance;
+            });
+    }
 
-    //GroupKey key = { r->model, r->materialOverride.get() };
-    //instancedGroups[key].push_back(i);
-    //    }
 
 
     void RenderGroups(const Frustum& frustum) {
@@ -392,40 +758,36 @@ public:
         auto& lights = std::get<1>(lightQuery->componentsVectors);
 
 
-        std::vector<std::pair<size_t, AABB>> allSubjects;
+        std::unordered_map<size_t, AABB> allSubjects; // entityIdx -> local AABB, do debugowania occlusion culling
 
-        for (auto& [key, indices] : instancedGroups) {
+        for (auto& [key, indices] : instancedGroupsOpaque) {
             RenderMesh* model = std::get<0>(key);
-            Material* overrideMat = std::get<1>(key);
-            Shader* shader = overrideMat->shader;
+            Material* material = std::get<1>(key);
+            Shader* shader = material->shader;
 
             if (shader == nullptr)
                 continue;
 
 
-            std::vector<size_t> occluders; // Duże obiekty - rysujemy zawsze
-            std::vector<size_t> subjects;  // Małe obiekty - testujemy occlusion
+            std::vector<size_t> occluders;
+            std::vector<size_t> subjects;
             // Culling
             auto cullStart = std::chrono::high_resolution_clock::now();
             for (size_t i : indices) {
-                AABB localAABB = GetLocalAABB(renderers[i]->meshes);
+                AABB localAABB = renderers[i]->localObjectAABB; //RenderHelper::GetLocalAABB(renderers[i]->meshes);
+
                 if (frustumCullingEnabled && !AABBInFrustum(frustum, localAABB, transforms[i]->modelMatrix)) {
-                    stats.culledByFrustum++;
-                    stats.drawCalls++; // (opcjonalnie statystyka frustum)
+                    stats.frustumCulledSet.insert(i);
                     continue;
                 }
 
-                // Decyzja: czy obiekt jest na tyle duży, by sam zasłaniał inne?
                 glm::vec3 size = localAABB.max - localAABB.min;
-
-                float dims[3] = { size.x, size.y, size.z };
-                std::sort(dims, dims + 3);
 
                 if (size.x * size.y * size.z > occluderThreshold) {
                     occluders.push_back(i);
                 } else {
                     subjects.push_back(i);
-                    allSubjects.push_back({i, localAABB});
+                    allSubjects.emplace(i, localAABB);
                 }
             }
             auto cullEnd = std::chrono::high_resolution_clock::now();
@@ -437,7 +799,6 @@ public:
                 for (size_t i : subjects) {
                     OcclusionData& data = occlusionMap[i];
 
-                    // Pobieramy wynik z poprzedniej klatki
                     if (data.queryId != 0 && data.queryActive) {
                         GLuint available = 0;
                         glGetQueryObjectuiv(data.queryId, GL_QUERY_RESULT_AVAILABLE, &available);
@@ -455,18 +816,16 @@ public:
                             data.queryActive = false;
                         }
                     } else {
-                        // Brak wyniku zapytania z poprzedniej klatki - traktujemy jako widoczne
                         data.isVisible = true;
                     }
 
                     if (data.isVisible) {
                         visibleSubjects.push_back(i);
                     } else {
-                        stats.culledByOcclusion++;
+                        stats.occlusionCulledSet.insert(i);
                     }
                 }
             } else {
-                // Jeśli occlusion culling jest wyłączone, renderujemy wszystkie małe obiekty
                 visibleSubjects = subjects;
             }
 
@@ -479,11 +838,15 @@ public:
             shader->setMat4("projection", projection);
             shader->setMat4("view", view);
             shader->setVec3("viewPos", currentCameraPos);
+
+            //Transparent
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             
+            // light
             int numPointLight = 0;
             int numSpotLight = 0;
-
-            // light
+            
             for (size_t i = 0; i < lights.size(); i++)
             {
                 if (lights[i]->type == Point) 
@@ -503,94 +866,54 @@ public:
             {
                 LightHelper::Apply(*transformsLights[i], *lights[i], *shader);
             }
-
-            //shader->setVec3("dirLight.direction", glm::vec3(-0.2f, -1.0f, -0.3f));
-            //shader->setVec3("dirLight.ambient", glm::vec3(0.2f, 0.2f, 0.2f));
-            //shader->setVec3("dirLight.diffuse", glm::vec3(0.8f, 0.8f, 0.8f));
-            //shader->setVec3("dirLight.specular", glm::vec3(1.0f, 1.0f, 1.0f));
-
-            std::vector<size_t> standardVisible;
-            std::vector<size_t> animatedVisible;
-
-            for (size_t i : finalToRender) {
-                auto* go = renderQuery->gameobjects[i];
-                AnimatorComponent* animator = go->template GetComponent<AnimatorComponent>();
-                GameObject* current = go->GetParent();
-                while (animator == nullptr && current != nullptr) {
-                    animator = current->template GetComponent<AnimatorComponent>();
-                    current = current->GetParent();
-                }
-
-                if (animator) animatedVisible.push_back(i);
-                else          standardVisible.push_back(i);
-            }
-
-            if (!standardVisible.empty()) {
-                shader->setBool("isAnimated", false);
-
-                if (standardVisible.size() == 1) {
-                    shader->setBool("useInstance", false);
-                    shader->setMat4("model", transforms[standardVisible[0]]->modelMatrix);
-                    auto drawStart = std::chrono::high_resolution_clock::now();
-                    overrideMat->Apply();
-                    model->Draw(0);
-                    stats.drawCalls++;
-                    stats.renderedObjects++;
-                    stats.stateChanges++;
-                    stats.triangles += GetTriangleCount(model);
-                    auto drawEnd = std::chrono::high_resolution_clock::now();
-                    stats.drawSubmitTimeMs += std::chrono::duration<float, std::milli>(drawEnd - drawStart).count();
-                }
-                else {
-                    shader->setBool("useInstance", true);
-                    auto drawStart = std::chrono::high_resolution_clock::now();
-                    RenderInstanced(model, standardVisible, overrideMat);
-                    auto drawEnd = std::chrono::high_resolution_clock::now();
-                    stats.drawSubmitTimeMs += std::chrono::duration<float, std::milli>(drawEnd - drawStart).count();
-                    stats.drawCalls++;
-                    stats.renderedObjects += (int)standardVisible.size();
-                    stats.stateChanges++;
-                    stats.triangles += GetTriangleCount(model) * (int)standardVisible.size();
-                }
-            }
-
-            if (!animatedVisible.empty()) {
+          
+            if (finalToRender.size() == 1) {
                 shader->setBool("useInstance", false);
-                shader->setBool("isAnimated", true);
 
-                for (size_t i : animatedVisible) {
-                    auto* go = renderQuery->gameobjects[i];
-                    auto* renderComp = std::get<1>(renderQuery->componentsVectors)[i];
-
-                    AnimatorComponent* animator = go->template GetComponent<AnimatorComponent>();
-
-                    GameObject* current = go->GetParent();
-                    while (animator == nullptr && current != nullptr) {
-                        animator = current->template GetComponent<AnimatorComponent>();
-                        current = current->GetParent();
-                    }
-                    //if (!animator && renderComp->rootAnimator) {
-                    //    animator = renderComp->rootAnimator;
-                    //}
-
-                    shader->setMat4("model", transforms[i]->modelMatrix);
+                if (renderers[finalToRender[0]]->animator)
+                {
+                    AnimatorComponent* animator = renderers[finalToRender[0]]->animator;
+                    shader->setBool("isAnimated", true);
 
                     if (animator && animator->currentSkeleton) {
                         shader->setMat4Array("finalBonesMatrices", animator->finalBoneMatrices);
                     }
 
-                    auto drawStart = std::chrono::high_resolution_clock::now();
-                    overrideMat->Apply();
-                    model->Draw(0);
-                    stats.drawCalls++;
-                    stats.renderedObjects++;
-                    stats.stateChanges++;
-                    stats.triangles += GetTriangleCount(model);
-                    auto drawEnd = std::chrono::high_resolution_clock::now();
-                    stats.drawSubmitTimeMs += std::chrono::duration<float, std::milli>(drawEnd - drawStart).count();
                 }
+                else {
+                    shader->setBool("isAnimated", false);
+                }
+
+                shader->setMat4("model", transforms[finalToRender[0]]->modelMatrix);
+                auto drawStart = std::chrono::high_resolution_clock::now();
+                material->Apply();
+                model->Draw(0);
+                stats.drawCalls++;
+                stats.renderedObjects++;
+                stats.stateChanges++;
+                stats.triangles += GetTriangleCount(model);
+                auto drawEnd = std::chrono::high_resolution_clock::now();
+                stats.drawSubmitTimeMs += std::chrono::duration<float, std::milli>(drawEnd - drawStart).count();
             }
+            else {
+                shader->setBool("useInstance", true);
+                shader->setBool("isAnimated", false);
+
+                auto drawStart = std::chrono::high_resolution_clock::now();
+                RenderInstanced(model, finalToRender, material);
+                auto drawEnd = std::chrono::high_resolution_clock::now();
+                stats.drawSubmitTimeMs += std::chrono::duration<float, std::milli>(drawEnd - drawStart).count();
+                stats.drawCalls++;
+                stats.renderedObjects += (int)finalToRender.size();
+                stats.stateChanges++;
+                stats.triangles += GetTriangleCount(model) * (int)finalToRender.size();
+            }
+
+
         }
+
+
+
         if (occlusionCullingEnabled) {
             for (auto& [i, localAABB] : allSubjects) {
                 IssueOcclusionQuery(i, transforms[i]->modelMatrix, localAABB);
@@ -598,7 +921,7 @@ public:
         }
     }
 
-    void RenderInstanced(RenderMesh* model, std::vector<size_t>& indices, Material* overrideMat)
+    void RenderInstanced(RenderMesh* model, std::vector<size_t>& indices, Material* material)
     {
         auto& transforms = std::get<0>(renderQuery->componentsVectors);
 
@@ -615,18 +938,8 @@ public:
         glBufferData(GL_ARRAY_BUFFER, count * sizeof(glm::mat4), matrices.data(), GL_DYNAMIC_DRAW);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-        overrideMat->Apply();
+        material->Apply();
         model->Draw((GLsizei)count);
-    }
-
-    AABB GetLocalAABB(vector<MeshNode> meshes) const
-    {
-        AABB result;
-        for (auto& node : meshes) {
-            result.min = glm::min(result.min, node.aabb.min);
-            result.max = glm::max(result.max, node.aabb.max);
-        }
-        return result;
     }
 
     int GetTriangleCount(RenderMesh* mesh) const
@@ -644,16 +957,25 @@ public:
         if (fboWidth == w && fboHeight == h) return; // bez zmian
         fboWidth = w; fboHeight = h;
 
+        spdlog::warn("FBO sie ustawia");
         if (sceneFBO) {
             glDeleteFramebuffers(1, &sceneFBO);
             glDeleteTextures(1, &sceneColorTexture);
-            glDeleteRenderbuffers(1, &sceneDepthRBO);
-        }
+            glDeleteTextures(1, &sceneDepthTexture);
 
+            //if (depthTexturePrev) {
+            //    glDeleteTextures(1, &depthTexturePrev);
+            //    depthTexturePrev = 0;
+            //}
+
+            for (auto& [cam, hiz] : cameraHiZ)
+                hiz.Destroy();
+            cameraHiZ.clear();
+        }
+        
         glGenFramebuffers(1, &sceneFBO);
         glBindFramebuffer(GL_FRAMEBUFFER, sceneFBO);
 
-        // Textura koloru
         glGenTextures(1, &sceneColorTexture);
         glBindTexture(GL_TEXTURE_2D, sceneColorTexture);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
@@ -661,20 +983,507 @@ public:
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, sceneColorTexture, 0);
 
-        // Renderbuffer dla depth+stencil
-        glGenRenderbuffers(1, &sceneDepthRBO);
-        glBindRenderbuffer(GL_RENDERBUFFER, sceneDepthRBO);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, w, h);
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, sceneDepthRBO);
+        glGenTextures(1, &sceneDepthTexture);
+        glBindTexture(GL_TEXTURE_2D, sceneDepthTexture);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, w, h, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, sceneDepthTexture, 0);
 
         if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-            spdlog::error("PostProcessing FBO incomplete!");
-
+            spdlog::error("SceneFBO incomplete!");
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        glBindTexture(GL_TEXTURE_2D, 0);
     }
+
 
     GLuint GetSceneTexture() const { return sceneColorTexture; }
 
+  
+    GLuint GetFirstCameraDepthPrev() const
+    {
+        if (cameraHiZ.empty()) return 0;
+        return cameraHiZ.begin()->second.depthPrev;
+    }
 };
 
 #endif
+
+
+//void RebuildGameObjectInRenderer(GameObject* e) {
+//    // Szukamy tego obiektu w renderQuery po wskaźniku
+//    auto& gos = renderQuery->gameobjects;
+//    auto& renderers = std::get<1>(renderQuery->componentsVectors);
+
+//    for (size_t i = 0; i < gos.size(); ++i) {
+//        if (gos[i] != e) continue;
+
+//        RenderComponent* rc = renderers[i];
+//        if (!rc) return;
+
+//        // 1. Zarejestruj animator jeśli nowy
+//        if (rc->animator &&
+//            drivenManager.animatorIDMap.find(rc->animator) == drivenManager.animatorIDMap.end())
+//        {
+//            drivenManager.animatorIDMap[rc->animator] =
+//                (uint32_t)drivenManager.animatorIDMap.size();
+//        }
+
+//        // 2. Dla każdego mesha sprawdź czy pass/mesh/materiał już istnieje
+//        for (auto& mesh : rc->meshes) {
+//            if (!mesh.cpuData || !mesh.material) continue;
+
+//            MeshData* md = mesh.cpuData.get();
+//            Material* mat = mesh.material.get();
+//            Shader* shader = mat->shader ? mat->shader : drivenManager.defaultShaderRender;
+
+//            uint32_t pid = drivenManager.GetOrCreatePass(shader, mat->surfaceType);
+//            GPUDrivenRenderer* r = drivenManager.GetRenderer(pid);
+//            if (!r) continue;
+
+//            // RegisterMesh/RegisterMaterial są idempotentne —
+//            // zwracają istniejące ID jeśli już zarejestrowane,
+//            // a dodają nowy wpis tylko gdy go nie ma
+//            bool meshIsNew = (r->GetMeshId(md) == UINT32_MAX);
+//            bool materialIsNew = (r->GetMaterialId(mat) == UINT32_MAX);
+
+//            if (meshIsNew)     r->RegisterMesh(md);
+//            if (materialIsNew) r->RegisterMaterial(mat);
+
+//            // Upload na GPU tylko jeśli faktycznie coś nowego trafiło do rejestrów
+//            // UploadMeshes() to pełna realokacja VBO/EBO/meshDataSSBO — wywołujemy rzadko
+//            if (meshIsNew)     r->UploadMeshes();
+//            if (materialIsNew) r->UploadMaterials();
+
+//            // Zawsze oznacz instancje jako brudne — nowy/zmieniony obiekt
+//            // musi przejść przez BuildInstance przy następnym RenderFrame
+//            r->dirtyInstance = true;
+//        }
+
+//        return; // obiekt znaleziony, kończymy
+//    }
+//}
+
+
+/*void RebuildAllRegistries(Query<TransformComponent, RenderComponent>& renderQuery) {
+    for (auto& entry : passes)
+        entry.renderer->Reset();
+
+    animatorIDMap.clear();
+
+    // identyczne jak InitPassesFromScene
+    auto& renderers = std::get<1>(renderQuery.componentsVectors);
+    for (size_t i = 0; i < renderers.size(); i++) {
+        RenderComponent* rc = renderers[i];
+        if (!rc) continue;
+
+        if (rc->animator && animatorIDMap.find(rc->animator) == animatorIDMap.end())
+            animatorIDMap[rc->animator] = (uint32_t)animatorIDMap.size();
+
+        for (auto& mesh : rc->meshes) {
+            if (!mesh.cpuData || !mesh.material) continue;
+            Material* mat = mesh.material.get();
+            Shader* shader = mat->shader ? mat->shader : defaultShaderRender;
+            uint32_t pid = GetOrCreatePass(shader, mat->surfaceType);
+            GPUDrivenRenderer* r = GetRenderer(pid);
+            if (!r) continue;
+            r->RegisterMesh(mesh.cpuData.get());
+            r->RegisterMaterial(mat);
+        }
+    }
+
+    for (auto& entry : passes) {
+        entry.renderer->UploadMeshes();
+        entry.renderer->UploadMaterials();
+    }
+}
+*/
+
+//std::unordered_map<AnimatorComponent*, uint32_t> animatorIDMap;
+
+//void InitGPUDrivenRenderer(int width, int height)
+//{
+//    auto& renderers = std::get<1>(renderQuery->componentsVectors);
+//    gpuRenderer.Init(width, height);
+
+//    for (size_t i = 0; i < renderers.size(); i++) {
+//        RenderComponent* r = renderers[i];
+//        if (!r) continue;
+
+//        if (r->animator && animatorIDMap.find(r->animator) == animatorIDMap.end())
+//            animatorIDMap[r->animator] = (uint32_t)animatorIDMap.size();
+
+//        for (auto& mesh : r->meshes) {
+//            if (!mesh.gpuMesh || !mesh.material || !mesh.cpuData) continue;
+
+//            MeshData* md = mesh.cpuData.get();
+//            Material* mat = mesh.material.get();
+
+//            gpuRenderer.RegisterMesh(md);
+//            gpuRenderer.RegisterMaterial(mat);
+//        }
+//    }
+
+
+//    gpuRenderer.UploadMeshes();
+//    gpuRenderer.UploadMaterials();
+
+//    // Depth texture — tworzona TYLKO RAZ
+//    if (depthTexturePrev == 0) {
+//        glGenTextures(1, &depthTexturePrev);
+//        glBindTexture(GL_TEXTURE_2D, depthTexturePrev);
+//        glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32F, width, height);
+//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+//        glBindTexture(GL_TEXTURE_2D, 0);
+//    }
+
+
+//    gpuRendererReady = true;
+//}
+//std::vector<RenderData> renderDataCache;
+//std::vector<glm::mat4> boneMatricesCache;
+//struct AnimCache { uint32_t slot; AnimatorComponent* anim; };
+
+//std::vector<RenderData>& CollectRenderData()
+//{
+//    auto& transforms = std::get<0>(renderQuery->componentsVectors);
+//    auto& renderers = std::get<1>(renderQuery->componentsVectors);
+
+//    renderDataCache.clear();
+//    renderDataCache.reserve(renderQuery->gameobjects.size());
+
+//    const size_t objectCount = renderQuery->gameobjects.size();
+
+//    // trzeba znalezc to co ustawia animatory w RenderComponent zeby pozbyc sie tej petli i robic to raz
+//    // 1. najpierw zarejestruj nowe animatory
+//    for (size_t i = 0; i < objectCount; ++i) {
+//        const RenderComponent* r = renderers[i];
+//        if (!r || !r->animator) continue;
+//        if (animatorIDMap.find(r->animator) == animatorIDMap.end())
+//            animatorIDMap[r->animator] = (uint32_t)animatorIDMap.size();
+//    }
+
+//    size_t requiredSize = animatorIDMap.size() * MAX_BONES_PER_SKELETON;
+//    if (boneMatricesCache.size() != requiredSize)
+//        boneMatricesCache.resize(requiredSize, glm::mat4(1.0f));
+
+//    for (size_t i = 0; i < objectCount; ++i)
+//    {
+//        const TransformComponent* t = transforms[i];
+//        const RenderComponent* r = renderers[i];
+
+//        if (!t || !r)
+//            continue;
+//        const glm::mat4 model = t->modelMatrix;
+
+//        
+//        const auto& meshes = r->meshes;
+//        auto animator = r->animator;
+
+//        auto animIt = animator ? animatorIDMap.find(animator) : animatorIDMap.end();
+//        if (animIt != animatorIDMap.end() && animator->currentSkeleton)
+//        {
+//            uint32_t slot = animIt->second;
+//            uint32_t boneCount = (uint32_t)std::min(animator->finalBoneMatrices.size(), (size_t)MAX_BONES_PER_SKELETON);
+
+//            std::copy(animator->finalBoneMatrices.begin(), animator->finalBoneMatrices.begin() + boneCount, boneMatricesCache.begin() + slot * MAX_BONES_PER_SKELETON);
+//        }
+
+//        for (const auto& mesh : meshes)
+//        {
+//            auto* gpuMesh = mesh.cpuData.get();
+//            auto* material = mesh.material.get();
+
+//            if (!gpuMesh || !material || !mesh.cpuData)
+//                continue;
+
+//            auto meshID = gpuRenderer.GetMeshId(gpuMesh);
+//            if (meshID == UINT32_MAX)
+//                continue;
+
+//            auto matID = gpuRenderer.GetMaterialId(material);
+//            if (matID == UINT32_MAX)
+//                continue;
+
+
+//            auto& aabb = mesh.cpuData->aabb;
+
+//            renderDataCache.emplace_back(RenderData{
+//                .modelMatrix = model,
+//                .aabbMin = glm::vec4(aabb.min, 0.0f),
+//                .aabbMax = glm::vec4(aabb.max, 0.0f),
+//                .meshID = meshID,
+//                .materialID = matID,
+//                .skeletonID = animIt != animatorIDMap.end() ? animIt->second : NO_SKELETON,
+//                .padding = 0
+//                });            
+//        }
+//    }
+//    
+//    gpuRenderer.ResizeBoneBufferIfNeeded((uint32_t)animatorIDMap.size());
+//    gpuRenderer.UploadAllBoneMatrices(boneMatricesCache);
+
+//    return renderDataCache;
+//}
+
+
+
+//glm::vec3 worldMin(FLT_MAX), worldMax(-FLT_MAX);
+//glm::vec3 corners[8] = {
+//    {aabb.min.x, aabb.min.y, aabb.min.z},
+//    {aabb.max.x, aabb.min.y, aabb.min.z},
+//    {aabb.min.x, aabb.max.y, aabb.min.z},
+//    {aabb.max.x, aabb.max.y, aabb.min.z},
+//    {aabb.min.x, aabb.min.y, aabb.max.z},
+//    {aabb.max.x, aabb.min.y, aabb.max.z},
+//    {aabb.min.x, aabb.max.y, aabb.max.z},
+//    {aabb.max.x, aabb.max.y, aabb.max.z},
+//};
+//for (const auto& c : corners) {
+//    glm::vec3 w = glm::vec3(model * glm::vec4(c, 1.0f));
+//    worldMin = glm::min(worldMin, w);
+//    worldMax = glm::max(worldMax, w);
+//}
+
+//DebugDrawSystem::AddAABB(worldMin, worldMax, glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
+// 
+//
+//
+//struct HiZBuffer {
+//    GLuint fbo = 0;
+//    GLuint depthTex = 0;
+//    int    width = 0;
+//    int    height = 0;
+//    int    mipLevels = 0;
+//
+//    void Init(int w, int h) {
+//        width = w;
+//        height = h;
+//        mipLevels = (int)std::floor(std::log2(std::max(w, h))) + 1;
+//
+//        // Tekstura depth z mipmapy
+//        glGenTextures(1, &depthTex);
+//        glBindTexture(GL_TEXTURE_2D, depthTex);
+//        glTexStorage2D(GL_TEXTURE_2D, mipLevels, GL_DEPTH_COMPONENT32F, w, h);
+//
+//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+//
+//        // FBO dla mip 0
+//        glGenFramebuffers(1, &fbo);
+//        glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+//        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+//            GL_TEXTURE_2D, depthTex, 0);
+//        glDrawBuffer(GL_NONE);
+//        glReadBuffer(GL_NONE);
+//        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+//    }
+//};
+
+
+//class HiZOcclusionCuller {
+//public:
+//    HiZBuffer hiz;
+//    GLuint  hizBuildShader = 0;
+//    GLuint  hizCullShader = 0;
+//
+//    GLuint objectSSBO = 0; // dane AABB obiektów
+//    GLuint drawCmdSSBO = 0; // indirect draw commands
+//    GLuint counterSSBO = 0; // licznik widocznych
+//
+//    void Init(int w, int h) {
+//        hiz.Init(w, h);
+//        hizBuildShader = ComputeShader("res/shaders/hiz_build.comp").ID;
+//        hizCullShader = ComputeShader("res/shaders/hiz_culling.comp").ID;
+//    }
+//
+//    // Krok 1 — skopiuj depth z głównego FBO do Hi-Z
+//    void CopyDepth(GLuint mainDepthTex) {
+//        glCopyImageSubData(mainDepthTex, GL_TEXTURE_2D, 0, 0, 0, 0, hiz.depthTex, GL_TEXTURE_2D, 0, 0, 0, 0, hiz.width, hiz.height, 1);
+//    }
+//
+//    // Krok 2 — zbuduj mipmapy Hi-Z
+//    void BuildMips() {
+//        glUseProgram(hizBuildShader); // compute_shader->use
+//
+//        for (int mip = 1; mip < hiz.mipLevels; mip++) {
+//            int mipW = std::max(1, hiz.width >> mip);
+//            int mipH = std::max(1, hiz.height >> mip);
+//
+//            // Czytaj z poprzedniego mipa
+//            glActiveTexture(GL_TEXTURE0);
+//            glBindTexture(GL_TEXTURE_2D, hiz.depthTex);
+//            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, mip - 1);
+//            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, mip - 1);
+//
+//            // Pisz do aktualnego mipa
+//            glBindImageTexture(1, hiz.depthTex, mip, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
+//
+//            glDispatchCompute(
+//                (mipW + 7) / 8,
+//                (mipH + 7) / 8,
+//                1
+//            );
+//            glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+//        }
+//
+//        // Przywróć pełny zakres mipów
+//        glBindTexture(GL_TEXTURE_2D, hiz.depthTex);
+//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, hiz.mipLevels - 1);
+//    }
+//
+//    // Krok 3 — culling na GPU
+//    void Cull(const glm::mat4& vp, int objectCount) {
+//        // Zeruj licznik
+//        uint32_t zero = 0;
+//        glBindBuffer(GL_SHADER_STORAGE_BUFFER, counterSSBO);
+//        glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(uint32_t), &zero);
+//
+//        glUseProgram(hizCullShader);  // compute_shader->use
+//        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(vp));
+//        glUniform1i(1, objectCount);
+//        glUniform1i(2, hiz.mipLevels);
+//        glUniform2f(3, (float)hiz.width, (float)hiz.height);
+//
+//        glActiveTexture(GL_TEXTURE0);
+//        glBindTexture(GL_TEXTURE_2D, hiz.depthTex);
+//
+//        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, objectSSBO);
+//        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, drawCmdSSBO);
+//        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, counterSSBO);
+//
+//        glDispatchCompute((objectCount + 63) / 64, 1, 1);
+//        glMemoryBarrier(GL_COMMAND_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
+//    }
+//
+//    // Krok 4 — rysuj indirect
+//    void DrawIndirect(GLuint VAO, GLuint EBO) {
+//        glBindVertexArray(VAO);
+//        glBindBuffer(GL_DRAW_INDIRECT_BUFFER, drawCmdSSBO);
+//        glBindBuffer(GL_SHADER_STORAGE_BUFFER, counterSSBO);
+//
+//        // Odczytaj liczbę widocznych
+//        uint32_t visibleCount = 0;
+//        glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(uint32_t), &visibleCount);
+//
+//        glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, visibleCount, 0);
+//    }
+//};
+//
+//
+//void RenderCamera(...) {
+//    // === Klatka N ===
+//
+//    // 1. Render sceny do głównego FBO (używa Hi-Z z klatki N-1)
+//    glBindFramebuffer(GL_FRAMEBUFFER, mainFBO);
+//    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+//
+//    culler.Cull(projection * view, objectCount); // GPU culling
+//    culler.DrawIndirect(VAO, EBO);               // indirect draw
+//
+//    // 2. Skopiuj depth → zbuduj Hi-Z dla klatki N+1
+//    culler.CopyDepth(mainDepthTex);
+//    culler.BuildMips();
+//
+//    // 3. Wyświetl
+//    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+//    // blit mainFBO → ekran
+//}
+
+////sort transparent
+//for (auto& [key, vectorMesh] : instancedGroupsTransparent)
+//{
+//    //tylko sortuje instancjonowane obiekty
+//    std::sort(vectorMesh.begin(), vectorMesh.end(),
+//        [](const TransparentMesh& a, const TransparentMesh& b)
+//        {
+//            return a.distance > b.distance; // dalekie -> bliskie (back-to-front)
+//        });
+//}
+
+
+//std::vector<std::pair<GroupKey, std::vector<TransparentMesh>>> items(
+//    instancedGroupsTransparent.begin(),
+//    instancedGroupsTransparent.end()
+//);
+
+//std::sort(items.begin(), items.end(),
+//    [](auto& a, auto& b)
+//    {
+//        float da = a.second.front().distance;
+//        float db = b.second.front().distance;
+//        return da > db;
+//    });
+
+
+
+
+//stary render
+            //Culling
+              /*float dims[3] = { size.x, size.y, size.z };
+                std::sort(dims, dims + 3);*/
+
+            //shader->setVec3("dirLight.direction", glm::vec3(-0.2f, -1.0f, -0.3f));
+            //shader->setVec3("dirLight.ambient", glm::vec3(0.2f, 0.2f, 0.2f));
+            //shader->setVec3("dirLight.diffuse", glm::vec3(0.8f, 0.8f, 0.8f));
+            //shader->setVec3("dirLight.specular", glm::vec3(1.0f, 1.0f, 1.0f));
+
+            //std::vector<size_t> standardVisible;
+            ////std::vector<size_t> animatedVisible;
+
+            //for (size_t i : finalToRender) {
+            //    //auto* go = renderQuery->gameobjects[i];
+            //    //AnimatorComponent* animator = go->template GetComponent<AnimatorComponent>();
+            //    //GameObject* current = go->GetParent();
+            //    //while (animator == nullptr && current != nullptr) {
+            //    //    animator = current->template GetComponent<AnimatorComponent>();
+            //    //    current = current->GetParent();
+            //    //}
+            //   
+            //    standardVisible.push_back(i);
+            //}
+
+
+
+            //if (!final.empty()) {
+            //    
+            //}
+
+            //if (!animatedVisible.empty()) {
+
+            //    for (size_t i : animatedVisible) {
+            //     /*   auto* go = renderQuery->gameobjects[i];
+            //        auto* renderComp = std::get<1>(renderQuery->componentsVectors)[i];*/
+
+            //        
+            //     /*   AnimatorComponent* animator = go->GetComponent<AnimatorComponent>();
+
+            //        GameObject* current = go->GetParent();
+            //        if (animator == nullptr && current != nullptr) {
+            //            animator = current->GetComponentInParent<AnimatorComponent>();
+            //        }*/
+            //        //if (!animator && renderComp->rootAnimator) {
+            //        //    animator = renderComp->rootAnimator;
+            //        //}
+
+            //        auto drawStart = std::chrono::high_resolution_clock::now();
+            //        overrideMat->Apply();
+            //        model->Draw(0);
+            //        stats.drawCalls++;
+            //        stats.renderedObjects++;
+            //        stats.stateChanges++;
+            //        stats.triangles += GetTriangleCount(model);
+            //        auto drawEnd = std::chrono::high_resolution_clock::now();
+            //        stats.drawSubmitTimeMs += std::chrono::duration<float, std::milli>(drawEnd - drawStart).count();
+            //    }
+            //}
+

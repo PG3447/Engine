@@ -1,0 +1,30 @@
+#include "core/component.h"
+#include "core/gameobject.h"
+
+static uint32_t nextAnimatorID = 0;
+
+void AnimatorComponent::OnEnable(GameObject* owner) {
+    //owner->GetComponent<RenderComponent>()->animator = this;
+    animatorID = nextAnimatorID++;
+    staticCounterAnimator++;
+    owner->TraverseChildren([this](GameObject* go) {
+        auto* render = go->GetComponent<RenderComponent>();
+        if (render) {
+            render->animator = this;
+            render->rendererDirty = true;
+            spdlog::info("animator przypisany do: {}", go->name);
+        }
+        });
+}
+
+
+void ColliderComponent::OnEnable(GameObject* owner) {
+    auto renderComponent = owner->GetComponent<RenderComponent>();
+    auto transformComponent = owner->GetComponent<TransformComponent>();
+    if (renderComponent != nullptr && transformComponent != nullptr)
+    {
+        this->halfSize = (renderComponent->localObjectAABB.max - renderComponent->localObjectAABB.min) * 0.5f;
+        this->halfSize *= transformComponent->scale;
+        //this->halfSize = renderComponent->localObjectAABB.max * transformComponent->scale;
+    }
+}

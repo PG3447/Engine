@@ -16,9 +16,8 @@ void RaycastSystem::Update(ECS&, float)
 
     for (size_t i = 0; i < tObjs.size(); i++) {
         glm::vec3 pos  = glm::vec3(tTrs[i]->modelMatrix[3]);
-        glm::vec3 half = tCols[i]->halfSize * tTrs[i]->scale;
-        targets.push_back({ tObjs[i], pos + tCols[i]->offset - half,
-                                      pos + tCols[i]->offset + half });
+        glm::vec3 half = tCols[i]->halfSize;
+        targets.push_back({ tObjs[i], pos + tCols[i]->offset - half, pos + tCols[i]->offset + half });
     }
 
     for (const auto& tgt : targets) {
@@ -67,8 +66,7 @@ void RaycastSystem::Update(ECS&, float)
 
             rc->raycastHits.push_back(best);
             glm::vec3 endpoint = best.hit ? best.point : origin + dir * rc->range;
-            DebugDrawSystem::AddLine(origin, endpoint,
-                best.hit ? glm::vec4(1,0,0,1) : glm::vec4(0,1,0,1));
+            DebugDrawSystem::AddLine(origin, endpoint, best.hit ? glm::vec4(1,0,0,1) : glm::vec4(0,1,0,1));
         }
     }
 }

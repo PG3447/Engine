@@ -20,6 +20,7 @@ public:
     {
         root = std::make_unique<GameObject>(&ecs);
         root->AddComponent<TransformComponent>();
+        root->name = "root";
     }
 
     GameObject* GetRoot() { return root.get(); }

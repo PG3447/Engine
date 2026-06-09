@@ -6,13 +6,25 @@
 #include <spdlog/spdlog.h>
 #include "shader.h"
 
+enum class SurfaceType {
+    Opaque,
+    Transparent
+};
+
 class Material {
 public:
     Shader* shader = nullptr;
 
+    SurfaceType surfaceType = SurfaceType::Opaque;
+
+    std::vector<uint32_t> materialID;
+
     GLuint diffuseMap = 0;
     GLuint specularMap = 0;
+    GLuint metallicRoughnessMap = 0;
+    GLuint aoMap = 0;
     GLuint normalMap = 0;
+    bool aoInMetallicRoughness = false;
 
     glm::vec3 diffuseColor = glm::vec3(1.0f, 1.0f, 1.0f);
     float shininess = 32.0f;
@@ -21,6 +33,33 @@ public:
 
     Material(Shader* s, GLuint diffuse = 0, GLuint specular = 0, GLuint normal = 0)
         : shader(s), diffuseMap(diffuse), specularMap(specular), normalMap(normal) {
+    }
+   
+
+    void setMaterialId(int passId, uint32_t id)
+    {
+        if (passId >= static_cast<int>(materialID.size()))
+            materialID.resize(passId + 1, UINT32_MAX);
+
+        materialID[passId] = id;
+    }
+
+    uint32_t getMaterialId(int passId) const
+    {
+        if (passId >= static_cast<int>(materialID.size()))
+            return UINT32_MAX;
+
+        return materialID[passId];
+    }
+
+    bool hasMaterial(int passId) const
+    {
+        return getMaterialId(passId) != UINT32_MAX;
+    }
+
+    void removeMaterial(int passId)
+    {
+        setMaterialId(passId, UINT32_MAX);
     }
 
     void Apply() const {
