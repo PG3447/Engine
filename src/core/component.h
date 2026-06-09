@@ -521,7 +521,7 @@ struct NavPathComponent : Component {
     float stuckThreshold     = 1.0f;
     glm::vec3 lastCheckedPos { 0.0f };
 
-    bool debugDraw = true;
+    bool debugDraw = false;
     glm::vec4 colorPath     = glm::vec4(1.0f, 1.0f, 0.0f, 1.0f);
     glm::vec4 colorGoal     = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
     glm::vec4 colorWaypoint = glm::vec4(0.0f, 0.5f, 1.0f, 1.0f);
