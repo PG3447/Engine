@@ -198,11 +198,16 @@ std::unique_ptr<Prefab> NormalDoor;
 std::unique_ptr<Prefab> szkloModel;
 std::unique_ptr<Prefab> cockroachModel;
 
+std::unique_ptr<Prefab> puzel1;
+std::unique_ptr<Prefab> puzel2;
+std::unique_ptr<Prefab> puzel3;
+std::unique_ptr<Prefab> puzel4;
+std::unique_ptr<Prefab> puzel5;
+std::unique_ptr<Prefab> puzel6;
 
-std::unique_ptr<Prefab> LewyDolny;
-std::unique_ptr<Prefab> PrawyDolny;
-std::unique_ptr<Prefab> PrawyGorny;
-std::unique_ptr<Prefab> LewyGorny;
+std::unique_ptr<Prefab> czerwonaTablica;
+std::unique_ptr<Prefab> zielonaTablica;
+std::unique_ptr<Prefab> Rentgen;
 
 std::unique_ptr<Prefab> dyingModelPrefab;
 std::unique_ptr<Prefab> jumpSkeletonPrefab;
@@ -394,7 +399,7 @@ void OnPuzzleSolved(Scene* scene) {
         return;
     }
 
-    puzzleRewardObject = placeholderModel->Instantiate(*scene, nullptr, ourShader.get());
+    puzzleRewardObject = placeholderModel->Instantiate(*scene, nullptr, nullptr);
     puzzleRewardObject->name = "PuzzleReward";
 
     TransformComponent* tr = puzzleRewardObject->GetComponent<TransformComponent>();
@@ -460,6 +465,8 @@ void HandlePlayerInteraction(
             heldTr->rotation = targetSlot->targetRotation;
             heldTr->isDirty  = true;
             targetSlot->occupant = myHeldObject;
+            if (IsPuzzleSolved())
+                OnPuzzleSolved(scene);
 
             if (auto rb = myHeldObject->GetComponent<RigidbodyComponent>()) {
                 rb->useGravity = false;
@@ -823,12 +830,12 @@ int main(int, char**)
 
     pbrShader = std::make_unique<Shader>("res/shaders/gpu_driven_PBR.vert", "res/shaders/gpu_driven_PBR.frag");
     pbrShader->use();
-    
+
 
     groundModel = std::make_unique<Prefab>("res/models/podloze.glb");
     sunModel    = std::make_unique<Prefab>("res/models/Sun.glb");
     szkloModel = std::make_unique<Prefab>("res/models/samochod.glb");
-    
+
     GameObject* szklo = szkloModel->Instantiate(*scena1, nullptr, pbrShader.get());
     szklo->name = "SZKLO";
     //for (auto& mesh : szklo->GetComponent<RenderComponent>()->meshes)
@@ -879,7 +886,7 @@ int main(int, char**)
 
     camera1->GetComponent<RigidbodyComponent>()->useGravity = false;
     camera1->GetComponent<ColliderComponent>()->halfSize    = glm::vec3{ 1.0f, 9.0f, 1.0f };
-    
+
     GameObject* camera2 = scena1->CreateGameObject(nullptr);
     CameraComponent*    camCompRight     = camera2->AddComponent<CameraComponent>();
     ColliderComponent*  camera2collider  = camera2->AddComponent<ColliderComponent>();
@@ -1583,7 +1590,7 @@ void imgui_render(SceneManager& sceneManager)
     }
 
     ImGui::Separator();
-    ImGui::Text("Ambient"); 
+    ImGui::Text("Ambient");
     ImGui::DragFloat("Ambient strength", &renderSystem->ambientStrength, 0.000001f, 0.0f, 1.0f, "%.6f");
     ImGui::Separator();
     ImGui::Text("Hierarchy");
@@ -1814,10 +1821,17 @@ void connectAllModels() {
     szafkaModel      = std::make_unique<Prefab>("res/models/szafka_pop_main.glb");
     ruraModel        = std::make_unique<Prefab>("res/models/placeholder_rura_wysuwana.glb");
     panelModel       = std::make_unique<Prefab>("res/models/Panel_5x5.glb");
-    LewyDolny       = std::make_unique<Prefab>("res/models/LewyDolny.glb");
-    LewyGorny       = std::make_unique<Prefab>("res/models/LewyGorny.glb");
-    PrawyGorny       = std::make_unique<Prefab>("res/models/PrawyGorny.glb");
-    PrawyDolny       = std::make_unique<Prefab>("res/models/PrawyDolny.glb");
+    puzel1       = std::make_unique<Prefab>("res/models/Puzel1.glb");
+    puzel2       = std::make_unique<Prefab>("res/models/Puzel2.glb");
+    puzel3       = std::make_unique<Prefab>("res/models/Puzel3.glb");
+    puzel4       = std::make_unique<Prefab>("res/models/Puzel4.glb");
+    puzel5       = std::make_unique<Prefab>("res/models/Puzel5.glb");
+    puzel6       = std::make_unique<Prefab>("res/models/Puzel6.glb");
+
+    zielonaTablica = std::make_unique<Prefab>("res/models/ZielonaTablica.glb");
+    czerwonaTablica = std::make_unique<Prefab>("res/models/CzerwonaTablica.glb");
+    Rentgen = std::make_unique<Prefab>("res/models/Rentgen.glb");
+
     cockroachModel   = std::make_unique<Prefab>("res/models/cockroach.glb");
 }
 
@@ -2174,45 +2188,98 @@ void createRentgenRoom(Scene* scena) {
         tablicaKibli[i]->GetComponent<ColliderComponent>()->isWalkable     = false;
         tablicaKibli[i]->GetComponent<ColliderComponent>()->affectsNavMesh = true;
     }*/
-    GameObject * lewyDolny = LewyDolny->Instantiate(*scena, nullptr, ourShader.get());
-    lewyDolny->name = "lewyDolny";
-    lewyDolny->GetComponent<TransformComponent>()->position = glm::vec3(4, 3, -16);
-    lewyDolny->AddComponent<RigidbodyComponent>();
-    lewyDolny->GetComponent<RigidbodyComponent>()->useGravity = true;
-    lewyDolny->GetComponent<RigidbodyComponent>()->isStatic = false;
-    lewyDolny->AddComponent<ColliderComponent>();
-    objectOriginalRotations[lewyDolny] = glm::vec3(0.0f);
-    pickupObjects.insert(lewyDolny);
+    GameObject * objPuzel1 = puzel1->Instantiate(*scena, nullptr, nullptr);
+    objPuzel1->name = "puzel1";
+    objPuzel1->GetComponent<TransformComponent>()->position = glm::vec3(4, 3, -16);
+    objPuzel1->GetComponent<TransformComponent>()->rotation = glm::vec3(0, -90, 0);
+    objPuzel1->AddComponent<RigidbodyComponent>();
+    objPuzel1->GetComponent<RigidbodyComponent>()->useGravity = true;
+    objPuzel1->GetComponent<RigidbodyComponent>()->isStatic = false;
+    objPuzel1->AddComponent<ColliderComponent>();
+    objectOriginalRotations[objPuzel1] = objPuzel1->GetComponent<TransformComponent>()->rotation;
+    pickupObjects.insert(objPuzel1);
 
-    GameObject * lewyGorny = LewyGorny->Instantiate(*scena, nullptr, ourShader.get());
-    lewyGorny->name = "lewyGorny";
-    lewyGorny->GetComponent<TransformComponent>()->position = glm::vec3(4, 3, -18);
-    lewyGorny->AddComponent<RigidbodyComponent>();
-    lewyGorny->GetComponent<RigidbodyComponent>()->useGravity = true;
-    lewyGorny->GetComponent<RigidbodyComponent>()->isStatic = false;
-    lewyGorny->AddComponent<ColliderComponent>();
-    objectOriginalRotations[lewyGorny] = glm::vec3(0.0f);
-    pickupObjects.insert(lewyGorny);
+    GameObject * objPuzel2 = puzel2->Instantiate(*scena, nullptr, nullptr);
+    objPuzel2->name = "puzel2";
+    objPuzel2->GetComponent<TransformComponent>()->position = glm::vec3(4, 3, -18);
+    objPuzel2->GetComponent<TransformComponent>()->rotation = glm::vec3(0, -90, 0);
+    objPuzel2->AddComponent<RigidbodyComponent>();
+    objPuzel2->GetComponent<RigidbodyComponent>()->useGravity = true;
+    objPuzel2->GetComponent<RigidbodyComponent>()->isStatic = false;
+    objPuzel2->AddComponent<ColliderComponent>();
+    objectOriginalRotations[objPuzel2] = objPuzel2->GetComponent<TransformComponent>()->rotation;
+    pickupObjects.insert(objPuzel2);
 
-    GameObject * prawyDolny = PrawyDolny->Instantiate(*scena, nullptr, ourShader.get());
-    prawyDolny->name = "prawyDolny";
-    prawyDolny->GetComponent<TransformComponent>()->position = glm::vec3(4, 3, -20);
-    prawyDolny->AddComponent<RigidbodyComponent>();
-    prawyDolny->GetComponent<RigidbodyComponent>()->useGravity = true;
-    prawyDolny->GetComponent<RigidbodyComponent>()->isStatic = false;
-    prawyDolny->AddComponent<ColliderComponent>();
-    objectOriginalRotations[prawyDolny] = glm::vec3(0.0f);
-    pickupObjects.insert(prawyDolny);
+    GameObject * objPuzel3 = puzel3->Instantiate(*scena, nullptr, nullptr);
+    objPuzel3->name = "puzel3";
+    objPuzel3->GetComponent<TransformComponent>()->position = glm::vec3(4, 3, -20);
+    objPuzel3->GetComponent<TransformComponent>()->rotation = glm::vec3(0, -90, 0);
+    objPuzel3->AddComponent<RigidbodyComponent>();
+    objPuzel3->GetComponent<RigidbodyComponent>()->useGravity = true;
+    objPuzel3->GetComponent<RigidbodyComponent>()->isStatic = false;
+    objPuzel3->AddComponent<ColliderComponent>();
+    objectOriginalRotations[objPuzel3] = objPuzel3->GetComponent<TransformComponent>()->rotation;
+    pickupObjects.insert(objPuzel3);
 
-    GameObject * prawyGorny = PrawyGorny->Instantiate(*scena, nullptr, ourShader.get());
-    prawyGorny->name = "prawyGorny";
-    prawyGorny->GetComponent<TransformComponent>()->position = glm::vec3(4, 3, -22);
-    prawyGorny->AddComponent<RigidbodyComponent>();
-    prawyGorny->GetComponent<RigidbodyComponent>()->useGravity = true;
-    prawyGorny->GetComponent<RigidbodyComponent>()->isStatic = false;
-    prawyGorny->AddComponent<ColliderComponent>();
-    objectOriginalRotations[prawyGorny] = glm::vec3(0.0f);
-    pickupObjects.insert(prawyGorny);
+    GameObject * objPuzel4 = puzel4->Instantiate(*scena, nullptr, nullptr);
+    objPuzel4->name = "puzel4";
+    objPuzel4->GetComponent<TransformComponent>()->position = glm::vec3(4, 3, -22);
+    objPuzel4->GetComponent<TransformComponent>()->rotation = glm::vec3(0, -90, 0);
+    objPuzel4->AddComponent<RigidbodyComponent>();
+    objPuzel4->GetComponent<RigidbodyComponent>()->useGravity = true;
+    objPuzel4->GetComponent<RigidbodyComponent>()->isStatic = false;
+    objPuzel4->AddComponent<ColliderComponent>();
+    objectOriginalRotations[objPuzel4] = objPuzel4->GetComponent<TransformComponent>()->rotation;
+    pickupObjects.insert(objPuzel4);
+
+    GameObject * objPuzel5 = puzel5->Instantiate(*scena, nullptr, nullptr);
+    objPuzel5->name = "puzel5";
+    objPuzel5->GetComponent<TransformComponent>()->position = glm::vec3(4, 3, -25);
+    objPuzel5->GetComponent<TransformComponent>()->rotation = glm::vec3(0, -90, 0);
+    objPuzel5->AddComponent<RigidbodyComponent>();
+    objPuzel5->GetComponent<RigidbodyComponent>()->useGravity = true;
+    objPuzel5->GetComponent<RigidbodyComponent>()->isStatic = false;
+    objPuzel5->AddComponent<ColliderComponent>();
+    objectOriginalRotations[objPuzel5] = objPuzel5->GetComponent<TransformComponent>()->rotation;
+    pickupObjects.insert(objPuzel5);
+
+    GameObject * objPuzel6 = puzel6->Instantiate(*scena, nullptr, nullptr);
+    objPuzel6->name = "puzel6";
+    objPuzel6->GetComponent<TransformComponent>()->position = glm::vec3(4, 3, -28);
+    objPuzel6->GetComponent<TransformComponent>()->rotation = glm::vec3(0, -90, 0);
+    objPuzel6->AddComponent<RigidbodyComponent>();
+    objPuzel6->GetComponent<RigidbodyComponent>()->useGravity = true;
+    objPuzel6->GetComponent<RigidbodyComponent>()->isStatic = false;
+    objPuzel6->AddComponent<ColliderComponent>();
+    objectOriginalRotations[objPuzel6] = objPuzel6->GetComponent<TransformComponent>()->rotation;
+    pickupObjects.insert(objPuzel6);
+
+    GameObject * CzerwonaTablica = czerwonaTablica->Instantiate(*scena, nullptr, nullptr);
+    CzerwonaTablica->name = "CzerwonaTablica";
+    CzerwonaTablica->GetComponent<TransformComponent>()->position = glm::vec3(-40, 12, -296);
+    CzerwonaTablica->GetComponent<TransformComponent>()->rotation = glm::vec3(180, 90, 90);
+    CzerwonaTablica->GetComponent<TransformComponent>()->scale = glm::vec3(6, 0.1, 10);
+    CzerwonaTablica->AddComponent<RigidbodyComponent>();
+    CzerwonaTablica->GetComponent<RigidbodyComponent>()->useGravity = false;
+    CzerwonaTablica->GetComponent<RigidbodyComponent>()->isStatic = true;
+
+    GameObject * ZielonaTablica = zielonaTablica->Instantiate(*scena, nullptr, nullptr);
+    ZielonaTablica->name = "ZielonaTablica";
+    ZielonaTablica->GetComponent<TransformComponent>()->position = glm::vec3(40, 12, -296);
+    ZielonaTablica->GetComponent<TransformComponent>()->rotation = glm::vec3(180, 90, 90);
+    ZielonaTablica->GetComponent<TransformComponent>()->scale = glm::vec3(6, 0.1, 10);
+    ZielonaTablica->AddComponent<RigidbodyComponent>();
+    ZielonaTablica->GetComponent<RigidbodyComponent>()->useGravity = false;
+    ZielonaTablica->GetComponent<RigidbodyComponent>()->isStatic = true;
+
+    GameObject * rentgen = Rentgen->Instantiate(*scena, nullptr, nullptr);
+    rentgen->name = "RentgenTablica";
+    rentgen->GetComponent<TransformComponent>()->position = glm::vec3(4, 12, -296);
+    rentgen->GetComponent<TransformComponent>()->rotation = glm::vec3(180, 90, 90);
+    rentgen->GetComponent<TransformComponent>()->scale = glm::vec3(6, 0.1, 10);
+    rentgen->AddComponent<RigidbodyComponent>();
+    rentgen->GetComponent<RigidbodyComponent>()->useGravity = false;
+    rentgen->GetComponent<RigidbodyComponent>()->isStatic = true;
 
     auto createPuzzleSlot = [&](const glm::vec3& pos, const glm::vec3& targetRot, GameObject* expected) {
         GameObject* slotGO = scena->CreateGameObject(nullptr);
@@ -2222,7 +2289,7 @@ void createRentgenRoom(Scene* scena) {
         tr->position = pos;
 
         ColliderComponent* col = slotGO->AddComponent<ColliderComponent>();
-        col->halfSize  = glm::vec3(2.0f);
+        col->halfSize  = glm::vec3(2, 2, 0.5);
         col->isTrigger = true;
 
         RigidbodyComponent* rb = slotGO->AddComponent<RigidbodyComponent>();
@@ -2236,8 +2303,10 @@ void createRentgenRoom(Scene* scena) {
         puzzleSlotsMap[slotGO] = slot;
     };
 
-    createPuzzleSlot(glm::vec3(0.850, 11, -292.58), glm::vec3(90, 0,  0), lewyDolny);
-    createPuzzleSlot(glm::vec3(6, 11, -292.58), glm::vec3(90, 0, 0), lewyGorny);
-    createPuzzleSlot(glm::vec3(0.850, 5.14, -292.58), glm::vec3(90, 0, 0), prawyDolny);
-    createPuzzleSlot(glm::vec3(6, 5.14, -292.58), glm::vec3(90, 0,   0), prawyGorny);
+    createPuzzleSlot(glm::vec3(-2, 15, -295.9), glm::vec3(180, 90,  90), objPuzel1);
+    createPuzzleSlot(glm::vec3(4, 15, -295.9), glm::vec3(180, 90, 90), objPuzel2);
+    createPuzzleSlot(glm::vec3(11, 15, -295.9), glm::vec3(180, 90, 90), objPuzel3);
+    createPuzzleSlot(glm::vec3(-2, 9, -295.9), glm::vec3(180, 90, 90), objPuzel4);
+    createPuzzleSlot(glm::vec3(4, 9, -295.9), glm::vec3(180, 90, 90), objPuzel5);
+    createPuzzleSlot(glm::vec3(11, 9, -295.9), glm::vec3(180, 90, 90), objPuzel6);
 }
