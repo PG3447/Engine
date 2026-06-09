@@ -14,10 +14,6 @@ out vec3 Normal;
 out mat3 TBN;
 flat out uint materialID;
 
-// =======================
-// GPU BUFFERS
-// =======================
-
 struct InstanceData {
     mat4 model;
     uint materialID;
@@ -36,7 +32,6 @@ layout(std140, binding = 0) uniform FrameUBO
     float ambientStrength;
     int numLights;
 };
-
 
 // Jedna p³aska tablica wszystkich macierzy koœci dla WSZYSTKICH szkieletów.
 // Uk³ad: skeleton 0 zajmuje [0 .. MAX_BONES-1],

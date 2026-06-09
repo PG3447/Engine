@@ -13,7 +13,7 @@ void main() {
     //vec3 color = texture(screenTexture, uv).rgb;
 
     vec3 color = texture(screenTexture, TexCoords).rgb;
-    color = pow(color, vec3(2.2));
+    //color = pow(color, vec3(2.2));
     //vec3 negative = 1.0 - color;
     //FragColor = vec4(negative, 1.0);
 
@@ -37,8 +37,8 @@ void main() {
             float m1 = max(s1, s2);
             float m2 = max(s3, s4);
 
-            float ss1 = smoothstep(0.2, 0.4, m1);
-            float ss2 = smoothstep(0.2, 0.4, m2);
+            float ss1 = smoothstep(0.08, 0.15, m1);
+            float ss2 = smoothstep(0.08, 0.15, m2);
 
             float GIGAWYNIK = max(ss1, ss2);
 
@@ -56,8 +56,8 @@ void main() {
             float m1 = max(s1, s2);
             float m2 = max(s3, s4);
 
-            float ss1 = smoothstep(0.2, 0.4, m1);
-            float ss2 = smoothstep(0.2, 0.4, m2);
+            float ss1 = smoothstep(0.08, 0.15, m1);
+            float ss2 = smoothstep(0.08, 0.15, m2);
 
             float GIGAWYNIK = max(ss1, ss2);
 
@@ -66,25 +66,25 @@ void main() {
             playerColor =  mix(vec3(dotProduct), color, GIGAWYNIK);//pow(tempColor, vec3(1.0 / 1.8));//dont worry about it
      }
 
-     playerColor = pow(playerColor, vec3(1.0 / 2.2));
+     //playerColor = pow(playerColor, vec3(1.0 / 2.2));
 
 
     //Contrast
 
-        float contrast = 1.5;
-        playerColor = (playerColor - 0.5) * contrast + 0.5;
+//        float contrast = 1.5;
+//        playerColor = (playerColor - 0.5) * contrast + 0.5;
 
 
     //Lines
-
-        float scanline = sin(TexCoords.y * 800.0) * 0.04;
-        playerColor -= scanline;
+//
+//        float scanline = sin(TexCoords.y * 800.0) * 0.04;
+//        playerColor -= scanline;
 
 
     //Grain
 
-        //float noise = fract(sin(dot(TexCoords + time * 0.1, vec2(12.9898, 78.233))) * 43758.5453);
-        //playerColor += noise * 0.1;
+        float noise = fract(sin(dot(TexCoords + time * 0.1, vec2(12.9898, 78.233))) * 43758.5453);
+        playerColor += noise * 0.1;
 
 
 
@@ -111,25 +111,6 @@ void main() {
 
         float divider = smoothstep(0.001, 0.005, abs(TexCoords.x - 0.5));
         playerColor *= divider;
-
-    // crosshair
-    vec2 crosshairCenter;
-    if (TexCoords.x < 0.5)
-    crosshairCenter = vec2(0.25, 0.5);
-    else
-    crosshairCenter = vec2(0.75, 0.5);
-
-    vec2 aspectUV = (TexCoords - crosshairCenter) * vec2(2.0, 1.0);
-    float distCrosshair = length(aspectUV);
-
-    float dotRadius = 0.003;
-    float outlineRadius = 0.006;
-
-    float innerDot = smoothstep(dotRadius, dotRadius - 0.001, distCrosshair);
-    float outline  = smoothstep(outlineRadius, outlineRadius - 0.001, distCrosshair);
-
-    playerColor = mix(playerColor, vec3(0.0), outline);
-    playerColor = mix(playerColor, vec3(1.0), innerDot);
 
 
     FragColor = vec4(playerColor, 1.0);

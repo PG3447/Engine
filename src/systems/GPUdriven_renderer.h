@@ -39,10 +39,13 @@ struct GPUMeshData
     uint32_t padding;
 };
 
+
 struct GPUMaterial
 {
     GLuint64 diffuseHandle;
     GLuint64 specularHandle;
+    GLuint64 metallicRoughnessMap;
+    GLuint64 aoHandle;
     GLuint64 normalHandle;
     uint32_t packedColor;
     float shininess;
@@ -50,7 +53,6 @@ struct GPUMaterial
     //uint32_t padding2;
     //glm::vec4 diffuseColorAndShininess;
 };
-
 
 struct GPULight
 {
@@ -215,6 +217,7 @@ public:
     Shader* shaderRender = nullptr;
 
     bool dirtyInstance = true;
+    bool frustumsEnabled = false;
     bool occlussionEnabled = false;
 
 	GPUDrivenRenderer() = default; 
@@ -383,7 +386,7 @@ public:
         materialRegistry.clear();
     }
 
-    void AttachHiZ(GLuint tex, int mipLevels, int vpW, int vpH, int vpX = 0, int vpY = 0, bool occlusionEnabled = false)
+    void AttachHiZ(GLuint tex, int mipLevels, int vpW, int vpH, int vpX = 0, int vpY = 0, bool frustumEnabled = false, bool occlusionEnabled = false)
     {
         hizTexture = tex;
         hizMipLevels = mipLevels;
@@ -391,6 +394,7 @@ public:
         vpHeight = vpH;
         vpOffsetX = vpX;
         vpOffsetY = vpY;
+        frustumsEnabled = frustumEnabled;
         occlussionEnabled = occlusionEnabled;
 
         if (shaderHizDownsample) {
@@ -403,7 +407,7 @@ public:
 
 
 
-    uint32_t RegisterMesh(MeshData* data)
+    uint32_t RegisterMesh(uint32_t passID, RenderComponent* rc, MeshData* data)
     {
         auto it = meshRegistry.find(data);
         if (it != meshRegistry.end())
@@ -426,9 +430,11 @@ public:
         meshesData.push_back(meshData);
         uint32_t id = meshesData.size() - 1;
         meshRegistry[data] = id;
+        data->setMeshId(passID, id);
+        rc->rendererDirty = true;
+        
         spdlog::error("Zarejestrowano mesh");
         spdlog::info(allVertices.size());
-
         return (GLuint)id; //meshID
     }
 
@@ -443,13 +449,15 @@ public:
     }
 
 
-    uint32_t RegisterMaterial(Material* mat) {
+    uint32_t RegisterMaterial(uint32_t passID, RenderComponent* rc, Material* mat) {
         auto it = materialRegistry.find(mat);
         if (it != materialRegistry.end()) return it->second;
 
         GPUMaterial gpu;
         gpu.diffuseHandle = GetOrCreateHandle(mat->diffuseMap);
         gpu.specularHandle = GetOrCreateHandle(mat->specularMap);
+        gpu.metallicRoughnessMap = GetOrCreateHandle(mat->metallicRoughnessMap);
+        gpu.aoHandle = (!mat->aoInMetallicRoughness) ? GetOrCreateHandle(mat->aoMap) : GLuint64(0);
         gpu.normalHandle = GetOrCreateHandle(mat->normalMap);
         gpu.packedColor = packUnorm4x8(glm::vec4(mat->diffuseColor, 1.0f));
         gpu.shininess = mat->shininess;
@@ -457,6 +465,8 @@ public:
         uint32_t id = (uint32_t)materials.size();
         materials.push_back(gpu);
         materialRegistry[mat] = id;
+        mat->setMaterialId(passID, id);
+        rc->rendererDirty = true;
 
         spdlog::error("Zarejestrowano material");
         spdlog::info(materialRegistry.size());
@@ -527,57 +537,6 @@ public:
         spdlog::warn("Materialy sie wysylaja");
     }
 
-    //size_t prevSizeLights = 0;
-
-    //void UpdateAndUploadLights(std::vector<LightComponent*>& lights, std::vector<TransformComponent*>& transforms)
-    //{
-    //    if (lights.empty()) return;
-
-    //    uint32_t count = std::min((uint32_t)lights.size(), (uint32_t)MAX_UBO_LIGHTS);
-    //    gpuLights.resize(count);
-
-    //    for (size_t i = 0; i < count; i++)
-    //    {
-    //        LightComponent* light = lights[i];
-    //        TransformComponent* transform = transforms[i];
-    //        if (!light || !transform) continue;
-
-    //        GPULight& g = gpuLights[i];
-
-    //        const bool on = light->isOn;
-
-    //        g.position = glm::vec4(transform->position, (float)light->type);
-    //        g.direction = (glm::length2(light->direction) < 0.0001f) ? glm::vec4(TransformHelper::getForward(*transform), 0.0f) : glm::vec4(light->direction, 0.0f);
-
-    //        const glm::vec3& zero = glm::vec3(0.0f);
-    //        g.ambient = glm::vec4(on ? light->ambient : zero, 0.0f);
-    //        g.diffuse = glm::vec4(on ? light->diffuse : zero, 0.0f);
-    //        g.specular = glm::vec4(on ? light->specular : zero, 0.0f);
-    //        g.params1 = glm::vec4(light->constant, light->linear, light->quadratic, 0.0f);
-    //        g.params2 = glm::vec4(light->cutOff, light->outerCutOff, on ? 1.0f : 0.0f, 0.0f);
-    //    }
-
-
-    //    glBindBuffer(GL_UNIFORM_BUFFER, lightsUBO);
-    //    glBufferSubData(GL_UNIFORM_BUFFER, 0, count * sizeof(GPULight), gpuLights.data());
-    //    glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
-    //    //if (prevSizeLights == gpuLights.size())
-    //    //{
-    //    //    glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightsSSBO);
-    //    //    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, gpuLights.size() * sizeof(GPULight), gpuLights.data());
-    //    //    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-    //    //}
-    //    //else
-    //    //{
-    //    //    glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightsSSBO);
-    //    //    glBufferData(GL_SHADER_STORAGE_BUFFER, gpuLights.size() * sizeof(GPULight), gpuLights.data(), GL_DYNAMIC_DRAW);
-    //    //    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-    //    //}
-
-    //    prevSizeLights = count;
-    //}
-
     void UploadAllBoneMatrices(const std::vector<glm::mat4>& allBones)
     {
         if (allBones.empty()) return;
@@ -633,7 +592,7 @@ public:
         glUniform1i(glGetUniformLocation(shaderHizWritePass->ID, "hizMipLevels"), hizTexture ? hizMipLevels : 0); // 0 = wyłącz HiZ
         glUniform1ui(glGetUniformLocation(shaderHizWritePass->ID, "objectCount"), objectCount);
         glUniform1i(glGetUniformLocation(shaderHizWritePass->ID, "enableOcclusion"), occlussionEnabled ? GL_TRUE : GL_FALSE); // 0 = wyłącz HiZ
-        glUniform1i(glGetUniformLocation(shaderHizWritePass->ID, "enableFrustumCulling"), GL_TRUE);
+        glUniform1i(glGetUniformLocation(shaderHizWritePass->ID, "enableFrustumCulling"), frustumsEnabled ? GL_TRUE : GL_FALSE);
 
         glTextureParameteri(hizTexture, GL_TEXTURE_COMPARE_MODE, GL_NONE);
         glBindTextureUnit(0, hizTexture);
@@ -660,11 +619,6 @@ public:
         glDispatchCompute((meshCount + 63) / 64, 1, 1);
         glMemoryBarrier(GL_COMMAND_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
     }
-
-    //void CopyDepthToHiZ(GLuint depthTexture)
-    //{
-    //    glCopyImageSubData(depthTexture, GL_TEXTURE_2D, 0, 0, 0, 0, hizTexture, GL_TEXTURE_2D, 0, 0, 0, 0, screenWidth, screenHeight, 1);
-    //}
 
     void CopyDepthToHiZ(GLuint depthTexture)
     {
@@ -716,110 +670,6 @@ public:
         }
     }
 
-    //void BuildHiZ(GLuint depthTexture)
-    //{
-    //    int w = vpWidth > 0 ? vpWidth : screenWidth;
-    //    int h = vpHeight > 0 ? vpHeight : screenHeight;
-
-    //    shaderHizDownsample->use();
-    //    glTextureParameteri(depthTexture, GL_TEXTURE_COMPARE_MODE, GL_NONE);
-
-    //    // Krok 0: depth → mip0, kopiuj 1:1
-    //    glUniform1i(glGetUniformLocation(shaderHizDownsample->ID, "isMip0"), GL_TRUE);
-    //    glBindTextureUnit(0, depthTexture);
-    //    glBindImageTexture(1, hizTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
-    //    glDispatchCompute((w + 7) / 8, (h + 7) / 8, 1);
-    //    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
-
-    //    // Krok 1+: downsampling
-    //    glUniform1i(glGetUniformLocation(shaderHizDownsample->ID, "isMip0"), GL_FALSE);
-    //    glTextureParameteri(hizTexture, GL_TEXTURE_COMPARE_MODE, GL_NONE);
-
-    //    int mw = w, mh = h;
-    //    for (int mip = 1; mip < hizMipLevels; mip++) {
-    //        mw = std::max(1, mw / 2);
-    //        mh = std::max(1, mh / 2);
-
-    //        glTextureParameteri(hizTexture, GL_TEXTURE_BASE_LEVEL, mip - 1);
-    //        glTextureParameteri(hizTexture, GL_TEXTURE_MAX_LEVEL, mip - 1);
-    //        glBindTextureUnit(0, hizTexture);
-    //        glBindImageTexture(1, hizTexture, mip, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
-
-    //        glDispatchCompute((mw + 7) / 8, (mh + 7) / 8, 1);
-    //        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
-    //    }
-
-    //    glTextureParameteri(hizTexture, GL_TEXTURE_BASE_LEVEL, 0);
-    //    glTextureParameteri(hizTexture, GL_TEXTURE_MAX_LEVEL, hizMipLevels - 1);
-    //}
-
-    //void BuildHiZ(GLuint depthTexture)
-    //{
-    //    int w = vpWidth > 0 ? vpWidth : screenWidth;
-    //    int h = vpHeight > 0 ? vpHeight : screenHeight;
-
-    //    shaderHizDownsample->use();
-
-    //    // Krok 0: depth texture → hiz mip0 przez compute (nie glCopyImageSubData!)
-    //    // depth ma GL_DEPTH_COMPONENT32F, hiz ma GL_R32F — różne klasy, copy jest GL_INVALID_OPERATION
-    //    glTextureParameteri(depthTexture, GL_TEXTURE_COMPARE_MODE, GL_NONE);
-    //    glBindTextureUnit(0, depthTexture);
-    //    glBindImageTexture(1, hizTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
-    //    glDispatchCompute((w + 7) / 8, (h + 7) / 8, 1);
-    //    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
-
-    //    // Krok 1+: downsampling mip1, mip2, ...
-    //    glTextureParameteri(hizTexture, GL_TEXTURE_COMPARE_MODE, GL_NONE);
-
-    //    int mw = w, mh = h;
-    //    for (int mip = 1; mip < hizMipLevels; mip++) {
-    //        mw = std::max(1, mw / 2);
-    //        mh = std::max(1, mh / 2);
-
-    //        glTextureParameteri(hizTexture, GL_TEXTURE_BASE_LEVEL, mip - 1);
-    //        glTextureParameteri(hizTexture, GL_TEXTURE_MAX_LEVEL, mip - 1);
-    //        glBindTextureUnit(0, hizTexture);
-    //        glBindImageTexture(1, hizTexture, mip, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
-
-    //        glDispatchCompute((mw + 7) / 8, (mh + 7) / 8, 1);
-    //        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
-    //    }
-
-    //    glTextureParameteri(hizTexture, GL_TEXTURE_BASE_LEVEL, 0);
-    //    glTextureParameteri(hizTexture, GL_TEXTURE_MAX_LEVEL, hizMipLevels - 1);
-    //}
-
-    //void BuildHiZ()
-    //{
-    //    shaderHizDownsample->use();
-
-    //    int w = screenWidth, h = screenHeight;
-
-    //    for (int mip = 1; mip < hizMipLevels; mip++) {
-    //        w = std::max(1, w / 2);
-    //        h = std::max(1, h / 2);
-
-    //        // Poprzedni mip jako sampler (texture view na mip-1)
-    //        // Ograniczamy BASE/MAX żeby sampler czytał tylko ten poziom
-    //        glTextureParameteri(hizTexture, GL_TEXTURE_BASE_LEVEL, mip - 1);
-    //        glTextureParameteri(hizTexture, GL_TEXTURE_MAX_LEVEL, mip - 1);
-    //        glBindTextureUnit(0, hizTexture);
-
-    //        // Aktualny mip jako image2D (zapis)
-    //        glBindImageTexture(1, hizTexture, mip, GL_FALSE, 0,
-    //            GL_WRITE_ONLY, GL_R32F);
-
-    //        glDispatchCompute((w + 7) / 8, (h + 7) / 8, 1);
-    //        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT
-    //            | GL_TEXTURE_FETCH_BARRIER_BIT);
-    //    }
-
-    //    // Przywróć pełny zakres mipów
-    //    glTextureParameteri(hizTexture, GL_TEXTURE_BASE_LEVEL, 0);
-    //    glTextureParameteri(hizTexture, GL_TEXTURE_MAX_LEVEL, hizMipLevels - 1);
-    //}
-
-
 
     void BindForDraw()
     {
@@ -861,18 +711,17 @@ public:
     void RenderFrame(const glm::mat4& viewProj, const std::vector<RenderData>& objects, GLuint depthTexturePrevFrame, glm::vec3 currentCameraPos, bool cameraDirty)
     {
         uint32_t objCount = (uint32_t)objects.size();
-
         // 0. Aktualizuj obiekty na GPU
         UploadObjects(objects);
         //UploadLights();
         //DebugReadBuffers(objCount, (uint32_t)meshesData.size());
 
         // 1. Zbuduj HiZ z depth poprzedniej klatki
-        if (depthTexturePrevFrame != 0 && cameraDirty)
-        {
-            //CopyDepthToHiZ(depthTexturePrevFrame);
-            BuildHiZ(depthTexturePrevFrame);
-        }
+        //if (depthTexturePrevFrame != 0 && cameraDirty)
+        //{
+        //    //CopyDepthToHiZ(depthTexturePrevFrame);
+        //    BuildHiZ(depthTexturePrevFrame);
+        //}
         if (dirtyInstance)
             BuildInstance(objCount);
         //DebugPipelineState(objCount);
@@ -893,7 +742,6 @@ public:
         // 7. Rysuj
         Draw();
     }
-
 
     void DebugShowHiZ(int mipLevel = 0)
     {
@@ -992,6 +840,86 @@ public:
 
 #endif
 
+//void BuildHiZ()
+//{
+//    shaderHizDownsample->use();
+
+//    int w = screenWidth, h = screenHeight;
+
+//    for (int mip = 1; mip < hizMipLevels; mip++) {
+//        w = std::max(1, w / 2);
+//        h = std::max(1, h / 2);
+
+//        // Poprzedni mip jako sampler (texture view na mip-1)
+//        // Ograniczamy BASE/MAX żeby sampler czytał tylko ten poziom
+//        glTextureParameteri(hizTexture, GL_TEXTURE_BASE_LEVEL, mip - 1);
+//        glTextureParameteri(hizTexture, GL_TEXTURE_MAX_LEVEL, mip - 1);
+//        glBindTextureUnit(0, hizTexture);
+
+//        // Aktualny mip jako image2D (zapis)
+//        glBindImageTexture(1, hizTexture, mip, GL_FALSE, 0,
+//            GL_WRITE_ONLY, GL_R32F);
+
+//        glDispatchCompute((w + 7) / 8, (h + 7) / 8, 1);
+//        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT
+//            | GL_TEXTURE_FETCH_BARRIER_BIT);
+//    }
+
+//    // Przywróć pełny zakres mipów
+//    glTextureParameteri(hizTexture, GL_TEXTURE_BASE_LEVEL, 0);
+//    glTextureParameteri(hizTexture, GL_TEXTURE_MAX_LEVEL, hizMipLevels - 1);
+//}
+
+    //size_t prevSizeLights = 0;
+
+    //void UpdateAndUploadLights(std::vector<LightComponent*>& lights, std::vector<TransformComponent*>& transforms)
+    //{
+    //    if (lights.empty()) return;
+
+    //    uint32_t count = std::min((uint32_t)lights.size(), (uint32_t)MAX_UBO_LIGHTS);
+    //    gpuLights.resize(count);
+
+    //    for (size_t i = 0; i < count; i++)
+    //    {
+    //        LightComponent* light = lights[i];
+    //        TransformComponent* transform = transforms[i];
+    //        if (!light || !transform) continue;
+
+    //        GPULight& g = gpuLights[i];
+
+    //        const bool on = light->isOn;
+
+    //        g.position = glm::vec4(transform->position, (float)light->type);
+    //        g.direction = (glm::length2(light->direction) < 0.0001f) ? glm::vec4(TransformHelper::getForward(*transform), 0.0f) : glm::vec4(light->direction, 0.0f);
+
+    //        const glm::vec3& zero = glm::vec3(0.0f);
+    //        g.ambient = glm::vec4(on ? light->ambient : zero, 0.0f);
+    //        g.diffuse = glm::vec4(on ? light->diffuse : zero, 0.0f);
+    //        g.specular = glm::vec4(on ? light->specular : zero, 0.0f);
+    //        g.params1 = glm::vec4(light->constant, light->linear, light->quadratic, 0.0f);
+    //        g.params2 = glm::vec4(light->cutOff, light->outerCutOff, on ? 1.0f : 0.0f, 0.0f);
+    //    }
+
+
+    //    glBindBuffer(GL_UNIFORM_BUFFER, lightsUBO);
+    //    glBufferSubData(GL_UNIFORM_BUFFER, 0, count * sizeof(GPULight), gpuLights.data());
+    //    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+    //    //if (prevSizeLights == gpuLights.size())
+    //    //{
+    //    //    glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightsSSBO);
+    //    //    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, gpuLights.size() * sizeof(GPULight), gpuLights.data());
+    //    //    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    //    //}
+    //    //else
+    //    //{
+    //    //    glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightsSSBO);
+    //    //    glBufferData(GL_SHADER_STORAGE_BUFFER, gpuLights.size() * sizeof(GPULight), gpuLights.data(), GL_DYNAMIC_DRAW);
+    //    //    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    //    //}
+
+    //    prevSizeLights = count;
+    //}
 
 
 //void ResetDrawCount() {

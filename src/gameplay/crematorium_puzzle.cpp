@@ -40,6 +40,7 @@ void CrematoriumPuzzle::Init(Scene* scene, std::shared_ptr<Model> coffinModel, P
 
             CoffinData data;
             data.gameObject = obj;
+            data.transform = transform;
             data.wall = WallSide::Left;
             data.row = r;
             data.col = c;
@@ -86,6 +87,7 @@ void CrematoriumPuzzle::Init(Scene* scene, std::shared_ptr<Model> coffinModel, P
 
             CoffinData data;
             data.gameObject = obj;
+            data.transform = transform;
             data.wall = WallSide::Right;
             data.row = r;
             data.col = c;
@@ -199,9 +201,7 @@ void CrematoriumPuzzle::ToggleCoffin(GameObject* clickedObject)
     else {
         clickedData->isActivated = true;
 
-        std::vector<std::vector<std::vector<bool>>> gridOccupied(
-            rows, std::vector<std::vector<bool>>(cols, std::vector<bool>(cols, false))
-        );
+        std::vector<bool> gridOccupied(rows * cols * cols, false);
 
         for (auto& c : coffins) {
             if (c.isActivated && !c.isBouncingBack && &c != clickedData) {
@@ -209,7 +209,8 @@ void CrematoriumPuzzle::ToggleCoffin(GameObject* clickedObject)
                 for (int step = 0; step < c.currentTargetLevel; ++step) {
                     int markX = (c.wall == WallSide::Left) ? c.col : step;
                     int markZ = (c.wall == WallSide::Right) ? c.col : step;
-                    gridOccupied[r][markX][markZ] = true;
+
+                    gridOccupied[r * (cols * cols) + markX * cols + markZ] = true;
                 }
             }
         }
@@ -221,7 +222,7 @@ void CrematoriumPuzzle::ToggleCoffin(GameObject* clickedObject)
             int checkX = (clickedData->wall == WallSide::Left) ? clickedData->col : step;
             int checkZ = (clickedData->wall == WallSide::Right) ? clickedData->col : step;
 
-            if (gridOccupied[r][checkX][checkZ]) {
+            if (gridOccupied[r * (cols * cols) + checkX * cols + checkZ]) {
                 maxAllowedLevel = step;
                 break;
             }
@@ -243,13 +244,12 @@ void CrematoriumPuzzle::Update(float deltaTime)
     float animSpeed = 60.0f;
 
     for (auto& coffin : coffins) {
-        if (!coffin.gameObject) continue;
+        if (!coffin.gameObject || !coffin.transform) continue;
 
-        auto* transform = coffin.gameObject->GetComponent<TransformComponent>();
+        float oldExtension = coffin.currentExtensionAnim;
 
         if (coffin.isActivated) {
             float targetDistance = 0.0f;
-
             if (coffin.currentTargetLevel > 0) {
                 float t = static_cast<float>(coffin.currentTargetLevel - 1) / static_cast<float>(cols - 1);
                 targetDistance = minExtensionDistance + t * (maxExtensionDistance - minExtensionDistance);
@@ -260,10 +260,8 @@ void CrematoriumPuzzle::Update(float deltaTime)
 
             if (coffin.currentExtensionAnim < targetDistance) {
                 coffin.currentExtensionAnim += animSpeed * deltaTime;
-
                 if (coffin.currentExtensionAnim >= targetDistance) {
                     coffin.currentExtensionAnim = targetDistance;
-
                     if (coffin.isBouncingBack) {
                         coffin.isActivated = false;
                         coffin.isBouncingBack = false;
@@ -280,21 +278,24 @@ void CrematoriumPuzzle::Update(float deltaTime)
             }
         }
 
-        float extensionDistance = coffin.currentExtensionAnim;
+        if (coffin.currentExtensionAnim != oldExtension) {
+            float extensionDistance = coffin.currentExtensionAnim;
 
-        if (coffin.wall == WallSide::Left) {
-            transform->position = coffin.basePosition + glm::vec3(0.0f, 0.0f, extensionDistance * w1_extendDirZ);
+            if (coffin.wall == WallSide::Left) {
+                coffin.transform->position = coffin.basePosition + glm::vec3(0.0f, 0.0f, extensionDistance * w1_extendDirZ);
+            }
+            else {
+                coffin.transform->position = coffin.basePosition + glm::vec3(extensionDistance * w2_extendDirX, 0.0f, 0.0f);
+            }
+            coffin.transform->isDirty = true;
         }
-        else {
-            transform->position = coffin.basePosition + glm::vec3(extensionDistance * w2_extendDirX, 0.0f, 0.0f);
-        }
-        transform->isDirty = true;
     }
 
     auto updatePanelColors = [&](GameObject* panel, WallSide side, glm::vec3 activeColor) {
         if (!panel) return;
 
-        std::vector<std::vector<bool>> grid(rows, std::vector<bool>(cols, false));
+        static std::vector<std::vector<bool>> grid(rows, std::vector<bool>(cols, false));
+        for (int r = 0; r < rows; ++r) std::fill(grid[r].begin(), grid[r].end(), false);
 
         for (auto& coffin : coffins) {
             if (coffin.wall == side && coffin.isActivated && !coffin.isBouncingBack) {
@@ -304,6 +305,25 @@ void CrematoriumPuzzle::Update(float deltaTime)
                 grid[mappedRow][mappedCol] = true;
             }
         }
+
+        static std::vector<std::vector<bool>> lastGridLeft(rows, std::vector<bool>(cols, false));
+        static std::vector<std::vector<bool>> lastGridRight(rows, std::vector<bool>(cols, false));
+        auto& lastGrid = (side == WallSide::Left) ? lastGridLeft : lastGridRight;
+
+        bool gridChanged = false;
+        for (int r = 0; r < rows; ++r) {
+            for (int c = 0; c < cols; ++c) {
+                if (grid[r][c] != lastGrid[r][c]) {
+                    gridChanged = true;
+                    break;
+                }
+            }
+            if (gridChanged) break;
+        }
+
+        if (!gridChanged) return;
+
+        lastGrid = grid;
 
         panel->TraverseChildren([&](GameObject* child) {
             auto* render = child->GetComponent<RenderComponent>();
@@ -371,8 +391,13 @@ void CrematoriumPuzzle::Update(float deltaTime)
     updatePanelColors(leftPanelObj, WallSide::Left, glm::vec3(1.0f, 0.0f, 0.0f));
     updatePanelColors(rightPanelObj, WallSide::Right, glm::vec3(0.0f, 1.0f, 0.0f));
 
-    std::vector<std::vector<bool>> gridLeft(rows, std::vector<bool>(cols, false));
-    std::vector<std::vector<bool>> gridRight(rows, std::vector<bool>(cols, false));
+    static std::vector<std::vector<bool>> gridLeft(rows, std::vector<bool>(cols, false));
+    static std::vector<std::vector<bool>> gridRight(rows, std::vector<bool>(cols, false));
+
+    for (int r = 0; r < rows; ++r) {
+        std::fill(gridLeft[r].begin(), gridLeft[r].end(), false);
+        std::fill(gridRight[r].begin(), gridRight[r].end(), false);
+    }
 
     for (auto& coffin : coffins) {
         if (coffin.isActivated && !coffin.isBouncingBack) {
@@ -388,63 +413,87 @@ void CrematoriumPuzzle::Update(float deltaTime)
         }
     }
 
-    auto hasPath = [&](const std::vector<std::vector<bool>>& grid, std::pair<int, int> start, std::pair<int, int> end) -> bool {
-        if (!grid[start.first][start.second] || !grid[end.first][end.second]) return false;
+    static std::vector<std::vector<bool>> lastGridLeftDFS(rows, std::vector<bool>(cols, false));
+    static std::vector<std::vector<bool>> lastGridRightDFS(rows, std::vector<bool>(cols, false));
 
-        std::vector<std::vector<bool>> visited(rows, std::vector<bool>(cols, false));
-        std::vector<std::pair<int, int>> stack;
+    bool dfsNeeded = false;
+    for (int r = 0; r < rows; ++r) {
+        for (int c = 0; c < cols; ++c) {
+            if (gridLeft[r][c] != lastGridLeftDFS[r][c] || gridRight[r][c] != lastGridRightDFS[r][c]) {
+                dfsNeeded = true;
+                break;
+            }
+        }
+        if (dfsNeeded) break;
+    }
 
-        stack.push_back(start);
-        visited[start.first][start.second] = true;
+    if (dfsNeeded) {
+        lastGridLeftDFS = gridLeft;
+        lastGridRightDFS = gridRight;
 
-        int dr[] = { -1, 1, 0, 0 };
-        int dc[] = { 0, 0, -1, 1 };
+        auto hasPath = [&](const std::vector<std::vector<bool>>& grid, std::pair<int, int> start, std::pair<int, int> end) -> bool {
+            if (!grid[start.first][start.second] || !grid[end.first][end.second]) return false;
 
-        while (!stack.empty()) {
-            auto curr = stack.back();
-            stack.pop_back();
+            static std::vector<std::vector<bool>> visited(rows, std::vector<bool>(cols, false));
+            for (int r = 0; r < rows; ++r) {
+                std::fill(visited[r].begin(), visited[r].end(), false);
+            }
 
-            if (curr.first == end.first && curr.second == end.second) return true;
+            static std::vector<std::pair<int, int>> stack;
+            stack.clear();
 
-            for (int i = 0; i < 4; ++i) {
-                int nr = curr.first + dr[i];
-                int nc = curr.second + dc[i];
+            stack.push_back(start);
+            visited[start.first][start.second] = true;
 
-                if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
-                    if (grid[nr][nc] && !visited[nr][nc]) {
-                        visited[nr][nc] = true;
-                        stack.push_back({ nr, nc });
+            int dr[] = { -1, 1, 0, 0 };
+            int dc[] = { 0, 0, -1, 1 };
+
+            while (!stack.empty()) {
+                auto curr = stack.back();
+                stack.pop_back();
+
+                if (curr.first == end.first && curr.second == end.second) return true;
+
+                for (int i = 0; i < 4; ++i) {
+                    int nr = curr.first + dr[i];
+                    int nc = curr.second + dc[i];
+
+                    if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
+                        if (grid[nr][nc] && !visited[nr][nc]) {
+                            visited[nr][nc] = true;
+                            stack.push_back({ nr, nc });
+                        }
                     }
                 }
             }
-        }
-        return false;
+            return false;
         };
 
-    bool currentLeftSolved = hasPath(gridLeft, leftStart, leftEnd);
-    bool currentRightSolved = hasPath(gridRight, rightStart, rightEnd);
+        bool currentLeftSolved = hasPath(gridLeft, leftStart, leftEnd);
+        bool currentRightSolved = hasPath(gridRight, rightStart, rightEnd);
 
-    if (currentLeftSolved && !isLeftSolved) {
-        spdlog::info("Lewa Sciana Zostala Polaczona");
-        isLeftSolved = true;
-    }
-    else if (!currentLeftSolved && isLeftSolved) {
-        isLeftSolved = false;
-    }
+        if (currentLeftSolved && !isLeftSolved) {
+            spdlog::info("Lewa Sciana Zostala Polaczona");
+            isLeftSolved = true;
+        }
+        else if (!currentLeftSolved && isLeftSolved) {
+            isLeftSolved = false;
+        }
 
-    if (currentRightSolved && !isRightSolved) {
-        spdlog::info("Prawa Sciana Zostala Polaczona");
-        isRightSolved = true;
-    }
-    else if (!currentRightSolved && isRightSolved) {
-        isRightSolved = false;
-    }
+        if (currentRightSolved && !isRightSolved) {
+            spdlog::info("Prawa Sciana Zostala Polaczona");
+            isRightSolved = true;
+        }
+        else if (!currentRightSolved && isRightSolved) {
+            isRightSolved = false;
+        }
 
-    if (isLeftSolved && isRightSolved && !isPuzzleSolved) {
-        spdlog::warn("ZAGADKA KREMATORIUM ZOSTALA ROZWIAZANA W PELNI WOOOOOOOOOOOW");
-        isPuzzleSolved = true;
-    }
-    else if ((!isLeftSolved || !isRightSolved) && isPuzzleSolved) {
-        isPuzzleSolved = false;
+        if (isLeftSolved && isRightSolved && !isPuzzleSolved) {
+            spdlog::warn("ZAGADKA KREMATORIUM ZOSTALA ROZWIAZANA W PELNI WOOOOOOOOOOOW");
+            isPuzzleSolved = true;
+        }
+        else if ((!isLeftSolved || !isRightSolved) && isPuzzleSolved) {
+            isPuzzleSolved = false;
+        }
     }
 }

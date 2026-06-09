@@ -137,10 +137,10 @@ GLuint VBO;
 GLuint VAO;
 GLuint texture;
 std::unique_ptr<Prefab> sunModel;
-std::unique_ptr<Shader> ourShader;
+std::unique_ptr<Shader> pbrShader;
 std::unique_ptr<Shader> skyboxShader;
-std::unique_ptr<Shader> reflectShader;
-std::unique_ptr<Shader> refractShader;
+//std::unique_ptr<Shader> reflectShader;
+//std::unique_ptr<Shader> refractShader;
 
 std::unique_ptr<Prefab> bed1Model;
 std::unique_ptr<Prefab> bed2Model;
@@ -195,6 +195,8 @@ std::unique_ptr<Prefab> wallModel;
 std::unique_ptr<Prefab> wallModel2;
 std::unique_ptr<Prefab> wallModel3;
 std::unique_ptr<Prefab> NormalDoor;
+std::unique_ptr<Prefab> szkloModel;
+std::unique_ptr<Prefab> cockroachModel;
 
 
 std::unique_ptr<Prefab> LewyDolny;
@@ -271,6 +273,13 @@ GameObject* p2HeldObject = nullptr;
 
 std::vector<GameObject*> mainRoomDoors;
 
+//interfejs type situation
+float p1ShakeTimer = 0.0f;
+float p2ShakeTimer = 0.0f;
+const float SHAKE_DURATION = 0.5f;
+const glm::vec2 p1BasePos(480.0f, 640.0f);
+const glm::vec2 p2BasePos(1440.0f, 640.0f);
+
 void updateFPS(float deltaTime) {
     frameTimes[index] = deltaTime;
     index = (index + 1) % MAX_SAMPLES;
@@ -344,6 +353,7 @@ void processCameraInput(ECS& ecs, CameraComponent& cam, TransformComponent& tran
         dir = glm::normalize(dir);
         transform.position += dir * MovementSpeed * deltaTime;
         transform.isDirty   = true;
+        cam.dirty = true;
     }
 }
 
@@ -352,6 +362,11 @@ void processCameraMouse(ECS& ecs, CameraComponent& cam, TransformComponent& tran
     const auto& hid = ecs.GetSystem<HID>();
     float dx = hid->get_mouse_dx();
     float dy = hid->get_mouse_dy();
+    const float epsilon = 0.01f;
+
+    if (glm::abs(dx) < epsilon && glm::abs(dy) < epsilon)
+        return;
+
     CameraHelper::ProcessMouseMovement(cam, transform, dx, dy);
 }
 
@@ -414,7 +429,8 @@ void HandlePlayerInteraction(
     GameObject*& myHeldObject,
     GameObject* otherPlayerHeldObject,
     Scene* scene,
-    std::unordered_map<GameObject*, float>& rotatingObjects
+    std::unordered_map<GameObject*, float>& rotatingObjects,
+    float& outShakeTimer
 ) {
     if (!ecs.GetSystem<HID>()->is_action_just_pressed(inputAction)) return;
     //upuszczanie
@@ -478,11 +494,11 @@ void HandlePlayerInteraction(
             if (majorDoors.count(hit.hitObject)) {
                 if (can_open_door_1) {
                     for (GameObject* door : majorDoors) {
-                        TransformComponent* transform = door->GetComponent<TransformComponent>();
-                        if (transform != nullptr) {
-                            transform->position = glm::vec3(-1000.0f, -1000.0f, -1000.0f);
-                        }
+                        TransformComponent* t = door->GetComponent<TransformComponent>();
+                        if (t) t->position = glm::vec3(-1000.0f, -1000.0f, -1000.0f);
                     }
+                } else {
+                    outShakeTimer = SHAKE_DURATION;
                 }
             }
             // Otwieranie drzwi
@@ -584,7 +600,7 @@ void UpdateDoors(float deltaTime) {
             TransformComponent* hingeTr = state.hinge->GetComponent<TransformComponent>();
             if (hingeTr) {
                 hingeTr->rotation.y = state.currentAngle;
-                hingeTr->isDirty    = true;
+                hingeTr->isDirty = true;
             }
         }
     }
@@ -804,13 +820,23 @@ int main(int, char**)
 
     addAllSystems(ecs);
 
-    ourShader = std::make_unique<Shader>("res/shaders/basic.vert", "res/shaders/basic.frag");
-    ourShader->use();
+
+    pbrShader = std::make_unique<Shader>("res/shaders/gpu_driven_PBR.vert", "res/shaders/gpu_driven_PBR.frag");
+    pbrShader->use();
+    
 
     groundModel = std::make_unique<Prefab>("res/models/podloze.glb");
     sunModel    = std::make_unique<Prefab>("res/models/Sun.glb");
+    szkloModel = std::make_unique<Prefab>("res/models/samochod.glb");
+    
+    GameObject* szklo = szkloModel->Instantiate(*scena1, nullptr, pbrShader.get());
+    szklo->name = "SZKLO";
+    //for (auto& mesh : szklo->GetComponent<RenderComponent>()->meshes)
+    //{
+    //    //mesh.material->surfaceType = SurfaceType::Transparent;
+    //}
 
-    GameObject* obb3 = sunModel->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* obb3 = sunModel->Instantiate(*scena1, nullptr, nullptr);
     obb3->GetComponent<TransformComponent>()->scale    = glm::vec3(25.0f);
     obb3->GetComponent<TransformComponent>()->position = glm::vec3(75.0f, 250.0f, 0.0f);
 
@@ -822,7 +848,7 @@ int main(int, char**)
     GLuint norm = ResourceManager::LoadTexture("normal_brick.png",   "res/textures/");
 
     auto brickMat           = std::make_shared<Material>();
-    brickMat->shader        = ourShader.get();
+    brickMat->shader        = nullptr;
     brickMat->diffuseMap    = diff;
     brickMat->specularMap   = spec;
     brickMat->normalMap     = norm;
@@ -853,7 +879,7 @@ int main(int, char**)
 
     camera1->GetComponent<RigidbodyComponent>()->useGravity = false;
     camera1->GetComponent<ColliderComponent>()->halfSize    = glm::vec3{ 1.0f, 9.0f, 1.0f };
-
+    
     GameObject* camera2 = scena1->CreateGameObject(nullptr);
     CameraComponent*    camCompRight     = camera2->AddComponent<CameraComponent>();
     ColliderComponent*  camera2collider  = camera2->AddComponent<ColliderComponent>();
@@ -914,12 +940,12 @@ int main(int, char**)
 
     connectAllModels();
 
-    GameObject* model1 = bed1Model->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* model1 = bed1Model->Instantiate(*scena1, nullptr, nullptr);
     model1->GetComponent<TransformComponent>()->position.x = 0.0f;
     model1->GetComponent<TransformComponent>()->position.y = 100.0f;
     model1->GetComponent<TransformComponent>()->position.z = 20.0f;
 
-    model1->AddComponent<RigidbodyComponent>();
+    //model1->AddComponent<RigidbodyComponent>();
     model1->AddComponent<ColliderComponent>();
     model1->AddComponent<LightComponent>();
 
@@ -937,6 +963,8 @@ int main(int, char**)
 
     sceneManager.Update(16);
     spdlog::info("Scena git.");
+
+
 
     focused = true;
     updateFocus();
@@ -958,7 +986,7 @@ int main(int, char**)
     dyingModelPrefab   = std::make_unique<Prefab>("res/models/Dying.fbx");
     jumpSkeletonPrefab = std::make_unique<Prefab>("res/models/Jump.fbx");
 
-    GameObject* dyingObj = dyingModelPrefab->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* dyingObj = dyingModelPrefab->Instantiate(*scena1, nullptr, nullptr);
     dyingObj->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, -50.0f, -50.0f);
     dyingObj->GetComponent<TransformComponent>()->scale    = glm::vec3(0.1f);
 
@@ -969,9 +997,9 @@ int main(int, char**)
     GreenModel = std::make_unique<Prefab>("res/models/test/green_test.glb");
     BlueModel  = std::make_unique<Prefab>("res/models/test/blue_test.glb");
 
-    GameObject* redObject   = RedModel->Instantiate(*scena1,   nullptr, ourShader.get());
-    GameObject* blueObject  = BlueModel->Instantiate(*scena1,  nullptr, ourShader.get());
-    GameObject* greenObject = GreenModel->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* redObject   = RedModel->Instantiate(*scena1,   nullptr, nullptr);
+    GameObject* blueObject  = BlueModel->Instantiate(*scena1,  nullptr, nullptr);
+    GameObject* greenObject = GreenModel->Instantiate(*scena1, nullptr, nullptr);
 
     redObject->GetComponent<TransformComponent>()->position   = glm::vec3(0.0f, 30.0f,  50.0f);
     blueObject->GetComponent<TransformComponent>()->position  = glm::vec3(0.0f, 30.0f,   0.0f);
@@ -1021,7 +1049,9 @@ int main(int, char**)
     // Karaluch center
     glm::vec3 nestPos = glm::vec3(0.0f, 0.5f, -80.0f);
 
-    GameObject* leader = CreateCockroachLeader(*scena1, *placeholderModel, ourShader.get(), nestPos, 4.0f);
+    //I LOVE THE TASTE OF IRON
+    GameObject* Kurorushi = CreateCockroachLeader(*scena1, *cockroachModel, nullptr, nestPos, 4.0f);
+    //I LOVE THE TASTE OF IRON
 
     for (int i = 0; i < 3; i++) {
         glm::vec3 offset = glm::vec3(
@@ -1029,9 +1059,33 @@ int main(int, char**)
             (float)(rand() % 6) - 3.0f
         );
         CreateCockroachFollower(
-            *scena1, *placeholderModel, ourShader.get(),
-            leader, nestPos + offset, 4.5f);
+            *scena1, *cockroachModel, nullptr,
+            Kurorushi, nestPos + offset, 4.5f); // I LOVE THE TASE OF IRON
     }
+
+    //interfejs sprite'y
+    // Crosshair P1
+    GameObject* crosshair1_obj = scena1->CreateGameObject(nullptr);
+    SpriteComponent* crosshair1 = crosshair1_obj->AddComponent<SpriteComponent>();
+    crosshair1->sprites         = { ResourceManager::LoadTexture("crosshair.png", "res/sprites/") };
+    crosshair1->screenPosition  = glm::vec2(480.0f - 16.0f, 540.0f - 16.0f); // centrum - half size
+    crosshair1->size            = glm::vec2(16.0f, 16.0f);
+    crosshair1->layer           = 2; // nad napisami
+    crosshair1->isVisible       = true;
+
+    // Crosshair P2
+    GameObject* crosshair2_obj = scena1->CreateGameObject(nullptr);
+    SpriteComponent* crosshair2 = crosshair2_obj->AddComponent<SpriteComponent>();
+    crosshair2->sprites         = { ResourceManager::LoadTexture("crosshair.png", "res/sprites/") };
+    crosshair2->screenPosition  = glm::vec2(1440.0f - 16.0f, 540.0f - 16.0f);
+    crosshair2->size            = glm::vec2(16.0f, 16.0f);
+    crosshair2->layer           = 2;
+    crosshair2->isVisible       = true;
+
+    const glm::vec2 CH_SIZE_NORMAL(16.0f, 16.0f);
+    const glm::vec2 CH_SIZE_BIG(32.0f, 32.0f);
+    const glm::vec2 CH1_CENTER(480.0f,  540.0f);
+    const glm::vec2 CH2_CENTER(1440.0f, 540.0f);
 
     // Main loop
     while (!glfwWindowShouldClose(window))
@@ -1077,74 +1131,67 @@ int main(int, char**)
 
         std::string hintText = "";
 
-        if (player1Raycast->anyHit()) {
+        if (p1HeldObject != nullptr) {
+            hintText = "Drop";
+        } else if (player1Raycast->anyHit()) {
             RaycastHit hit = player1Raycast->closestHit();
             if (hit.hitObject != nullptr) {
-                if (rotatableObjects.count(hit.hitObject)) {
-                    hintText = "Rotate";
-                }
-                else if (unlockedDoors.count(hit.hitObject)) {
-                    hintText = "Open";
-                }
-                else if (cabinetsMap.count(hit.hitObject)) {
-                    hintText = "Open Cabinet";
-                }
-                else if (majorDoors.count(hit.hitObject)) {
-                    hintText = "Unlock";
-                }
-                else if (puzzleSlotsMap.count(hit.hitObject) && p1HeldObject != nullptr) {
-                    PuzzleSlot& slot = puzzleSlotsMap[hit.hitObject];
-                    hintText = (slot.occupant == nullptr) ? "Place here" : "Slot occupied";
-                }
-                //gracz patrzy na kostkę w slocie
-                else if (pickupObjects.count(hit.hitObject)) {
-                    bool isInSlot = false;
-                    for (auto& [slotGO, slot] : puzzleSlotsMap) {
-                        if (slot.occupant == hit.hitObject) { isInSlot = true; break; }
-                    }
-                    if (isInSlot)
-                        hintText = "Pull out";
-                    else
-                        hintText = (hit.hitObject == p2HeldObject) ? "Held by Player2" : "Pick up";
-                }
-                else if (hit.hitObject->name.find("Coffin") != std::string::npos) {
-                    hintText = "Pull Coffin";
-                }
+                if (rotatableObjects.count(hit.hitObject))
+    hintText = "Rotate";
+else if (toiletDoorsMap.count(hit.hitObject))
+    hintText = toiletDoorsMap[hit.hitObject].isOpen ? "Close" : "Open";
+else if (cabinetsMap.count(hit.hitObject))
+    hintText = isCabinetButtonPushed ? "..." : "Open Cabinet";
+else if (majorDoors.count(hit.hitObject))
+    hintText = can_open_door_1 ? "Open" : "Unlock";
+else if (puzzleSlotsMap.count(hit.hitObject)) {
+    PuzzleSlot& slot = puzzleSlotsMap[hit.hitObject];
+    if (p1HeldObject != nullptr)
+        hintText = (slot.occupant == nullptr) ? "Place here" : "Slot occupied";
+    else if (slot.occupant != nullptr)
+        hintText = "Pull out";
+}
+else if (pickupObjects.count(hit.hitObject)) {
+    bool isInSlot = false;
+    for (auto& [slotGO, slot] : puzzleSlotsMap)
+        if (slot.occupant == hit.hitObject) { isInSlot = true; break; }
+    hintText = isInSlot ? "Pull out" : (hit.hitObject == p2HeldObject ? "Held by Player 2" : "Pick up");
+}
+else if (hit.hitObject->name.find("Coffin") != std::string::npos)
+    hintText = "Pull Coffin";
             }
         }
         player1InteractionInfo->text = hintText;
 
         std::string hintText2 = "";
-        if (player2Raycast->anyHit()) {
+        if (p1HeldObject != nullptr) {
+            hintText = "Drop";
+        } else if (player2Raycast->anyHit()) {
             RaycastHit hit = player2Raycast->closestHit();
             if (hit.hitObject != nullptr) {
-                if (rotatableObjects.count(hit.hitObject)) {
-                    hintText2 = "Rotate";
-                }
-                else if (unlockedDoors.count(hit.hitObject)) {
-                    hintText2 = "Open";
-                }
-                else if (cabinetsMap.count(hit.hitObject)) {
-                    hintText2 = "Open Cabinet";
-                }
-                else if (majorDoors.count(hit.hitObject)) {
-                    hintText2 = "Unlock";
-                }
-                else if (puzzleSlotsMap.count(hit.hitObject) && p2HeldObject != nullptr) {
-                    PuzzleSlot& slot = puzzleSlotsMap[hit.hitObject];
-                    hintText2 = (slot.occupant == nullptr) ? "Place here" : "Slot occupied";
-                }
-                //gracz 2 patrzy na kostkę w slocie ──
-                else if (pickupObjects.count(hit.hitObject)) {
-                    bool isInSlot = false;
-                    for (auto& [slotGO, slot] : puzzleSlotsMap) {
-                        if (slot.occupant == hit.hitObject) { isInSlot = true; break; }
-                    }
-                    if (isInSlot)
-                        hintText = "Pull out";
-                    else
-                        hintText = (hit.hitObject == p2HeldObject) ? "Held by Player2" : "Pick up";
-                }
+              if (rotatableObjects.count(hit.hitObject))
+    hintText2 = "Rotate";
+else if (toiletDoorsMap.count(hit.hitObject))
+    hintText2 = toiletDoorsMap[hit.hitObject].isOpen ? "Close" : "Open";
+else if (cabinetsMap.count(hit.hitObject))
+    hintText2 = isCabinetButtonPushed ? "..." : "Open Cabinet";
+else if (majorDoors.count(hit.hitObject))
+    hintText2 = can_open_door_1 ? "Open" : "Unlock";
+else if (puzzleSlotsMap.count(hit.hitObject)) {
+    PuzzleSlot& slot = puzzleSlotsMap[hit.hitObject];
+    if (p2HeldObject != nullptr)
+        hintText2 = (slot.occupant == nullptr) ? "Place here" : "Slot occupied";
+    else if (slot.occupant != nullptr)
+        hintText2 = "Pull out";
+}
+else if (pickupObjects.count(hit.hitObject)) {
+    bool isInSlot = false;
+    for (auto& [slotGO, slot] : puzzleSlotsMap)
+        if (slot.occupant == hit.hitObject) { isInSlot = true; break; }
+    hintText2 = isInSlot ? "Pull out" : (hit.hitObject == p1HeldObject ? "Held by Player 1" : "Pick up");
+}
+else if (hit.hitObject->name.find("Coffin") != std::string::npos)
+    hintText2 = "Pull Coffin";
             }
         }
         player2InteractionInfo->text = hintText2;
@@ -1170,8 +1217,8 @@ int main(int, char**)
             else ++it;
         }
 
-        HandlePlayerInteraction(ecs, "interact_p1", player1Raycast, camera1, p1HeldObject, p2HeldObject, scena1, rotatingObjects);
-        HandlePlayerInteraction(ecs, "interact_p2", player2Raycast, camera2, p2HeldObject, p1HeldObject, scena1, rotatingObjects);
+        HandlePlayerInteraction(ecs, "interact_p1", player1Raycast, camera1, p1HeldObject, p2HeldObject, scena1, rotatingObjects, p1ShakeTimer);
+        HandlePlayerInteraction(ecs, "interact_p2", player2Raycast, camera2, p2HeldObject, p1HeldObject, scena1, rotatingObjects, p1ShakeTimer);
 
         // testy animacji
         if (ecs.GetSystem<HID>()->is_action_just_pressed("anim_play_dying")) {
@@ -1214,11 +1261,67 @@ int main(int, char**)
             processCameraGamepad(ecs, *camCompRight, *t1, 1);
         }
 
+        if (p1ShakeTimer > 0.0f) p1ShakeTimer -= deltaTime;
+        if (p2ShakeTimer > 0.0f) p2ShakeTimer -= deltaTime;
+
+        if (p1ShakeTimer > 0.0f) {
+            float t = currentFrame * 40.0f;
+            float strength = 6.0f;
+            player1InteractionInfo->screenPosition = p1BasePos + glm::vec2(
+                sin(t)        * strength,
+                sin(t * 1.3f) * strength * 0.5f
+            );
+        } else {
+            player1InteractionInfo->screenPosition = p1BasePos;
+        }
+
+        if (p2ShakeTimer > 0.0f) {
+            float t = currentFrame * 40.0f;
+            float strength = 6.0f;
+            player2InteractionInfo->screenPosition = p2BasePos + glm::vec2(
+                sin(t + 1.0f) * strength,
+                sin(t * 1.3f + 1.0f) * strength * 0.5f
+            );
+        } else {
+            player2InteractionInfo->screenPosition = p2BasePos;
+        }
+
+        float p1Int = 0.0f, p2Int = 0.0f;
+
+        if (player1Raycast->anyHit()) {
+            auto hit = player1Raycast->closestHit();
+            if (hit.hitObject &&
+               (rotatableObjects.count(hit.hitObject) ||
+                toiletDoorsMap.count(hit.hitObject)   ||
+                cabinetsMap.count(hit.hitObject)       ||
+                majorDoors.count(hit.hitObject)        ||
+                pickupObjects.count(hit.hitObject)     ||
+                hit.hitObject->name.find("Coffin") != std::string::npos))
+                p1Int = 1.0f;
+        }
+        if (player2Raycast->anyHit()) {
+            auto hit = player2Raycast->closestHit();
+            if (hit.hitObject &&
+               (rotatableObjects.count(hit.hitObject) ||
+                toiletDoorsMap.count(hit.hitObject)   ||
+                cabinetsMap.count(hit.hitObject)       ||
+                majorDoors.count(hit.hitObject)        ||
+                pickupObjects.count(hit.hitObject)))
+                p2Int = 1.0f;
+        }
+
+        float chLerpSpeed = 10.0f;
+        crosshair1->size = glm::mix(crosshair1->size, p1Int > 0.5f ? CH_SIZE_BIG : CH_SIZE_NORMAL, deltaTime * chLerpSpeed);
+        crosshair2->size = glm::mix(crosshair2->size, p2Int > 0.5f ? CH_SIZE_BIG : CH_SIZE_NORMAL, deltaTime * chLerpSpeed);
+
+        crosshair1->screenPosition = CH1_CENTER - crosshair1->size * 0.5f;
+        crosshair2->screenPosition = CH2_CENTER - crosshair2->size * 0.5f;
+
         auto inputEnd = std::chrono::high_resolution_clock::now();
 
         auto logicStart = std::chrono::high_resolution_clock::now();
-        sceneManager.Update(deltaTime);
         crematoriumPuzzle.Update(deltaTime);
+        sceneManager.Update(deltaTime);
         update();
         auto logicEnd = std::chrono::high_resolution_clock::now();
 
@@ -1415,6 +1518,7 @@ void ShowLightEditor(LightComponent& light)
     ImGui::ColorEdit3("Ambient",  &light.ambient.x);
     ImGui::ColorEdit3("Diffuse",  &light.diffuse.x);
     ImGui::ColorEdit3("Specular", &light.specular.x);
+    ImGui::DragFloat("Intensity", &light.intensity, 0.001f, 0.0f, 1000.0f);
     ImGui::Separator();
 
     if (light.type == Point || light.type == Spot) {
@@ -1422,6 +1526,7 @@ void ShowLightEditor(LightComponent& light)
         ImGui::DragFloat("Constant",  &light.constant,  0.001f, 0.0f, 10.0f);
         ImGui::DragFloat("Linear",    &light.linear,    0.001f, 0.0f, 10.0f);
         ImGui::DragFloat("Quadratic", &light.quadratic, 0.001f, 0.0f, 10.0f);
+        ImGui::DragFloat("Range", &light.range, 0.001f, 0.0f, 1000.0f);
     }
 
     if (light.type == Spot) {
@@ -1478,6 +1583,9 @@ void imgui_render(SceneManager& sceneManager)
     }
 
     ImGui::Separator();
+    ImGui::Text("Ambient"); 
+    ImGui::DragFloat("Ambient strength", &renderSystem->ambientStrength, 0.000001f, 0.0f, 1.0f, "%.6f");
+    ImGui::Separator();
     ImGui::Text("Hierarchy");
     ShowGameObjectTree(sceneManager.GetActiveScene()->GetRoot());
 
@@ -1513,7 +1621,7 @@ void imgui_render(SceneManager& sceneManager)
 
             if (ImGui::Button("Instantiate")) {
                 Prefab& prefab = prefabs.at(name);
-                GameObject* obj = prefab.Instantiate(scene, nullptr, ourShader.get());
+                GameObject* obj = prefab.Instantiate(scene, nullptr, nullptr);
                 if (obj) obj->name = name;
             }
         }
@@ -1626,6 +1734,8 @@ void end_frame()
     glfwSwapBuffers(window);
 }
 
+float lookDeadzone = 0.0f;
+
 void processCameraGamepad(ECS& ecs, CameraComponent& cam, TransformComponent& transform, int gamepad_id)
 {
     const auto& hid = ecs.GetSystem<HID>();
@@ -1649,10 +1759,18 @@ void processCameraGamepad(ECS& ecs, CameraComponent& cam, TransformComponent& tr
     if (glm::length(dir) > 0.0f) {
         dir = glm::normalize(dir);
         transform.position += dir * MovementSpeed * deltaTime;
+        cam.dirty = true;
     }
 
     float rx = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_RIGHT_X, gamepad_id);
     float ry = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_RIGHT_Y, gamepad_id);
+
+
+    if (lookDeadzone <= 0.01f)
+        lookDeadzone += 0.0005f;
+    else if (glm::abs(rx) < lookDeadzone && glm::abs(ry) < lookDeadzone)
+        return;
+
 
     const float sensitivity = 600.0f;
     CameraHelper::ProcessMouseMovement(cam, transform,
@@ -1693,14 +1811,14 @@ void connectAllModels() {
     washroomExit     = std::make_unique<Prefab>("res/models/door_other_2.glb");
     urinModel        = std::make_unique<Prefab>("res/models/uniral_v2.glb");
     NormalDoor       = std::make_unique<Prefab>("res/models/doors.glb");
-    szafkaModel      = std::make_unique<Prefab>("res/models/szafka_rozszerzona.glb");
+    szafkaModel      = std::make_unique<Prefab>("res/models/szafka_pop_main.glb");
     ruraModel        = std::make_unique<Prefab>("res/models/placeholder_rura_wysuwana.glb");
     panelModel       = std::make_unique<Prefab>("res/models/Panel_5x5.glb");
     LewyDolny       = std::make_unique<Prefab>("res/models/LewyDolny.glb");
     LewyGorny       = std::make_unique<Prefab>("res/models/LewyGorny.glb");
     PrawyGorny       = std::make_unique<Prefab>("res/models/PrawyGorny.glb");
     PrawyDolny       = std::make_unique<Prefab>("res/models/PrawyDolny.glb");
-
+    cockroachModel   = std::make_unique<Prefab>("res/models/cockroach.glb");
 }
 
 void createFirstRoom(Scene* scena1) {
@@ -1710,24 +1828,24 @@ void createFirstRoom(Scene* scena1) {
     wallModel3 = std::make_unique<Prefab>("res/models/wall3.glb");
 
     // Podloga i sufit
-    GameObject* floor = CreateStaticObject(scena1, floorModel.get(), ourShader.get(),
+    GameObject* floor = CreateStaticObject(scena1, floorModel.get(), nullptr,
     "PodlogawLazience", glm::vec3(25, 0, -60), glm::vec3(50, 1, 50));
     floor->GetComponent<ColliderComponent>()->isWalkable = true;
-    CreateStaticObject(scena1, floorModel.get(), ourShader.get(), "SufitWKiblu",       glm::vec3(0, 20, 0),  glm::vec3(100, 1, 100), glm::vec3(0), glm::vec3(100, 1, 100));
+    CreateStaticObject(scena1, floorModel.get(), nullptr, "SufitWKiblu",       glm::vec3(0, 20, 0),  glm::vec3(100, 1, 100), glm::vec3(0), glm::vec3(100, 1, 100));
 
     // Sciany
-    CreateStaticObject(scena1, wallModel.get(),  ourShader.get(), "ScianaTylnaKibel",           glm::vec3(0, 0, -10),    glm::vec3(50, 50, 1),  glm::vec3(0), glm::vec3(50, 50, 1));
-    CreateStaticObject(scena1, wallModel2.get(), ourShader.get(), "ScianaKiblowa",              glm::vec3(50, 0, 0),     glm::vec3(100, 50, 1), glm::vec3(0,90,0), glm::vec3(1, 50, 100));
-    CreateStaticObject(scena1, wallModel2.get(), ourShader.get(), "ScianaSinkowa",              glm::vec3(-25, 0, 0),    glm::vec3(100, 50, 1), glm::vec3(0,90,0), glm::vec3(1, 50, 100));
-    CreateStaticObject(scena1, wallModel.get(),  ourShader.get(), "ScianaDrzwiDoMainRoomPrawa", glm::vec3(110, 0, -100), glm::vec3(100, 50, 1), glm::vec3(0), glm::vec3(100,50,1), true);
-    CreateStaticObject(scena1, wallModel.get(),  ourShader.get(), "ScianaDrzwiDoMainRoomLewa",  glm::vec3(-110, 0, -100),glm::vec3(100, 50, 1), glm::vec3(0), glm::vec3(100,50,1), true);
-    CreateStaticObject(scena1, wallModel.get(),  ourShader.get(), "GoraPrzejscieDoMainRoom",    glm::vec3(0, 70, -100),  glm::vec3(100, 50, 1), glm::vec3(0), glm::vec3(100,50,1), true);
+    CreateStaticObject(scena1, wallModel.get(),  nullptr, "ScianaTylnaKibel",           glm::vec3(0, 0, -10),    glm::vec3(50, 50, 1),  glm::vec3(0), glm::vec3(50, 50, 1));
+    CreateStaticObject(scena1, wallModel2.get(), nullptr, "ScianaKiblowa",              glm::vec3(50, 0, 0),     glm::vec3(100, 50, 1), glm::vec3(0,90,0), glm::vec3(1, 50, 100));
+    CreateStaticObject(scena1, wallModel2.get(), nullptr, "ScianaSinkowa",              glm::vec3(-25, 0, 0),    glm::vec3(100, 50, 1), glm::vec3(0,90,0), glm::vec3(1, 50, 100));
+    CreateStaticObject(scena1, wallModel.get(),  nullptr, "ScianaDrzwiDoMainRoomPrawa", glm::vec3(110, 0, -100), glm::vec3(100, 50, 1), glm::vec3(0), glm::vec3(100,50,1), true);
+    CreateStaticObject(scena1, wallModel.get(),  nullptr, "ScianaDrzwiDoMainRoomLewa",  glm::vec3(-110, 0, -100),glm::vec3(100, 50, 1), glm::vec3(0), glm::vec3(100,50,1), true);
+    CreateStaticObject(scena1, wallModel.get(),  nullptr, "GoraPrzejscieDoMainRoom",    glm::vec3(0, 70, -100),  glm::vec3(100, 50, 1), glm::vec3(0), glm::vec3(100,50,1), true);
 
     // Kibel
     GameObject* tablicaKibli[8];
     for (int i = 0; i < 8; i++) {
         if (i !=2 && i != 3) {
-            tablicaKibli[i] = toiletModel->Instantiate(*scena1, nullptr, ourShader.get());
+            tablicaKibli[i] = toiletModel->Instantiate(*scena1, nullptr, nullptr);
             tablicaKibli[i]->name = "Kibel" + std::to_string(i);
             tablicaKibli[i]->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1.5, 1.5, 1.5 };
             tablicaKibli[i]->AddComponent<RigidbodyComponent>();
@@ -1743,7 +1861,7 @@ void createFirstRoom(Scene* scena1) {
         }
 
         if (i == 2 || i == 3) {
-            tablicaKibli[i] = urinModel->Instantiate(*scena1, nullptr, ourShader.get());
+            tablicaKibli[i] = urinModel->Instantiate(*scena1, nullptr, nullptr);
             tablicaKibli[i]->name = "Kibel" + std::to_string(i);
             tablicaKibli[i]->GetComponent<TransformComponent>()->scale    = glm::vec3{ 12, 12, 12 };
             tablicaKibli[i]->AddComponent<RigidbodyComponent>();
@@ -1763,7 +1881,7 @@ void createFirstRoom(Scene* scena1) {
     GameObject* tablicaZaslon[9];
     for (int i = 0; i < 9; i++) {
 
-        tablicaZaslon[i] = wallModel3->Instantiate(*scena1, nullptr, ourShader.get());
+        tablicaZaslon[i] = wallModel3->Instantiate(*scena1, nullptr, nullptr);
         tablicaZaslon[i]->GetComponent<TransformComponent>()->scale = glm::vec3{ 0.3, 30, 20 };
         tablicaZaslon[i]->name = "Zaslona" + std::to_string(i);
         tablicaZaslon[i]->AddComponent<RigidbodyComponent>();
@@ -1789,7 +1907,7 @@ void createFirstRoom(Scene* scena1) {
             glm::vec3 colliderSize = glm::vec3{ 0.9f, 10.0f, 4.5f };
 
             GameObject* hinge = CreateInteractableDoor(
-                scena1, doorsToiletModel.get(), ourShader.get(),
+                scena1, doorsToiletModel.get(), nullptr,
                 "ToiletDoor_" + std::to_string(i),
                 doorPos, doorScale, pivotOffset, colliderSize, 90.0f
             );
@@ -1799,7 +1917,7 @@ void createFirstRoom(Scene* scena1) {
 
     // Papier toaletowy
     for (int i = 0; i < 6; i++) {
-        tablicaPapierowKibel[i] = toiletPaperModel->Instantiate(*scena1, nullptr, ourShader.get());
+        tablicaPapierowKibel[i] = toiletPaperModel->Instantiate(*scena1, nullptr, nullptr);
         tablicaKibli[i]->name = "PapierKibel" + std::to_string(i);
         tablicaPapierowKibel[i]->GetComponent<TransformComponent>()->scale    = glm::vec3{ 2, 2, 2 };
         tablicaPapierowKibel[i]->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 90, 0 };
@@ -1817,7 +1935,7 @@ void createFirstRoom(Scene* scena1) {
     // Zlewy - pozycja X z MainRoomIPoprawkiModeli (-20.5)
     GameObject* tablicaSink[8];
     for (int i = 0; i < 8; i++) {
-        tablicaSink[i] = sinkModel->Instantiate(*scena1, nullptr, ourShader.get());
+        tablicaSink[i] = sinkModel->Instantiate(*scena1, nullptr, nullptr);
         tablicaSink[i]->name = "Sink" + std::to_string(i);
         tablicaSink[i]->GetComponent<TransformComponent>()->scale    = glm::vec3{ 3, 3, 3 };
         tablicaSink[i]->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 90, 0 };
@@ -1832,7 +1950,7 @@ void createFirstRoom(Scene* scena1) {
     // Urinary - 7 sztuk, uklad z mastera (poziomy, skala 12,12,12, obrot 180)
     GameObject* tablicaurin[7];
     for (int i = 0; i < 7; i++) {
-        tablicaurin[i] = urinModel->Instantiate(*scena1, nullptr, ourShader.get());
+        tablicaurin[i] = urinModel->Instantiate(*scena1, nullptr, nullptr);
         tablicaurin[i]->GetComponent<TransformComponent>()->scale    = glm::vec3{ 12, 12, 12 };
         tablicaurin[i]->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 180, 0 };
         tablicaurin[i]->AddComponent<RigidbodyComponent>();
@@ -1844,7 +1962,7 @@ void createFirstRoom(Scene* scena1) {
     }*/
 
     // Lustra 1-3
-    GameObject* lustro1 = mirrorModel1->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* lustro1 = mirrorModel1->Instantiate(*scena1, nullptr, nullptr);
     lustro1->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1, 2, 8 };
     lustro1->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, -180, 0 };
     lustro1->AddComponent<RigidbodyComponent>();
@@ -1853,7 +1971,7 @@ void createFirstRoom(Scene* scena1) {
     lustro1->GetComponent<RigidbodyComponent>()->isStatic   = true;
     lustro1->GetComponent<TransformComponent>()->position   = glm::vec3{ -23.5, 12.0, -25 + (-20 * 0) };
 
-    GameObject* lustro2 = mirrorModel2->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* lustro2 = mirrorModel2->Instantiate(*scena1, nullptr, nullptr);
     lustro2->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1, 2, 8 };
     lustro2->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, -180, 0 };
     lustro2->AddComponent<RigidbodyComponent>();
@@ -1862,7 +1980,7 @@ void createFirstRoom(Scene* scena1) {
     lustro2->GetComponent<RigidbodyComponent>()->isStatic   = true;
     lustro2->GetComponent<TransformComponent>()->position   = glm::vec3{ -23.5, 12.0, -25 + (-20 * 1) };
 
-    GameObject* lustro3 = mirrorModel3->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* lustro3 = mirrorModel3->Instantiate(*scena1, nullptr, nullptr);
     lustro3->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1, 2, 8 };
     lustro3->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, -180, 0 };
     lustro3->AddComponent<RigidbodyComponent>();
@@ -1872,7 +1990,7 @@ void createFirstRoom(Scene* scena1) {
     lustro3->GetComponent<TransformComponent>()->position   = glm::vec3{ -23.5, 12.0, -25 + (-20 * 2) };
 
     // Lustro 4 - dodane z mirrorModel4 (lustro_puste.glb)
-    GameObject* lustro4 = mirrorModel4->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* lustro4 = mirrorModel4->Instantiate(*scena1, nullptr, nullptr);
     lustro4->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1, 2, 8 };
     lustro4->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, -180, 0 };
     lustro4->AddComponent<RigidbodyComponent>();
@@ -1884,7 +2002,7 @@ void createFirstRoom(Scene* scena1) {
     // Drzwi wyjsciowe z lazienki (washroomExit)
     /*GameObject* tablicaDrzwi[2];
     for (int i = 0; i < 2; i++) {
-        tablicaDrzwi[i] = washroomExit->Instantiate(*scena1, nullptr, ourShader.get());
+        tablicaDrzwi[i] = washroomExit->Instantiate(*scena1, nullptr, nullptr);
         tablicaDrzwi[i]->GetComponent<TransformComponent>()->scale    = glm::vec3{ 10, 11, 10 };
         tablicaDrzwi[i]->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 180 * i, 0 };
         tablicaDrzwi[i]->AddComponent<RigidbodyComponent>();
@@ -1900,7 +2018,7 @@ void createFirstRoom(Scene* scena1) {
     */
 
     // Kubek - kolider domyslny (bez jawnego halfSize)
-    GameObject* cup = cupModel->Instantiate(*scena1, nullptr, ourShader.get());
+    GameObject* cup = cupModel->Instantiate(*scena1, nullptr, nullptr);
     cup->name = "Magiczny_Kubek";
 
     TransformComponent* cupTr = cup->GetComponent<TransformComponent>();
@@ -1918,26 +2036,26 @@ void createFirstRoom(Scene* scena1) {
 
 void createMainRooom(Scene* scena) {
     // Podloga i sufit
-    CreateStaticObject(scena, floorModel.get(), ourShader.get(), "PodlogaMainRoom", glm::vec3(0, 0, -158),  glm::vec3(60, 1, 60));
-    CreateStaticObject(scena, floorModel.get(), ourShader.get(), "SufitMainRoom",   glm::vec3(0, 25, -200), glm::vec3(100, 1, 100), std::nullopt, glm::vec3(100, 1, 100));
+    CreateStaticObject(scena, floorModel.get(), nullptr, "PodlogaMainRoom", glm::vec3(0, 0, -158),  glm::vec3(60, 1, 60));
+    CreateStaticObject(scena, floorModel.get(), nullptr, "SufitMainRoom",   glm::vec3(0, 25, -200), glm::vec3(100, 1, 100), std::nullopt, glm::vec3(100, 1, 100));
 
     // Sciany
-    CreateStaticObject(scena, wallModel.get(),  ourShader.get(), "ScianaDoRentgenaPrawa",        glm::vec3(35, 0, -218),   glm::vec3(25, 50, 1));
-    CreateStaticObject(scena, wallModel.get(),  ourShader.get(), "ScianaDoRentgenaLewa",         glm::vec3(-30, 0, -218),  glm::vec3(30, 50, 1));
-    CreateStaticObject(scena, wallModel2.get(), ourShader.get(), "ScianaPrawaDoKrematorium",     glm::vec3(60, 0, -130),   glm::vec3(30, 50, 1), std::nullopt, glm::vec3(1, 50, 30));
-    CreateStaticObject(scena, wallModel2.get(), ourShader.get(), "ScianaLewaDoKrematorium",      glm::vec3(60, 0, -235),   glm::vec3(65, 50, 1), std::nullopt, glm::vec3(1, 50, 65));
-    CreateStaticObject(scena, wallModel2.get(), ourShader.get(), "ScianaPrawaDoATOMU",           glm::vec3(-60, 0, -130),  glm::vec3(30, 50, 1), std::nullopt, glm::vec3(1, 50, 30));
-    CreateStaticObject(scena, wallModel2.get(), ourShader.get(), "ScianaLewaDoATOMU",            glm::vec3(-60, 0, -235),  glm::vec3(65, 50, 1), std::nullopt, glm::vec3(1, 50, 65));
+    CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaDoRentgenaPrawa",        glm::vec3(35, 0, -218),   glm::vec3(25, 50, 1));
+    CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaDoRentgenaLewa",         glm::vec3(-30, 0, -218),  glm::vec3(30, 50, 1));
+    CreateStaticObject(scena, wallModel2.get(), nullptr, "ScianaPrawaDoKrematorium",     glm::vec3(60, 0, -130),   glm::vec3(30, 50, 1), std::nullopt, glm::vec3(1, 50, 30));
+    CreateStaticObject(scena, wallModel2.get(), nullptr, "ScianaLewaDoKrematorium",      glm::vec3(60, 0, -235),   glm::vec3(65, 50, 1), std::nullopt, glm::vec3(1, 50, 65));
+    CreateStaticObject(scena, wallModel2.get(), nullptr, "ScianaPrawaDoATOMU",           glm::vec3(-60, 0, -130),  glm::vec3(30, 50, 1), std::nullopt, glm::vec3(1, 50, 30));
+    CreateStaticObject(scena, wallModel2.get(), nullptr, "ScianaLewaDoATOMU",            glm::vec3(-60, 0, -235),  glm::vec3(65, 50, 1), std::nullopt, glm::vec3(1, 50, 65));
 
     // Gora przejscia
-    CreateStaticObject(scena, wallModel.get(), ourShader.get(), "GoraPrzejscieDoRentgena",              glm::vec3(0, 70, -218),   glm::vec3(100, 50, 1));
-    CreateStaticObject(scena, wallModel.get(), ourShader.get(), "GoraPrzejscieDoKrematorium",           glm::vec3(60, 70, -218),  glm::vec3(100, 50, 1), glm::vec3(0, 90, 0));
-    CreateStaticObject(scena, wallModel.get(), ourShader.get(), "GoraPrzejscieDoREAKTORAATOMOWEGO",     glm::vec3(-60, 70, -218), glm::vec3(100, 50, 1), glm::vec3(0, 90, 0));
+    CreateStaticObject(scena, wallModel.get(), nullptr, "GoraPrzejscieDoRentgena",              glm::vec3(0, 70, -218),   glm::vec3(100, 50, 1));
+    CreateStaticObject(scena, wallModel.get(), nullptr, "GoraPrzejscieDoKrematorium",           glm::vec3(60, 70, -218),  glm::vec3(100, 50, 1), glm::vec3(0, 90, 0));
+    CreateStaticObject(scena, wallModel.get(), nullptr, "GoraPrzejscieDoREAKTORAATOMOWEGO",     glm::vec3(-60, 70, -218), glm::vec3(100, 50, 1), glm::vec3(0, 90, 0));
 
     glm::vec3 scaleDoors = glm::vec3(11.0f, 10.0f, 10.0f);
 
     GameObject* hingeKrematorium = CreateInteractableDoor(
-        scena, NormalDoor.get(), ourShader.get(), "DrzwiDoKrematorium",
+        scena, NormalDoor.get(), nullptr, "DrzwiDoKrematorium",
         glm::vec3(60.0f, 2.750f, -165.180f), scaleDoors,
         glm::vec3(0.0f, 0.0f, -5.0f), glm::vec3(0.8f, 20.0f, 5.0f), -90.0f, 90.0f
     );
@@ -1945,7 +2063,7 @@ void createMainRooom(Scene* scena) {
     mainRoomDoors.push_back(hingeKrematorium);
 
     GameObject* hingeRentgen = CreateInteractableDoor(
-        scena, NormalDoor.get(), ourShader.get(), "DrzwiDoRentgen",
+        scena, NormalDoor.get(), nullptr, "DrzwiDoRentgen",
         glm::vec3(5.440f, 2.750f, -217.800f), scaleDoors,
         glm::vec3(5.0f, 0.0f, 0.0f), glm::vec3(5.0f, 20.0f, 0.8f), 90.0f, 0.0f
     );
@@ -1953,14 +2071,14 @@ void createMainRooom(Scene* scena) {
     mainRoomDoors.push_back(hingeRentgen);
 
     GameObject* hingeATOM = CreateInteractableDoor(
-        scena, NormalDoor.get(), ourShader.get(), "DrzwiDoATOMU",
+        scena, NormalDoor.get(), nullptr, "DrzwiDoATOMU",
         glm::vec3(-60.440f, 2.750f, -165.180f), scaleDoors,
         glm::vec3(0.0f, 0.0f, -5.0f), glm::vec3(0.8f, 20.0f, 5.0f), -90.0f, 90.0f
     );
     toiletDoorsMap[hingeATOM].canBeClicked = false;
     mainRoomDoors.push_back(hingeATOM);
 
-    GameObject* szafkaObj = szafkaModel->Instantiate(*scena, nullptr, ourShader.get());
+    GameObject* szafkaObj = szafkaModel->Instantiate(*scena, nullptr, nullptr);
     szafkaObj->name = "Szafka";
 
     TransformComponent* szafkaTr = szafkaObj->GetComponent<TransformComponent>();
@@ -1997,17 +2115,18 @@ void createMainRooom(Scene* scena) {
 }
 
 void createNuclearRooom(Scene* scena) {
-    CreateStaticObject(scena, floorModel.get(), ourShader.get(), "PodlogaNucearRoom", glm::vec3(-120, 0, -180),  glm::vec3(60, 1, 80));
-    CreateStaticObject(scena, floorModel.get(), ourShader.get(), "SufitATOM",         glm::vec3(-120, 20, -180), glm::vec3(60, 1, 80));
-    CreateStaticObject(scena, wallModel2.get(), ourShader.get(), "ScianaKoncowaAtom", glm::vec3(-180, 0, -180),  glm::vec3(80, 50, 1), std::nullopt, glm::vec3(1, 50, 80));
-    CreateStaticObject(scena, wallModel.get(),  ourShader.get(), "ScianaATOMPrawa",   glm::vec3(-120.180, 0, -259.680), glm::vec3(60, 50, 1), std::nullopt, glm::vec3(60, 100, 1));
+    CreateStaticObject(scena, floorModel.get(), nullptr, "PodlogaNucearRoom", glm::vec3(-120, 0, -180),  glm::vec3(60, 1, 80));
+    CreateStaticObject(scena, floorModel.get(), nullptr, "SufitATOM",         glm::vec3(-120, 20, -180), glm::vec3(60, 1, 80));
+    CreateStaticObject(scena, wallModel2.get(), nullptr, "ScianaKoncowaAtom", glm::vec3(-180, 0, -180),  glm::vec3(80, 50, 1), std::nullopt, glm::vec3(1, 50, 80));
+    CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaATOMPrawa",   glm::vec3(-120.180, 0, -259.680), glm::vec3(60, 50, 1), std::nullopt, glm::vec3(60, 100, 1));
 }
 
 void createCrematorium(Scene* scena) {
-    CreateStaticObject(scena, floorModel.get(), ourShader.get(), "PodlogaKrematorium",   glm::vec3(120, 0, -180),  glm::vec3(60, 1, 80));
-    CreateStaticObject(scena, floorModel.get(), ourShader.get(), "SufitCrematorium",     glm::vec3(120, 25, -180), glm::vec3(60, 1, 80));
-    CreateStaticObject(scena, wallModel2.get(), ourShader.get(), "ScianaKoncowaKrematorium", glm::vec3(180, 0, -180), glm::vec3(80, 50, 1), std::nullopt, glm::vec3(1, 50, 80));
-    CreateStaticObject(scena, wallModel.get(),  ourShader.get(), "ScianaKremLewa",       glm::vec3(120.180, 0, -259.680), glm::vec3(60, 50, 1), std::nullopt, glm::vec3(60, 100, 1));
+
+    CreateStaticObject(scena, floorModel.get(), nullptr, "PodlogaKrematorium",   glm::vec3(120, 0, -180),  glm::vec3(60, 1, 80));
+    CreateStaticObject(scena, floorModel.get(), nullptr, "SufitCrematorium",     glm::vec3(120, 25, -180), glm::vec3(60, 1, 80));
+    CreateStaticObject(scena, wallModel2.get(), nullptr, "ScianaKoncowaKrematorium", glm::vec3(180, 0, -180), glm::vec3(80, 50, 1), std::nullopt, glm::vec3(1, 50, 80));
+    CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaKremLewa",       glm::vec3(120.180, 0, -259.680), glm::vec3(60, 50, 1), std::nullopt, glm::vec3(60, 100, 1));
 
     crematoriumPuzzle.spacingHorizontal = 6.0f;
     crematoriumPuzzle.spacingVertical   = 4.5f;
@@ -2027,7 +2146,7 @@ void createCrematorium(Scene* scena) {
     glm::vec3 cornerPosition(175.0f, 4.0f, -255.0f);
 
     if (ruraModel != nullptr && panelModel != nullptr && ruraModel->rootModel != nullptr) {
-        crematoriumPuzzle.Init(scena, ruraModel->rootModel, panelModel.get(), ourShader.get(), cornerPosition);
+        crematoriumPuzzle.Init(scena, ruraModel->rootModel, panelModel.get(), nullptr, cornerPosition);
     }
     else {
         spdlog::error("Model rury albo panelu nie zostal poprawnie zaladowany!");
@@ -2035,9 +2154,9 @@ void createCrematorium(Scene* scena) {
 }
 
 void createRentgenRoom(Scene* scena) {
-    CreateStaticObject(scena, floorModel.get(), ourShader.get(), "PodlogaRentgenRoom",    glm::vec3(0.040, 0, -257.800),  glm::vec3(60, 1, 40));
-    CreateStaticObject(scena, floorModel.get(), ourShader.get(), "SufitRentgen",          glm::vec3(0.040, 20, -257.800), glm::vec3(60, 1, 40));
-    CreateStaticObject(scena, wallModel.get(),  ourShader.get(), "KoncowaScianaRentgen",  glm::vec3(0, 0, -297),          glm::vec3(61, 50, 1));
+    CreateStaticObject(scena, floorModel.get(), nullptr, "PodlogaRentgenRoom",    glm::vec3(0.040, 0, -257.800),  glm::vec3(60, 1, 40));
+    CreateStaticObject(scena, floorModel.get(), nullptr, "SufitRentgen",          glm::vec3(0.040, 20, -257.800), glm::vec3(60, 1, 40));
+    CreateStaticObject(scena, wallModel.get(),  nullptr, "KoncowaScianaRentgen",  glm::vec3(0, 0, -297),          glm::vec3(61, 50, 1));
 
 
     /*if (i == 2 || i == 3) {

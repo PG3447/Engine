@@ -140,7 +140,12 @@ bool hizCull(vec3 aabbMin, vec3 aabbMax, mat4 mvp)
     mip = clamp(mip, 0.0, float(hizMipLevels - 1));
 
     vec2  uvCenter = (uvMin + uvMax) * 0.5;
-    float hizDepth = textureLod(hizCullingTexture, uvCenter, mip).r;
+    float h0 = textureLod(hizCullingTexture, uvMin, mip).r;
+    float h1 = textureLod(hizCullingTexture, uvMax, mip).r;
+    float h2 = textureLod(hizCullingTexture, vec2(uvMin.x, uvMax.y), mip).r;
+    float h3 = textureLod(hizCullingTexture, vec2(uvMax.x, uvMin.y), mip).r;
+    float h4 = textureLod(hizCullingTexture, uvCenter, mip).r;
+    float hizDepth = max(max(max(h0, h1), max(h2, h3)), h4);
 
     return zMin > hizDepth;
 }
@@ -156,6 +161,8 @@ float h2 = textureLod(hizCullingTexture, vec2(uvMin.x, uvMax.y), mip).r;
 float h3 = textureLod(hizCullingTexture, vec2(uvMax.x, uvMin.y), mip).r;
 float h4 = textureLod(hizCullingTexture, uvCenter, mip).r;
 float hizDepth = max(max(max(h0, h1), max(h2, h3)), h4);
+
+float hizDepth = textureLod(hizCullingTexture, uvCenter, mip).r;
 */
 
 

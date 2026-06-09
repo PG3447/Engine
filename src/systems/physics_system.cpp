@@ -111,8 +111,10 @@ void PhysicsSystem::Update(ECS&, float dt) {
                 rbB->velocity.z = 0;
             }
 
-            tA->isDirty = true;
-            tB->isDirty = true;
+            if (!rbA->isStatic)
+                tA->isDirty = true;
+            if (!rbB->isStatic)
+                tB->isDirty = true;
         }
     }
 }

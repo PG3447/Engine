@@ -29,6 +29,8 @@ struct NodeAnimCache {
     int lastScaleIndex = 0;
 };
 
+static uint32_t staticCounterAnimator = 1;
+
 struct Component {
     static constexpr bool Unique = false;
     virtual ~Component() {}
@@ -53,6 +55,7 @@ struct TransformComponent : Component {
     glm::mat4 modelMatrix{ 1.0f };
 
     bool isDirty = true;
+    bool rendererDirty = true;
 
     const char* GetTypeName() const override { return "Transform"; }
 
@@ -103,8 +106,7 @@ struct RenderComponent : Component {
     std::vector<MeshNode> meshes;
     AnimatorComponent* animator;
     AABB localObjectAABB;
-
-
+    bool rendererDirty = true;
     //std::vector<std::shared_ptr<Material>> materials; Fajnie jak bedzie xD
 
     //std::shared_ptr<Model> model;
@@ -272,6 +274,8 @@ struct LightComponent : Component {
     float constant = 1.0f;
     float linear = 0.09f;
     float quadratic = 0.032f;
+    float intensity = 1.0f;
+    float range = 0.0f;
 
     // Spot
     float cutOff = glm::cos(glm::radians(12.5f));
@@ -297,6 +301,8 @@ struct LightComponent : Component {
         node["constant"] = constant;
         node["linear"] = linear;
         node["quadratic"] = quadratic;
+        node["intensity"] = intensity;
+        node["range"] = range;
 
         node["cutOff"] = cutOff;
         node["outerCutOff"] = outerCutOff;
@@ -337,6 +343,12 @@ struct LightComponent : Component {
         if (node["quadratic"])
             quadratic = node["quadratic"].as<float>();
 
+        if (node["intensity"])
+            intensity = node["intensity"].as<float>();
+
+        if (node["range"])
+            range = node["range"].as<float>();
+
         if (node["cutOff"])
             cutOff = node["cutOff"].as<float>();
 
@@ -350,6 +362,8 @@ struct AnimatorComponent : Component {
     static constexpr bool Unique = true;
 
     static const int MAX_BONES = 200;
+
+    uint32_t animatorID = UINT32_MAX;
 
     Skeleton* currentSkeleton = nullptr;
     AnimationClip* currentAnimation = nullptr;
@@ -507,7 +521,7 @@ struct NavPathComponent : Component {
     float stuckThreshold     = 1.0f;
     glm::vec3 lastCheckedPos { 0.0f };
 
-    bool debugDraw = true;
+    bool debugDraw = false;
     glm::vec4 colorPath     = glm::vec4(1.0f, 1.0f, 0.0f, 1.0f);
     glm::vec4 colorGoal     = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
     glm::vec4 colorWaypoint = glm::vec4(0.0f, 0.5f, 1.0f, 1.0f);
