@@ -1138,68 +1138,74 @@ int main(int, char**)
 
         std::string hintText = "";
 
-        if (p1HeldObject != nullptr) {
-            hintText = "Drop";
-        } else if (player1Raycast->anyHit()) {
+        if (player1Raycast->anyHit()) {
             RaycastHit hit = player1Raycast->closestHit();
             if (hit.hitObject != nullptr) {
-                if (rotatableObjects.count(hit.hitObject))
-    hintText = "Rotate";
-else if (toiletDoorsMap.count(hit.hitObject))
-    hintText = toiletDoorsMap[hit.hitObject].isOpen ? "Close" : "Open";
-else if (cabinetsMap.count(hit.hitObject))
-    hintText = isCabinetButtonPushed ? "..." : "Open Cabinet";
-else if (majorDoors.count(hit.hitObject))
-    hintText = can_open_door_1 ? "Open" : "Unlock";
-else if (puzzleSlotsMap.count(hit.hitObject)) {
-    PuzzleSlot& slot = puzzleSlotsMap[hit.hitObject];
-    if (p1HeldObject != nullptr)
-        hintText = (slot.occupant == nullptr) ? "Place here" : "Slot occupied";
-    else if (slot.occupant != nullptr)
-        hintText = "Pull out";
-}
-else if (pickupObjects.count(hit.hitObject)) {
-    bool isInSlot = false;
-    for (auto& [slotGO, slot] : puzzleSlotsMap)
-        if (slot.occupant == hit.hitObject) { isInSlot = true; break; }
-    hintText = isInSlot ? "Pull out" : (hit.hitObject == p2HeldObject ? "Held by Player 2" : "Pick up");
-}
-else if (hit.hitObject->name.find("Coffin") != std::string::npos)
-    hintText = "Pull Coffin";
+                if (puzzleSlotsMap.count(hit.hitObject)) {
+                    PuzzleSlot& slot = puzzleSlotsMap[hit.hitObject];
+                    if (p1HeldObject != nullptr)
+                        hintText = (slot.occupant == nullptr) ? "Put in" : "Slot occupied";
+                    else if (slot.occupant != nullptr)
+                        hintText = "Pull out";
+                }
+                else if (p1HeldObject != nullptr) {
+                    hintText = "Drop";
+                }
+                else if (rotatableObjects.count(hit.hitObject))
+                    hintText = "Rotate";
+                else if (toiletDoorsMap.count(hit.hitObject))
+                    hintText = toiletDoorsMap[hit.hitObject].isOpen ? "Close" : "Open";
+                else if (cabinetsMap.count(hit.hitObject))
+                    hintText = isCabinetButtonPushed ? "..." : "Open Cabinet";
+                else if (majorDoors.count(hit.hitObject))
+                    hintText = can_open_door_1 ? "Open" : "Unlock";
+                else if (pickupObjects.count(hit.hitObject)) {
+                    bool isInSlot = false;
+                    for (auto& [slotGO, slot] : puzzleSlotsMap)
+                        if (slot.occupant == hit.hitObject) { isInSlot = true; break; }
+                    hintText = isInSlot ? "Pull out" : (hit.hitObject == p2HeldObject ? "Held by Player 2" : "Pick up");
+                }
+                else if (hit.hitObject->name.find("Coffin") != std::string::npos)
+                    hintText = "Pull Coffin";
             }
+        } else if (p1HeldObject != nullptr) {
+            hintText = "Drop";
         }
         player1InteractionInfo->text = hintText;
 
         std::string hintText2 = "";
-        if (p1HeldObject != nullptr) {
-            hintText = "Drop";
-        } else if (player2Raycast->anyHit()) {
+        if (player2Raycast->anyHit()) {
             RaycastHit hit = player2Raycast->closestHit();
             if (hit.hitObject != nullptr) {
-              if (rotatableObjects.count(hit.hitObject))
-    hintText2 = "Rotate";
-else if (toiletDoorsMap.count(hit.hitObject))
-    hintText2 = toiletDoorsMap[hit.hitObject].isOpen ? "Close" : "Open";
-else if (cabinetsMap.count(hit.hitObject))
-    hintText2 = isCabinetButtonPushed ? "..." : "Open Cabinet";
-else if (majorDoors.count(hit.hitObject))
-    hintText2 = can_open_door_1 ? "Open" : "Unlock";
-else if (puzzleSlotsMap.count(hit.hitObject)) {
-    PuzzleSlot& slot = puzzleSlotsMap[hit.hitObject];
-    if (p2HeldObject != nullptr)
-        hintText2 = (slot.occupant == nullptr) ? "Place here" : "Slot occupied";
-    else if (slot.occupant != nullptr)
-        hintText2 = "Pull out";
-}
-else if (pickupObjects.count(hit.hitObject)) {
-    bool isInSlot = false;
-    for (auto& [slotGO, slot] : puzzleSlotsMap)
-        if (slot.occupant == hit.hitObject) { isInSlot = true; break; }
-    hintText2 = isInSlot ? "Pull out" : (hit.hitObject == p1HeldObject ? "Held by Player 1" : "Pick up");
-}
-else if (hit.hitObject->name.find("Coffin") != std::string::npos)
-    hintText2 = "Pull Coffin";
+                if (puzzleSlotsMap.count(hit.hitObject)) {
+                    PuzzleSlot& slot = puzzleSlotsMap[hit.hitObject];
+                    if (p2HeldObject != nullptr)
+                        hintText2 = (slot.occupant == nullptr) ? "Put in" : "Slot occupied";
+                    else if (slot.occupant != nullptr)
+                        hintText2 = "Pull out";
+                }
+                else if (p2HeldObject != nullptr) {
+                    hintText2 = "Drop";
+                }
+                else if (rotatableObjects.count(hit.hitObject))
+                    hintText2 = "Rotate";
+                else if (toiletDoorsMap.count(hit.hitObject))
+                    hintText2 = toiletDoorsMap[hit.hitObject].isOpen ? "Close" : "Open";
+                else if (cabinetsMap.count(hit.hitObject))
+                    hintText2 = isCabinetButtonPushed ? "..." : "Open Cabinet";
+                else if (majorDoors.count(hit.hitObject))
+                    hintText2 = can_open_door_1 ? "Open" : "Unlock";
+                else if (pickupObjects.count(hit.hitObject)) {
+                    bool isInSlot = false;
+                    for (auto& [slotGO, slot] : puzzleSlotsMap)
+                        if (slot.occupant == hit.hitObject) { isInSlot = true; break; }
+                    hintText2 = isInSlot ? "Pull out" : (hit.hitObject == p1HeldObject ? "Held by Player 1" : "Pick up");
+                }
+                else if (hit.hitObject->name.find("Coffin") != std::string::npos)
+                    hintText2 = "Pull Coffin";
             }
+        } else if (p2HeldObject != nullptr) {
+            hintText2 = "Drop";
         }
         player2InteractionInfo->text = hintText2;
 
@@ -1298,23 +1304,25 @@ else if (hit.hitObject->name.find("Coffin") != std::string::npos)
         if (player1Raycast->anyHit()) {
             auto hit = player1Raycast->closestHit();
             if (hit.hitObject &&
-               (rotatableObjects.count(hit.hitObject) ||
-                toiletDoorsMap.count(hit.hitObject)   ||
-                cabinetsMap.count(hit.hitObject)       ||
-                majorDoors.count(hit.hitObject)        ||
-                pickupObjects.count(hit.hitObject)     ||
-                hit.hitObject->name.find("Coffin") != std::string::npos))
-                p1Int = 1.0f;
+                (rotatableObjects.count(hit.hitObject) ||
+                 toiletDoorsMap.count(hit.hitObject)   ||
+                 cabinetsMap.count(hit.hitObject)       ||
+                 majorDoors.count(hit.hitObject)        ||
+                 pickupObjects.count(hit.hitObject)     ||
+                 hit.hitObject->name.find("Coffin") != std::string::npos ||
+                 (puzzleSlotsMap.count(hit.hitObject) && puzzleSlotsMap[hit.hitObject].occupant != nullptr)))
+                            p1Int = 1.0f;
         }
         if (player2Raycast->anyHit()) {
             auto hit = player2Raycast->closestHit();
             if (hit.hitObject &&
-               (rotatableObjects.count(hit.hitObject) ||
-                toiletDoorsMap.count(hit.hitObject)   ||
-                cabinetsMap.count(hit.hitObject)       ||
-                majorDoors.count(hit.hitObject)        ||
-                pickupObjects.count(hit.hitObject)))
-                p2Int = 1.0f;
+                 (rotatableObjects.count(hit.hitObject) ||
+                 toiletDoorsMap.count(hit.hitObject)   ||
+                 cabinetsMap.count(hit.hitObject)       ||
+                 majorDoors.count(hit.hitObject)        ||
+                 pickupObjects.count(hit.hitObject)     ||
+                 (puzzleSlotsMap.count(hit.hitObject) && puzzleSlotsMap[hit.hitObject].occupant != nullptr)))
+                            p2Int = 1.0f;
         }
 
         float chLerpSpeed = 10.0f;
