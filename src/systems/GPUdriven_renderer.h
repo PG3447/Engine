@@ -39,10 +39,13 @@ struct GPUMeshData
     uint32_t padding;
 };
 
+
 struct GPUMaterial
 {
     GLuint64 diffuseHandle;
     GLuint64 specularHandle;
+    GLuint64 metallicRoughnessMap;
+    GLuint64 aoHandle;
     GLuint64 normalHandle;
     uint32_t packedColor;
     float shininess;
@@ -50,7 +53,6 @@ struct GPUMaterial
     //uint32_t padding2;
     //glm::vec4 diffuseColorAndShininess;
 };
-
 
 struct GPULight
 {
@@ -454,6 +456,8 @@ public:
         GPUMaterial gpu;
         gpu.diffuseHandle = GetOrCreateHandle(mat->diffuseMap);
         gpu.specularHandle = GetOrCreateHandle(mat->specularMap);
+        gpu.metallicRoughnessMap = GetOrCreateHandle(mat->metallicRoughnessMap);
+        gpu.aoHandle = (!mat->aoInMetallicRoughness) ? GetOrCreateHandle(mat->aoMap) : GLuint64(0);
         gpu.normalHandle = GetOrCreateHandle(mat->normalMap);
         gpu.packedColor = packUnorm4x8(glm::vec4(mat->diffuseColor, 1.0f));
         gpu.shininess = mat->shininess;

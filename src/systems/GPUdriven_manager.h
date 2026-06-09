@@ -44,8 +44,8 @@ struct FrameUBO {
     glm::vec4 viewPos;   // xyz=kamera, w=unused
     float     zNear;
     float     zFar;
+    float     ambientStrength;
     int       numLights;
-    int       _pad;
 };
 
 
@@ -704,8 +704,8 @@ public:
             g.ambient = glm::vec4(on ? light->ambient : zero, 0.0f);
             g.diffuse = glm::vec4(on ? light->diffuse : zero, 0.0f);
             g.specular = glm::vec4(on ? light->specular : zero, 0.0f);
-            g.params1 = glm::vec4(light->constant, light->linear, light->quadratic, light->range);
-            g.params2 = glm::vec4(light->cutOff, light->outerCutOff, on ? 1.0f : 0.0f, 0.0f);
+            g.params1 = glm::vec4(light->constant, light->linear, light->quadratic, light->intensity);
+            g.params2 = glm::vec4(light->cutOff, light->outerCutOff, on ? 1.0f : 0.0f, light->range);
         }
 
         glBindBuffer(GL_UNIFORM_BUFFER, lightsUBO);
@@ -748,10 +748,10 @@ public:
     }
 
     // Główna pętla renderowania
-    void RenderFrame(const glm::mat4& view, const glm::mat4& projection, const glm::mat4& viewProj, glm::vec3 cameraPos, GLuint prevDepth, bool cameraDirty, float zNear = 0.1f, float zFar = 1000.0f)
+    void RenderFrame(const glm::mat4& view, const glm::mat4& projection, const glm::mat4& viewProj, glm::vec3 cameraPos, float ambientStrength, GLuint prevDepth, bool cameraDirty, float zNear = 0.1f, float zFar = 1000.0f)
     {
         const int numLights = (int)gpuLights.size();
-        UploadFrameUBO(viewProj, cameraPos, numLights, zNear, zFar);
+        UploadFrameUBO(viewProj, cameraPos, ambientStrength, numLights, zNear, zFar);
 
         //if (prevDepth && hizTexture) {
         //    glCopyImageSubData(prevDepth, GL_TEXTURE_2D, 0, 0, 0, 0,
@@ -801,13 +801,14 @@ public:
         }
     }
 
-    void UploadFrameUBO(const glm::mat4& viewProj, const glm::vec3& cameraPos, int numLights, float zNear, float zFar)
+    void UploadFrameUBO(const glm::mat4& viewProj, const glm::vec3& cameraPos, float ambientStrength, int numLights, float zNear, float zFar)
     {
         FrameUBO data{};
         data.viewProjection = viewProj;
         data.viewPos = glm::vec4(cameraPos, 1.0f);
         data.zNear = zNear;
         data.zFar = zFar;
+        data.ambientStrength = ambientStrength;
         data.numLights = numLights;
 
         glBindBuffer(GL_UNIFORM_BUFFER, frameUBO);

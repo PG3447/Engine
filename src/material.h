@@ -21,7 +21,10 @@ public:
 
     GLuint diffuseMap = 0;
     GLuint specularMap = 0;
+    GLuint metallicRoughnessMap = 0;
+    GLuint aoMap = 0;
     GLuint normalMap = 0;
+    bool aoInMetallicRoughness = false;
 
     glm::vec3 diffuseColor = glm::vec3(1.0f, 1.0f, 1.0f);
     float shininess = 32.0f;

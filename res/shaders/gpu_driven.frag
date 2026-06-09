@@ -14,12 +14,11 @@ struct MaterialGPU
 {
     uvec2 diffuseHandle;
     uvec2 specularHandle;
+    uvec2 metallicRoughnessMap;
+    uvec2 aoHandle;
     uvec2 normalHandle;
     uint packedColor;
     float shininess;
-//    uint  padding;
-//    uint  padding2;
-//    vec4  diffuseColorAndShininess;
 };
 
 struct GPULight {
@@ -28,8 +27,8 @@ struct GPULight {
     vec4 ambient;
     vec4 diffuse;
     vec4 specular;
-    vec4 params1;   // x=constant, y=linear, z=quadratic, w=range
-    vec4 params2;   // x=cutOff,   y=outerCutOff, z=enabled, w=unused
+    vec4 params1;   // x=constant, y=linear, z=quadratic, w=intensity
+    vec4 params2;   // x=cutOff,   y=outerCutOff, z=enabled, w=range
 };
 
 //layout(std140, binding = 0) uniform FrameFS {
@@ -45,9 +44,10 @@ layout(std140, binding = 0) uniform FrameUBO
     vec4  viewPos;   // xyz = pozycja kamery
     float zNear;
     float zFar;
-    int   numLights;
-    int   _pad;
+    float ambientStrength;
+    int numLights;
 };
+
 
 #define MAX_LIGHTS 512
 layout(std140, binding = 1) uniform Lights

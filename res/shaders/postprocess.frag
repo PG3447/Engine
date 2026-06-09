@@ -37,8 +37,8 @@ void main() {
             float m1 = max(s1, s2);
             float m2 = max(s3, s4);
 
-            float ss1 = smoothstep(0.2, 0.4, m1);
-            float ss2 = smoothstep(0.2, 0.4, m2);
+            float ss1 = smoothstep(0.08, 0.15, m1);
+            float ss2 = smoothstep(0.08, 0.15, m2);
 
             float GIGAWYNIK = max(ss1, ss2);
 
@@ -56,8 +56,8 @@ void main() {
             float m1 = max(s1, s2);
             float m2 = max(s3, s4);
 
-            float ss1 = smoothstep(0.2, 0.4, m1);
-            float ss2 = smoothstep(0.2, 0.4, m2);
+            float ss1 = smoothstep(0.08, 0.15, m1);
+            float ss2 = smoothstep(0.08, 0.15, m2);
 
             float GIGAWYNIK = max(ss1, ss2);
 
@@ -66,7 +66,7 @@ void main() {
             playerColor =  mix(vec3(dotProduct), color, GIGAWYNIK);//pow(tempColor, vec3(1.0 / 1.8));//dont worry about it
      }
 
-     playerColor = pow(playerColor, vec3(1.0 / 2.2));
+     //playerColor = pow(playerColor, vec3(1.0 / 2.2));
 
 
     //Contrast
@@ -76,9 +76,9 @@ void main() {
 
 
     //Lines
-
-        float scanline = sin(TexCoords.y * 800.0) * 0.04;
-        playerColor -= scanline;
+//
+//        float scanline = sin(TexCoords.y * 800.0) * 0.04;
+//        playerColor -= scanline;
 
 
     //Grain
@@ -132,6 +132,6 @@ void main() {
     playerColor = mix(playerColor, vec3(1.0), innerDot);
 
 
-    FragColor = vec4(color, 1.0);
+    FragColor = vec4(playerColor, 1.0);
 
 }

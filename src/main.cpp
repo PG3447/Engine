@@ -1297,6 +1297,7 @@ void ShowLightEditor(LightComponent& light)
     ImGui::ColorEdit3("Ambient",  &light.ambient.x);
     ImGui::ColorEdit3("Diffuse",  &light.diffuse.x);
     ImGui::ColorEdit3("Specular", &light.specular.x);
+    ImGui::DragFloat("Intensity", &light.intensity, 0.001f, 0.0f, 1000.0f);
     ImGui::Separator();
 
     if (light.type == Point || light.type == Spot) {
@@ -1304,7 +1305,7 @@ void ShowLightEditor(LightComponent& light)
         ImGui::DragFloat("Constant",  &light.constant,  0.001f, 0.0f, 10.0f);
         ImGui::DragFloat("Linear",    &light.linear,    0.001f, 0.0f, 10.0f);
         ImGui::DragFloat("Quadratic", &light.quadratic, 0.001f, 0.0f, 10.0f);
-        ImGui::DragFloat("Range", &light.range, 0.001f, 0.0f, 10.0f);
+        ImGui::DragFloat("Range", &light.range, 0.001f, 0.0f, 1000.0f);
     }
 
     if (light.type == Spot) {
@@ -1360,6 +1361,9 @@ void imgui_render(SceneManager& sceneManager)
         glPolygonMode(GL_FRONT_AND_BACK, wireframeMode ? GL_LINE : GL_FILL);
     }
 
+    ImGui::Separator();
+    ImGui::Text("Ambient"); 
+    ImGui::DragFloat("Ambient strength", &renderSystem->ambientStrength, 0.000001f, 0.0f, 1.0f, "%.6f");
     ImGui::Separator();
     ImGui::Text("Hierarchy");
     ShowGameObjectTree(sceneManager.GetActiveScene()->GetRoot());

@@ -294,6 +294,41 @@ MeshNode Model::processMesh(aiMesh* mesh, const aiScene* scene)
     vector<Texture> specularMaps = loadMaterialTextures(aiMat, aiTextureType_SPECULAR, "texture_specular", scene);
     if (!specularMaps.empty()) myMaterial->specularMap = specularMaps[0].id;
 
+    //metallic roughness
+    bool hasMRTexture = false;
+    vector<Texture> metallicRoughnessMaps = loadMaterialTextures(aiMat, aiTextureType_UNKNOWN, "texture_metallic_roughness", scene);
+    if (metallicRoughnessMaps.empty())
+        metallicRoughnessMaps = loadMaterialTextures(aiMat, aiTextureType_METALNESS, "texture_metallic_roughness", scene);
+    if (!metallicRoughnessMaps.empty()) {
+        myMaterial->metallicRoughnessMap = metallicRoughnessMaps[0].id;
+        hasMRTexture = true;
+    }
+    else {
+        float metallic = 0.0f, roughness = 0.5f;
+        aiGetMaterialFloat(aiMat, AI_MATKEY_METALLIC_FACTOR, &metallic);
+        aiGetMaterialFloat(aiMat, AI_MATKEY_ROUGHNESS_FACTOR, &roughness);
+        myMaterial->metallicRoughnessMap = ResourceManager::CreateTextureFromColor(fullPath + "_mat" + std::to_string(mesh->mMaterialIndex), glm::vec3(1.0f, roughness, metallic));
+        //myMaterial->metallic = metallic;
+        //myMaterial->roughness = roughness;
+    }
+
+    // AO
+    vector<Texture> aoMaps = loadMaterialTextures(aiMat, aiTextureType_LIGHTMAP, "texture_ao", scene);
+    if (aoMaps.empty())
+        aoMaps = loadMaterialTextures(aiMat, aiTextureType_AMBIENT_OCCLUSION, "texture_ao", scene);
+
+    if (!aoMaps.empty())
+    {
+        if (hasMRTexture && aoMaps[0].id == myMaterial->metallicRoughnessMap)
+        {
+            myMaterial->aoInMetallicRoughness = true;
+        }
+        else {
+            myMaterial->aoMap = aoMaps[0].id;
+        }
+    }
+
+
     // normal
     vector<Texture> normalMaps = loadMaterialTextures(aiMat, aiTextureType_HEIGHT, "texture_normal", scene);
     if (normalMaps.empty()) {
@@ -390,6 +425,7 @@ vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType type,
     }
     return textures;
 }
+
 
 void Model::SetVertexBoneDataToDefault(Vertex& vertex)
 {

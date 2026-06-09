@@ -26,6 +26,8 @@ public:
 
     static GLuint CreateTextureFromColor(const std::string& name, const glm::vec3& color);
 
+    static GLuint CreateTextureMaterialFromColor(const std::string& name, const glm::vec3& color);
+
     static void SaveAsset();
 
     static void LoadAssets(std::string& path);
