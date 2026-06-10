@@ -273,6 +273,19 @@ MeshNode Model::processMesh(aiMesh* mesh, const aiScene* scene)
     aiMaterial* aiMat = scene->mMaterials[mesh->mMaterialIndex];
     std::shared_ptr<Material> myMaterial = std::make_shared<Material>();
 
+
+    //vector<Texture> diffuseMaps = loadMaterialTextures(aiMat, aiTextureType_DIFFUSE, "texture_diffuse", scene);
+//if (diffuseMaps.empty()) {
+//
+//    @@ - 218, 16 + 219, 27 @@ MeshNode Model::processMesh(aiMesh * mesh, const aiScene * scene)
+//}
+//if (!diffuseMaps.empty()) {
+//    myMaterial->diffuseMap = diffuseMaps[0].id;
+//
+//    if (diffuseMaps[0].hasAlpha)
+//        myMaterial->transparent = true;
+//}
+
     // diffuse
     vector<Texture> diffuseMaps = loadMaterialTextures(aiMat, aiTextureType_DIFFUSE, "texture_diffuse", scene);
     if (diffuseMaps.empty()) {
@@ -286,10 +299,19 @@ MeshNode Model::processMesh(aiMesh* mesh, const aiScene* scene)
         if (aiGetMaterialColor(aiMat, AI_MATKEY_BASE_COLOR, &color) == AI_SUCCESS ||
             aiGetMaterialColor(aiMat, AI_MATKEY_COLOR_DIFFUSE, &color) == AI_SUCCESS)
         {
-            myMaterial->diffuseColor = glm::vec3(color.r, color.g, color.b);
+            myMaterial->diffuseColor = glm::vec4(color.r, color.g, color.b, color.a);
         }
     }
+    float opacity = 1.0f;
+    aiGetMaterialFloat(aiMat, AI_MATKEY_OPACITY, &opacity);
 
+    int blendMode = aiBlendMode_Default;
+    aiGetMaterialInteger(aiMat, AI_MATKEY_BLEND_FUNC, &blendMode);
+    
+    if ((opacity < 1.0f) || (blendMode != aiBlendMode_Default)) // !diffuseMaps.empty() && diffuseMaps[0].hasAlpha) || 
+    {
+        myMaterial->surfaceType = SurfaceType::Transparent;
+    }
     // specular
     vector<Texture> specularMaps = loadMaterialTextures(aiMat, aiTextureType_SPECULAR, "texture_specular", scene);
     if (!specularMaps.empty()) myMaterial->specularMap = specularMaps[0].id;

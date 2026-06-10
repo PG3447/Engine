@@ -23,7 +23,7 @@ void CrematoriumPuzzle::Init(Scene* scene, std::shared_ptr<Model> coffinModel, P
             int targetLvl = configLeftWall[configRow][configCol];
             bool interactable = (targetLvl > 0);
 
-            glm::vec3 coffinColor = interactable ? glm::vec3(1.0f, 0.0f, 0.0f) : glm::vec3(0.1f, 0.1f, 0.1f);
+            glm::vec4 coffinColor = interactable ? glm::vec4(1.0f, 0.0f, 0.0f, 1.0f) : glm::vec4(0.1f, 0.1f, 0.1f, 1.0f);
 
             auto* render = obj->AddComponent<RenderComponent>();
             render->meshes = coffinModel->rootNode->meshes;
@@ -70,7 +70,7 @@ void CrematoriumPuzzle::Init(Scene* scene, std::shared_ptr<Model> coffinModel, P
             int targetLvl = configRightWall[configRow][configCol];
             bool interactable = (targetLvl > 0);
 
-            glm::vec3 coffinColor = interactable ? glm::vec3(0.0f, 1.0f, 0.0f) : glm::vec3(0.1f, 0.1f, 0.1f);
+            glm::vec4 coffinColor = interactable ? glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) : glm::vec4(0.1f, 0.1f, 0.1f, 1.0f);
 
             auto* render = obj->AddComponent<RenderComponent>();
             render->meshes = coffinModel->rootNode->meshes;
@@ -114,7 +114,7 @@ void CrematoriumPuzzle::Init(Scene* scene, std::shared_ptr<Model> coffinModel, P
             for (auto& mesh : render->meshes) {
                 if (mesh.material) {
                     mesh.material = std::make_shared<Material>(*mesh.material);
-                    mesh.material->diffuseColor = glm::vec3(0.1f, 0.1f, 0.1f);
+                    mesh.material->diffuseColor = glm::vec4(0.1f, 0.1f, 0.1f, 1.0f);
                 }
             }
         }
@@ -136,13 +136,13 @@ void CrematoriumPuzzle::Init(Scene* scene, std::shared_ptr<Model> coffinModel, P
             for (auto& mesh : render->meshes) {
                 if (mesh.material) {
                     mesh.material = std::make_shared<Material>(*mesh.material);
-                    mesh.material->diffuseColor = glm::vec3(0.1f, 0.1f, 0.1f);
+                    mesh.material->diffuseColor = glm::vec4(0.1f, 0.1f, 0.1f, 1.0f);
                 }
             }
         }
     });
 
-    auto setupPanelMaterials = [&](GameObject* panelObj, glm::vec3 activeColor) {
+    auto setupPanelMaterials = [&](GameObject* panelObj, glm::vec4 activeColor) {
         if (!panelObj) return;
         panelObj->TraverseChildren([&](GameObject* child) {
             auto* render = child->GetComponent<RenderComponent>();
@@ -155,7 +155,7 @@ void CrematoriumPuzzle::Init(Scene* scene, std::shared_ptr<Model> coffinModel, P
                 for (auto& mesh : render->meshes) {
                     if (mesh.material) {
                         auto inactiveMat = std::make_shared<Material>(*mesh.material);
-                        inactiveMat->diffuseColor = glm::vec3(0.1f, 0.1f, 0.1f);
+                        inactiveMat->diffuseColor = glm::vec4(0.1f, 0.1f, 0.1f, 1.0f);
                         inactiveMaterials[child] = inactiveMat;
 
                         auto activeMat = std::make_shared<Material>(*mesh.material);
@@ -175,8 +175,8 @@ void CrematoriumPuzzle::Init(Scene* scene, std::shared_ptr<Model> coffinModel, P
             });
         };
 
-    setupPanelMaterials(leftPanelObj, glm::vec3(1.0f, 0.0f, 0.0f));
-    setupPanelMaterials(rightPanelObj, glm::vec3(0.0f, 1.0f, 0.0f));
+    setupPanelMaterials(leftPanelObj, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+    setupPanelMaterials(rightPanelObj, glm::vec4(0.0f, 1.0f, 0.0f, 1.04));
 }
 
 void CrematoriumPuzzle::ToggleCoffin(GameObject* clickedObject)

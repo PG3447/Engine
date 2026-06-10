@@ -51,7 +51,7 @@ public:
         }
     }
 
-    static void SetDiffuseColor(GameObject* root, const glm::vec3& color, bool includeChildren = true)
+    static void SetDiffuseColor(GameObject* root, const glm::vec4& color, bool includeChildren = true)
     {
         if (!root) return;
 

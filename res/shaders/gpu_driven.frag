@@ -79,8 +79,7 @@ void main()
     }
     else
     {
-         vec3 diffuseColor = unpackUnorm4x8(mat.packedColor).rgb;
-        texColor = vec4(diffuseColor, 1.0);
+        texColor = unpackUnorm4x8(mat.packedColor);
     }
 
     // Specular

@@ -26,7 +26,7 @@ public:
     GLuint normalMap = 0;
     bool aoInMetallicRoughness = false;
 
-    glm::vec3 diffuseColor = glm::vec3(1.0f, 1.0f, 1.0f);
+    glm::vec4 diffuseColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
     float shininess = 32.0f;
 
     Material() = default;

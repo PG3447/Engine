@@ -459,7 +459,7 @@ public:
         gpu.metallicRoughnessMap = GetOrCreateHandle(mat->metallicRoughnessMap);
         gpu.aoHandle = (!mat->aoInMetallicRoughness) ? GetOrCreateHandle(mat->aoMap) : GLuint64(0);
         gpu.normalHandle = GetOrCreateHandle(mat->normalMap);
-        gpu.packedColor = packUnorm4x8(glm::vec4(mat->diffuseColor, 1.0f));
+        gpu.packedColor = packUnorm4x8(glm::vec4(mat->diffuseColor));
         gpu.shininess = mat->shininess;
 
         uint32_t id = (uint32_t)materials.size();
