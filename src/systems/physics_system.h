@@ -21,7 +21,7 @@ private:
     Query<TransformComponent, ColliderComponent>* colliderOnlyQuery;
 
     float physicsAccumulator = 0.0f;
-    static constexpr float fixedDeltaTime = 0.02f;
+    static constexpr float fixedDeltaTime = 0.04f;
 
 public:
     PhysicsSystem(ECS& ecs);
