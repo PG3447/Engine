@@ -1,4 +1,4 @@
-﻿#ifndef PHYSICS_SYSTEM_H
+#ifndef PHYSICS_SYSTEM_H
 #define PHYSICS_SYSTEM_H
 
 #include "core/ecs.h"
@@ -20,7 +20,7 @@ private:
     Query<TransformComponent, RigidbodyComponent, ColliderComponent>* query;
 
     float physicsAccumulator = 0.0f;
-    static constexpr float fixedDeltaTime = 0.02f;
+    static constexpr float fixedDeltaTime = 0.04f;
 
 public:
     PhysicsSystem(ECS& ecs);
