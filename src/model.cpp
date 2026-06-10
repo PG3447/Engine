@@ -286,6 +286,12 @@ MeshNode Model::processMesh(aiMesh* mesh, const aiScene* scene)
 //        myMaterial->transparent = true;
 //}
 
+    float opacity = 1.0f;
+    aiGetMaterialFloat(aiMat, AI_MATKEY_OPACITY, &opacity);
+
+    int blendMode = aiBlendMode_Default;
+    aiGetMaterialInteger(aiMat, AI_MATKEY_BLEND_FUNC, &blendMode);
+
     // diffuse
     vector<Texture> diffuseMaps = loadMaterialTextures(aiMat, aiTextureType_DIFFUSE, "texture_diffuse", scene);
     if (diffuseMaps.empty()) {
@@ -300,16 +306,18 @@ MeshNode Model::processMesh(aiMesh* mesh, const aiScene* scene)
         if (aiGetMaterialColor(aiMat, AI_MATKEY_BASE_COLOR, &color) == AI_SUCCESS ||
             aiGetMaterialColor(aiMat, AI_MATKEY_COLOR_DIFFUSE, &color) == AI_SUCCESS)
         {
-            myMaterial->diffuseColor = glm::vec4(color.r, color.g, color.b, color.a);
+            if (opacity < 1.0f) {
+                myMaterial->diffuseColor = glm::vec4(color.r, color.g, color.b, color.a);
+            }
+            else
+            {
+                myMaterial->diffuseColor = glm::vec4(color.r, color.g, color.b, opacity);
+            }
         }
     }
-    float opacity = 1.0f;
-    aiGetMaterialFloat(aiMat, AI_MATKEY_OPACITY, &opacity);
 
-    int blendMode = aiBlendMode_Default;
-    aiGetMaterialInteger(aiMat, AI_MATKEY_BLEND_FUNC, &blendMode);
     
-    if ((!diffuseMaps.empty() && diffuseMaps[0].isAlpha) || (opacity < 1.0f) || (blendMode != aiBlendMode_Default))
+    if ((opacity < 1.0f) || (blendMode != aiBlendMode_Default)) //(!diffuseMaps.empty() && diffuseMaps[0].isAlpha) ||
     {
         myMaterial->surfaceType = SurfaceType::Transparent;
     }

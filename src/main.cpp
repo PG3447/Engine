@@ -137,7 +137,6 @@ GLuint VBO;
 GLuint VAO;
 GLuint texture;
 std::unique_ptr<Prefab> sunModel;
-std::unique_ptr<Shader> pbrShader;
 std::unique_ptr<Shader> skyboxShader;
 //std::unique_ptr<Shader> reflectShader;
 //std::unique_ptr<Shader> refractShader;
@@ -829,15 +828,12 @@ int main(int, char**)
     addAllSystems(ecs);
 
 
-    pbrShader = std::make_unique<Shader>("res/shaders/gpu_driven_PBR.vert", "res/shaders/gpu_driven_PBR.frag");
-    pbrShader->use();
-
 
     groundModel = std::make_unique<Prefab>("res/models/podloze.glb");
     sunModel    = std::make_unique<Prefab>("res/models/Sun.glb");
     szkloModel = std::make_unique<Prefab>("res/models/samochod.glb");
 
-    GameObject* szklo = szkloModel->Instantiate(*scena1, nullptr, pbrShader.get());
+    GameObject* szklo = szkloModel->Instantiate(*scena1, nullptr, nullptr);
     szklo->name = "SZKLO";
     //for (auto& mesh : szklo->GetComponent<RenderComponent>()->meshes)
     //{
