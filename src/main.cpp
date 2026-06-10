@@ -55,6 +55,7 @@
 #include "systems/NpcSystem.h"
 #include "utils/render_helper.h"
 #include "utils/animation_helper.h"
+#include "utils/player_animation_helper.h"
 
 #include "gameplay/crematorium_puzzle.h"
 
@@ -75,13 +76,13 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 
-void processCameraInput(ECS& ecs, CameraComponent& cam, TransformComponent& transform,
+bool processCameraInput(ECS& ecs, CameraComponent& cam, TransformComponent& transform,
     const std::string& up,
     const std::string& down,
     const std::string& left,
     const std::string& right);
 
-void processCameraGamepad(ECS& ecs,
+bool processCameraGamepad(ECS& ecs,
     CameraComponent& cam,
     TransformComponent& transform,
     int gamepad_id);
@@ -161,6 +162,7 @@ std::unique_ptr<Prefab> bad2Model;
 std::unique_ptr<Prefab> bad3Model;
 std::unique_ptr<Prefab> papersModel;
 std::unique_ptr<Prefab> bossModel;
+std::unique_ptr<Prefab> bossCapsuleModel;
 std::unique_ptr<Prefab> characterModel;
 std::unique_ptr<Prefab> vial1Model;
 std::unique_ptr<Prefab> vial2Model;
@@ -332,11 +334,9 @@ GameObject* CreateRaycastTestObject(
     return go;
 }
 
-void processCameraInput(ECS& ecs, CameraComponent& cam, TransformComponent& transform,
-                        const std::string& up,
-                        const std::string& down,
-                        const std::string& left,
-                        const std::string& right)
+bool processCameraInput(ECS& ecs, CameraComponent& cam, TransformComponent& transform,
+    const std::string& up, const std::string& down,
+    const std::string& left, const std::string& right)
 {
     const auto& hid = ecs.GetSystem<HID>();
     glm::vec3 dir(0.0f);
@@ -359,7 +359,9 @@ void processCameraInput(ECS& ecs, CameraComponent& cam, TransformComponent& tran
         transform.position += dir * MovementSpeed * 0.04f; //deltaTime; aktualnie fixedDeltaTime
         transform.isDirty   = true;
         cam.dirty = true;
+        return true;
     }
+    return false;
 }
 
 void processCameraMouse(ECS& ecs, CameraComponent& cam, TransformComponent& transform)
@@ -378,7 +380,7 @@ void processCameraMouse(ECS& ecs, CameraComponent& cam, TransformComponent& tran
 
 float lookDeadzone = 0.0f;
 
-void processCameraGamepad(ECS& ecs, CameraComponent& cam, TransformComponent& transform, int gamepad_id)
+bool processCameraGamepad(ECS& ecs, CameraComponent& cam, TransformComponent& transform, int gamepad_id)
 {
     const auto& hid = ecs.GetSystem<HID>();
 
@@ -386,11 +388,9 @@ void processCameraGamepad(ECS& ecs, CameraComponent& cam, TransformComponent& tr
     float ly = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_LEFT_Y, gamepad_id);
 
     glm::vec3 dir(0.0f);
-
     glm::vec3 camFront = cam.state.Front;
     camFront.y = 0.0f;
     camFront = glm::normalize(camFront);
-
     glm::vec3 camRight = cam.state.Right;
     camRight.y = 0.0f;
     camRight = glm::normalize(camRight);
@@ -398,27 +398,27 @@ void processCameraGamepad(ECS& ecs, CameraComponent& cam, TransformComponent& tr
     dir += camFront * (-ly);
     dir += camRight * lx;
 
+    bool isMoving = false;
     if (glm::length(dir) > 0.0f) {
         dir = glm::normalize(dir);
-        transform.position += dir * MovementSpeed * 0.04f;// deltaTime; aktualnie fixedDeltaTime
+        transform.position += dir * MovementSpeed * 0.04f;
         transform.isDirty = true;
         cam.dirty = true;
+        isMoving = true;
     }
 
     float rx = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_RIGHT_X, gamepad_id);
     float ry = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_RIGHT_Y, gamepad_id);
 
-
     if (lookDeadzone <= 0.01f)
         lookDeadzone += 0.0005f;
     else if (glm::abs(rx) < lookDeadzone && glm::abs(ry) < lookDeadzone)
-        return;
-
+        return isMoving;
 
     const float sensitivity = 600.0f;
-    CameraHelper::ProcessMouseMovement(cam, transform,
-        rx * sensitivity * deltaTime,
-        ry * sensitivity * deltaTime);
+    CameraHelper::ProcessMouseMovement(cam, transform, rx * sensitivity * deltaTime, ry * sensitivity * deltaTime);
+
+    return isMoving;
 }
 
 void addAllSystems(ECS& ecs);
@@ -934,6 +934,34 @@ int main(int, char**)
     gracz1->AddChild(modelPostac1);
     modelPostac1->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, -2.0f, 0.0f);
 
+    AnimatorComponent* p1Animator = nullptr;
+    int totalAnimsP1 = 0;
+    int currentAnimIndexP1 = 0;
+
+    if (postacGracza->rootModel && !postacGracza->rootModel->animations.empty()) {
+
+        p1Animator = modelPostac1->GetComponent<AnimatorComponent>();
+        if (p1Animator == nullptr) {
+            p1Animator = modelPostac1->AddComponent<AnimatorComponent>();
+        }
+
+        totalAnimsP1 = postacGracza->rootModel->animations.size();
+
+        spdlog::info(">>> Model Gracza 1 posiada {} animacji! <<<", totalAnimsP1);
+        for (int i = 0; i < totalAnimsP1; i++) {
+            spdlog::info("Animacja [{}]: {}", i, postacGracza->rootModel->animations[i].name);
+        }
+
+        // Odpalamy pierwszą animację z flagą loop = false
+        AnimationClip* firstClip = &postacGracza->rootModel->animations[0];
+        AnimationHelper::Play(p1Animator, firstClip, false, 1.0f);
+        spdlog::info("Odtwarzam pierwszą: {}", firstClip->name);
+
+    }
+    else {
+        spdlog::warn("Model postac_srodek.glb nie ma żadnych animacji!");
+    }
+
     GameObject* camera2 = scena1->CreateGameObject(nullptr);
     CameraComponent*    camCompRight     = camera2->AddComponent<CameraComponent>();
     ColliderComponent*  camera2collider  = camera2->AddComponent<ColliderComponent>();
@@ -1331,17 +1359,20 @@ int main(int, char**)
 
         input();
 
-        if (focused) {
-            processCameraInput(ecs, *camCompLeft, *t0,
-                "move_up", "move_down", "move_left", "move_right");
+        bool p1IsMoving = false;
+        bool p2IsMoving = false;
 
-            processCameraInput(ecs, *camCompRight, *t1,
-                "move_up_2", "move_down_2", "move_left_2", "move_right_2");
+        if (focused) {
+            p1IsMoving |= processCameraInput(ecs, *camCompLeft, *t0, "move_up", "move_down", "move_left", "move_right");
+            p2IsMoving |= processCameraInput(ecs, *camCompRight, *t1, "move_up_2", "move_down_2", "move_left_2", "move_right_2");
 
             processCameraMouse(ecs, *camCompLeft, *camTransform1);
-            processCameraGamepad(ecs, *camCompLeft,  *t0, 0);
-            processCameraGamepad(ecs, *camCompRight, *t1, 1);
+
+            p1IsMoving |= processCameraGamepad(ecs, *camCompLeft, *t0, 0);
+            p2IsMoving |= processCameraGamepad(ecs, *camCompRight, *t1, 1);
         }
+
+        PlayerAnimationHelper::UpdateAnimation(p1Animator, postacGracza.get(), p1IsMoving);
 
         if (p1ShakeTimer > 0.0f) p1ShakeTimer -= deltaTime;
         if (p2ShakeTimer > 0.0f) p2ShakeTimer -= deltaTime;
@@ -1921,6 +1952,9 @@ void connectAllModels() {
     Rentgen = std::make_unique<Prefab>("res/models/Rentgen.glb");
 
     cockroachModel   = std::make_unique<Prefab>("res/models/cockroach.glb");
+
+    bossModel = std::make_unique<Prefab>("res/models/demon_animations_with_textures.glb");
+    bossCapsuleModel = std::make_unique<Prefab>("res/models/boss_capsule.glb");
 }
 
 void createFirstRoom(Scene* scena1) {
@@ -2178,6 +2212,39 @@ void createMainRooom(Scene* scena) {
         cabState.buttonTargetPos = cabState.buttonStartPos + glm::vec3{ 0.0f, 0.0f, -0.15f };
 
         cabinetsMap[cabState.button] = cabState;
+    }
+
+    glm::vec3 bossRoomCenter = glm::vec3(-35.0f, 5.3f, -190.0f);
+
+    // kapsuła
+
+    //GameObject* capsuleObj = CreateStaticObject(
+    //    scena,
+    //    bossCapsuleModel.get(),
+    //    nullptr,
+    //    "BossCapsule",
+    //    bossRoomCenter,
+    //    glm::vec3(3.0f),
+    //    std::nullopt,
+    //    glm::vec3(3.0f, 8.0f, 3.0f),
+    //    true
+    //);
+
+    GameObject* bossObj = bossModel->Instantiate(*scena, nullptr, nullptr);
+    bossObj->name = "DemonBoss";
+
+    TransformComponent* bossTr = bossObj->GetComponent<TransformComponent>();
+    bossTr->position = glm::vec3(bossRoomCenter.x - 2.2f, bossRoomCenter.y + 8.7f, bossRoomCenter.z - 3.9f);
+    bossTr->scale = glm::vec3(3.0f);
+    bossTr->rotation = glm::vec3(0.0f, -140.0f, 0.0f);
+    bossTr->isDirty = true;
+
+    AnimatorComponent* bossAnimator = bossObj->AddComponent<AnimatorComponent>();
+
+    if (bossModel->rootModel && !bossModel->rootModel->animations.empty()) {
+        AnimationClip* defaultBossClip = &bossModel->rootModel->animations[0];
+
+        AnimationHelper::Play(bossAnimator, defaultBossClip, true, 1.0f);
     }
 }
 

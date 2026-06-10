@@ -1,6 +1,7 @@
 #include "core/component.h"
 #include "core/gameobject.h"
 
+uint32_t staticCounterAnimator = 1;
 static uint32_t nextAnimatorID = 0;
 
 void AnimatorComponent::OnEnable(GameObject* owner) {
