@@ -714,17 +714,17 @@ int main(int, char**)
     pbrShader = std::make_unique<Shader>("res/shaders/gpu_driven_PBR.vert", "res/shaders/gpu_driven_PBR.frag");
     pbrShader->use();
     
-    postacGracza = std::make_unique<Prefab>("res/models/postac.glb");
+    postacGracza = std::make_unique<Prefab>("res/models/postac_srodek.glb");
     groundModel = std::make_unique<Prefab>("res/models/podloze.glb");
     sunModel    = std::make_unique<Prefab>("res/models/Sun.glb");
     szkloModel = std::make_unique<Prefab>("res/models/szklo.glb");
     
     GameObject* szklo = szkloModel->Instantiate(*scena1, nullptr, pbrShader.get());
     szklo->name = "SZKLO";
-    //for (auto& mesh : szklo->GetComponent<RenderComponent>()->meshes)
-    //{
-    //    //mesh.material->surfaceType = SurfaceType::Transparent;
-    //}
+    for (auto& mesh : szklo->GetComponent<RenderComponent>()->meshes)
+    {
+        mesh.material->surfaceType = SurfaceType::Transparent;
+    }
 
     GameObject* obb3 = sunModel->Instantiate(*scena1, nullptr, nullptr);
     obb3->GetComponent<TransformComponent>()->scale    = glm::vec3(25.0f);
@@ -747,28 +747,26 @@ int main(int, char**)
     RenderHelper::SetMaterial(obb3, brickMat);
 
     //Tworzenie gracza nr.1
-
     GameObject* gracz1 = scena1->CreateGameObject(nullptr);
     gracz1->name = "Gracz1";
-    
+
+    ColliderComponent* camera1collider = gracz1->AddComponent<ColliderComponent>();
+    RigidbodyComponent* rigidBodyCamera1 = gracz1->AddComponent<RigidbodyComponent>();
+    gracz1->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 10.0f, -20.0f);
+    gracz1->GetComponent<RigidbodyComponent>()->useGravity = false;
+    gracz1->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1.0f, 8.0f, 1.0f };
+
     
     GameObject* camera1 = scena1->CreateGameObject(nullptr);//groundModel->Instantiate(*scena1, nullptr, ourShader.get());
     camera1->name = "Kamera";
-    camera1->SetParent(gracz1);
-
-    GameObject* modelPostac1 = postacGracza->Instantiate(*scena1, nullptr, nullptr);
-    modelPostac1->SetParent(gracz1);
-
-    gracz1->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 10.0f, -20.0f);
-    
-    CameraComponent* camCompLeft = gracz1->AddComponent<CameraComponent>();
-    ColliderComponent* camera1collider = gracz1->AddComponent<ColliderComponent>();
-    RigidbodyComponent* rigidBodyCamera1 = gracz1->AddComponent<RigidbodyComponent>();
+    gracz1->AddChild(camera1);
+    camera1->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 3.0f, 0.0f);
+    CameraComponent* camCompLeft = camera1->AddComponent<CameraComponent>();
     RaycastComponent*  player1Raycast   = camera1->AddComponent<RaycastComponent>();
     player1Raycast->debugDraw = false;
 
-    gracz1->AddComponent<LightComponent>();
-    LightComponent* light2 = gracz1->GetComponent<LightComponent>();
+    camera1->AddComponent<LightComponent>();
+    LightComponent* light2 = camera1->GetComponent<LightComponent>();
 
     light2->type      = Spot;
     light2->index     = 0;
@@ -778,12 +776,13 @@ int main(int, char**)
     light2->constant  = 1.0f;
     light2->linear    = 0.10f;
     light2->quadratic = 0.00001f;
+    light2->intensity = 100.0f;
     light2->cutOff      = glm::cos(glm::radians(4.0f));
     light2->outerCutOff = glm::cos(glm::radians(16.0f));
 
-    gracz1->GetComponent<RigidbodyComponent>()->useGravity = false;
-    gracz1->GetComponent<ColliderComponent>()->halfSize    = glm::vec3{ 1.0f, 10.0f, 1.0f };
-
+    GameObject* modelPostac1 = postacGracza->Instantiate(*scena1, nullptr, nullptr);
+    gracz1->AddChild(modelPostac1);
+    modelPostac1->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, -2.0f, 0.0f);
 
     GameObject* camera2 = scena1->CreateGameObject(nullptr);
     CameraComponent*    camCompRight     = camera2->AddComponent<CameraComponent>();
@@ -808,7 +807,6 @@ int main(int, char**)
     light3->outerCutOff = glm::cos(glm::radians(16.0f));
 
     TransformComponent* camTransform1 = camera1->GetComponent<TransformComponent>();
-    camTransform1->position = glm::vec3(0.0f, 0.0f, 0.0f);
     CameraHelper::InitialCamera(*camCompLeft, *camTransform1,
         glm::vec3(0.0f, 1.0f, 0.0f),
         //YAW, PITCH,

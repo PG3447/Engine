@@ -494,7 +494,7 @@ public:
         projection = CameraHelper::getProjectionMatrix(cam, width, height);
 
         glm::mat4 vp = projection * view;
-        currentCameraPos = transform.position;
+        currentCameraPos = TransformHelper::getGlobalPosition(transform);
         
         auto cullStart = std::chrono::high_resolution_clock::now();
 

@@ -152,7 +152,7 @@ void main()
     color = ACESFilmic(color);
     color = pow(color, vec3(1.0/2.2));  
     
-    FragColor = vec4(color, 1.0);
+    FragColor = vec4(color, texColor.a);
 }
 
 vec3 CalcDirLightPBR(in GPULight light, vec3 normal, vec3 viewDir, vec3 F0, vec3 albedo, float metallic, float roughness)

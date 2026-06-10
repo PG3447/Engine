@@ -26,6 +26,7 @@ public:
 
     static glm::mat4 getViewMatrix(CameraComponent& cam, TransformComponent& transform) {
         glm::vec3 position = TransformHelper::getGlobalPosition(transform);
+
         return glm::lookAt(position, position + cam.state.Front, cam.state.WorldUp);
     }
 
