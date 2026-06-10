@@ -290,6 +290,7 @@ MeshNode Model::processMesh(aiMesh* mesh, const aiScene* scene)
     vector<Texture> diffuseMaps = loadMaterialTextures(aiMat, aiTextureType_DIFFUSE, "texture_diffuse", scene);
     if (diffuseMaps.empty()) {
         diffuseMaps = loadMaterialTextures(aiMat, aiTextureType_BASE_COLOR, "texture_diffuse", scene);
+       
     }
     if (!diffuseMaps.empty()) {
         myMaterial->diffuseMap = diffuseMaps[0].id;
@@ -308,7 +309,7 @@ MeshNode Model::processMesh(aiMesh* mesh, const aiScene* scene)
     int blendMode = aiBlendMode_Default;
     aiGetMaterialInteger(aiMat, AI_MATKEY_BLEND_FUNC, &blendMode);
     
-    if ((opacity < 1.0f) || (blendMode != aiBlendMode_Default)) // !diffuseMaps.empty() && diffuseMaps[0].hasAlpha) || 
+    if ((!diffuseMaps.empty() && diffuseMaps[0].isAlpha) || (opacity < 1.0f) || (blendMode != aiBlendMode_Default))
     {
         myMaterial->surfaceType = SurfaceType::Transparent;
     }
@@ -329,7 +330,7 @@ MeshNode Model::processMesh(aiMesh* mesh, const aiScene* scene)
         float metallic = 0.0f, roughness = 0.5f;
         aiGetMaterialFloat(aiMat, AI_MATKEY_METALLIC_FACTOR, &metallic);
         aiGetMaterialFloat(aiMat, AI_MATKEY_ROUGHNESS_FACTOR, &roughness);
-        myMaterial->metallicRoughnessMap = ResourceManager::CreateTextureFromColor(fullPath + "_mat" + std::to_string(mesh->mMaterialIndex), glm::vec3(1.0f, roughness, metallic));
+        myMaterial->metallicRoughnessMap = ResourceManager::CreateTextureFromColor(fullPath + "_mat" + std::to_string(mesh->mMaterialIndex), glm::vec3(1.0f, roughness, metallic)).id;
         //myMaterial->metallic = metallic;
         //myMaterial->roughness = roughness;
     }
@@ -432,15 +433,20 @@ vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType type,
 
         const aiTexture* embeddedTexture = scene->GetEmbeddedTexture(str.C_Str());
         
+        TextureData textureData;
+
         if (embeddedTexture)
         {
-            texture.id = ResourceManager::LoadTexture(this->fullPath + str.C_Str(), "", embeddedTexture);
+            textureData = ResourceManager::LoadTexture(this->fullPath + str.C_Str(), "", embeddedTexture);
+            
         }
         else
         {
-            texture.id = ResourceManager::LoadTexture(str.C_Str(), this->directory);
+            textureData = ResourceManager::LoadTexture(str.C_Str(), this->directory);
         }
 
+        texture.id = textureData.id;
+        texture.isAlpha = textureData.hasAlpha;
         texture.type = typeName;
         texture.path = str.C_Str();
         textures.push_back(texture);

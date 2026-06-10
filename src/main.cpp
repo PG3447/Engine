@@ -851,9 +851,9 @@ int main(int, char**)
     obb3->AddComponent<RigidbodyComponent>()->useGravity = false;
     obb3->AddComponent<ColliderComponent>()->halfSize    = glm::vec3{ 25, 25, 25 };
 
-    GLuint diff = ResourceManager::LoadTexture("diffuse_brick.png",  "res/textures/");
-    GLuint spec = ResourceManager::LoadTexture("specular_brick.png", "res/textures/");
-    GLuint norm = ResourceManager::LoadTexture("normal_brick.png",   "res/textures/");
+    GLuint diff = ResourceManager::LoadTexture("diffuse_brick.png",  "res/textures/").id;
+    GLuint spec = ResourceManager::LoadTexture("specular_brick.png", "res/textures/").id;
+    GLuint norm = ResourceManager::LoadTexture("normal_brick.png",   "res/textures/").id;
 
     auto brickMat           = std::make_shared<Material>();
     brickMat->shader        = nullptr;
@@ -966,8 +966,8 @@ int main(int, char**)
     light->diffuse   = glm::vec3(0.3f);
     light->specular  = glm::vec3(0.9f);
 
-    GLuint whiteSpecular = ResourceManager::CreateTextureFromColor("white_spec", glm::vec3(1.0f));
-    RenderHelper::SetSpecularTexture(model1, whiteSpecular);
+    //GLuint whiteSpecular = ResourceManager::CreateTextureFromColor("white_spec", glm::vec3(1.0f)).id;
+    //RenderHelper::SetSpecularTexture(model1, whiteSpecular);
 
     sceneManager.Update(16);
     spdlog::info("Scena git.");
@@ -1075,7 +1075,7 @@ int main(int, char**)
     // Crosshair P1
     GameObject* crosshair1_obj = scena1->CreateGameObject(nullptr);
     SpriteComponent* crosshair1 = crosshair1_obj->AddComponent<SpriteComponent>();
-    crosshair1->sprites         = { ResourceManager::LoadTexture("crosshair.png", "res/sprites/") };
+    crosshair1->sprites         = { ResourceManager::LoadTexture("crosshair.png", "res/sprites/").id };
     crosshair1->screenPosition  = glm::vec2(480.0f - 16.0f, 540.0f - 16.0f); // centrum - half size
     crosshair1->size            = glm::vec2(16.0f, 16.0f);
     crosshair1->layer           = 2; // nad napisami
@@ -1084,7 +1084,7 @@ int main(int, char**)
     // Crosshair P2
     GameObject* crosshair2_obj = scena1->CreateGameObject(nullptr);
     SpriteComponent* crosshair2 = crosshair2_obj->AddComponent<SpriteComponent>();
-    crosshair2->sprites         = { ResourceManager::LoadTexture("crosshair.png", "res/sprites/") };
+    crosshair2->sprites         = { ResourceManager::LoadTexture("crosshair.png", "res/sprites/").id };
     crosshair2->screenPosition  = glm::vec2(1440.0f - 16.0f, 540.0f - 16.0f);
     crosshair2->size            = glm::vec2(16.0f, 16.0f);
     crosshair2->layer           = 2;

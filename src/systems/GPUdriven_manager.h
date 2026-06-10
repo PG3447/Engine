@@ -779,7 +779,7 @@ public:
 
             if (entry.renderer);
             {
-                //DebugRenderFrameInput(entry, cameraPos);
+                DebugRenderFrameInput(entry, cameraPos);
                 entry.renderer->RenderFrame(viewProj, entry.objects, prevDepth, cameraPos, cameraDirty);
             }
         }

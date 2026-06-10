@@ -11,10 +11,10 @@
 #define GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT 0x84FF
 #endif
 
-std::unordered_map<std::string, GLuint> ResourceManager::Textures;
+std::unordered_map<std::string, TextureData> ResourceManager::Textures;
 std::unordered_map<std::string, std::shared_ptr<Model>> ResourceManager::Models;
 
-GLuint ResourceManager::LoadTexture(const std::string& path, const std::string& directory, const aiTexture* aiTex)
+TextureData ResourceManager::LoadTexture(const std::string& path, const std::string& directory, const aiTexture* aiTex)
 {
     std::string fullPath = path;
 
@@ -31,25 +31,25 @@ GLuint ResourceManager::LoadTexture(const std::string& path, const std::string& 
         return it->second;
     }
 
-    GLuint textureID = loadTextureFromFile(path, directory, aiTex);
+    TextureData textureData = loadTextureFromFile(path, directory, aiTex);
 
     spdlog::info("==== TEXTURE CACHE DUMP ====");
     spdlog::info("Total textures: {}", Textures.size());
 
-    for (const auto& [path, id] : Textures)
+    for (const auto& [path, textureData] : Textures)
     {
-        spdlog::info("Texture: {} | ID: {}", path, id);
+        spdlog::info("Texture: {} | ID: {}", path, textureData.id);
     }
 
     spdlog::info("============================");
-    if (textureID != 0) {
-        Textures[fullPath] = textureID;
+    if (textureData.id != 0) {
+        Textures[fullPath].id = textureData.id;
+        Textures[fullPath].hasAlpha = textureData.hasAlpha;
     }
 
 
-    return textureID;
+    return textureData;
 }
-
 
 std::shared_ptr<Model> ResourceManager::LoadModel(const std::string& path)
 {
@@ -76,12 +76,14 @@ std::shared_ptr<Model> ResourceManager::LoadModel(const std::string& path)
     return model;
 }
 
-unsigned int ResourceManager::loadTextureFromFile(const std::string& path, const std::string& directory, const aiTexture* aiTex)
+TextureData ResourceManager::loadTextureFromFile(const std::string& path, const std::string& directory, const aiTexture* aiTex)
 {
     unsigned int textureID = 0;
 
     int width, height, nrComponents;
     unsigned char* data = nullptr;
+    bool hasAlpha = false;
+    TextureData dataTexture = { textureID, hasAlpha };
 
     if (aiTex)
     {
@@ -111,7 +113,10 @@ unsigned int ResourceManager::loadTextureFromFile(const std::string& path, const
         GLenum format = GL_RED;
         if (nrComponents == 1) format = GL_RED;
         else if (nrComponents == 3) format = GL_RGB;
-        else if (nrComponents == 4) format = GL_RGBA;
+        else if (nrComponents == 4) {
+            hasAlpha = true;
+            format = GL_RGBA;
+        }
 
         glBindTexture(GL_TEXTURE_2D, textureID);
         glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
@@ -138,13 +143,14 @@ unsigned int ResourceManager::loadTextureFromFile(const std::string& path, const
     {
         spdlog::error("ResourceManager: BLAD ladowania tekstury {}", path);
         if (data) stbi_image_free(data);
-        return 0;
+        return dataTexture;
     }
+    dataTexture = { textureID, hasAlpha };
 
-    return textureID;
+    return dataTexture;
 }
 
-GLuint ResourceManager::CreateTextureFromColor(const std::string& name, const glm::vec3& color)
+TextureData ResourceManager::CreateTextureFromColor(const std::string& name, const glm::vec3& color)
 {
     auto it = Textures.find(name);
     if (it != Textures.end())
@@ -172,47 +178,12 @@ GLuint ResourceManager::CreateTextureFromColor(const std::string& name, const gl
     glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAnisotropy);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, maxAnisotropy);
 
-    Textures[name] = tex;
+    TextureData texture{ tex, false };
+    Textures[name] = texture;
 
     spdlog::info("ResourceManager: Created color texture {}", name);
 
-    return tex;
-}
-
-
-GLuint ResourceManager::CreateTextureMaterialFromColor(const std::string& name, const glm::vec3& color)
-{
-    auto it = Textures.find(name);
-    if (it != Textures.end())
-        return it->second;
-
-    unsigned char data[3] = {
-        (unsigned char)(glm::clamp(color.r, 0.0f, 1.0f) * 255),
-        (unsigned char)(glm::clamp(color.g, 0.0f, 1.0f) * 255),
-        (unsigned char)(glm::clamp(color.b, 0.0f, 1.0f) * 255)
-    };
-
-    GLuint tex = 0;
-    glGenTextures(1, &tex);
-
-    glBindTexture(GL_TEXTURE_2D, tex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-    glGenerateMipmap(GL_TEXTURE_2D);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    GLfloat maxAnisotropy;
-    glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAnisotropy);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, maxAnisotropy);
-
-    Textures[name] = tex;
-
-    spdlog::info("ResourceManager: Created color texture {}", name);
-
-    return tex;
+    return texture;
 }
 
 /*

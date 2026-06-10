@@ -32,7 +32,15 @@ struct Texture {
     unsigned int id;
     std::string type;
     std::string path;
+    bool isAlpha;
 };
+
+struct TextureData
+{
+    unsigned int id;
+    bool hasAlpha;
+};
+
 
 //
 //struct Mesh {
