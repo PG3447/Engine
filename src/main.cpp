@@ -1260,7 +1260,7 @@ int main(int, char**)
         }
 
         HandlePlayerInteraction(ecs, "interact_p1", player1Raycast, camera1, p1HeldObject, p2HeldObject, scena1, rotatingObjects, p1ShakeTimer);
-        HandlePlayerInteraction(ecs, "interact_p2", player2Raycast, camera2, p2HeldObject, p1HeldObject, scena1, rotatingObjects, p1ShakeTimer);
+        HandlePlayerInteraction(ecs, "interact_p2", player2Raycast, camera2, p2HeldObject, p1HeldObject, scena1, rotatingObjects, p2ShakeTimer);
 
         // testy animacji
         if (ecs.GetSystem<HID>()->is_action_just_pressed("anim_play_dying")) {
@@ -2105,7 +2105,7 @@ void createFirstRoom(Scene* scena1) {
     lustro4->GetComponent<TransformComponent>()->position   = glm::vec3{ -23.5, 12.0, -25 + (-20 * 3) };
 
     // Drzwi wyjsciowe z lazienki (washroomExit)
-    /*GameObject* tablicaDrzwi[2];
+    GameObject* tablicaDrzwi[2];
     for (int i = 0; i < 2; i++) {
         tablicaDrzwi[i] = washroomExit->Instantiate(*scena1, nullptr, nullptr);
         tablicaDrzwi[i]->GetComponent<TransformComponent>()->scale    = glm::vec3{ 10, 11, 10 };
@@ -2120,7 +2120,6 @@ void createFirstRoom(Scene* scena1) {
         tablicaDrzwi[i]->GetComponent<ColliderComponent>()->isWalkable     = false;
         tablicaDrzwi[i]->GetComponent<ColliderComponent>()->affectsNavMesh = true;
     }
-    */
 
     // Kubek - kolider domyslny (bez jawnego halfSize)
     GameObject* cup = cupModel->Instantiate(*scena1, nullptr, nullptr);
