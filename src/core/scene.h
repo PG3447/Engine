@@ -15,9 +15,6 @@ private:
     ECS& ecs;
     std::unique_ptr<GameObject> root;
 
-    float physicsAccumulator = 0.0f;
-    static constexpr float fixedDeltaTime = 0.02f;
-
 public:
     Scene(ECS& ecsRef) : ecs(ecsRef)
     {
