@@ -125,15 +125,6 @@ struct RigidbodyComponent : Component {
     float mass = 1.0f;
     glm::vec3 velocity{ 0.0f };
     glm::vec3 acceleration{ 0.0f };
-    glm::vec3 angularVelocity = glm::vec3(0);
-
-    // pozycja
-    glm::vec3 previousPosition = glm::vec3(0);
-    glm::vec3 physicsPosition = glm::vec3(0);
-
-    // rotacja
-    //glm::quat previousRotation = glm::quat(1, 0, 0, 0);
-    //glm::quat physicsRotation = glm::quat(1, 0, 0, 0);
 
     bool useGravity = true;
     bool isStatic = false;

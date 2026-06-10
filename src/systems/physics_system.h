@@ -19,21 +19,12 @@ private:
 
     Query<TransformComponent, RigidbodyComponent, ColliderComponent>* query;
 
-    float physicsAccumulator = 0.0f;
-    static constexpr float fixedDeltaTime = 0.016f;
-
 public:
     PhysicsSystem(ECS& ecs);
 
     void OnGameObjectUpdated(GameObject* e) override;
 
-    void Init();
-
     void Update(ECS&, float dt) override;
-    
-    void Interpolate(float alpha);
-
-    void FixedUpdate(float fixedDeltaTime);
 
     void ApplyForce(GameObject* e, float fx, float fy);
 

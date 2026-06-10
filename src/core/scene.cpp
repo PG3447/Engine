@@ -36,8 +36,15 @@ void Scene::Update(float deltaTime) {
     if (auto* ts = ecs.GetSystem<TransformSystem>())
         ts->updateSelfAndChild(root.get());
 
-    if (auto* ps = ecs.GetSystem<PhysicsSystem>())
-        ps->Update(ecs, deltaTime);    
+    physicsAccumulator += deltaTime;
+
+    while (physicsAccumulator >= fixedDeltaTime)
+    {
+        if (auto* ps = ecs.GetSystem<PhysicsSystem>())
+            ps->Update(ecs, fixedDeltaTime);
+
+        physicsAccumulator -= fixedDeltaTime;
+    }
 
     if (auto* ps = ecs.GetSystem<AnimationSystem>())
         ps->Update(ecs, deltaTime);
