@@ -637,10 +637,6 @@ GameObject* CreateStaticObject(
         tr->isDirty  = true;
     }
 
-    RigidbodyComponent* rb = go->AddComponent<RigidbodyComponent>();
-    rb->useGravity = false;
-    rb->isStatic   = true;
-
     ColliderComponent* col = go->AddComponent<ColliderComponent>();
     if (colliderHalfSize.has_value())
         col->halfSize = colliderHalfSize.value();
@@ -663,10 +659,6 @@ GameObject* CreateCockroachLeader(
     tr->position  = homePos;
     tr->scale     = glm::vec3(0.3f);
     tr->isDirty   = true;
-
-    auto* rb       = go->AddComponent<RigidbodyComponent>();
-    rb->useGravity = true;
-    rb->isStatic   = false;
 
     auto* col      = go->AddComponent<ColliderComponent>();
     col->halfSize  = glm::vec3(0.3f, 0.2f, 0.3f);
@@ -706,9 +698,6 @@ GameObject* CreateCockroachFollower(
     tr->scale     = glm::vec3(0.25f);
     tr->isDirty   = true;
 
-    auto* rb       = go->AddComponent<RigidbodyComponent>();
-    rb->useGravity = true;
-    rb->isStatic   = false;
 
     auto* col      = go->AddComponent<ColliderComponent>();
     col->halfSize  = glm::vec3(0.25f, 0.15f, 0.25f);
@@ -798,7 +787,7 @@ int main(int, char**)
     ColliderComponent* camera1collider = gracz1->AddComponent<ColliderComponent>();
     RigidbodyComponent* rigidBodyCamera1 = gracz1->AddComponent<RigidbodyComponent>();
     gracz1->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 20.0f, -20.0f);
-    gracz1->GetComponent<RigidbodyComponent>()->useGravity = false;
+    gracz1->GetComponent<RigidbodyComponent>()->useGravity = true;
     gracz1->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1.0f, 9.0f, 1.0f };
 
     
@@ -1824,10 +1813,7 @@ void createFirstRoom(Scene* scena1) {
     GameObject* lustro1 = mirrorModel1->Instantiate(*scena1, nullptr, nullptr);
     lustro1->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1, 2, 8 };
     lustro1->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, -180, 0 };
-    lustro1->AddComponent<RigidbodyComponent>();
     lustro1->AddComponent<ColliderComponent>();
-    lustro1->GetComponent<RigidbodyComponent>()->useGravity = false;
-    lustro1->GetComponent<RigidbodyComponent>()->isStatic   = true;
     lustro1->GetComponent<TransformComponent>()->position   = glm::vec3{ -23.5, 12.0, -25 + (-20 * 0) };
 
     GameObject* lustro2 = mirrorModel2->Instantiate(*scena1, nullptr, nullptr);
