@@ -5,25 +5,78 @@
 
 PhysicsSystem::PhysicsSystem(ECS& ecs) {
     query = ecs.CreateQuery<TransformComponent, RigidbodyComponent, ColliderComponent>();
+    colliderOnlyQuery = ecs.CreateQuery<TransformComponent, ColliderComponent>();
 }
 
 void PhysicsSystem::OnGameObjectUpdated(GameObject* e) {
     query->OnGameObjectUpdated(e);
+    colliderOnlyQuery->OnGameObjectUpdated(e);
+}
+
+void PhysicsSystem::Init() {
+    auto& transforms = std::get<0>(query->componentsVectors);
+    auto& rigidbodies = std::get<1>(query->componentsVectors);
+
+    for (size_t i = 0; i < query->gameobjects.size(); i++) {
+        auto* tr = transforms[i];
+        auto* rb = rigidbodies[i];
+        rb->physicsPosition = tr->position;
+        rb->previousPosition = tr->position;
+    }
 }
 
 void PhysicsSystem::Update(ECS&, float dt) {
 
+    physicsAccumulator += dt;
+
+    while (physicsAccumulator >= fixedDeltaTime)
+    {
+        FixedUpdate(fixedDeltaTime);
+
+        physicsAccumulator -= fixedDeltaTime;
+    }
+
+    float alpha = physicsAccumulator / fixedDeltaTime;
+    Interpolate(alpha);
+}
+
+void PhysicsSystem::Interpolate(float alpha)
+{
+    auto& transforms = std::get<0>(query->componentsVectors);
+    auto& rigidbodies = std::get<1>(query->componentsVectors);
+
+    for (size_t i = 0; i < query->gameobjects.size(); i++) {
+        auto* tr = transforms[i];
+        auto* rb = rigidbodies[i];
+        if (rb->isStatic) continue;
+
+        tr->position = glm::mix(rb->previousPosition, rb->physicsPosition, alpha);
+        tr->isDirty = true;
+    }
+
+}
+
+void PhysicsSystem::FixedUpdate(float fixedDeltaTime)
+{
     auto& transforms = std::get<0>(query->componentsVectors);
     auto& rigidbodies = std::get<1>(query->componentsVectors);
     auto& colliders = std::get<2>(query->componentsVectors);
 
-    dt = 1.0f / 60.0f;
+    //dt = 1.0f / 60.0f;
 
     // RUCH
     for (size_t i = 0; i < query->gameobjects.size(); i++) {
 
         auto* tr = transforms[i];
         auto* rb = rigidbodies[i];
+
+        rb->previousPosition = rb->physicsPosition;
+
+        if (tr->isDirty)
+        {
+            rb->physicsPosition = tr->position;
+            //rb->previousPosition = tr->position;
+        }
 
         if (rb->isStatic)
             continue;
@@ -35,20 +88,21 @@ void PhysicsSystem::Update(ECS&, float dt) {
         if (rb->useGravity)
             acc.y += -9.81f;
 
-        rb->velocity += acc * dt;
+        rb->velocity += acc * fixedDeltaTime;
         //rb->velocity *= rb->damping;
 
-        tr->position += rb->velocity * dt;
+        rb->physicsPosition += rb->velocity * fixedDeltaTime;
 
-        tr->isDirty = true;
+        //tr->isDirty = true;
+        //rb->physicsPosition = tr->position;
     }
 
     // KOLIZJE (AABB)
     for (size_t i = 0; i < query->gameobjects.size(); i++) {
         for (size_t j = i + 1; j < query->gameobjects.size(); j++) {
 
-            auto* tA = transforms[i];
-            auto* tB = transforms[j];
+            //auto* tA = transforms[i];
+            //auto* tB = transforms[j];
 
             auto* cA = colliders[i];
             auto* cB = colliders[j];
@@ -56,15 +110,15 @@ void PhysicsSystem::Update(ECS&, float dt) {
             auto* rbA = rigidbodies[i];
             auto* rbB = rigidbodies[j];
 
-            glm::vec3 posA = tA->position + cA->offset;
-            glm::vec3 posB = tB->position + cB->offset;
+            glm::vec3 posA = rbA->physicsPosition + cA->offset;
+            glm::vec3 posB = rbB->physicsPosition + cB->offset;
 
             glm::vec3 halfA = cA->halfSize;
             glm::vec3 halfB = cB->halfSize;
 
             if (!AABB(posA, halfA, posB, halfB))
                 continue;
-            
+
             //kierunek
             glm::vec3 delta = posA - posB;
 
@@ -79,46 +133,116 @@ void PhysicsSystem::Update(ECS&, float dt) {
                 float dir = (delta.x > 0 ? 1.0f : -1.0f);
 
                 if (!rbA->isStatic)
-                    tA->position.x += overlapX * dir;
-                if (!rbB->isStatic)
-                    tB->position.x -= overlapX * dir;
+                {
+                    rbA->physicsPosition.x += overlapX * dir;
+                    rbA->velocity.x = 0;
+                    rbA->physicsPosition.x = rbA->physicsPosition.x;
+                    //tA->isDirty = true;
+                }
 
-                rbA->velocity.x = 0;
-                rbB->velocity.x = 0;
+                if (!rbB->isStatic)
+                {
+                    rbB->physicsPosition.x -= overlapX * dir;
+                    rbB->velocity.x = 0;
+                    rbB->physicsPosition.x = rbB->physicsPosition.x;
+                    //tB->isDirty = true;
+                }
+                
             }
             else if (overlapY < overlapZ) {
 
                 float dir = (delta.y > 0 ? 1.0f : -1.0f);
 
                 if (!rbA->isStatic)
-                    tA->position.y += overlapY * dir;
-                if (!rbB->isStatic)
-                    tB->position.y -= overlapY * dir;
+                {
+                    rbA->physicsPosition.y += overlapY * dir;
+                    rbA->velocity.y = 0;
+                    rbA->physicsPosition.y = rbA->physicsPosition.y;
+                    //tA->isDirty = true;
+                }
 
-                rbA->velocity.y = 0;
-                rbB->velocity.y = 0;
+                if (!rbB->isStatic)
+                {
+                    rbB->physicsPosition.y -= overlapY * dir;
+                    rbB->velocity.y = 0;
+                    rbB->physicsPosition.y = rbB->physicsPosition.y;
+                    //tB->isDirty = true;
+                }
+
             }
             else {
 
                 float dir = (delta.z > 0 ? 1.0f : -1.0f);
 
                 if (!rbA->isStatic)
-                    tA->position.z += overlapZ * dir;
+                {
+                    rbA->physicsPosition.z += overlapZ * dir;
+                    rbA->velocity.z = 0;
+                    rbA->physicsPosition.z = rbA->physicsPosition.z;
+                    //tA->isDirty = true;
+                }
+
                 if (!rbB->isStatic)
-                    tB->position.z -= overlapZ * dir;
+                {
+                    rbB->physicsPosition.z -= overlapZ * dir;
+                    rbB->velocity.z = 0;
+                    rbB->physicsPosition.z = rbB->physicsPosition.z;
+                    //tB->isDirty = true;
+                }
 
-                rbA->velocity.z = 0;
-                rbB->velocity.z = 0;
             }
+               
+        }
+    }
 
-            if (!rbA->isStatic)
-                tA->isDirty = true;
-            if (!rbB->isStatic)
-                tB->isDirty = true;
+    auto& coTransforms = std::get<0>(colliderOnlyQuery->componentsVectors);
+    auto& coColliders = std::get<1>(colliderOnlyQuery->componentsVectors);
+
+    for (size_t i = 0; i < query->gameobjects.size(); i++) {
+        auto* rb = rigidbodies[i];
+        auto* cA = colliders[i];
+
+        for (size_t j = 0; j < colliderOnlyQuery->gameobjects.size(); j++) {
+            auto* tB = coTransforms[j];
+            auto* cB = coColliders[j];
+
+            // pomiń jeśli ten sam obiekt jest w obu query
+            if (query->gameobjects[i] == colliderOnlyQuery->gameobjects[j])
+                continue;
+
+            glm::vec3 posA = rb->physicsPosition + cA->offset;
+            glm::vec3 posB = tB->position + cB->offset;
+
+            if (!AABB(posA, cA->halfSize, posB, cB->halfSize))
+                continue;
+
+            glm::vec3 delta = posA - posB;
+
+            float overlapX = (cA->halfSize.x + cB->halfSize.x) - std::abs(delta.x);
+            float overlapY = (cA->halfSize.y + cB->halfSize.y) - std::abs(delta.y);
+            float overlapZ = (cA->halfSize.z + cB->halfSize.z) - std::abs(delta.z);
+
+            if (overlapX < overlapY && overlapX < overlapZ) {
+                float dir = (delta.x > 0 ? 1.0f : -1.0f);
+                rb->physicsPosition.x += overlapX * dir;
+                rb->previousPosition.x = rb->physicsPosition.x;
+                rb->velocity.x = 0;
+            }
+            else if (overlapY < overlapZ) {
+                float dir = (delta.y > 0 ? 1.0f : -1.0f);
+                rb->physicsPosition.y += overlapY * dir;
+                rb->previousPosition.y = rb->physicsPosition.y;
+                rb->velocity.y = 0;
+            }
+            else {
+                float dir = (delta.z > 0 ? 1.0f : -1.0f);
+                rb->physicsPosition.z += overlapZ * dir;
+                rb->previousPosition.z = rb->physicsPosition.z;
+                rb->velocity.z = 0;
+            }
         }
     }
 }
-
 
 void PhysicsSystem::ApplyForce(GameObject* e, float fx, float fy)  {
     auto* rb = e->GetComponent<RigidbodyComponent>();

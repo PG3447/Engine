@@ -1,4 +1,4 @@
-﻿#include "scene.h"
+#include "scene.h"
 #include <spdlog/spdlog.h>
 
 #include "systems/PostProcessingSystem.h"
@@ -33,11 +33,11 @@ GameObject* Scene::CreateGameObject(GameObject* parent) {
 void Scene::Update(float deltaTime) {
     if (auto* hid = ecs.GetSystem<HID>()) hid->Update(ecs, deltaTime);
 
+    if (auto* ps = ecs.GetSystem<PhysicsSystem>())
+        ps->Update(ecs, deltaTime);    
+
     if (auto* ts = ecs.GetSystem<TransformSystem>())
         ts->updateSelfAndChild(root.get());
-
-    if (auto* ps = ecs.GetSystem<PhysicsSystem>())
-        ps->Update(ecs, deltaTime);
 
     if (auto* ps = ecs.GetSystem<AnimationSystem>())
         ps->Update(ecs, deltaTime);

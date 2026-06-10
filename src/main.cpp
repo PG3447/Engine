@@ -141,6 +141,7 @@ std::unique_ptr<Shader> skyboxShader;
 //std::unique_ptr<Shader> reflectShader;
 //std::unique_ptr<Shader> refractShader;
 
+std::unique_ptr<Prefab> postacGracza;
 std::unique_ptr<Prefab> bed1Model;
 std::unique_ptr<Prefab> bed2Model;
 std::unique_ptr<Prefab> bed3Model;
@@ -355,7 +356,7 @@ void processCameraInput(ECS& ecs, CameraComponent& cam, TransformComponent& tran
 
     if (glm::length(dir) > 0.0f) {
         dir = glm::normalize(dir);
-        transform.position += dir * MovementSpeed * deltaTime;
+        transform.position += dir * MovementSpeed * 0.04f; //deltaTime; aktualnie fixedDeltaTime
         transform.isDirty   = true;
         cam.dirty = true;
     }
@@ -372,6 +373,52 @@ void processCameraMouse(ECS& ecs, CameraComponent& cam, TransformComponent& tran
         return;
 
     CameraHelper::ProcessMouseMovement(cam, transform, dx, dy);
+}
+
+
+float lookDeadzone = 0.0f;
+
+void processCameraGamepad(ECS& ecs, CameraComponent& cam, TransformComponent& transform, int gamepad_id)
+{
+    const auto& hid = ecs.GetSystem<HID>();
+
+    float lx = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_LEFT_X, gamepad_id);
+    float ly = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_LEFT_Y, gamepad_id);
+
+    glm::vec3 dir(0.0f);
+
+    glm::vec3 camFront = cam.state.Front;
+    camFront.y = 0.0f;
+    camFront = glm::normalize(camFront);
+
+    glm::vec3 camRight = cam.state.Right;
+    camRight.y = 0.0f;
+    camRight = glm::normalize(camRight);
+
+    dir += camFront * (-ly);
+    dir += camRight * lx;
+
+    if (glm::length(dir) > 0.0f) {
+        dir = glm::normalize(dir);
+        transform.position += dir * MovementSpeed * 0.04f;// deltaTime; aktualnie fixedDeltaTime
+        transform.isDirty = true;
+        cam.dirty = true;
+    }
+
+    float rx = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_RIGHT_X, gamepad_id);
+    float ry = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_RIGHT_Y, gamepad_id);
+
+
+    if (lookDeadzone <= 0.01f)
+        lookDeadzone += 0.0005f;
+    else if (glm::abs(rx) < lookDeadzone && glm::abs(ry) < lookDeadzone)
+        return;
+
+
+    const float sensitivity = 600.0f;
+    CameraHelper::ProcessMouseMovement(cam, transform,
+        rx * sensitivity * deltaTime,
+        ry * sensitivity * deltaTime);
 }
 
 void addAllSystems(ECS& ecs);
@@ -667,8 +714,7 @@ GameObject* CreateInteractableDoor(Scene* scene, Prefab* prefab, Shader* shader,
     doorTr->rotation   = glm::vec3(0.0f, baseRotationY, 0.0f);
     doorTr->position   = -pivotOffset;
 
-    hinge->AddComponent<RigidbodyComponent>()->useGravity = false;
-    hinge->GetComponent<RigidbodyComponent>()->isStatic   = true;
+
     ColliderComponent* col = hinge->AddComponent<ColliderComponent>();
     col->halfSize       = colliderHalfSize;
     col->offset         = -pivotOffset;
@@ -709,10 +755,6 @@ GameObject* CreateStaticObject(
         tr->isDirty  = true;
     }
 
-    RigidbodyComponent* rb = go->AddComponent<RigidbodyComponent>();
-    rb->useGravity = false;
-    rb->isStatic   = true;
-
     ColliderComponent* col = go->AddComponent<ColliderComponent>();
     if (colliderHalfSize.has_value())
         col->halfSize = colliderHalfSize.value();
@@ -735,10 +777,6 @@ GameObject* CreateCockroachLeader(
     tr->position  = homePos;
     tr->scale     = glm::vec3(0.3f);
     tr->isDirty   = true;
-
-    auto* rb       = go->AddComponent<RigidbodyComponent>();
-    rb->useGravity = true;
-    rb->isStatic   = false;
 
     auto* col      = go->AddComponent<ColliderComponent>();
     col->halfSize  = glm::vec3(0.3f, 0.2f, 0.3f);
@@ -778,9 +816,6 @@ GameObject* CreateCockroachFollower(
     tr->scale     = glm::vec3(0.25f);
     tr->isDirty   = true;
 
-    auto* rb       = go->AddComponent<RigidbodyComponent>();
-    rb->useGravity = true;
-    rb->isStatic   = false;
 
     auto* col      = go->AddComponent<ColliderComponent>();
     col->halfSize  = glm::vec3(0.25f, 0.15f, 0.25f);
@@ -827,18 +862,17 @@ int main(int, char**)
 
     addAllSystems(ecs);
 
-
-
+    postacGracza = std::make_unique<Prefab>("res/models/postac_srodek.glb");
     groundModel = std::make_unique<Prefab>("res/models/podloze.glb");
     sunModel    = std::make_unique<Prefab>("res/models/Sun.glb");
-    szkloModel = std::make_unique<Prefab>("res/models/samochod.glb");
-
+    szkloModel = std::make_unique<Prefab>("res/models/szklo.glb");
+    
     GameObject* szklo = szkloModel->Instantiate(*scena1, nullptr, nullptr);
     szklo->name = "SZKLO";
-    //for (auto& mesh : szklo->GetComponent<RenderComponent>()->meshes)
-    //{
-    //    //mesh.material->surfaceType = SurfaceType::Transparent;
-    //}
+    for (auto& mesh : szklo->GetComponent<RenderComponent>()->meshes)
+    {
+        mesh.material->surfaceType = SurfaceType::Transparent;
+    }
 
     GameObject* obb3 = sunModel->Instantiate(*scena1, nullptr, nullptr);
     obb3->GetComponent<TransformComponent>()->scale    = glm::vec3(25.0f);
@@ -860,10 +894,22 @@ int main(int, char**)
 
     RenderHelper::SetMaterial(obb3, brickMat);
 
+    //Tworzenie gracza nr.1
+    GameObject* gracz1 = scena1->CreateGameObject(nullptr);
+    gracz1->name = "Gracz1";
+
+    ColliderComponent* camera1collider = gracz1->AddComponent<ColliderComponent>();
+    RigidbodyComponent* rigidBodyCamera1 = gracz1->AddComponent<RigidbodyComponent>();
+    gracz1->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 20.0f, -20.0f);
+    gracz1->GetComponent<RigidbodyComponent>()->useGravity = true;
+    gracz1->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1.0f, 9.0f, 1.0f };
+
+    
     GameObject* camera1 = scena1->CreateGameObject(nullptr);//groundModel->Instantiate(*scena1, nullptr, ourShader.get());
+    camera1->name = "Kamera";
+    gracz1->AddChild(camera1);
+    camera1->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 3.0f, 0.0f);
     CameraComponent* camCompLeft = camera1->AddComponent<CameraComponent>();
-    ColliderComponent* camera1collider = camera1->AddComponent<ColliderComponent>();
-    RigidbodyComponent* rigidBodyCamera1 = camera1->AddComponent<RigidbodyComponent>();
     RaycastComponent*  player1Raycast   = camera1->AddComponent<RaycastComponent>();
     player1Raycast->debugDraw = false;
 
@@ -878,18 +924,20 @@ int main(int, char**)
     light2->constant  = 1.0f;
     light2->linear    = 0.10f;
     light2->quadratic = 0.00001f;
+    light2->intensity = 250.0f;
     light2->cutOff      = glm::cos(glm::radians(4.0f));
     light2->outerCutOff = glm::cos(glm::radians(16.0f));
 
-    camera1->GetComponent<RigidbodyComponent>()->useGravity = false;
-    camera1->GetComponent<ColliderComponent>()->halfSize    = glm::vec3{ 1.0f, 9.0f, 1.0f };
+    GameObject* modelPostac1 = postacGracza->Instantiate(*scena1, nullptr, nullptr);
+    gracz1->AddChild(modelPostac1);
+    modelPostac1->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, -2.0f, 0.0f);
 
     GameObject* camera2 = scena1->CreateGameObject(nullptr);
     CameraComponent*    camCompRight     = camera2->AddComponent<CameraComponent>();
     ColliderComponent*  camera2collider  = camera2->AddComponent<ColliderComponent>();
     RigidbodyComponent* rigidBodyCamera2 = camera2->AddComponent<RigidbodyComponent>();
     camera2->GetComponent<RigidbodyComponent>()->useGravity = false;
-    camera2->GetComponent<ColliderComponent>()->halfSize    = glm::vec3{ 1.0f, 9.0f, 1.0f };
+    camera2->GetComponent<ColliderComponent>()->halfSize    = glm::vec3{ 2.0f, 8.0f, 2.0f };
     RaycastComponent* player2Raycast = camera2->AddComponent<RaycastComponent>();
     player2Raycast->debugDraw = false;
 
@@ -907,10 +955,9 @@ int main(int, char**)
     light3->outerCutOff = glm::cos(glm::radians(16.0f));
 
     TransformComponent* camTransform1 = camera1->GetComponent<TransformComponent>();
-    camTransform1->position = glm::vec3(0.0f, 20.0f, -20.0f);
     CameraHelper::InitialCamera(*camCompLeft, *camTransform1,
         glm::vec3(0.0f, 1.0f, 0.0f),
-        YAW, PITCH,
+        //YAW, PITCH,
         Viewport{ 0.0f, 0.0f, 0.5f, 1.0f }
     );
     camCompLeft->isActive = true;
@@ -919,7 +966,7 @@ int main(int, char**)
     camTransform2->position = glm::vec3(0.0f, 20.0f, -20.0f);
     CameraHelper::InitialCamera(*camCompRight, *camTransform2,
         glm::vec3(0.0f, 1.0f, 0.0f),
-        0.0f, -20.0f,
+        //0.0f, -20.0f,
         Viewport{ 0.5f, 0.0f, 0.5f, 1.0f }
     );
     camCompRight->isActive = true;
@@ -965,15 +1012,10 @@ int main(int, char**)
     //GLuint whiteSpecular = ResourceManager::CreateTextureFromColor("white_spec", glm::vec3(1.0f)).id;
     //RenderHelper::SetSpecularTexture(model1, whiteSpecular);
 
-    sceneManager.Update(16);
-    spdlog::info("Scena git.");
-
-
-
     focused = true;
     updateFocus();
 
-    auto* t0 = camera1->GetComponent<TransformComponent>();
+    auto* t0 = gracz1->GetComponent<TransformComponent>();
     auto* t1 = camera2->GetComponent<TransformComponent>();
 
     renderSystem         = ecs.GetSystem<RenderSystem>();
@@ -1828,49 +1870,6 @@ void end_frame()
     glfwSwapBuffers(window);
 }
 
-float lookDeadzone = 0.0f;
-
-void processCameraGamepad(ECS& ecs, CameraComponent& cam, TransformComponent& transform, int gamepad_id)
-{
-    const auto& hid = ecs.GetSystem<HID>();
-
-    float lx = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_LEFT_X, gamepad_id);
-    float ly = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_LEFT_Y, gamepad_id);
-
-    glm::vec3 dir(0.0f);
-
-    glm::vec3 camFront = cam.state.Front;
-    camFront.y = 0.0f;
-    camFront   = glm::normalize(camFront);
-
-    glm::vec3 camRight = cam.state.Right;
-    camRight.y = 0.0f;
-    camRight   = glm::normalize(camRight);
-
-    dir += camFront * (-ly);
-    dir += camRight *   lx;
-
-    if (glm::length(dir) > 0.0f) {
-        dir = glm::normalize(dir);
-        transform.position += dir * MovementSpeed * deltaTime;
-        cam.dirty = true;
-    }
-
-    float rx = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_RIGHT_X, gamepad_id);
-    float ry = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_RIGHT_Y, gamepad_id);
-
-
-    if (lookDeadzone <= 0.01f)
-        lookDeadzone += 0.0005f;
-    else if (glm::abs(rx) < lookDeadzone && glm::abs(ry) < lookDeadzone)
-        return;
-
-
-    const float sensitivity = 600.0f;
-    CameraHelper::ProcessMouseMovement(cam, transform,
-        rx * sensitivity * deltaTime,
-        ry * sensitivity * deltaTime);
-}
 
 void addAllSystems(ECS& ecs) {
     ecs.AddSystem<TransformSystem>(ecs);
@@ -1949,10 +1948,7 @@ void createFirstRoom(Scene* scena1) {
             tablicaKibli[i] = toiletModel->Instantiate(*scena1, nullptr, nullptr);
             tablicaKibli[i]->name = "Kibel" + std::to_string(i);
             tablicaKibli[i]->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1.5, 1.5, 1.5 };
-            tablicaKibli[i]->AddComponent<RigidbodyComponent>();
             tablicaKibli[i]->AddComponent<ColliderComponent>();
-            tablicaKibli[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
-            tablicaKibli[i]->GetComponent<RigidbodyComponent>()->isStatic   = true;
             tablicaKibli[i]->GetComponent<ColliderComponent>()->halfSize     = glm::vec3{ 2.5, 4, 2.5 };
             tablicaKibli[i]->GetComponent<ColliderComponent>()->offset       = glm::vec3{ 0, 4, 0 };
             tablicaKibli[i]->GetComponent<TransformComponent>()->position    = glm::vec3{ 45, 0.5f, -25 + (-10 * i) };
@@ -1965,10 +1961,7 @@ void createFirstRoom(Scene* scena1) {
             tablicaKibli[i] = urinModel->Instantiate(*scena1, nullptr, nullptr);
             tablicaKibli[i]->name = "Kibel" + std::to_string(i);
             tablicaKibli[i]->GetComponent<TransformComponent>()->scale    = glm::vec3{ 12, 12, 12 };
-            tablicaKibli[i]->AddComponent<RigidbodyComponent>();
             tablicaKibli[i]->AddComponent<ColliderComponent>();
-            tablicaKibli[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
-            tablicaKibli[i]->GetComponent<RigidbodyComponent>()->isStatic   = true;
             tablicaKibli[i]->GetComponent<ColliderComponent>()->halfSize     = glm::vec3{ 2.5, 4, 2.5 };
             tablicaKibli[i]->GetComponent<ColliderComponent>()->offset       = glm::vec3{ 0, 4, 0 };
             tablicaKibli[i]->GetComponent<TransformComponent>()->position    = glm::vec3{ 47.6, 2.0f, -25 + (-10 * i) };
@@ -1985,10 +1978,7 @@ void createFirstRoom(Scene* scena1) {
         tablicaZaslon[i] = wallModel3->Instantiate(*scena1, nullptr, nullptr);
         tablicaZaslon[i]->GetComponent<TransformComponent>()->scale = glm::vec3{ 0.3, 30, 20 };
         tablicaZaslon[i]->name = "Zaslona" + std::to_string(i);
-        tablicaZaslon[i]->AddComponent<RigidbodyComponent>();
         tablicaZaslon[i]->AddComponent<ColliderComponent>();
-        tablicaZaslon[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
-        tablicaZaslon[i]->GetComponent<RigidbodyComponent>()->isStatic   = true;
         tablicaZaslon[i]->GetComponent<ColliderComponent>()->halfSize     = glm::vec3{ 20, 15, 0.3 };
         tablicaZaslon[i]->GetComponent<TransformComponent>()->position    = glm::vec3{ 50, 0, -20 + (-10 * i) };
         tablicaZaslon[i]->GetComponent<ColliderComponent>()->isWalkable     = false;
@@ -2022,10 +2012,7 @@ void createFirstRoom(Scene* scena1) {
         tablicaKibli[i]->name = "PapierKibel" + std::to_string(i);
         tablicaPapierowKibel[i]->GetComponent<TransformComponent>()->scale    = glm::vec3{ 2, 2, 2 };
         tablicaPapierowKibel[i]->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 90, 0 };
-        tablicaPapierowKibel[i]->AddComponent<RigidbodyComponent>();
         tablicaPapierowKibel[i]->AddComponent<ColliderComponent>();
-        tablicaPapierowKibel[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
-        tablicaPapierowKibel[i]->GetComponent<RigidbodyComponent>()->isStatic   = true;
         tablicaPapierowKibel[i]->GetComponent<TransformComponent>()->position   = glm::vec3{ 35, 5.0, -40.7 + (-10 * i) };
         rotatableObjects.insert(tablicaPapierowKibel[i]);
         if (i < 2) {
@@ -2041,10 +2028,7 @@ void createFirstRoom(Scene* scena1) {
         tablicaSink[i]->GetComponent<TransformComponent>()->scale    = glm::vec3{ 3, 3, 3 };
         tablicaSink[i]->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 90, 0 };
         tablicaSink[i]->GetComponent<TransformComponent>()->position = glm::vec3{ -20.5, 6.0, -20 + (-10 * i) };
-        tablicaSink[i]->AddComponent<RigidbodyComponent>();
         tablicaSink[i]->AddComponent<ColliderComponent>();
-        tablicaSink[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
-        tablicaSink[i]->GetComponent<RigidbodyComponent>()->isStatic   = true;
     }
 
     /*
@@ -2066,38 +2050,26 @@ void createFirstRoom(Scene* scena1) {
     GameObject* lustro1 = mirrorModel1->Instantiate(*scena1, nullptr, nullptr);
     lustro1->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1, 2, 8 };
     lustro1->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, -180, 0 };
-    lustro1->AddComponent<RigidbodyComponent>();
     lustro1->AddComponent<ColliderComponent>();
-    lustro1->GetComponent<RigidbodyComponent>()->useGravity = false;
-    lustro1->GetComponent<RigidbodyComponent>()->isStatic   = true;
     lustro1->GetComponent<TransformComponent>()->position   = glm::vec3{ -23.5, 12.0, -25 + (-20 * 0) };
 
     GameObject* lustro2 = mirrorModel2->Instantiate(*scena1, nullptr, nullptr);
     lustro2->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1, 2, 8 };
     lustro2->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, -180, 0 };
-    lustro2->AddComponent<RigidbodyComponent>();
     lustro2->AddComponent<ColliderComponent>();
-    lustro2->GetComponent<RigidbodyComponent>()->useGravity = false;
-    lustro2->GetComponent<RigidbodyComponent>()->isStatic   = true;
     lustro2->GetComponent<TransformComponent>()->position   = glm::vec3{ -23.5, 12.0, -25 + (-20 * 1) };
 
     GameObject* lustro3 = mirrorModel3->Instantiate(*scena1, nullptr, nullptr);
     lustro3->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1, 2, 8 };
     lustro3->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, -180, 0 };
-    lustro3->AddComponent<RigidbodyComponent>();
     lustro3->AddComponent<ColliderComponent>();
-    lustro3->GetComponent<RigidbodyComponent>()->useGravity = false;
-    lustro3->GetComponent<RigidbodyComponent>()->isStatic   = true;
     lustro3->GetComponent<TransformComponent>()->position   = glm::vec3{ -23.5, 12.0, -25 + (-20 * 2) };
 
     // Lustro 4 - dodane z mirrorModel4 (lustro_puste.glb)
     GameObject* lustro4 = mirrorModel4->Instantiate(*scena1, nullptr, nullptr);
     lustro4->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1, 2, 8 };
     lustro4->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, -180, 0 };
-    lustro4->AddComponent<RigidbodyComponent>();
     lustro4->AddComponent<ColliderComponent>();
-    lustro4->GetComponent<RigidbodyComponent>()->useGravity = false;
-    lustro4->GetComponent<RigidbodyComponent>()->isStatic   = true;
     lustro4->GetComponent<TransformComponent>()->position   = glm::vec3{ -23.5, 12.0, -25 + (-20 * 3) };
 
     // Drzwi wyjsciowe z lazienki (washroomExit)
@@ -2106,10 +2078,7 @@ void createFirstRoom(Scene* scena1) {
         tablicaDrzwi[i] = washroomExit->Instantiate(*scena1, nullptr, nullptr);
         tablicaDrzwi[i]->GetComponent<TransformComponent>()->scale    = glm::vec3{ 10, 11, 10 };
         tablicaDrzwi[i]->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 180 * i, 0 };
-        tablicaDrzwi[i]->AddComponent<RigidbodyComponent>();
         tablicaDrzwi[i]->AddComponent<ColliderComponent>();
-        tablicaDrzwi[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
-        tablicaDrzwi[i]->GetComponent<RigidbodyComponent>()->isStatic   = true;
         tablicaDrzwi[i]->GetComponent<ColliderComponent>()->halfSize     = glm::vec3{ 5, 22, 1 };
         tablicaDrzwi[i]->GetComponent<TransformComponent>()->position    = glm::vec3{ -5 + (10 * i), 0.0, -100 };
         majorDoors.insert(tablicaDrzwi[i]);
@@ -2185,10 +2154,6 @@ void createMainRooom(Scene* scena) {
     szafkaTr->position = glm::vec3{ -56.6f, 5.6f, -140.0f };
     szafkaTr->scale    = glm::vec3{ 10.0f, 10.0f, 10.0f };
     szafkaTr->rotation = glm::vec3{ 0.0f, 0.0f, 0.0f };
-
-    RigidbodyComponent* szafkaRb = szafkaObj->AddComponent<RigidbodyComponent>();
-    szafkaRb->useGravity = false;
-    szafkaRb->isStatic   = true;
 
     ColliderComponent* szafkaCol = szafkaObj->AddComponent<ColliderComponent>();
     szafkaCol->affectsNavMesh = true;

@@ -1,4 +1,4 @@
-﻿#ifndef PHYSICS_SYSTEM_H
+#ifndef PHYSICS_SYSTEM_H
 #define PHYSICS_SYSTEM_H
 
 #include "core/ecs.h"
@@ -18,13 +18,23 @@ private:
     //std::vector<CollisionObject*> m_objects;
 
     Query<TransformComponent, RigidbodyComponent, ColliderComponent>* query;
+    Query<TransformComponent, ColliderComponent>* colliderOnlyQuery;
+
+    float physicsAccumulator = 0.0f;
+    static constexpr float fixedDeltaTime = 0.04f;
 
 public:
     PhysicsSystem(ECS& ecs);
 
     void OnGameObjectUpdated(GameObject* e) override;
 
+    void Init();
+
     void Update(ECS&, float dt) override;
+    
+    void Interpolate(float alpha);
+
+    void FixedUpdate(float fixedDeltaTime);
 
     void ApplyForce(GameObject* e, float fx, float fy);
 

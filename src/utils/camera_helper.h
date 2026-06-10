@@ -13,7 +13,7 @@ constexpr  float MouseSensitivity = 0.1f;
 
 class CameraHelper {
 public:
-    static void InitialCamera(CameraComponent& cam, TransformComponent& transform, glm::vec3 up, float yaw, float pitch, Viewport vp)
+    static void InitialCamera(CameraComponent& cam, TransformComponent& transform, glm::vec3 up, Viewport vp) //, float yaw, float pitch
     {
         cam.state.WorldUp = up;
         //cam.yaw = yaw;
@@ -25,7 +25,8 @@ public:
 
 
     static glm::mat4 getViewMatrix(CameraComponent& cam, TransformComponent& transform) {
-        glm::vec3& position  = transform.position;
+        glm::vec3 position = TransformHelper::getGlobalPosition(transform);
+
         return glm::lookAt(position, position + cam.state.Front, cam.state.WorldUp);
     }
 
