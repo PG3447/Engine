@@ -18,6 +18,7 @@ private:
     //std::vector<CollisionObject*> m_objects;
 
     Query<TransformComponent, RigidbodyComponent, ColliderComponent>* query;
+    Query<TransformComponent, ColliderComponent>* colliderOnlyQuery;
 
     float physicsAccumulator = 0.0f;
     static constexpr float fixedDeltaTime = 0.04f;

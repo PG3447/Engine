@@ -346,7 +346,7 @@ void processCameraInput(ECS& ecs, CameraComponent& cam, TransformComponent& tran
 
     if (glm::length(dir) > 0.0f) {
         dir = glm::normalize(dir);
-        transform.position += dir * MovementSpeed * deltaTime;
+        transform.position += dir * MovementSpeed * 0.04f; //deltaTime; aktualnie fixedDeltaTime
         transform.isDirty   = true;
         cam.dirty = true;
     }
@@ -363,6 +363,52 @@ void processCameraMouse(ECS& ecs, CameraComponent& cam, TransformComponent& tran
         return;
 
     CameraHelper::ProcessMouseMovement(cam, transform, dx, dy);
+}
+
+
+float lookDeadzone = 0.0f;
+
+void processCameraGamepad(ECS& ecs, CameraComponent& cam, TransformComponent& transform, int gamepad_id)
+{
+    const auto& hid = ecs.GetSystem<HID>();
+
+    float lx = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_LEFT_X, gamepad_id);
+    float ly = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_LEFT_Y, gamepad_id);
+
+    glm::vec3 dir(0.0f);
+
+    glm::vec3 camFront = cam.state.Front;
+    camFront.y = 0.0f;
+    camFront = glm::normalize(camFront);
+
+    glm::vec3 camRight = cam.state.Right;
+    camRight.y = 0.0f;
+    camRight = glm::normalize(camRight);
+
+    dir += camFront * (-ly);
+    dir += camRight * lx;
+
+    if (glm::length(dir) > 0.0f) {
+        dir = glm::normalize(dir);
+        transform.position += dir * MovementSpeed * 0.04f;// deltaTime; aktualnie fixedDeltaTime
+        transform.isDirty = true;
+        cam.dirty = true;
+    }
+
+    float rx = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_RIGHT_X, gamepad_id);
+    float ry = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_RIGHT_Y, gamepad_id);
+
+
+    if (lookDeadzone <= 0.01f)
+        lookDeadzone += 0.0005f;
+    else if (glm::abs(rx) < lookDeadzone && glm::abs(ry) < lookDeadzone)
+        return;
+
+
+    const float sensitivity = 600.0f;
+    CameraHelper::ProcessMouseMovement(cam, transform,
+        rx * sensitivity * deltaTime,
+        ry * sensitivity * deltaTime);
 }
 
 void addAllSystems(ECS& ecs);
@@ -550,8 +596,7 @@ GameObject* CreateInteractableDoor(Scene* scene, Prefab* prefab, Shader* shader,
     doorTr->rotation   = glm::vec3(0.0f, baseRotationY, 0.0f);
     doorTr->position   = -pivotOffset;
 
-    hinge->AddComponent<RigidbodyComponent>()->useGravity = false;
-    hinge->GetComponent<RigidbodyComponent>()->isStatic   = true;
+
     ColliderComponent* col = hinge->AddComponent<ColliderComponent>();
     col->halfSize       = colliderHalfSize;
     col->offset         = -pivotOffset;
@@ -1610,50 +1655,6 @@ void end_frame()
     glfwSwapBuffers(window);
 }
 
-float lookDeadzone = 0.0f;
-
-void processCameraGamepad(ECS& ecs, CameraComponent& cam, TransformComponent& transform, int gamepad_id)
-{
-    const auto& hid = ecs.GetSystem<HID>();
-
-    float lx = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_LEFT_X, gamepad_id);
-    float ly = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_LEFT_Y, gamepad_id);
-
-    glm::vec3 dir(0.0f);
-
-    glm::vec3 camFront = cam.state.Front;
-    camFront.y = 0.0f;
-    camFront   = glm::normalize(camFront);
-
-    glm::vec3 camRight = cam.state.Right;
-    camRight.y = 0.0f;
-    camRight   = glm::normalize(camRight);
-
-    dir += camFront * (-ly);
-    dir += camRight *   lx;
-
-    if (glm::length(dir) > 0.0f) {
-        dir = glm::normalize(dir);
-        transform.position += dir * 0.45f;// MovementSpeed;// *deltaTime;
-        transform.isDirty = true;
-        cam.dirty = true;
-    }
-
-    float rx = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_RIGHT_X, gamepad_id);
-    float ry = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_RIGHT_Y, gamepad_id);
-
-
-    if (lookDeadzone <= 0.01f)
-        lookDeadzone += 0.0005f;
-    else if (glm::abs(rx) < lookDeadzone && glm::abs(ry) < lookDeadzone)
-        return;
-
-
-    const float sensitivity = 600.0f;
-    CameraHelper::ProcessMouseMovement(cam, transform,
-        rx * sensitivity * deltaTime,
-        ry * sensitivity * deltaTime);
-}
 
 void addAllSystems(ECS& ecs) {
     ecs.AddSystem<TransformSystem>(ecs);
@@ -1721,10 +1722,7 @@ void createFirstRoom(Scene* scena1) {
             tablicaKibli[i] = toiletModel->Instantiate(*scena1, nullptr, nullptr);
             tablicaKibli[i]->name = "Kibel" + std::to_string(i);
             tablicaKibli[i]->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1.5, 1.5, 1.5 };
-            tablicaKibli[i]->AddComponent<RigidbodyComponent>();
             tablicaKibli[i]->AddComponent<ColliderComponent>();
-            tablicaKibli[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
-            tablicaKibli[i]->GetComponent<RigidbodyComponent>()->isStatic   = true;
             tablicaKibli[i]->GetComponent<ColliderComponent>()->halfSize     = glm::vec3{ 2.5, 4, 2.5 };
             tablicaKibli[i]->GetComponent<ColliderComponent>()->offset       = glm::vec3{ 0, 4, 0 };
             tablicaKibli[i]->GetComponent<TransformComponent>()->position    = glm::vec3{ 45, 0.5f, -25 + (-10 * i) };
@@ -1737,10 +1735,7 @@ void createFirstRoom(Scene* scena1) {
             tablicaKibli[i] = urinModel->Instantiate(*scena1, nullptr, nullptr);
             tablicaKibli[i]->name = "Kibel" + std::to_string(i);
             tablicaKibli[i]->GetComponent<TransformComponent>()->scale    = glm::vec3{ 12, 12, 12 };
-            tablicaKibli[i]->AddComponent<RigidbodyComponent>();
             tablicaKibli[i]->AddComponent<ColliderComponent>();
-            tablicaKibli[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
-            tablicaKibli[i]->GetComponent<RigidbodyComponent>()->isStatic   = true;
             tablicaKibli[i]->GetComponent<ColliderComponent>()->halfSize     = glm::vec3{ 2.5, 4, 2.5 };
             tablicaKibli[i]->GetComponent<ColliderComponent>()->offset       = glm::vec3{ 0, 4, 0 };
             tablicaKibli[i]->GetComponent<TransformComponent>()->position    = glm::vec3{ 47.6, 2.0f, -25 + (-10 * i) };
@@ -1757,10 +1752,7 @@ void createFirstRoom(Scene* scena1) {
         tablicaZaslon[i] = wallModel3->Instantiate(*scena1, nullptr, nullptr);
         tablicaZaslon[i]->GetComponent<TransformComponent>()->scale = glm::vec3{ 0.3, 30, 20 };
         tablicaZaslon[i]->name = "Zaslona" + std::to_string(i);
-        tablicaZaslon[i]->AddComponent<RigidbodyComponent>();
         tablicaZaslon[i]->AddComponent<ColliderComponent>();
-        tablicaZaslon[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
-        tablicaZaslon[i]->GetComponent<RigidbodyComponent>()->isStatic   = true;
         tablicaZaslon[i]->GetComponent<ColliderComponent>()->halfSize     = glm::vec3{ 20, 15, 0.3 };
         tablicaZaslon[i]->GetComponent<TransformComponent>()->position    = glm::vec3{ 50, 0, -20 + (-10 * i) };
         tablicaZaslon[i]->GetComponent<ColliderComponent>()->isWalkable     = false;
@@ -1794,10 +1786,7 @@ void createFirstRoom(Scene* scena1) {
         tablicaKibli[i]->name = "PapierKibel" + std::to_string(i);
         tablicaPapierowKibel[i]->GetComponent<TransformComponent>()->scale    = glm::vec3{ 2, 2, 2 };
         tablicaPapierowKibel[i]->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 90, 0 };
-        tablicaPapierowKibel[i]->AddComponent<RigidbodyComponent>();
         tablicaPapierowKibel[i]->AddComponent<ColliderComponent>();
-        tablicaPapierowKibel[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
-        tablicaPapierowKibel[i]->GetComponent<RigidbodyComponent>()->isStatic   = true;
         tablicaPapierowKibel[i]->GetComponent<TransformComponent>()->position   = glm::vec3{ 35, 5.0, -40.7 + (-10 * i) };
         rotatableObjects.insert(tablicaPapierowKibel[i]);
         if (i < 2) {
@@ -1813,10 +1802,7 @@ void createFirstRoom(Scene* scena1) {
         tablicaSink[i]->GetComponent<TransformComponent>()->scale    = glm::vec3{ 3, 3, 3 };
         tablicaSink[i]->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 90, 0 };
         tablicaSink[i]->GetComponent<TransformComponent>()->position = glm::vec3{ -20.5, 6.0, -20 + (-10 * i) };
-        tablicaSink[i]->AddComponent<RigidbodyComponent>();
         tablicaSink[i]->AddComponent<ColliderComponent>();
-        tablicaSink[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
-        tablicaSink[i]->GetComponent<RigidbodyComponent>()->isStatic   = true;
     }
 
     /*
@@ -1847,29 +1833,20 @@ void createFirstRoom(Scene* scena1) {
     GameObject* lustro2 = mirrorModel2->Instantiate(*scena1, nullptr, nullptr);
     lustro2->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1, 2, 8 };
     lustro2->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, -180, 0 };
-    lustro2->AddComponent<RigidbodyComponent>();
     lustro2->AddComponent<ColliderComponent>();
-    lustro2->GetComponent<RigidbodyComponent>()->useGravity = false;
-    lustro2->GetComponent<RigidbodyComponent>()->isStatic   = true;
     lustro2->GetComponent<TransformComponent>()->position   = glm::vec3{ -23.5, 12.0, -25 + (-20 * 1) };
 
     GameObject* lustro3 = mirrorModel3->Instantiate(*scena1, nullptr, nullptr);
     lustro3->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1, 2, 8 };
     lustro3->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, -180, 0 };
-    lustro3->AddComponent<RigidbodyComponent>();
     lustro3->AddComponent<ColliderComponent>();
-    lustro3->GetComponent<RigidbodyComponent>()->useGravity = false;
-    lustro3->GetComponent<RigidbodyComponent>()->isStatic   = true;
     lustro3->GetComponent<TransformComponent>()->position   = glm::vec3{ -23.5, 12.0, -25 + (-20 * 2) };
 
     // Lustro 4 - dodane z mirrorModel4 (lustro_puste.glb)
     GameObject* lustro4 = mirrorModel4->Instantiate(*scena1, nullptr, nullptr);
     lustro4->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1, 2, 8 };
     lustro4->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, -180, 0 };
-    lustro4->AddComponent<RigidbodyComponent>();
     lustro4->AddComponent<ColliderComponent>();
-    lustro4->GetComponent<RigidbodyComponent>()->useGravity = false;
-    lustro4->GetComponent<RigidbodyComponent>()->isStatic   = true;
     lustro4->GetComponent<TransformComponent>()->position   = glm::vec3{ -23.5, 12.0, -25 + (-20 * 3) };
 
     // Drzwi wyjsciowe z lazienki (washroomExit)
@@ -1878,10 +1855,7 @@ void createFirstRoom(Scene* scena1) {
         tablicaDrzwi[i] = washroomExit->Instantiate(*scena1, nullptr, nullptr);
         tablicaDrzwi[i]->GetComponent<TransformComponent>()->scale    = glm::vec3{ 10, 11, 10 };
         tablicaDrzwi[i]->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 180 * i, 0 };
-        tablicaDrzwi[i]->AddComponent<RigidbodyComponent>();
         tablicaDrzwi[i]->AddComponent<ColliderComponent>();
-        tablicaDrzwi[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
-        tablicaDrzwi[i]->GetComponent<RigidbodyComponent>()->isStatic   = true;
         tablicaDrzwi[i]->GetComponent<ColliderComponent>()->halfSize     = glm::vec3{ 5, 22, 1 };
         tablicaDrzwi[i]->GetComponent<TransformComponent>()->position    = glm::vec3{ -5 + (10 * i), 0.0, -100 };
         majorDoors.insert(tablicaDrzwi[i]);
@@ -1957,10 +1931,6 @@ void createMainRooom(Scene* scena) {
     szafkaTr->position = glm::vec3{ -56.6f, 5.6f, -140.0f };
     szafkaTr->scale    = glm::vec3{ 10.0f, 10.0f, 10.0f };
     szafkaTr->rotation = glm::vec3{ 0.0f, 0.0f, 0.0f };
-
-    RigidbodyComponent* szafkaRb = szafkaObj->AddComponent<RigidbodyComponent>();
-    szafkaRb->useGravity = false;
-    szafkaRb->isStatic   = true;
 
     ColliderComponent* szafkaCol = szafkaObj->AddComponent<ColliderComponent>();
     szafkaCol->affectsNavMesh = true;

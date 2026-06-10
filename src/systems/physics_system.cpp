@@ -5,10 +5,12 @@
 
 PhysicsSystem::PhysicsSystem(ECS& ecs) {
     query = ecs.CreateQuery<TransformComponent, RigidbodyComponent, ColliderComponent>();
+    colliderOnlyQuery = ecs.CreateQuery<TransformComponent, ColliderComponent>();
 }
 
 void PhysicsSystem::OnGameObjectUpdated(GameObject* e) {
     query->OnGameObjectUpdated(e);
+    colliderOnlyQuery->OnGameObjectUpdated(e);
 }
 
 void PhysicsSystem::Init() {
@@ -190,6 +192,54 @@ void PhysicsSystem::FixedUpdate(float fixedDeltaTime)
 
             }
                
+        }
+    }
+
+    auto& coTransforms = std::get<0>(colliderOnlyQuery->componentsVectors);
+    auto& coColliders = std::get<1>(colliderOnlyQuery->componentsVectors);
+
+    for (size_t i = 0; i < query->gameobjects.size(); i++) {
+        auto* rb = rigidbodies[i];
+        auto* cA = colliders[i];
+
+        for (size_t j = 0; j < colliderOnlyQuery->gameobjects.size(); j++) {
+            auto* tB = coTransforms[j];
+            auto* cB = coColliders[j];
+
+            // pomiń jeśli ten sam obiekt jest w obu query
+            if (query->gameobjects[i] == colliderOnlyQuery->gameobjects[j])
+                continue;
+
+            glm::vec3 posA = rb->physicsPosition + cA->offset;
+            glm::vec3 posB = tB->position + cB->offset;
+
+            if (!AABB(posA, cA->halfSize, posB, cB->halfSize))
+                continue;
+
+            glm::vec3 delta = posA - posB;
+
+            float overlapX = (cA->halfSize.x + cB->halfSize.x) - std::abs(delta.x);
+            float overlapY = (cA->halfSize.y + cB->halfSize.y) - std::abs(delta.y);
+            float overlapZ = (cA->halfSize.z + cB->halfSize.z) - std::abs(delta.z);
+
+            if (overlapX < overlapY && overlapX < overlapZ) {
+                float dir = (delta.x > 0 ? 1.0f : -1.0f);
+                rb->physicsPosition.x += overlapX * dir;
+                rb->previousPosition.x = rb->physicsPosition.x;
+                rb->velocity.x = 0;
+            }
+            else if (overlapY < overlapZ) {
+                float dir = (delta.y > 0 ? 1.0f : -1.0f);
+                rb->physicsPosition.y += overlapY * dir;
+                rb->previousPosition.y = rb->physicsPosition.y;
+                rb->velocity.y = 0;
+            }
+            else {
+                float dir = (delta.z > 0 ? 1.0f : -1.0f);
+                rb->physicsPosition.z += overlapZ * dir;
+                rb->previousPosition.z = rb->physicsPosition.z;
+                rb->velocity.z = 0;
+            }
         }
     }
 }
