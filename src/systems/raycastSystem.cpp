@@ -21,7 +21,7 @@ void RaycastSystem::Update(ECS&, float)
     }
 
     for (const auto& tgt : targets) {
-        DebugDrawSystem::AddAABB(tgt.min, tgt.max, glm::vec4(0, 1, 1, 1)); // cyjanowy
+        //DebugDrawSystem::AddAABB(tgt.min, tgt.max, glm::vec4(0, 1, 1, 1)); // cyjanowy
     }
 
     // Shootery — tylko obiekty z RaycastComponent
@@ -66,7 +66,7 @@ void RaycastSystem::Update(ECS&, float)
 
             rc->raycastHits.push_back(best);
             glm::vec3 endpoint = best.hit ? best.point : origin + dir * rc->range;
-            DebugDrawSystem::AddLine(origin, endpoint, best.hit ? glm::vec4(1,0,0,1) : glm::vec4(0,1,0,1));
+            //DebugDrawSystem::AddLine(origin, endpoint, best.hit ? glm::vec4(1,0,0,1) : glm::vec4(0,1,0,1));
         }
     }
 }

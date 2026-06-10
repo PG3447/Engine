@@ -75,16 +75,13 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 
-void processCameraInput(ECS& ecs, CameraComponent& cam, TransformComponent& transform,
+void processCameraInput(ECS& ecs, CameraComponent& cam, TransformComponent& transformCamera,
     const std::string& up,
     const std::string& down,
     const std::string& left,
     const std::string& right);
 
-void processCameraGamepad(ECS& ecs,
-    CameraComponent& cam,
-    TransformComponent& transform,
-    int gamepad_id);
+void processCameraGamepad(ECS& ecs, CameraComponent& cam, TransformComponent& transformCamera, TransformComponent& playerTransform, int gamepad_id);
 
 void imgui_begin();
 void imgui_render(SceneManager& sceneManager);
@@ -332,7 +329,7 @@ GameObject* CreateRaycastTestObject(
     return go;
 }
 
-void processCameraInput(ECS& ecs, CameraComponent& cam, TransformComponent& transform,
+void processCameraInput(ECS& ecs, CameraComponent& cam, TransformComponent& playerTransform,
                         const std::string& up,
                         const std::string& down,
                         const std::string& left,
@@ -356,13 +353,15 @@ void processCameraInput(ECS& ecs, CameraComponent& cam, TransformComponent& tran
 
     if (glm::length(dir) > 0.0f) {
         dir = glm::normalize(dir);
-        transform.position += dir * MovementSpeed * 0.04f; //deltaTime; aktualnie fixedDeltaTime
-        transform.isDirty   = true;
+        playerTransform.position += dir * MovementSpeed * 0.04f; //deltaTime; aktualnie fixedDeltaTime
+        playerTransform.isDirty   = true;
         cam.dirty = true;
     }
 }
 
-void processCameraMouse(ECS& ecs, CameraComponent& cam, TransformComponent& transform)
+const float sensitivityCamera = 1200.0f;
+
+void processCameraMouse(ECS& ecs, CameraComponent& cam, TransformComponent& transformCamera, TransformComponent& playerTransform)
 {
     const auto& hid = ecs.GetSystem<HID>();
     float dx = hid->get_mouse_dx();
@@ -371,14 +370,17 @@ void processCameraMouse(ECS& ecs, CameraComponent& cam, TransformComponent& tran
 
     if (glm::abs(dx) < epsilon && glm::abs(dy) < epsilon)
         return;
+    
+    playerTransform.rotation.y -= dx * sensitivityCamera / 400.0f * deltaTime;// deltaTime; aktualnie fixedDeltaTime
+    playerTransform.isDirty = true;
 
-    CameraHelper::ProcessMouseMovement(cam, transform, dx, dy);
+    CameraHelper::ProcessMouseMovement(cam, transformCamera, 0.0f, dy);
 }
 
 
 float lookDeadzone = 0.0f;
 
-void processCameraGamepad(ECS& ecs, CameraComponent& cam, TransformComponent& transform, int gamepad_id)
+void processCameraGamepad(ECS& ecs, CameraComponent& cam, TransformComponent& transformCamera, TransformComponent& playerTransform, int gamepad_id)
 {
     const auto& hid = ecs.GetSystem<HID>();
 
@@ -400,8 +402,8 @@ void processCameraGamepad(ECS& ecs, CameraComponent& cam, TransformComponent& tr
 
     if (glm::length(dir) > 0.0f) {
         dir = glm::normalize(dir);
-        transform.position += dir * MovementSpeed * 0.04f;// deltaTime; aktualnie fixedDeltaTime
-        transform.isDirty = true;
+        playerTransform.position += dir * MovementSpeed * 0.04f;// deltaTime; aktualnie fixedDeltaTime
+        playerTransform.isDirty = true;
         cam.dirty = true;
     }
 
@@ -413,12 +415,11 @@ void processCameraGamepad(ECS& ecs, CameraComponent& cam, TransformComponent& tr
         lookDeadzone += 0.0005f;
     else if (glm::abs(rx) < lookDeadzone && glm::abs(ry) < lookDeadzone)
         return;
-
-
-    const float sensitivity = 600.0f;
-    CameraHelper::ProcessMouseMovement(cam, transform,
-        rx * sensitivity * deltaTime,
-        ry * sensitivity * deltaTime);
+    
+    playerTransform.rotation.y -= rx * sensitivityCamera /10.0f * deltaTime;// deltaTime; aktualnie fixedDeltaTime
+    playerTransform.isDirty = true;
+ 
+    CameraHelper::ProcessMouseMovement(cam, transformCamera, 0.0f, ry * sensitivityCamera * deltaTime);
 }
 
 void addAllSystems(ECS& ecs);
@@ -903,6 +904,7 @@ int main(int, char**)
     ColliderComponent* camera1collider = gracz1->AddComponent<ColliderComponent>();
     RigidbodyComponent* rigidBodyCamera1 = gracz1->AddComponent<RigidbodyComponent>();
     gracz1->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 20.0f, -20.0f);
+    gracz1->GetComponent<TransformComponent>()->rotation = glm::vec3(0.0f, -180.0f, 0.0f);
     gracz1->GetComponent<RigidbodyComponent>()->useGravity = true;
     gracz1->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1.0f, 5.25f, 1.0f };
 
@@ -911,6 +913,7 @@ int main(int, char**)
     camera1->name = "Kamera";
     gracz1->AddChild(camera1);
     camera1->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 4.5f, 1.0f);
+    camera1->GetComponent<TransformComponent>()->rotation = glm::vec3(0.0f, -180.0f, 0.0f);
     CameraComponent* camCompLeft = camera1->AddComponent<CameraComponent>();
     RaycastComponent*  player1Raycast   = camera1->AddComponent<RaycastComponent>();
     player1Raycast->debugDraw = false;
@@ -941,7 +944,7 @@ int main(int, char**)
     camera2->GetComponent<RigidbodyComponent>()->useGravity = false;
     camera2->GetComponent<ColliderComponent>()->halfSize    = glm::vec3{ 1.0f, 5.0f, 1.0f };
     RaycastComponent* player2Raycast = camera2->AddComponent<RaycastComponent>();
-    player2Raycast->debugDraw = true;
+    player2Raycast->debugDraw = false;
 
     camera2->AddComponent<LightComponent>();
     LightComponent* light3 = camera2->AddComponent<LightComponent>();
@@ -1338,9 +1341,9 @@ int main(int, char**)
             processCameraInput(ecs, *camCompRight, *t1,
                 "move_up_2", "move_down_2", "move_left_2", "move_right_2");
 
-            processCameraMouse(ecs, *camCompLeft, *camTransform1);
-            processCameraGamepad(ecs, *camCompLeft,  *t0, 0);
-            processCameraGamepad(ecs, *camCompRight, *t1, 1);
+            processCameraMouse(ecs, *camCompLeft, *camTransform1, *t0);
+            processCameraGamepad(ecs, *camCompLeft, *camTransform1, *t0, 0);
+            processCameraGamepad(ecs, *camCompRight, *camTransform2, *t1, 1);
         }
 
         if (p1ShakeTimer > 0.0f) p1ShakeTimer -= deltaTime;
