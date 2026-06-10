@@ -1610,6 +1610,7 @@ void end_frame()
     glfwSwapBuffers(window);
 }
 
+float lookDeadzone = 0.0f;
 
 void processCameraGamepad(ECS& ecs, CameraComponent& cam, TransformComponent& transform, int gamepad_id)
 {
@@ -1640,6 +1641,12 @@ void processCameraGamepad(ECS& ecs, CameraComponent& cam, TransformComponent& tr
 
     float rx = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_RIGHT_X, gamepad_id);
     float ry = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_RIGHT_Y, gamepad_id);
+
+
+    if (lookDeadzone <= 0.01f)
+        lookDeadzone += 0.0005f;
+    else if (glm::abs(rx) < lookDeadzone && glm::abs(ry) < lookDeadzone)
+        return;
 
 
     const float sensitivity = 600.0f;
