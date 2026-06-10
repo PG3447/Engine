@@ -523,7 +523,7 @@ void HandlePlayerInteraction(
         }
         else {
             // ── Gracz patrzy gdzie indziej — normalne upuszczenie ──
-            heldTr->position = TransformHelper::getGlobalPosition(*camTr) + (camComp->state.Front * 5.0f);
+            heldTr->position = TransformHelper::getGlobalPosition(*camTr) + (camComp->state.Front * 7.5f);
             heldTr->rotation = objectOriginalRotations.count(myHeldObject)
                                    ? objectOriginalRotations[myHeldObject]
                                    : glm::vec3(0.0f);
@@ -904,13 +904,13 @@ int main(int, char**)
     RigidbodyComponent* rigidBodyCamera1 = gracz1->AddComponent<RigidbodyComponent>();
     gracz1->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 20.0f, -20.0f);
     gracz1->GetComponent<RigidbodyComponent>()->useGravity = true;
-    gracz1->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1.0f, 9.0f, 1.0f };
+    gracz1->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1.0f, 5.25f, 1.0f };
 
     
     GameObject* camera1 = scena1->CreateGameObject(nullptr);//groundModel->Instantiate(*scena1, nullptr, ourShader.get());
     camera1->name = "Kamera";
     gracz1->AddChild(camera1);
-    camera1->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 3.0f, 0.0f);
+    camera1->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 4.5f, 1.0f);
     CameraComponent* camCompLeft = camera1->AddComponent<CameraComponent>();
     RaycastComponent*  player1Raycast   = camera1->AddComponent<RaycastComponent>();
     player1Raycast->debugDraw = false;
@@ -932,16 +932,16 @@ int main(int, char**)
 
     GameObject* modelPostac1 = postacGracza->Instantiate(*scena1, nullptr, nullptr);
     gracz1->AddChild(modelPostac1);
-    modelPostac1->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, -2.0f, 0.0f);
+    modelPostac1->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 0.9f, 0.0f);
 
     GameObject* camera2 = scena1->CreateGameObject(nullptr);
     CameraComponent*    camCompRight     = camera2->AddComponent<CameraComponent>();
     ColliderComponent*  camera2collider  = camera2->AddComponent<ColliderComponent>();
     RigidbodyComponent* rigidBodyCamera2 = camera2->AddComponent<RigidbodyComponent>();
     camera2->GetComponent<RigidbodyComponent>()->useGravity = false;
-    camera2->GetComponent<ColliderComponent>()->halfSize    = glm::vec3{ 1.0f, 8.0f, 1.0f };
+    camera2->GetComponent<ColliderComponent>()->halfSize    = glm::vec3{ 1.0f, 5.0f, 1.0f };
     RaycastComponent* player2Raycast = camera2->AddComponent<RaycastComponent>();
-    player2Raycast->debugDraw = false;
+    player2Raycast->debugDraw = true;
 
     camera2->AddComponent<LightComponent>();
     LightComponent* light3 = camera2->AddComponent<LightComponent>();
