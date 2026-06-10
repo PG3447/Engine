@@ -147,7 +147,7 @@ private:
 public:
     GPUDrivenManager drivenManager;
 
-    float ambientStrength = 0.03f;
+    float ambientStrength = 0.003f;// domyslnie - 0.03f;
     //GLuint sceneDepthRBO = 0;
     GLuint sceneDepthTexture;
     GLuint depthTexturePrev = 0;

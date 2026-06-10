@@ -699,7 +699,7 @@ public:
             const bool on = light->isOn;
             const glm::vec3 zero(0.0f);
 
-            g.position = glm::vec4(transform->position, (float)light->type);
+            g.position = glm::vec4(TransformHelper::getGlobalPosition(*transform), (float)light->type);
             g.direction = (glm::length2(light->direction) < 0.0001f) ? glm::vec4(TransformHelper::getForward(*transform), 0.0f) : glm::vec4(light->direction, 0.0f);
             g.ambient = glm::vec4(on ? light->ambient : zero, 0.0f);
             g.diffuse = glm::vec4(on ? light->diffuse : zero, 0.0f);

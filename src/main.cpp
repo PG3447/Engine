@@ -752,9 +752,9 @@ int main(int, char**)
 
     ColliderComponent* camera1collider = gracz1->AddComponent<ColliderComponent>();
     RigidbodyComponent* rigidBodyCamera1 = gracz1->AddComponent<RigidbodyComponent>();
-    gracz1->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 10.0f, -20.0f);
+    gracz1->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 20.0f, -20.0f);
     gracz1->GetComponent<RigidbodyComponent>()->useGravity = false;
-    gracz1->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1.0f, 8.0f, 1.0f };
+    gracz1->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1.0f, 9.0f, 1.0f };
 
     
     GameObject* camera1 = scena1->CreateGameObject(nullptr);//groundModel->Instantiate(*scena1, nullptr, ourShader.get());
@@ -776,7 +776,7 @@ int main(int, char**)
     light2->constant  = 1.0f;
     light2->linear    = 0.10f;
     light2->quadratic = 0.00001f;
-    light2->intensity = 100.0f;
+    light2->intensity = 250.0f;
     light2->cutOff      = glm::cos(glm::radians(4.0f));
     light2->outerCutOff = glm::cos(glm::radians(16.0f));
 
@@ -789,7 +789,7 @@ int main(int, char**)
     ColliderComponent*  camera2collider  = camera2->AddComponent<ColliderComponent>();
     RigidbodyComponent* rigidBodyCamera2 = camera2->AddComponent<RigidbodyComponent>();
     camera2->GetComponent<RigidbodyComponent>()->useGravity = false;
-    camera2->GetComponent<ColliderComponent>()->halfSize    = glm::vec3{ 1.0f, 9.0f, 1.0f };
+    camera2->GetComponent<ColliderComponent>()->halfSize    = glm::vec3{ 2.0f, 8.0f, 2.0f };
     RaycastComponent* player2Raycast = camera2->AddComponent<RaycastComponent>();
     player2Raycast->debugDraw = false;
 
@@ -863,11 +863,6 @@ int main(int, char**)
 
     GLuint whiteSpecular = ResourceManager::CreateTextureFromColor("white_spec", glm::vec3(1.0f));
     RenderHelper::SetSpecularTexture(model1, whiteSpecular);
-
-    sceneManager.Update(16);
-    spdlog::info("Scena git.");
-
-
 
     focused = true;
     updateFocus();
