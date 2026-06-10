@@ -136,6 +136,7 @@ void PhysicsSystem::FixedUpdate(float fixedDeltaTime)
                 {
                     rbA->physicsPosition.x += overlapX * dir;
                     rbA->velocity.x = 0;
+                    rbA->acceleration.x = 0;
                     rbA->physicsPosition.x = rbA->physicsPosition.x;
                     //tA->isDirty = true;
                 }
@@ -144,6 +145,7 @@ void PhysicsSystem::FixedUpdate(float fixedDeltaTime)
                 {
                     rbB->physicsPosition.x -= overlapX * dir;
                     rbB->velocity.x = 0;
+                    rbB->acceleration.x = 0;
                     rbB->physicsPosition.x = rbB->physicsPosition.x;
                     //tB->isDirty = true;
                 }
@@ -157,6 +159,7 @@ void PhysicsSystem::FixedUpdate(float fixedDeltaTime)
                 {
                     rbA->physicsPosition.y += overlapY * dir;
                     rbA->velocity.y = 0;
+                    rbA->acceleration.y = 0;
                     rbA->physicsPosition.y = rbA->physicsPosition.y;
                     //tA->isDirty = true;
                 }
@@ -165,6 +168,7 @@ void PhysicsSystem::FixedUpdate(float fixedDeltaTime)
                 {
                     rbB->physicsPosition.y -= overlapY * dir;
                     rbB->velocity.y = 0;
+                    rbB->acceleration.y = 0;
                     rbB->physicsPosition.y = rbB->physicsPosition.y;
                     //tB->isDirty = true;
                 }
@@ -178,6 +182,7 @@ void PhysicsSystem::FixedUpdate(float fixedDeltaTime)
                 {
                     rbA->physicsPosition.z += overlapZ * dir;
                     rbA->velocity.z = 0;
+                    rbA->acceleration.z = 0;
                     rbA->physicsPosition.z = rbA->physicsPosition.z;
                     //tA->isDirty = true;
                 }
@@ -186,6 +191,7 @@ void PhysicsSystem::FixedUpdate(float fixedDeltaTime)
                 {
                     rbB->physicsPosition.z -= overlapZ * dir;
                     rbB->velocity.z = 0;
+                    rbB->acceleration.z = 0;
                     rbB->physicsPosition.z = rbB->physicsPosition.z;
                     //tB->isDirty = true;
                 }
@@ -227,18 +233,21 @@ void PhysicsSystem::FixedUpdate(float fixedDeltaTime)
                 rb->physicsPosition.x += overlapX * dir;
                 rb->previousPosition.x = rb->physicsPosition.x;
                 rb->velocity.x = 0;
+                rb->acceleration.x = 0;
             }
             else if (overlapY < overlapZ) {
                 float dir = (delta.y > 0 ? 1.0f : -1.0f);
                 rb->physicsPosition.y += overlapY * dir;
                 rb->previousPosition.y = rb->physicsPosition.y;
                 rb->velocity.y = 0;
+                rb->acceleration.y = 0;
             }
             else {
                 float dir = (delta.z > 0 ? 1.0f : -1.0f);
                 rb->physicsPosition.z += overlapZ * dir;
                 rb->previousPosition.z = rb->physicsPosition.z;
                 rb->velocity.z = 0;
+                rb->acceleration.z = 0;
             }
         }
     }

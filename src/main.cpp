@@ -506,8 +506,7 @@ void HandlePlayerInteraction(
 
         if (targetSlot != nullptr) {
             // ── Gracz patrzy na wolny slot ──
-            TransformComponent* slotTr = targetSlot->slotObject
-                                             ->GetComponent<TransformComponent>();
+            TransformComponent* slotTr = targetSlot->slotObject->GetComponent<TransformComponent>();
             heldTr->position = slotTr->position;
             heldTr->rotation = targetSlot->targetRotation;
             heldTr->isDirty  = true;
@@ -518,11 +517,13 @@ void HandlePlayerInteraction(
             if (auto rb = myHeldObject->GetComponent<RigidbodyComponent>()) {
                 rb->useGravity = false;
                 rb->isStatic   = true;
+                rb->velocity = glm::vec3(0.0f);
+                rb->acceleration = glm::vec3(0.0f);
             }
         }
         else {
             // ── Gracz patrzy gdzie indziej — normalne upuszczenie ──
-            heldTr->position = camTr->position + (camComp->state.Front * 3.0f);
+            heldTr->position = TransformHelper::getGlobalPosition(*camTr) + (camComp->state.Front * 5.0f);
             heldTr->rotation = objectOriginalRotations.count(myHeldObject)
                                    ? objectOriginalRotations[myHeldObject]
                                    : glm::vec3(0.0f);
@@ -532,6 +533,7 @@ void HandlePlayerInteraction(
                 rb->useGravity = true;
                 rb->isStatic   = false;
                 rb->velocity   = glm::vec3(0.0f);
+                rb->acceleration   = glm::vec3(0.0f);
             }
         }
 
@@ -937,7 +939,7 @@ int main(int, char**)
     ColliderComponent*  camera2collider  = camera2->AddComponent<ColliderComponent>();
     RigidbodyComponent* rigidBodyCamera2 = camera2->AddComponent<RigidbodyComponent>();
     camera2->GetComponent<RigidbodyComponent>()->useGravity = false;
-    camera2->GetComponent<ColliderComponent>()->halfSize    = glm::vec3{ 2.0f, 8.0f, 2.0f };
+    camera2->GetComponent<ColliderComponent>()->halfSize    = glm::vec3{ 1.0f, 8.0f, 1.0f };
     RaycastComponent* player2Raycast = camera2->AddComponent<RaycastComponent>();
     player2Raycast->debugDraw = false;
 
