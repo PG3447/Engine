@@ -482,7 +482,9 @@ void HandlePlayerInteraction(
     GameObject* otherPlayerHeldObject,
     Scene* scene,
     std::unordered_map<GameObject*, float>& rotatingObjects,
-    float& outShakeTimer
+    float& outShakeTimer,
+    AnimatorComponent* playerAnimator,
+    Prefab* playerPrefab
 ) {
     if (!ecs.GetSystem<HID>()->is_action_just_pressed(inputAction)) return;
     //upuszczanie
@@ -538,6 +540,7 @@ void HandlePlayerInteraction(
         }
 
         myHeldObject = nullptr;
+        PlayerAnimationHelper::TriggerAction(playerAnimator, playerPrefab, PlayerAnimationHelper::DROP_ANIM_INDEX);
     }
     else if (playerRaycast->anyHit()) {
         RaycastHit hit = playerRaycast->closestHit();
@@ -545,6 +548,7 @@ void HandlePlayerInteraction(
             // Obracanie
             if (rotatableObjects.count(hit.hitObject)) {
                 if (!rotatingObjects.count(hit.hitObject)) rotatingObjects[hit.hitObject] = 60.0f;
+                PlayerAnimationHelper::TriggerAction(playerAnimator, playerPrefab, PlayerAnimationHelper::INTERACT_ANIM_INDEX);
             }
             // PAIN
             if (majorDoors.count(hit.hitObject)) {
@@ -556,6 +560,7 @@ void HandlePlayerInteraction(
                 } else {
                     outShakeTimer = SHAKE_DURATION;
                 }
+                PlayerAnimationHelper::TriggerAction(playerAnimator, playerPrefab, PlayerAnimationHelper::INTERACT_ANIM_INDEX);
             }
             // Otwieranie drzwi
             else if (toiletDoorsMap.count(hit.hitObject)) {
@@ -568,6 +573,7 @@ void HandlePlayerInteraction(
                         col->halfSize = state.isOpen ? glm::vec3{ 1.0f, 10.0f, 1.0f } : glm::vec3{ 0.8f, 10.0f, 4.0f };
                         col->offset   = state.isOpen ? glm::vec3(0.0f) : state.originalOffset;
                     }
+                    PlayerAnimationHelper::TriggerAction(playerAnimator, playerPrefab, PlayerAnimationHelper::INTERACT_ANIM_INDEX);
                 }
             }
             // Otwieranie szafki
@@ -589,6 +595,7 @@ void HandlePlayerInteraction(
                             }
                         }
                     }
+                    PlayerAnimationHelper::TriggerAction(playerAnimator, playerPrefab, PlayerAnimationHelper::INTERACT_ANIM_INDEX);
                 }
             }
             if (puzzleSlotsMap.count(hit.hitObject)) {
@@ -608,6 +615,8 @@ void HandlePlayerInteraction(
                         rb->useGravity = false;
                         rb->isStatic   = true;
                     }
+
+                    PlayerAnimationHelper::TriggerAction(playerAnimator, playerPrefab, PlayerAnimationHelper::PICKUP_ANIM_INDEX);
                 }
             }
             // Podnoszenie (zabezpieczone przed wyrwaniem obiektu drugiemu graczowi)
@@ -632,10 +641,13 @@ void HandlePlayerInteraction(
                     rb->useGravity = false;
                     rb->isStatic   = true;
                 }
+
+                PlayerAnimationHelper::TriggerAction(playerAnimator, playerPrefab, PlayerAnimationHelper::PICKUP_ANIM_INDEX);
             }
             // zagadka z trumnami
             else if (hit.hitObject->name.find("Coffin") != std::string::npos) {
                 crematoriumPuzzle.ToggleCoffin(hit.hitObject);
+                PlayerAnimationHelper::TriggerAction(playerAnimator, playerPrefab, PlayerAnimationHelper::INTERACT_ANIM_INDEX);
             }
         }
     }
@@ -1327,8 +1339,9 @@ int main(int, char**)
             else ++it;
         }
 
-        HandlePlayerInteraction(ecs, "interact_p1", player1Raycast, camera1, p1HeldObject, p2HeldObject, scena1, rotatingObjects, p1ShakeTimer);
-        HandlePlayerInteraction(ecs, "interact_p2", player2Raycast, camera2, p2HeldObject, p1HeldObject, scena1, rotatingObjects, p2ShakeTimer);
+        HandlePlayerInteraction(ecs, "interact_p1", player1Raycast, camera1, p1HeldObject, p2HeldObject, scena1, rotatingObjects, p1ShakeTimer, p1Animator, postacGracza.get());
+
+        HandlePlayerInteraction(ecs, "interact_p2", player2Raycast, camera2, p2HeldObject, p1HeldObject, scena1, rotatingObjects, p2ShakeTimer, nullptr, postacGracza.get());
 
         // testy animacji
         if (ecs.GetSystem<HID>()->is_action_just_pressed("anim_play_dying")) {
@@ -1372,7 +1385,10 @@ int main(int, char**)
             p2IsMoving |= processCameraGamepad(ecs, *camCompRight, *t1, 1);
         }
 
-        PlayerAnimationHelper::UpdateAnimation(p1Animator, postacGracza.get(), p1IsMoving);
+        bool p1IsHolding = (p1HeldObject != nullptr);
+        bool p2IsHolding = (p2HeldObject != nullptr);
+
+        PlayerAnimationHelper::UpdateAnimation(p1Animator, postacGracza.get(), p1IsMoving, p1IsHolding);
 
         if (p1ShakeTimer > 0.0f) p1ShakeTimer -= deltaTime;
         if (p2ShakeTimer > 0.0f) p2ShakeTimer -= deltaTime;
