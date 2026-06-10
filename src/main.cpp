@@ -1633,7 +1633,8 @@ void processCameraGamepad(ECS& ecs, CameraComponent& cam, TransformComponent& tr
 
     if (glm::length(dir) > 0.0f) {
         dir = glm::normalize(dir);
-        transform.position += dir * MovementSpeed * deltaTime;
+        transform.position += dir * 0.45f;// MovementSpeed;// *deltaTime;
+        transform.isDirty = true;
         cam.dirty = true;
     }
 

@@ -70,6 +70,12 @@ void PhysicsSystem::FixedUpdate(float fixedDeltaTime)
 
         rb->previousPosition = rb->physicsPosition;
 
+        if (tr->isDirty)
+        {
+            rb->physicsPosition = tr->position;
+            //rb->previousPosition = tr->position;
+        }
+
         if (rb->isStatic)
             continue;
 
@@ -83,18 +89,18 @@ void PhysicsSystem::FixedUpdate(float fixedDeltaTime)
         rb->velocity += acc * fixedDeltaTime;
         //rb->velocity *= rb->damping;
 
-        tr->position += rb->velocity * fixedDeltaTime;
+        rb->physicsPosition += rb->velocity * fixedDeltaTime;
 
-        tr->isDirty = true;
-        rb->physicsPosition = tr->position;
+        //tr->isDirty = true;
+        //rb->physicsPosition = tr->position;
     }
 
     // KOLIZJE (AABB)
     for (size_t i = 0; i < query->gameobjects.size(); i++) {
         for (size_t j = i + 1; j < query->gameobjects.size(); j++) {
 
-            auto* tA = transforms[i];
-            auto* tB = transforms[j];
+            //auto* tA = transforms[i];
+            //auto* tB = transforms[j];
 
             auto* cA = colliders[i];
             auto* cB = colliders[j];
@@ -102,8 +108,8 @@ void PhysicsSystem::FixedUpdate(float fixedDeltaTime)
             auto* rbA = rigidbodies[i];
             auto* rbB = rigidbodies[j];
 
-            glm::vec3 posA = tA->position + cA->offset;
-            glm::vec3 posB = tB->position + cB->offset;
+            glm::vec3 posA = rbA->physicsPosition + cA->offset;
+            glm::vec3 posB = rbB->physicsPosition + cB->offset;
 
             glm::vec3 halfA = cA->halfSize;
             glm::vec3 halfB = cB->halfSize;
@@ -126,20 +132,20 @@ void PhysicsSystem::FixedUpdate(float fixedDeltaTime)
 
                 if (!rbA->isStatic)
                 {
-                    tA->position.x += overlapX * dir;
-                    rbA->physicsPosition.x = tA->position.x;
-                    tA->isDirty = true;
+                    rbA->physicsPosition.x += overlapX * dir;
+                    rbA->velocity.x = 0;
+                    rbA->physicsPosition.x = rbA->physicsPosition.x;
+                    //tA->isDirty = true;
                 }
 
                 if (!rbB->isStatic)
                 {
-                    tB->position.x -= overlapX * dir;
-                    rbB->physicsPosition.x = tB->position.x;
-                    tB->isDirty = true;
+                    rbB->physicsPosition.x -= overlapX * dir;
+                    rbB->velocity.x = 0;
+                    rbB->physicsPosition.x = rbB->physicsPosition.x;
+                    //tB->isDirty = true;
                 }
                 
-                rbA->velocity.x = 0;
-                rbB->velocity.x = 0;
             }
             else if (overlapY < overlapZ) {
 
@@ -147,20 +153,20 @@ void PhysicsSystem::FixedUpdate(float fixedDeltaTime)
 
                 if (!rbA->isStatic)
                 {
-                    tA->position.y += overlapY * dir;
-                    rbA->physicsPosition.y = tA->position.y;
-                    tA->isDirty = true;
+                    rbA->physicsPosition.y += overlapY * dir;
+                    rbA->velocity.y = 0;
+                    rbA->physicsPosition.y = rbA->physicsPosition.y;
+                    //tA->isDirty = true;
                 }
 
                 if (!rbB->isStatic)
                 {
-                    tB->position.y -= overlapY * dir;
-                    rbB->physicsPosition.y = tB->position.y;
-                    tB->isDirty = true;
+                    rbB->physicsPosition.y -= overlapY * dir;
+                    rbB->velocity.y = 0;
+                    rbB->physicsPosition.y = rbB->physicsPosition.y;
+                    //tB->isDirty = true;
                 }
 
-                rbA->velocity.y = 0;
-                rbB->velocity.y = 0;
             }
             else {
 
@@ -168,20 +174,20 @@ void PhysicsSystem::FixedUpdate(float fixedDeltaTime)
 
                 if (!rbA->isStatic)
                 {
-                    tA->position.z += overlapZ * dir;
-                    rbA->physicsPosition.z = tA->position.z;
-                    tA->isDirty = true;
+                    rbA->physicsPosition.z += overlapZ * dir;
+                    rbA->velocity.z = 0;
+                    rbA->physicsPosition.z = rbA->physicsPosition.z;
+                    //tA->isDirty = true;
                 }
 
                 if (!rbB->isStatic)
                 {
-                    tB->position.z -= overlapZ * dir;
-                    rbB->physicsPosition.z = tB->position.z;
-                    tB->isDirty = true;
+                    rbB->physicsPosition.z -= overlapZ * dir;
+                    rbB->velocity.z = 0;
+                    rbB->physicsPosition.z = rbB->physicsPosition.z;
+                    //tB->isDirty = true;
                 }
 
-                rbA->velocity.z = 0;
-                rbB->velocity.z = 0;
             }
                
         }
