@@ -20,8 +20,6 @@ target_include_directories(stb_image PRIVATE ${STB_IMAGE_DIR})
 CPMAddPackage("gh:assimp/assimp@5.4.3")
 CPMAddPackage("gh:glfw/glfw#3.3.8")
 CPMAddPackage("gh:g-truc/glm#1.0.1")
-CPMAddPackage("gh:ocornut/imgui@1.88")
-CPMAddPackage("gh:gabime/spdlog@1.10.0")
 CPMAddPackage(
 		NAME yaml-cpp
 		GITHUB_REPOSITORY jbeder/yaml-cpp
@@ -91,9 +89,7 @@ set_target_properties(glad
                       stb_image 
                       assimp 
                       glfw 
-                      glm 
-                      imgui 
-                      spdlog
+                      glm
 					  yaml-cpp
 					  freetype
 					  fmod PROPERTIES FOLDER "thirdparty")
