@@ -145,13 +145,9 @@ std::unique_ptr<Prefab> postacGracza;
 std::unique_ptr<Prefab> bed1Model;
 std::unique_ptr<Prefab> bed2Model;
 std::unique_ptr<Prefab> bed3Model;
-std::unique_ptr<Prefab> corkBoardModel;
-std::unique_ptr<Prefab> cupModel;
 std::unique_ptr<Prefab> deskModel;
 std::unique_ptr<Prefab> doorsModel;
-std::unique_ptr<Prefab> folderModel;
 std::unique_ptr<Prefab> krzesloModel;
-std::unique_ptr<Prefab> ksiazkaModel;
 std::unique_ptr<Prefab> lampa1Model;
 std::unique_ptr<Prefab> lampa2Model;
 std::unique_ptr<Prefab> lampa3Model;
@@ -159,7 +155,6 @@ std::unique_ptr<Prefab> needleModel;
 std::unique_ptr<Prefab> bad1Model;
 std::unique_ptr<Prefab> bad2Model;
 std::unique_ptr<Prefab> bad3Model;
-std::unique_ptr<Prefab> papersModel;
 std::unique_ptr<Prefab> bossModel;
 std::unique_ptr<Prefab> characterModel;
 std::unique_ptr<Prefab> vial1Model;
@@ -209,6 +204,32 @@ std::unique_ptr<Prefab> czerwonaTablica;
 std::unique_ptr<Prefab> zielonaTablica;
 std::unique_ptr<Prefab> Rentgen;
 
+std::unique_ptr<Prefab> bossCapsuleModel;
+std::unique_ptr<Prefab> kredensModel;
+std::unique_ptr<Prefab> eksp1Model;
+std::unique_ptr<Prefab> fiolka2Model;
+std::unique_ptr<Prefab> fiolka1Model;
+std::unique_ptr<Prefab> ksiazkaModel;
+std::unique_ptr<Prefab> eksp2Model;
+
+std::unique_ptr<Prefab> probowka7Model;
+std::unique_ptr<Prefab> probowka6Model;
+std::unique_ptr<Prefab> probowka5Model;
+std::unique_ptr<Prefab> probowkaArka_1_Model;
+std::unique_ptr<Prefab> probowka3Model;
+std::unique_ptr<Prefab> probowka4Model;
+std::unique_ptr<Prefab> labOla1Model;
+std::unique_ptr<Prefab> probowka2Model;
+std::unique_ptr<Prefab> folderModel;
+std::unique_ptr<Prefab> papersModel;
+std::unique_ptr<Prefab> cupModel;
+std::unique_ptr<Prefab> corkBoardModel;
+std::unique_ptr<Prefab> clockModel;
+std::unique_ptr<Prefab> computer_pbrModel;
+std::unique_ptr<Prefab> laboratoryStuff1Model;
+std::unique_ptr<Prefab> laboratoryStuff2Model;
+std::unique_ptr<Prefab> laboratoryStuff3Model;
+
 std::unique_ptr<Prefab> dyingModelPrefab;
 std::unique_ptr<Prefab> jumpSkeletonPrefab;
 
@@ -244,7 +265,7 @@ GameObject* tablicaPapierowKibel[6];
 std::unordered_set<GameObject*> rotatableObjects;
 std::unordered_set<GameObject*> unlockedDoors;
 std::unordered_set<GameObject*> majorDoors;
-bool can_open_door_1 = false;
+bool can_open_door_1 = true;
 
 bool isCabinetButtonPushed = false;
 
@@ -1890,8 +1911,6 @@ void connectAllModels() {
     bed1Model        = std::make_unique<Prefab>("res/models/samochod.glb");
     bed2Model        = std::make_unique<Prefab>("res/models/bed2.glb");
     bed3Model        = std::make_unique<Prefab>("res/models/bed3.glb");
-    corkBoardModel   = std::make_unique<Prefab>("res/models/cork_board.glb");
-    cupModel         = std::make_unique<Prefab>("res/models/cup.glb");
     placeholderModel = std::make_unique<Prefab>("res/models/placeholder.glb");
     sinkModel        = std::make_unique<Prefab>("res/models/sink_2.glb");
     toiletModel      = std::make_unique<Prefab>("res/models/toilet_f.glb");
@@ -1913,6 +1932,31 @@ void connectAllModels() {
     puzel4       = std::make_unique<Prefab>("res/models/Puzel4.glb");
     puzel5       = std::make_unique<Prefab>("res/models/Puzel5.glb");
     puzel6       = std::make_unique<Prefab>("res/models/Puzel6.glb");
+
+    bossCapsuleModel       = std::make_unique<Prefab>("res/models/boss_capsule.glb");
+    kredensModel       = std::make_unique<Prefab>("res/models/kredens.glb");
+    eksp1Model = std::make_unique<Prefab>("res/models/eksp1.glb");
+    eksp2Model = std::make_unique<Prefab>("res/models/eksp2.glb");
+    fiolka1Model = std::make_unique<Prefab>("res/models/fiolka1.glb");
+    fiolka2Model = std::make_unique<Prefab>("res/models/fiolka2.glb");
+    ksiazkaModel = std::make_unique<Prefab>("res/models/ksiazka.glb");
+    probowka7Model = std::make_unique<Prefab>("res/models/probowka7.glb");
+    probowka6Model = std::make_unique<Prefab>("res/models/probowka6.glb");
+    probowka5Model = std::make_unique<Prefab>("res/models/probowka5.glb");
+    probowkaArka_1_Model = std::make_unique<Prefab>("res/models/probowka_1.glb");
+    probowka3Model = std::make_unique<Prefab>("res/models/probowka3.glb");
+    probowka4Model = std::make_unique<Prefab>("res/models/probowka4.glb");
+    labOla1Model = std::make_unique<Prefab>("res/models/lab_ola_1.glb");
+    probowka2Model = std::make_unique<Prefab>("res/models/probowka_2.glb");
+    folderModel = std::make_unique<Prefab>("res/models/folder.glb");
+    papersModel = std::make_unique<Prefab>("res/models/papers.glb");
+    cupModel = std::make_unique<Prefab>("res/models/cup.glb");
+    corkBoardModel = std::make_unique<Prefab>("res/models/cork_board.glb");
+    clockModel = std::make_unique<Prefab>("res/models/clock.glb");
+    computer_pbrModel = std::make_unique<Prefab>("res/models/computer_pbr.glb");
+    laboratoryStuff1Model = std::make_unique<Prefab>("res/models/laboratory_stuff_1.glb");
+    laboratoryStuff2Model = std::make_unique<Prefab>("res/models/laboratory_stuff_2.glb");
+    laboratoryStuff3Model = std::make_unique<Prefab>("res/models/laboratory_stuff_3.glb");
 
     zielonaTablica = std::make_unique<Prefab>("res/models/ZielonaTablica.glb");
     czerwonaTablica = std::make_unique<Prefab>("res/models/CzerwonaTablica.glb");
@@ -2092,7 +2136,7 @@ void createFirstRoom(Scene* scena1) {
 
     TransformComponent* cupTr = cup->GetComponent<TransformComponent>();
     cupTr->position = glm::vec3{ 20.0f, 5.0f, -30.0f };
-    cupTr->scale    = glm::vec3{ 10.0f, 10.0f, 10.0f };
+    cupTr->scale    = glm::vec3{ 2, 2, 2 };
 
     RigidbodyComponent* cupRb = cup->AddComponent<RigidbodyComponent>();
     cupRb->useGravity = true;
@@ -2111,8 +2155,8 @@ void createMainRooom(Scene* scena) {
     // Sciany
     CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaDoRentgenaPrawa",        glm::vec3(35, 0, -218),   glm::vec3(25, 50, 1));
     CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaDoRentgenaLewa",         glm::vec3(-30, 0, -218),  glm::vec3(30, 50, 1));
-    CreateStaticObject(scena, wallModel2.get(), nullptr, "ScianaPrawaDoKrematorium",     glm::vec3(60, 0, -130),   glm::vec3(30, 50, 1), std::nullopt, glm::vec3(1, 50, 30));
-    CreateStaticObject(scena, wallModel2.get(), nullptr, "ScianaLewaDoKrematorium",      glm::vec3(60, 0, -235),   glm::vec3(65, 50, 1), std::nullopt, glm::vec3(1, 50, 65));
+    CreateStaticObject(scena, wallModel2.get(), nullptr, "ScianaPrawaDoKrematorium",     glm::vec3(60, 0, -112),   glm::vec3(12, 50, 1), std::nullopt, glm::vec3(1, 50, 12));
+    CreateStaticObject(scena, wallModel2.get(), nullptr, "ScianaLewaDoKrematorium",      glm::vec3(60, 0, -177.2),   glm::vec3(41.79, 50, 1), std::nullopt, glm::vec3(1, 50, 41.79));
     CreateStaticObject(scena, wallModel2.get(), nullptr, "ScianaPrawaDoATOMU",           glm::vec3(-60, 0, -130),  glm::vec3(30, 50, 1), std::nullopt, glm::vec3(1, 50, 30));
     CreateStaticObject(scena, wallModel2.get(), nullptr, "ScianaLewaDoATOMU",            glm::vec3(-60, 0, -235),  glm::vec3(65, 50, 1), std::nullopt, glm::vec3(1, 50, 65));
 
@@ -2121,11 +2165,11 @@ void createMainRooom(Scene* scena) {
     CreateStaticObject(scena, wallModel.get(), nullptr, "GoraPrzejscieDoKrematorium",           glm::vec3(60, 70, -218),  glm::vec3(100, 50, 1), glm::vec3(0, 90, 0));
     CreateStaticObject(scena, wallModel.get(), nullptr, "GoraPrzejscieDoREAKTORAATOMOWEGO",     glm::vec3(-60, 70, -218), glm::vec3(100, 50, 1), glm::vec3(0, 90, 0));
 
-    glm::vec3 scaleDoors = glm::vec3(11.0f, 10.0f, 10.0f);
+    glm::vec3 scaleDoors = glm::vec3(2.25, 2.2, 1);
 
     GameObject* hingeKrematorium = CreateInteractableDoor(
         scena, NormalDoor.get(), nullptr, "DrzwiDoKrematorium",
-        glm::vec3(60.0f, 2.750f, -165.180f), scaleDoors,
+        glm::vec3(59.850f, 3.000f, -131.060f), glm::vec3(2.5, 2.2, 1),
         glm::vec3(0.0f, 0.0f, -5.0f), glm::vec3(0.8f, 20.0f, 5.0f), -90.0f, 90.0f
     );
     toiletDoorsMap[hingeKrematorium].canBeClicked = false;
@@ -2151,14 +2195,14 @@ void createMainRooom(Scene* scena) {
     szafkaObj->name = "Szafka";
 
     TransformComponent* szafkaTr = szafkaObj->GetComponent<TransformComponent>();
-    szafkaTr->position = glm::vec3{ -56.6f, 5.6f, -140.0f };
-    szafkaTr->scale    = glm::vec3{ 10.0f, 10.0f, 10.0f };
-    szafkaTr->rotation = glm::vec3{ 0.0f, 0.0f, 0.0f };
+    szafkaTr->position = glm::vec3{ 27.0f, 9.0f, -216.490f };
+    szafkaTr->scale    = glm::vec3{ 8.0f, 8.0f, 8.0f };
+    szafkaTr->rotation = glm::vec3{ 0.0f, -90.0f, 0.0f };
 
     ColliderComponent* szafkaCol = szafkaObj->AddComponent<ColliderComponent>();
     szafkaCol->affectsNavMesh = true;
     szafkaCol->halfSize        = glm::vec3{ 10.0f, 8.0f, 3.0f };
-    szafkaCol->offset          = glm::vec3{ 0.0f, 6.0f, 0.0f };
+    szafkaCol->offset          = glm::vec3{ 2.0f, 6.0f, 0.0f };
 
     CabinetState cabState;
     szafkaObj->TraverseChildren([&](GameObject* go) {
@@ -2166,6 +2210,205 @@ void createMainRooom(Scene* scena) {
         if (go->name == "Right_Door") cabState.rightDoor = go;
         if (go->name == "Guzik")      cabState.button    = go;
     });
+
+    GameObject * bossCapsule = bossCapsuleModel->Instantiate(*scena, nullptr, nullptr);
+    bossCapsule->name = "BossCapsule";
+    bossCapsule->AddComponent<ColliderComponent>();
+    bossCapsule->GetComponent<TransformComponent>()->scale    = glm::vec3{ 2, 2, 2 };
+    bossCapsule->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -45.0f, 0.0f };
+    bossCapsule->GetComponent<TransformComponent>()->position = glm::vec3{51.58 ,5, -209.64f };
+    bossCapsule->GetComponent<ColliderComponent>()->halfSize    = glm::vec3{ 5.34, 5.34f, 5.34f };
+
+    CreateStaticObject(scena, kredensModel.get(), nullptr, "kredens1",     glm::vec3(56, 4.8, -176), glm::vec3(8, 8, 8), glm::vec3(0, -90, 0), glm::vec3(2, 5, 13));
+    CreateStaticObject(scena, kredensModel.get(), nullptr, "kredens2",     glm::vec3(56, 4.8, -152), glm::vec3(8, 8, 8), glm::vec3(0, -90, 0), glm::vec3(2, 5, 13));
+    CreateStaticObject(scena, kredensModel.get(), nullptr, "kredens3",     glm::vec3(20, 4.8, -176), glm::vec3(8, 8, 8), glm::vec3(0, -90, 0), glm::vec3(2, 5, 13));
+    CreateStaticObject(scena, kredensModel.get(), nullptr, "kredens4",     glm::vec3(20, 4.8, -152), glm::vec3(8, 8, 8), glm::vec3(0, -90, 0), glm::vec3(2, 5, 13));
+    GameObject * kredens5 = CreateStaticObject(scena, kredensModel.get(), nullptr, "kredens5",     glm::vec3(27.7, 4.8, -177), glm::vec3(8, 8, 8), glm::vec3(0, -270, 0), glm::vec3(4, 5, 13));
+    GameObject * kredens6 = CreateStaticObject(scena, kredensModel.get(), nullptr, "kredens6",     glm::vec3(27.7, 4.8, -153), glm::vec3(8, 8, 8), glm::vec3(0, -270, 0), glm::vec3(4, 5, 13));
+    kredens5->GetComponent<ColliderComponent>()->offset = glm::vec3{ -2.0f, 0.0f, 0.0f };
+    kredens6->GetComponent<ColliderComponent>()->offset = glm::vec3{ -2.0f, 0.0f, 0.0f };
+
+    GameObject * eksp1 = eksp1Model->Instantiate(*scena, nullptr, nullptr);
+    eksp1->name = "eksp1";
+    eksp1->GetComponent<TransformComponent>()->scale    = glm::vec3{ 10, 10, 10 };
+    eksp1->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -180.0f, 0.0f };
+    eksp1->GetComponent<TransformComponent>()->position = glm::vec3{ 57.170 ,9.510, -165.340 };
+
+    GameObject * eksp2 = eksp2Model->Instantiate(*scena, nullptr, nullptr);
+    eksp2->name = "eksp2";
+    eksp2->GetComponent<TransformComponent>()->scale    = glm::vec3{ 10, 10, 10 };
+    eksp2->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -111.000f, 0.0f };
+    eksp2->GetComponent<TransformComponent>()->position = glm::vec3{ 57.250 ,9.000, -178.730f };
+
+    GameObject * fiolka1 = fiolka1Model->Instantiate(*scena, nullptr, nullptr);
+    fiolka1->name = "fiolka1";
+    fiolka1->GetComponent<TransformComponent>()->scale    = glm::vec3{ 10, 10, 10 };
+    fiolka1->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -45.0f, 0.0f };
+    fiolka1->GetComponent<TransformComponent>()->position = glm::vec3{ 20 ,9, -144.64f };
+    GameObject * fiolka1b = fiolka1Model->Instantiate(*scena, nullptr, nullptr);
+    fiolka1b->name = "fiolka1b";
+    fiolka1b->GetComponent<TransformComponent>()->scale    = glm::vec3{ 10, 10, 10 };
+    fiolka1b->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -300.0f, 0.0f };
+    fiolka1b->GetComponent<TransformComponent>()->position = glm::vec3{ 22 ,9, -146.64f };
+    GameObject * fiolka1c = fiolka1Model->Instantiate(*scena, nullptr, nullptr);
+    fiolka1c->name = "fiolka1c";
+    fiolka1c->GetComponent<TransformComponent>()->scale    = glm::vec3{ 10, 10, 10 };
+    fiolka1c->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -200.0f, 0.0f };
+    fiolka1c->GetComponent<TransformComponent>()->position = glm::vec3{ 22 ,9, -142.64f };
+
+    GameObject * fiolka2 = fiolka2Model->Instantiate(*scena, nullptr, nullptr);
+    fiolka2->name = "fiolka2";
+    fiolka2->GetComponent<TransformComponent>()->scale    = glm::vec3{ 10.000, 10.000, 10.000 };
+    fiolka2->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -45.0f, 0.0f };
+    fiolka2->GetComponent<TransformComponent>()->position = glm::vec3{ 58.270 ,9.000, -174.380f };
+    GameObject * fiolka2b = fiolka2Model->Instantiate(*scena, nullptr, nullptr);
+    fiolka2b->name = "fiolka2b";
+    fiolka2b->GetComponent<TransformComponent>()->scale    = glm::vec3{ 10.000, 10.000, 10.000 };
+    fiolka2b->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -45.0f, 0.0f };
+    fiolka2b->GetComponent<TransformComponent>()->position = glm::vec3{ 57.630 ,9.000, -171.140f };
+
+    GameObject * ksiazka = ksiazkaModel->Instantiate(*scena, nullptr, nullptr);
+    ksiazka->name = "ksiazka";
+    ksiazka->GetComponent<TransformComponent>()->scale    = glm::vec3{ 10, 10, 10 };
+    ksiazka->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -45.0f, 0.0f };
+    ksiazka->GetComponent<TransformComponent>()->position = glm::vec3{ 56.920 ,8.560, -150.740 };
+
+    GameObject * probowka7 = probowka7Model->Instantiate(*scena, nullptr, nullptr);
+    probowka7->name = "probowka7";
+    probowka7->GetComponent<TransformComponent>()->scale    = glm::vec3{ 2, 2, 2 };
+    probowka7->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -45.0f, 0.0f };
+    probowka7->GetComponent<TransformComponent>()->position = glm::vec3{ 57.570 ,9, -174.640f };
+    GameObject * probowka7b = probowka7Model->Instantiate(*scena, nullptr, nullptr);
+    probowka7b->name = "probowka7b";
+    probowka7b->GetComponent<TransformComponent>()->scale    = glm::vec3{ 2, 2, 2 };
+    probowka7b->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -30.0f, 0.0f };
+    probowka7b->GetComponent<TransformComponent>()->position = glm::vec3{ 25.960 ,9, -174.640f };
+    GameObject * probowka7c = probowka7Model->Instantiate(*scena, nullptr, nullptr);
+    probowka7c->name = "probowka7c";
+    probowka7c->GetComponent<TransformComponent>()->scale    = glm::vec3{ 2, 2, 2 };
+    probowka7c->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, 45.0f, 0.0f };
+    probowka7c->GetComponent<TransformComponent>()->position = glm::vec3{ 21.360 ,9, -182.860 };
+
+    GameObject * probowka6 = probowka6Model->Instantiate(*scena, nullptr, nullptr);
+    probowka6->name = "probowka6";
+    probowka6->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1.5, 1.5, 1.5 };
+    probowka6->GetComponent<TransformComponent>()->rotation = glm::vec3{ 90.0f, -66.900, 0.0f };
+    probowka6->GetComponent<TransformComponent>()->position = glm::vec3{ 56.930 ,8.580, -172.450 };
+    GameObject * probowka6b = probowka6Model->Instantiate(*scena, nullptr, nullptr);
+    probowka6b->name = "probowka6b";
+    probowka6b->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1.5, 1.5, 1.5 };
+    probowka6b->GetComponent<TransformComponent>()->rotation = glm::vec3{ 90.0f, -115.900, 0.0f };
+    probowka6b->GetComponent<TransformComponent>()->position = glm::vec3{ 56.930 ,8.580, -174.460 };
+
+    GameObject * probowka5 = probowka5Model->Instantiate(*scena, nullptr, nullptr);
+    probowka5->name = "probowka5";
+    probowka5->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1.5, 1.5, 1.5 };
+    probowka5->GetComponent<TransformComponent>()->rotation = glm::vec3{ 90.0f, -45.0f, 0.0f };
+    probowka5->GetComponent<TransformComponent>()->position = glm::vec3{ 25.690 ,8.570, -144.030 };
+    GameObject * probowka5b = probowka5Model->Instantiate(*scena, nullptr, nullptr);
+    probowka5b->name = "probowka5b";
+    probowka5b->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1.5, 1.5, 1.5 };
+    probowka5b->GetComponent<TransformComponent>()->rotation = glm::vec3{ 90.0f, -112.0f, 0.0f };
+    probowka5b->GetComponent<TransformComponent>()->position = glm::vec3{ 25.880 ,8.570, -147.370 };
+
+    GameObject * probowkaArka_1 = probowkaArka_1_Model->Instantiate(*scena, nullptr, nullptr);
+    probowkaArka_1->name = "probowkaArka_1";
+    probowkaArka_1->GetComponent<TransformComponent>()->scale    = glm::vec3{ 0.250, 0.250, 0.250 };
+    probowkaArka_1->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -11.300, 0.0f };
+    probowkaArka_1->GetComponent<TransformComponent>()->position = glm::vec3{ 57.550 ,9.260, -184.430 };
+
+    GameObject * probowka3 = probowka3Model->Instantiate(*scena, nullptr, nullptr);
+    probowka3->name = "probowka3";
+    probowka3->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1.500, 1.500, 1.500 };
+    probowka3->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -151.800, 0.0f };
+    probowka3->GetComponent<TransformComponent>()->position = glm::vec3{ 55.760 ,9.640, -185.700 };
+
+    GameObject * probowka4 = probowka4Model->Instantiate(*scena, nullptr, nullptr);
+    probowka4->name = "probowka4";
+    probowka4->GetComponent<TransformComponent>()->scale    = glm::vec3{ 0.250, 0.250, 0.250 };
+    probowka4->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -45.0f, 0.0f };
+    probowka4->GetComponent<TransformComponent>()->position = glm::vec3{ 56.080 ,10.500, -162.990 };
+    GameObject * probowka4b = probowka4Model->Instantiate(*scena, nullptr, nullptr);
+    probowka4b->name = "probowka4b";
+    probowka4b->GetComponent<TransformComponent>()->scale    = glm::vec3{ 0.250, 0.250, 0.250 };
+    probowka4b->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -45.0f, 0.0f };
+    probowka4b->GetComponent<TransformComponent>()->position = glm::vec3{ 57.500 ,10.500, -161.540 };
+
+    GameObject * labOla1 = labOla1Model->Instantiate(*scena, nullptr, nullptr);
+    labOla1->name = "labOla1";
+    labOla1->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1, 1, 1 };
+    labOla1->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, 0.0f, 0.0f };
+    labOla1->GetComponent<TransformComponent>()->position = glm::vec3{ 56.840 ,9.540, -157.110 };
+
+    GameObject * probowka2 = probowka2Model->Instantiate(*scena, nullptr, nullptr);
+    probowka2->name = "probowka2";
+    probowka2->GetComponent<TransformComponent>()->scale    = glm::vec3{ 2, 2, 2 };
+    probowka2->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -176.200, 0.0f };
+    probowka2->GetComponent<TransformComponent>()->position = glm::vec3{ 24.200 ,9.400, -145.450 };
+
+    GameObject * folder = folderModel->Instantiate(*scena, nullptr, nullptr);
+    folder->name = "folder";
+    folder->GetComponent<TransformComponent>()->scale    = glm::vec3{ 3, 3, 3 };
+    folder->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -93.300, 0.0f };
+    folder->GetComponent<TransformComponent>()->position = glm::vec3{ 26.550 ,8.390, -150.040 };
+
+    GameObject * papers = papersModel->Instantiate(*scena, nullptr, nullptr);
+    papers->name = "papers";
+    papers->GetComponent<TransformComponent>()->scale    = glm::vec3{ 3, 3, 3 };
+    papers->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -45.0f, 0.0f };
+    papers->GetComponent<TransformComponent>()->position = glm::vec3{ 22.080 ,8.270, -149.310 };
+
+    GameObject * cup = cupModel->Instantiate(*scena, nullptr, nullptr);
+    cup->name = "cup";
+    cup->GetComponent<TransformComponent>()->scale    = glm::vec3{ 2, 2, 2 };
+    cup->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -45.0f, 0.0f };
+    cup->GetComponent<TransformComponent>()->position = glm::vec3{ 21.060 ,8.420, -186.810 };
+    GameObject * cup2 = cupModel->Instantiate(*scena, nullptr, nullptr);
+    cup2->name = "cup2";
+    cup2->GetComponent<TransformComponent>()->scale    = glm::vec3{ 2, 2, 2 };
+    cup2->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -169.600, 0.0f };
+    cup2->GetComponent<TransformComponent>()->position = glm::vec3{ 24.210 ,8.420, -185.480 };
+
+    GameObject * corkBoard = corkBoardModel->Instantiate(*scena, nullptr, nullptr);
+    corkBoard->name = "corkBoard";
+    corkBoard->GetComponent<TransformComponent>()->scale    = glm::vec3{ 2, 2, 2 };
+    corkBoard->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -90.000, 0.0f };
+    corkBoard->GetComponent<TransformComponent>()->position = glm::vec3{ 58.740 ,17.690, -177.210 };
+
+    GameObject * clock = clockModel->Instantiate(*scena, nullptr, nullptr);
+    clock->name = "clock";
+    clock->GetComponent<TransformComponent>()->scale    = glm::vec3{ 2, 2, 2 };
+    clock->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, 180.000, 0.0f };
+    clock->GetComponent<TransformComponent>()->position = glm::vec3{ 58.840 ,17.530, -147.150 };
+
+    GameObject * computer_pbr = computer_pbrModel->Instantiate(*scena, nullptr, nullptr);
+    computer_pbr->name = "computer_pbr";
+    computer_pbr->GetComponent<TransformComponent>()->scale    = glm::vec3{ 2, 2, 2 };
+    computer_pbr->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, 0.0f, 0.0f };
+    computer_pbr->GetComponent<TransformComponent>()->position = glm::vec3{ 57.280 ,8.170, -142.870 };
+    GameObject * computer_pbr2 = computer_pbrModel->Instantiate(*scena, nullptr, nullptr);
+    computer_pbr2->name = "computer_pbr2";
+    computer_pbr2->GetComponent<TransformComponent>()->scale    = glm::vec3{ 2, 2, 2 };
+    computer_pbr2->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, 0.0f, 0.0f };
+    computer_pbr2->GetComponent<TransformComponent>()->position = glm::vec3{ 57.280 ,8.170, -147.460 };
+
+    GameObject * laboratoryStuff1 = laboratoryStuff1Model->Instantiate(*scena, nullptr, nullptr);
+    laboratoryStuff1->name = "laboratoryStuff1";
+    laboratoryStuff1->GetComponent<TransformComponent>()->scale    = glm::vec3{ 3, 3, 3 };
+    laboratoryStuff1->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -123.800, 0.0f };
+    laboratoryStuff1->GetComponent<TransformComponent>()->position = glm::vec3{ 24.490 ,11.490, -157.870 };
+
+    GameObject * laboratoryStuff2 = laboratoryStuff2Model->Instantiate(*scena, nullptr, nullptr);
+    laboratoryStuff2->name = "laboratoryStuff2";
+    laboratoryStuff2->GetComponent<TransformComponent>()->scale    = glm::vec3{ 2.5, 2.5, 2.5 };
+    laboratoryStuff2->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -72.300, 0.0f };
+    laboratoryStuff2->GetComponent<TransformComponent>()->position = glm::vec3{ 23.630 ,10.250, -165.330 };
+
+    GameObject * laboratoryStuff3 = laboratoryStuff3Model->Instantiate(*scena, nullptr, nullptr);
+    laboratoryStuff3->name = "laboratoryStuff3";
+    laboratoryStuff3->GetComponent<TransformComponent>()->scale    = glm::vec3{ 3, 3, 3 };
+    laboratoryStuff3->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, 7.500, 0.0f };
+    laboratoryStuff3->GetComponent<TransformComponent>()->position = glm::vec3{ 23.540 ,8.540, -178.320 };
 
     if (cabState.button) {
         ColliderComponent* btnCol = cabState.button->AddComponent<ColliderComponent>();
