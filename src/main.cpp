@@ -371,7 +371,7 @@ void processCameraMouse(ECS& ecs, CameraComponent& cam, TransformComponent& tran
     if (glm::abs(dx) < epsilon && glm::abs(dy) < epsilon)
         return;
     
-    playerTransform.rotation.y -= dx * sensitivityCamera / 400.0f * deltaTime;// deltaTime; aktualnie fixedDeltaTime
+    playerTransform.rotation.y -= dx * sensitivityCamera / 600.0f * 0.04f;// deltaTime; aktualnie fixedDeltaTime
     playerTransform.isDirty = true;
 
     CameraHelper::ProcessMouseMovement(cam, transformCamera, 0.0f, dy);
