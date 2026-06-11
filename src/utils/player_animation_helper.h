@@ -3,7 +3,7 @@
 #include "core/component.h"
 #include "utils/animation_helper.h"
 #include "prefab.h"
-#include <spdlog/spdlog.h>
+//#include <spdlog/spdlog.h>
 
 class PlayerAnimationHelper {
 public:
@@ -20,7 +20,7 @@ public:
         auto& animations = playerPrefab->rootModel->animations;
 
         if (animations.size() <= actionIndex) {
-            spdlog::warn("Brak animacji o indeksie {} w modelu gracza!", actionIndex);
+            //spdlog::warn("Brak animacji o indeksie {} w modelu gracza!", actionIndex);
             return;
         }
 
