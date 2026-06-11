@@ -1,4 +1,4 @@
-﻿#include "resource_manager.h"
+#include "resource_manager.h"
 #include <stb_image.h>
 #include <iostream>
 
@@ -33,7 +33,7 @@ TextureData ResourceManager::LoadTexture(const std::string& path, const std::str
 
     TextureData textureData = loadTextureFromFile(path, directory, aiTex);
 
-    spdlog::info("==== TEXTURE CACHE DUMP ====");
+    /*spdlog::info("==== TEXTURE CACHE DUMP ====");
     spdlog::info("Total textures: {}", Textures.size());
 
     for (const auto& [path, textureData] : Textures)
@@ -41,7 +41,7 @@ TextureData ResourceManager::LoadTexture(const std::string& path, const std::str
         spdlog::info("Texture: {} | ID: {}", path, textureData.id);
     }
 
-    spdlog::info("============================");
+    spdlog::info("============================");*/
     if (textureData.id != 0) {
         Textures[fullPath].id = textureData.id;
         Textures[fullPath].hasAlpha = textureData.hasAlpha;

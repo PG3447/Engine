@@ -81,6 +81,13 @@ void main()
     if (mat.diffuseHandle != uvec2(0))
     {
         texColor = texture(sampler2D(mat.diffuseHandle), TexCoords);
+
+//        float opacity = unpackUnorm4x8(mat.packedColor).a;
+//
+//        if (opacity < 1.0f)
+//        {
+//            texColor.a = opacity;
+//        }
     }
     else
     {
@@ -123,11 +130,11 @@ void main()
     vec3 F0 = vec3(0.04); 
     F0 = mix(F0, albedo, metallic);
     
-    // równanie odbicia
+    // rÃ³wnanie odbicia
     vec3 Lo = vec3(0.0);
     for (int i = 0; i < numLights; i++)
     {
-        if (lights[i].params2.z < 0.5) continue; // wy³¹czone
+        if (lights[i].params2.z < 0.5) continue; // wyÅ‚Ä…czone
 
         int type = int(lights[i].position.w);
         switch (type)
@@ -243,7 +250,7 @@ vec3 CalcSpotLightPBR(in GPULight light, vec3 normal, vec3 viewDir, vec3 F0, vec
         attenuation = clamp(1.0 - distance / (range/10000.0f ), 0.0, 1.0);
     }
 
-    // sto¿ek spotlighta – identyczny jak w Blinn-Phong
+    // stoÅ¼ek spotlighta â€“ identyczny jak w Blinn-Phong
     float theta = dot(L, normalize(-light.direction.xyz));
     float intensity = smoothstep(light.params2.y, light.params2.x, theta);
     //float epsilon   = light.params2.x - light.params2.y;
@@ -320,7 +327,7 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0)
                 //result += CalcDirLight(lights[i], norm, viewDir, diffTex, specTex, shininess);
                 break;
             case 1: // point light
-                // obliczy radiancjê per-œwiat³o
+                // obliczy radiancjÄ™ per-Å›wiatÅ‚o
                 L = normalize(lights[i].position.xyz - FragPos);
                 H = normalize(viewDir + L);
                 distance = length(lights[i].position.xyz - FragPos);
@@ -353,7 +360,7 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0)
                 {
                     attenuation = pow(clamp(1.0 - pow(distance / range, 4.0), 0.0, 1.0), 2.0) / (distance * distance + 1.0);
                 }
-                // sto¿ek spotlighta – identyczny jak w Blinn-Phong
+                // stoÅ¼ek spotlighta â€“ identyczny jak w Blinn-Phong
                 float theta = dot(L, normalize(-lights[i].direction.xyz));
                 float epsilon   = lights[i].params2.x - lights[i].params2.y;
                 float intensity = clamp((theta - lights[i].params2.y) / epsilon, 0.0, 1.0);
