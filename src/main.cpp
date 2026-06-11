@@ -591,8 +591,14 @@ void HandlePlayerInteraction(
             if (majorDoors.count(hit.hitObject)) {
                 if (can_open_door_1) {
                     for (GameObject* door : majorDoors) {
+                        if (auto col = door->GetComponent<ColliderComponent>())
+                            col->halfSize = glm::vec3(0.0f);
+
                         TransformComponent* t = door->GetComponent<TransformComponent>();
-                        if (t) t->position = glm::vec3(-1000.0f, -1000.0f, -1000.0f);
+                        if (t) {
+                            t->position = glm::vec3(-1000.0f, -1000.0f, -1000.0f);
+                            t->isDirty  = true;  // <-- to najpewniej brakowało
+                        }
                     }
                 } else {
                     outShakeTimer = SHAKE_DURATION;
