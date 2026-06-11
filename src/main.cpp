@@ -929,36 +929,57 @@ int main(int, char**)
     light2->constant  = 1.0f;
     light2->linear    = 0.10f;
     light2->quadratic = 0.00001f;
-    light2->intensity = 250.0f;
-    light2->cutOff      = glm::cos(glm::radians(4.0f));
-    light2->outerCutOff = glm::cos(glm::radians(16.0f));
+    light2->intensity = 450.0f;
+    light2->cutOff      = glm::cos(glm::radians(8.0f));
+    light2->outerCutOff = glm::cos(glm::radians(22.0f));
 
     GameObject* modelPostac1 = postacGracza->Instantiate(*scena1, nullptr, nullptr);
     gracz1->AddChild(modelPostac1);
     modelPostac1->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 0.9f, 0.0f);
 
+    //Tworzenie gracza nr.2
+    GameObject* gracz2 = scena1->CreateGameObject(nullptr);
+    gracz2->name = "Gracz2";
+
+    ColliderComponent*  camera2collider  = gracz2->AddComponent<ColliderComponent>();
+    RigidbodyComponent* rigidBodyCamera2 = gracz2->AddComponent<RigidbodyComponent>();
+    gracz2->GetComponent<TransformComponent>()->position = glm::vec3(-10.0f, 20.0f, -20.0f);
+    gracz2->GetComponent<TransformComponent>()->rotation = glm::vec3(0.0f, -180.0f, 0.0f);
+    gracz2->GetComponent<RigidbodyComponent>()->useGravity = true;
+    gracz2->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1.0f, 5.25f, 1.0f };
+
     GameObject* camera2 = scena1->CreateGameObject(nullptr);
-    CameraComponent*    camCompRight     = camera2->AddComponent<CameraComponent>();
-    ColliderComponent*  camera2collider  = camera2->AddComponent<ColliderComponent>();
-    RigidbodyComponent* rigidBodyCamera2 = camera2->AddComponent<RigidbodyComponent>();
-    camera2->GetComponent<RigidbodyComponent>()->useGravity = false;
-    camera2->GetComponent<ColliderComponent>()->halfSize    = glm::vec3{ 1.0f, 5.0f, 1.0f };
+    camera2->name = "Kamera";
+    gracz2->AddChild(camera2);
+    camera2->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 4.5f, 1.0f);
+    camera2->GetComponent<TransformComponent>()->rotation = glm::vec3(0.0f, -180.0f, 0.0f);
+    CameraComponent* camCompRight = camera2->AddComponent<CameraComponent>();
     RaycastComponent* player2Raycast = camera2->AddComponent<RaycastComponent>();
     player2Raycast->debugDraw = false;
 
     camera2->AddComponent<LightComponent>();
     LightComponent* light3 = camera2->AddComponent<LightComponent>();
-    light3->type      = Spot;
-    light3->index     = 2;
-    light3->ambient   = glm::vec3(0.25f);
-    light3->diffuse   = glm::vec3(1.0f);
-    light3->specular  = glm::vec3(1.0f);
-    light3->constant  = 1.0f;
-    light3->linear    = 0.10f;
+    light3->type = Spot;
+    light3->index = 2;
+    light3->ambient = glm::vec3(0.25f);
+    light3->diffuse = glm::vec3(1.0f);
+    light3->specular = glm::vec3(1.0f);
+    light3->constant = 1.0f;
+    light3->linear = 0.10f;
     light3->quadratic = 0.00001f;
-    light3->cutOff      = glm::cos(glm::radians(4.0f));
-    light3->outerCutOff = glm::cos(glm::radians(16.0f));
+    light3->intensity = 450.0f;
+    light3->cutOff = glm::cos(glm::radians(8.0f));
+    light3->outerCutOff = glm::cos(glm::radians(22.0f));
 
+    GameObject* modelPostac2 = postacGracza->Instantiate(*scena1, nullptr, nullptr);
+    gracz2->AddChild(modelPostac2);
+    modelPostac2->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 0.9f, 0.0f);
+    
+    auto* t0 = gracz1->GetComponent<TransformComponent>();
+    auto* t1 = gracz2->GetComponent<TransformComponent>();    
+    //Zakoniczenie tworzenia postaci
+
+    //Kamery postaci
     TransformComponent* camTransform1 = camera1->GetComponent<TransformComponent>();
     CameraHelper::InitialCamera(*camCompLeft, *camTransform1,
         glm::vec3(0.0f, 1.0f, 0.0f),
@@ -968,7 +989,6 @@ int main(int, char**)
     camCompLeft->isActive = true;
 
     TransformComponent* camTransform2 = camera2->GetComponent<TransformComponent>();
-    camTransform2->position = glm::vec3(0.0f, 20.0f, -20.0f);
     CameraHelper::InitialCamera(*camCompRight, *camTransform2,
         glm::vec3(0.0f, 1.0f, 0.0f),
         //0.0f, -20.0f,
@@ -1003,16 +1023,16 @@ int main(int, char**)
 
     //model1->AddComponent<RigidbodyComponent>();
     model1->AddComponent<ColliderComponent>();
-    model1->AddComponent<LightComponent>();
+    //model1->AddComponent<LightComponent>();
 
-    model1->GetComponent<LightComponent>()->type  = Directional;
-    model1->GetComponent<LightComponent>()->index = 0;
-    auto* light = model1->GetComponent<LightComponent>();
+    //model1->GetComponent<LightComponent>()->type  = Directional;
+    //model1->GetComponent<LightComponent>()->index = 0;
+    //auto* light = model1->GetComponent<LightComponent>();
 
-    light->direction = glm::normalize(glm::vec3(-0.3f, -1.0f, -0.1f));
-    light->ambient   = glm::vec3(0.2f);
-    light->diffuse   = glm::vec3(0.3f);
-    light->specular  = glm::vec3(0.9f);
+    //light->direction = glm::normalize(glm::vec3(-0.3f, -1.0f, -0.1f));
+    //light->ambient   = glm::vec3(0.2f);
+    //light->diffuse   = glm::vec3(0.3f);
+    //light->specular  = glm::vec3(0.9f);
 
     //GLuint whiteSpecular = ResourceManager::CreateTextureFromColor("white_spec", glm::vec3(1.0f)).id;
     //RenderHelper::SetSpecularTexture(model1, whiteSpecular);
@@ -1020,8 +1040,6 @@ int main(int, char**)
     focused = true;
     updateFocus();
 
-    auto* t0 = gracz1->GetComponent<TransformComponent>();
-    auto* t1 = camera2->GetComponent<TransformComponent>();
 
     renderSystem         = ecs.GetSystem<RenderSystem>();
     postProcessingSystem = ecs.GetSystem<PostProcessingSystem>();
