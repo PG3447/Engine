@@ -292,6 +292,8 @@ MeshNode Model::processMesh(aiMesh* mesh, const aiScene* scene)
     int blendMode = aiBlendMode_Default;
     aiGetMaterialInteger(aiMat, AI_MATKEY_BLEND_FUNC, &blendMode);
 
+
+    myMaterial->opacitiy = opacity;
     // diffuse
     vector<Texture> diffuseMaps = loadMaterialTextures(aiMat, aiTextureType_DIFFUSE, "texture_diffuse", scene);
     if (diffuseMaps.empty()) {
@@ -307,17 +309,17 @@ MeshNode Model::processMesh(aiMesh* mesh, const aiScene* scene)
             aiGetMaterialColor(aiMat, AI_MATKEY_COLOR_DIFFUSE, &color) == AI_SUCCESS)
         {
             if (opacity < 1.0f) {
-                myMaterial->diffuseColor = glm::vec4(color.r, color.g, color.b, color.a);
+                myMaterial->diffuseColor = glm::vec4(color.r, color.g, color.b, opacity);
             }
             else
             {
-                myMaterial->diffuseColor = glm::vec4(color.r, color.g, color.b, opacity);
+                myMaterial->diffuseColor = glm::vec4(color.r, color.g, color.b, color.a);
             }
         }
     }
 
     
-    if ((opacity < 1.0f) || (blendMode != aiBlendMode_Default)) //(!diffuseMaps.empty() && diffuseMaps[0].isAlpha) ||
+    if ((!diffuseMaps.empty() && diffuseMaps[0].isAlpha) || (opacity < 1.0f) || (blendMode != aiBlendMode_Default)) //
     {
         myMaterial->surfaceType = SurfaceType::Transparent;
     }
