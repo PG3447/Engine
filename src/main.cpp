@@ -123,7 +123,7 @@ float  cameraDistance = 50.0f;
 float  rotationX      = 0.0f;
 float  rotationY      = 0.0f;
 
-ImVec4 clear_color   = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+//ImVec4 clear_color   = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 bool   autoRotation  = false;
 
 unsigned int cubemapTexture;
@@ -1656,32 +1656,32 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 
 GameObject* selectedGameObject = nullptr;
 
-
-void ShowGameObjectTree(GameObject* obj)
-{
-    if (!obj) return;
-
-    ImGuiTreeNodeFlags flags =
-        ImGuiTreeNodeFlags_OpenOnArrow |
-        ImGuiTreeNodeFlags_OpenOnDoubleClick |
-        ((obj == selectedGameObject) ? ImGuiTreeNodeFlags_Selected : 0);
-
-    const char* displayName = obj->name.empty() ? "GameObject" : obj->name.c_str();
-
-    if (!obj->HasChildren())
-        flags |= ImGuiTreeNodeFlags_Leaf;
-
-    bool opened = ImGui::TreeNodeEx((void*)obj, flags, "%s", displayName);
-
-    /*if (ImGui::IsItemClicked())
-        selectedGameObject = obj;*/
-
-    if (opened) {
-        for (GameObject* child : obj->GetChildren())
-            ShowGameObjectTree(child);
-        //ImGui::TreePop();
-    }
-}
+//
+//void ShowGameObjectTree(GameObject* obj)
+//{
+//    if (!obj) return;
+//
+//    ImGuiTreeNodeFlags flags =
+//        ImGuiTreeNodeFlags_OpenOnArrow |
+//        ImGuiTreeNodeFlags_OpenOnDoubleClick |
+//        ((obj == selectedGameObject) ? ImGuiTreeNodeFlags_Selected : 0);
+//
+//    const char* displayName = obj->name.empty() ? "GameObject" : obj->name.c_str();
+//
+//    if (!obj->HasChildren())
+//        flags |= ImGuiTreeNodeFlags_Leaf;
+//
+//    bool opened = ImGui::TreeNodeEx((void*)obj, flags, "%s", displayName);
+//
+//    /*if (ImGui::IsItemClicked())
+//        selectedGameObject = obj;*/
+//
+//    if (opened) {
+//        for (GameObject* child : obj->GetChildren())
+//            ShowGameObjectTree(child);
+//        //ImGui::TreePop();
+//    }
+//}
 
 /*void ShowTransformEditor(TransformComponent& transform)
 {

@@ -36,12 +36,9 @@ CPMAddPackage(
 		GIT_TAG VER-2-14-3
 )
 
-set(imgui_SOURCE_DIR ${imgui_SOURCE_DIR} CACHE INTERNAL "")
-add_library(imgui STATIC ${imgui_SOURCE_DIR}/imgui.cpp
-					     ${imgui_SOURCE_DIR}/imgui_demo.cpp
-					     ${imgui_SOURCE_DIR}/imgui_draw.cpp
-						 ${imgui_SOURCE_DIR}/imgui_tables.cpp
-					     ${imgui_SOURCE_DIR}/imgui_widgets.cpp)
+
+
+
 
 #FMOD
 set(FMOD_DIR ${CMAKE_CURRENT_LIST_DIR}/fmod CACHE INTERNAL "")

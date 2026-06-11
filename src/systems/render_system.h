@@ -6,7 +6,7 @@
 #include "core/ecs.h"
 
 #include <model.h>
-#include <imgui.h>
+//#include <imgui.h>
 #include <GLFW/glfw3.h>
 
 #include "DebugDrawSystem.h"
@@ -133,7 +133,7 @@ private:
     bool groupsDirty = true;
 
     GLFWwindow* window = nullptr;
-    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+    //ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
     GLuint texture;
 
     SkyboxRenderer skybox;
@@ -561,98 +561,98 @@ public:
 
 
 
-    void ShowDepthTextureImGui(GLuint depthTex, int w, int h, float zNear, float zFar)
-    {
-        // klucz = oryginalne ID tekstury depth
-        static std::unordered_map<GLuint, GLuint> debugTexMap;
+    //void ShowDepthTextureImGui(GLuint depthTex, int w, int h, float zNear, float zFar)
+    //{
+    //    // klucz = oryginalne ID tekstury depth
+    //    static std::unordered_map<GLuint, GLuint> debugTexMap;
 
-        GLuint& debugTex = debugTexMap[depthTex];
-        if (debugTex == 0) {
-            glGenTextures(1, &debugTex);
-            glBindTexture(GL_TEXTURE_2D, debugTex);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        }
+    //    GLuint& debugTex = debugTexMap[depthTex];
+    //    if (debugTex == 0) {
+    //        glGenTextures(1, &debugTex);
+    //        glBindTexture(GL_TEXTURE_2D, debugTex);
+    //        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    //        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    //    }
 
-        std::vector<float> depth(w * h);
-        glGetTextureImage(depthTex, 0, GL_DEPTH_COMPONENT, GL_FLOAT, w * h * sizeof(float), depth.data());
+    //    std::vector<float> depth(w * h);
+    //    glGetTextureImage(depthTex, 0, GL_DEPTH_COMPONENT, GL_FLOAT, w * h * sizeof(float), depth.data());
 
-        std::vector<uint8_t> rgb(w * h * 3);
-        for (int i = 0; i < w * h; i++) {
-            float d = depth[i];
-            float linear = (2.0f * zNear) / (zFar + zNear - d * (zFar - zNear));
-            uint8_t v = (uint8_t)(linear * 255.0f);
-            rgb[i * 3 + 0] = v;
-            rgb[i * 3 + 1] = v;
-            rgb[i * 3 + 2] = v;
-        }
+    //    std::vector<uint8_t> rgb(w * h * 3);
+    //    for (int i = 0; i < w * h; i++) {
+    //        float d = depth[i];
+    //        float linear = (2.0f * zNear) / (zFar + zNear - d * (zFar - zNear));
+    //        uint8_t v = (uint8_t)(linear * 255.0f);
+    //        rgb[i * 3 + 0] = v;
+    //        rgb[i * 3 + 1] = v;
+    //        rgb[i * 3 + 2] = v;
+    //    }
 
-        glBindTexture(GL_TEXTURE_2D, debugTex);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, rgb.data());
+    //    glBindTexture(GL_TEXTURE_2D, debugTex);
+    //    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, rgb.data());
 
-        ImGui::Image((ImTextureID)(intptr_t)debugTex, ImVec2(320, 180), ImVec2(0, 1), ImVec2(1, 0));
-    }
-    void ShowR32FTextureImGui(GLuint tex, int mip = 0)
-    {
-        static std::unordered_map<GLuint, GLuint> debugTexMap;
-        GLuint& debugTex = debugTexMap[tex];
-        if (debugTex == 0) {
-            glGenTextures(1, &debugTex);
-            glBindTexture(GL_TEXTURE_2D, debugTex);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glBindTexture(GL_TEXTURE_2D, 0);
-        }
+    //    ImGui::Image((ImTextureID)(intptr_t)debugTex, ImVec2(320, 180), ImVec2(0, 1), ImVec2(1, 0));
+    //}
+    //void ShowR32FTextureImGui(GLuint tex, int mip = 0)
+    //{
+    //    static std::unordered_map<GLuint, GLuint> debugTexMap;
+    //    GLuint& debugTex = debugTexMap[tex];
+    //    if (debugTex == 0) {
+    //        glGenTextures(1, &debugTex);
+    //        glBindTexture(GL_TEXTURE_2D, debugTex);
+    //        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    //        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    //        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    //        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    //        glBindTexture(GL_TEXTURE_2D, 0);
+    //    }
 
-        // Pytaj GPU o rzeczywisty rozmiar mipa
-        GLint mipW = 0, mipH = 0;
-        glGetTextureLevelParameteriv(tex, mip, GL_TEXTURE_WIDTH, &mipW);
-        glGetTextureLevelParameteriv(tex, mip, GL_TEXTURE_HEIGHT, &mipH);
-        if (mipW == 0 || mipH == 0) return;
+    //    // Pytaj GPU o rzeczywisty rozmiar mipa
+    //    GLint mipW = 0, mipH = 0;
+    //    glGetTextureLevelParameteriv(tex, mip, GL_TEXTURE_WIDTH, &mipW);
+    //    glGetTextureLevelParameteriv(tex, mip, GL_TEXTURE_HEIGHT, &mipH);
+    //    if (mipW == 0 || mipH == 0) return;
 
-        int pixelCount = mipW * mipH;
-        size_t bufSize = std::max(pixelCount, 64);
+    //    int pixelCount = mipW * mipH;
+    //    size_t bufSize = std::max(pixelCount, 64);
 
-        glPixelStorei(GL_PACK_ALIGNMENT, 1);
-        std::vector<float> data(bufSize, 0.0f);
-        glGetTextureImage(tex, mip, GL_RED, GL_FLOAT,
-            (GLsizei)(bufSize * sizeof(float)), data.data());
-        glPixelStorei(GL_PACK_ALIGNMENT, 4);
+    //    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    //    std::vector<float> data(bufSize, 0.0f);
+    //    glGetTextureImage(tex, mip, GL_RED, GL_FLOAT,
+    //        (GLsizei)(bufSize * sizeof(float)), data.data());
+    //    glPixelStorei(GL_PACK_ALIGNMENT, 4);
 
-        float minV = FLT_MAX, maxV = -FLT_MAX;
-        for (int i = 0; i < pixelCount; i++) {
-            if (data[i] > 0.0f) {
-                minV = std::min(minV, data[i]);
-                maxV = std::max(maxV, data[i]);
-            }
-        }
-        if (minV >= maxV) minV = 0.0f;
+    //    float minV = FLT_MAX, maxV = -FLT_MAX;
+    //    for (int i = 0; i < pixelCount; i++) {
+    //        if (data[i] > 0.0f) {
+    //            minV = std::min(minV, data[i]);
+    //            maxV = std::max(maxV, data[i]);
+    //        }
+    //    }
+    //    if (minV >= maxV) minV = 0.0f;
 
-        // RGBA — brak problemów z row alignment
-        std::vector<uint8_t> rgba(pixelCount * 4);
-        for (int i = 0; i < pixelCount; i++) {
-            float   n = (maxV > minV) ? (data[i] - minV) / (maxV - minV) : 0.0f;
-            uint8_t v = (uint8_t)(glm::clamp(n, 0.0f, 1.0f) * 255.0f);
-            rgba[i * 4 + 0] = v;
-            rgba[i * 4 + 1] = v;
-            rgba[i * 4 + 2] = v;
-            rgba[i * 4 + 3] = 255;
-        }
+    //    // RGBA — brak problemów z row alignment
+    //    std::vector<uint8_t> rgba(pixelCount * 4);
+    //    for (int i = 0; i < pixelCount; i++) {
+    //        float   n = (maxV > minV) ? (data[i] - minV) / (maxV - minV) : 0.0f;
+    //        uint8_t v = (uint8_t)(glm::clamp(n, 0.0f, 1.0f) * 255.0f);
+    //        rgba[i * 4 + 0] = v;
+    //        rgba[i * 4 + 1] = v;
+    //        rgba[i * 4 + 2] = v;
+    //        rgba[i * 4 + 3] = 255;
+    //    }
 
-        glBindTexture(GL_TEXTURE_2D, debugTex);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, mipW, mipH, 0,
-            GL_RGBA, GL_UNSIGNED_BYTE, rgba.data());
-        glBindTexture(GL_TEXTURE_2D, 0);
+    //    glBindTexture(GL_TEXTURE_2D, debugTex);
+    //    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, mipW, mipH, 0,
+    //        GL_RGBA, GL_UNSIGNED_BYTE, rgba.data());
+    //    glBindTexture(GL_TEXTURE_2D, 0);
 
-        // Skaluj podgląd do 320px szerokości zachowując proporcje
-        float dispW = 320.0f;
-        float dispH = dispW * ((float)mipH / (float)mipW);
-        ImGui::Text("mip%d: %dx%d", mip, mipW, mipH);
-        ImGui::Image((ImTextureID)(intptr_t)debugTex,
-            ImVec2(dispW, dispH), ImVec2(0, 1), ImVec2(1, 0));
-    }
+    //    // Skaluj podgląd do 320px szerokości zachowując proporcje
+    //    float dispW = 320.0f;
+    //    float dispH = dispW * ((float)mipH / (float)mipW);
+    //    ImGui::Text("mip%d: %dx%d", mip, mipW, mipH);
+    //    ImGui::Image((ImTextureID)(intptr_t)debugTex,
+    //        ImVec2(dispW, dispH), ImVec2(0, 1), ImVec2(1, 0));
+    //}
 
     void RenderCamera(CameraComponent& cam, TransformComponent& transform, int width, int height) {
         ApplyViewport(cam.viewport, width, height);
