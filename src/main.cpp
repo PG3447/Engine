@@ -977,8 +977,8 @@ int main(int, char**)
     GameObject* camera1 = scena1->CreateGameObject(nullptr);//groundModel->Instantiate(*scena1, nullptr, ourShader.get());
     camera1->name = "Kamera";
     gracz1->AddChild(camera1);
-    camera1->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 4.7f, 2.0f);
-    camera1->GetComponent<TransformComponent>()->rotation = glm::vec3(0.0f, 0.0f, 0.0f);
+    camera1->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 4.7f, 0.0f);
+    camera1->GetComponent<TransformComponent>()->rotation = glm::vec3(0.0f, -180.0f, 0.0f);
     CameraComponent* camCompLeft = camera1->AddComponent<CameraComponent>();
     RaycastComponent*  player1Raycast   = camera1->AddComponent<RaycastComponent>();
     player1Raycast->debugDraw = false;
@@ -1000,7 +1000,7 @@ int main(int, char**)
 
     GameObject* modelPostac1 = postacGracza->Instantiate(*scena1, nullptr, nullptr);
     gracz1->AddChild(modelPostac1);
-    modelPostac1->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 0.9f, 0.0f);
+    modelPostac1->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 0.9f, -1.7f);
     AnimatorComponent* p1Animator = modelPostac1->GetComponent<AnimatorComponent>();
     if (p1Animator == nullptr) {
         p1Animator = modelPostac1->AddComponent<AnimatorComponent>();
@@ -1023,8 +1023,8 @@ int main(int, char**)
     GameObject* camera2 = scena1->CreateGameObject(nullptr);
     camera2->name = "Kamera";
     gracz2->AddChild(camera2);
-    camera2->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 4.7f, -2.0f);
-    camera2->GetComponent<TransformComponent>()->rotation = glm::vec3(0.0f, -180.0f, 0.0f);
+    camera2->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 4.7f, 0.0f);
+    camera2->GetComponent<TransformComponent>()->rotation = glm::vec3(0.0f, 0.0f, 0.0f);
     CameraComponent* camCompRight = camera2->AddComponent<CameraComponent>();
     RaycastComponent* player2Raycast = camera2->AddComponent<RaycastComponent>();
     player2Raycast->debugDraw = false;
@@ -1045,7 +1045,7 @@ int main(int, char**)
 
     GameObject* modelPostac2 = postacGracza->Instantiate(*scena1, nullptr, nullptr);
     gracz2->AddChild(modelPostac2);
-    modelPostac2->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 0.9f, 0.0f);
+    modelPostac2->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 0.9f, 1.7f);
 	modelPostac2->GetComponent<TransformComponent>()->rotation = glm::vec3(0.0f, 180.0f, 0.0f);
     AnimatorComponent* p2Animator = modelPostac2->GetComponent<AnimatorComponent>();
     if (p2Animator == nullptr) {
