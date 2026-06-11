@@ -85,6 +85,7 @@ bool frustumCull(vec3 aabbMin, vec3 aabbMax, mat4 model, vec4 planes[6])
     vec3 worldMin = vec3( 1e20);
     vec3 worldMax = vec3(-1e20);
 
+   #pragma optionNV(unroll all)
     for (int i = 0; i < 8; i++)
     {
         vec3 corner = vec3(
@@ -118,6 +119,7 @@ bool hizCull(vec3 aabbMin, vec3 aabbMax, mat4 mvp)
     vec2 sMin = vec2( 1.0), sMax = vec2(-1.0);
     float zMin = 1.0;
 
+    #pragma optionNV(unroll all)
     for (int i = 0; i < 8; i++) {
         vec3 c = vec3(
             (i & 1) != 0 ? aabbMax.x : aabbMin.x,
@@ -139,13 +141,19 @@ bool hizCull(vec3 aabbMin, vec3 aabbMax, mat4 mvp)
     float mip = ceil(log2(max(size.x, size.y)));
     mip = clamp(mip, 0.0, float(hizMipLevels - 1));
 
-    vec2  uvCenter = (uvMin + uvMax) * 0.5;
-    float h0 = textureLod(hizCullingTexture, uvMin, mip).r;
-    float h1 = textureLod(hizCullingTexture, uvMax, mip).r;
-    float h2 = textureLod(hizCullingTexture, vec2(uvMin.x, uvMax.y), mip).r;
-    float h3 = textureLod(hizCullingTexture, vec2(uvMax.x, uvMin.y), mip).r;
-    float h4 = textureLod(hizCullingTexture, uvCenter, mip).r;
-    float hizDepth = max(max(max(h0, h1), max(h2, h3)), h4);
+    float hizDepth = max(
+        max(textureLod(hizCullingTexture, uvMin, mip).r,
+            textureLod(hizCullingTexture, uvMax, mip).r),
+        max(textureLod(hizCullingTexture, vec2(uvMin.x, uvMax.y), mip).r,
+            textureLod(hizCullingTexture, vec2(uvMax.x, uvMin.y), mip).r)
+    );
+    //vec2  uvCenter = (uvMin + uvMax) * 0.5;
+    //float h0 = textureLod(hizCullingTexture, uvMin, mip).r;
+    //float h1 = textureLod(hizCullingTexture, uvMax, mip).r;
+    //float h2 = textureLod(hizCullingTexture, vec2(uvMin.x, uvMax.y), mip).r;
+    //float h3 = textureLod(hizCullingTexture, vec2(uvMax.x, uvMin.y), mip).r;
+    //float h4 = textureLod(hizCullingTexture, uvCenter, mip).r;
+    //float hizDepth = max(max(max(h0, h1), max(h2, h3)), h4);
 
     return zMin > hizDepth;
 }
