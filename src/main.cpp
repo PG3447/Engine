@@ -2,9 +2,9 @@
 // If you are new to dear imgui, see examples/README.txt and documentation at the top of imgui.cpp.
 // (GLFW is a cross-platform general purpose library for handling windows, inputs, OpenGL/Vulkan graphics context creation, etc.)
 
-#include "imgui.h"
-#include "imgui_impl/imgui_impl_glfw.h"
-#include "imgui_impl/imgui_impl_opengl3.h"
+//#include "imgui.h"
+//#include "imgui_impl/imgui_impl_glfw.h"
+//#include "imgui_impl/imgui_impl_opengl3.h"
 #include <stdio.h>
 #include <windows.h>
 #include <commdlg.h>
@@ -16,7 +16,7 @@
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include <spdlog/spdlog.h>
+//#include <spdlog/spdlog.h>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -66,7 +66,7 @@ static void glfw_error_callback(int error, const char* description)
 }
 
 bool init();
-void init_imgui();
+//void init_imgui();
 
 void compileShader();
 
@@ -915,13 +915,13 @@ int main(int, char**)
 {
     if (!init())
     {
-        spdlog::error("Failed to initialize project!");
+      //  spdlog::error("Failed to initialize project!");
         return EXIT_FAILURE;
     }
-    spdlog::info("Initialized project.");
+    //spdlog::info("Initialized project.");
 
-    init_imgui();
-    spdlog::info("Initialized ImGui.");
+//    init_imgui();
+    //spdlog::info("Initialized ImGui.");
 
     ECS ecs;
     SceneManager sceneManager;
@@ -1178,8 +1178,8 @@ int main(int, char**)
             float expected = normalizeAngle(expectedAngles[i]);
 
             bool correct = fabs(current - expected) < 1.0f;
-            spdlog::info("Kibel[{}] rotacja Z: {:.2f} (oczekiwana: {:.2f}) - {}",
-                i, current, expected, correct ? "OK" : "ZLE");
+            //spdlog::info("Kibel[{}] rotacja Z: {:.2f} (oczekiwana: {:.2f}) - {}",
+            //    i, current, expected, correct ? "OK" : "ZLE");
 
             if (!correct) allCorrect = false;
         }
@@ -1282,13 +1282,13 @@ int main(int, char**)
         }
         if (ecs.GetSystem<HID>()->is_action_just_pressed("toggle_frustum_culling")) {
             renderSystem->frustumCullingEnabled = !renderSystem->frustumCullingEnabled;
-            spdlog::info("Frustum culling: {}",
-                renderSystem->frustumCullingEnabled ? "ON" : "OFF");
+           // spdlog::info("Frustum culling: {}",
+           //     renderSystem->frustumCullingEnabled ? "ON" : "OFF");
         }
         if (ecs.GetSystem<HID>()->is_action_just_pressed("toggle_oclussion_culling")) {
             renderSystem->occlusionCullingEnabled = !renderSystem->occlusionCullingEnabled;
-            spdlog::info("Oclussion culling: {}",
-                renderSystem->frustumCullingEnabled ? "ON" : "OFF");
+           // spdlog::info("Oclussion culling: {}",
+            //    renderSystem->frustumCullingEnabled ? "ON" : "OFF");
         }
 
         if (ecs.GetSystem<HID>()->is_action_just_pressed("gamma_up")) {
@@ -1394,7 +1394,7 @@ int main(int, char**)
             it->second = (it->second > 0.0f) ? it->second - step : it->second + step;
 
             if (std::abs(it->second) <= 0.0f) {
-                spdlog::info("Rotated to: {:.2f}", transform->rotation.z);
+            //    spdlog::info("Rotated to: {:.2f}", transform->rotation.z);
                 transform->isDirty = false;
                 rotatingInProgress.erase(it->first);
                 it = rotatingObjects.erase(it);
@@ -1414,7 +1414,7 @@ int main(int, char**)
             auto* clip = AnimationHelper::FindAnimation(dyingModelPrefab->rootModel->animations, "mixamo.com");
             if (clip) {
                 AnimationHelper::Play(animator, clip, true, 1.0f);
-                spdlog::info("Odtworzono animacje umierania");
+               // spdlog::info("Odtworzono animacje umierania");
             }
         }
 
@@ -1422,7 +1422,7 @@ int main(int, char**)
             auto* clip = &jumpSkeletonPrefab->rootModel->animations[0];
             if (clip) {
                 AnimationHelper::Play(animator, clip, true, 1.0f);
-                spdlog::info("Odtworzono animacje skoku");
+               // spdlog::info("Odtworzono animacje skoku");
             }
         }
 
@@ -1523,9 +1523,9 @@ int main(int, char**)
         update();
         auto logicEnd = std::chrono::high_resolution_clock::now();
 
-        imgui_begin();
-        imgui_render(sceneManager);
-        imgui_end();
+        //imgui_begin();
+        //imgui_render(sceneManager);
+        //imgui_end();
 
         cpuTimer.stop();
 
@@ -1543,9 +1543,9 @@ int main(int, char**)
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
 
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
+    //ImGui_ImplOpenGL3_Shutdown();
+    //ImGui_ImplGlfw_Shutdown();
+    //ImGui::DestroyContext();
 
     glfwDestroyWindow(window);
 
@@ -1563,7 +1563,7 @@ bool init()
 {
     glfwSetErrorCallback(glfw_error_callback);
     if (!glfwInit()) {
-        spdlog::error("Failed to initalize GLFW!");
+      //  spdlog::error("Failed to initalize GLFW!");
         return false;
     }
 
@@ -1574,7 +1574,7 @@ bool init()
 
     window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "MimiCry", NULL, NULL);
     if (window == NULL) {
-        spdlog::error("Failed to create GLFW Window!");
+       // spdlog::error("Failed to create GLFW Window!");
         return false;
     }
 
@@ -1586,13 +1586,13 @@ bool init()
 
     bool err = !gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
     if (err) {
-        spdlog::error("Failed to initialize OpenGL loader!");
+        //spdlog::error("Failed to initialize OpenGL loader!");
         return false;
     }
     return true;
 }
 
-void init_imgui()
+/*void init_imgui()
 {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -1602,11 +1602,11 @@ void init_imgui()
     ImGui_ImplOpenGL3_Init(glsl_version);
 
     ImGui::StyleColorsDark();
-}
+}*/
 
 void compileShader()
 {
-    spdlog::info("Success");
+    //spdlog::info("Success");
 }
 
 void input()
@@ -1647,12 +1647,12 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
 }
 
-void imgui_begin()
+/*void imgui_begin()
 {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
-}
+}*/
 
 GameObject* selectedGameObject = nullptr;
 
@@ -1673,17 +1673,17 @@ void ShowGameObjectTree(GameObject* obj)
 
     bool opened = ImGui::TreeNodeEx((void*)obj, flags, "%s", displayName);
 
-    if (ImGui::IsItemClicked())
-        selectedGameObject = obj;
+    /*if (ImGui::IsItemClicked())
+        selectedGameObject = obj;*/
 
     if (opened) {
         for (GameObject* child : obj->GetChildren())
             ShowGameObjectTree(child);
-        ImGui::TreePop();
+        //ImGui::TreePop();
     }
 }
 
-void ShowTransformEditor(TransformComponent& transform)
+/*void ShowTransformEditor(TransformComponent& transform)
 {
     glm::vec3 pos   = TransformHelper::getLocalPosition(transform);
     glm::vec3 rot   = TransformHelper::getLocalRotation(transform);
@@ -1739,9 +1739,9 @@ void ShowColliderEditor(ColliderComponent& col)
     ImGui::Checkbox("Is Trigger", &col.isTrigger);
     ImGui::Checkbox("Affects NavMesh", &col.affectsNavMesh);
     ImGui::Checkbox("Is Walkable", &col.isWalkable);
-}
+}*/
 
-void ShowLightEditor(LightComponent& light)
+/*void ShowLightEditor(LightComponent& light)
 {
     ImGui::Text("Light");
     ImGui::Checkbox("Enabled", &light.isOn);
@@ -1780,7 +1780,7 @@ void ShowLightEditor(LightComponent& light)
             light.outerCutOff = glm::cos(glm::radians(outerAngle));
     }
 }
-
+*/
 std::string OpenFileDialog()
 {
     char filename[MAX_PATH] = "";
@@ -1808,9 +1808,10 @@ std::string OpenFileDialog()
 
 static std::unordered_map<std::string, Prefab> prefabs;
 
+/*
 void imgui_render(SceneManager& sceneManager)
 {
-    if (show_demo_window) { }
+  if (show_demo_window) { }
 
     ImGui::Begin("Hello, world!");
 
@@ -2024,7 +2025,7 @@ void imgui_end()
     glfwGetFramebufferSize(window, &display_w, &display_h);
     glViewport(0, 0, display_w, display_h);
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-}
+} */
 
 void end_frame()
 {
@@ -2050,7 +2051,7 @@ void addAllSystems(ECS& ecs) {
 }
 
 void LoadPlayerAnimations() {
-    spdlog::info("Mapowanie animacji z pojedynczego pliku .glb gracza...");
+    //spdlog::info("Mapowanie animacji z pojedynczego pliku .glb gracza...");
 
     if (!postacGracza || !postacGracza->rootModel) return;
 
@@ -2062,7 +2063,7 @@ void LoadPlayerAnimations() {
         for (auto& anim : rawAnimations) {
             if (anim.name == exactName) {
                 postacGracza->rootModel->animations[targetIdx] = anim;
-                spdlog::info("Zmapowano animację '{}' pod indeks [{}]", anim.name, targetIdx);
+                //spdlog::info("Zmapowano animację '{}' pod indeks [{}]", anim.name, targetIdx);
                 return true;
             }
         }
@@ -2070,7 +2071,7 @@ void LoadPlayerAnimations() {
         for (auto& anim : rawAnimations) {
             if (anim.name.find(exactName) != std::string::npos) {
                 postacGracza->rootModel->animations[targetIdx] = anim;
-                spdlog::info("Zmapowano (częściowo) animację '{}' pod indeks [{}]", anim.name, targetIdx);
+                //spdlog::info("Zmapowano (częściowo) animację '{}' pod indeks [{}]", anim.name, targetIdx);
                 return true;
             }
         }
@@ -2079,7 +2080,7 @@ void LoadPlayerAnimations() {
             for (auto& anim : rawAnimations) {
                 if (anim.name.find(fallbackName) != std::string::npos) {
                     postacGracza->rootModel->animations[targetIdx] = anim;
-                    spdlog::warn("Brak '{}', użyto zamiennika '{}' dla indeksu [{}]", exactName, anim.name, targetIdx);
+                    //spdlog::warn("Brak '{}', użyto zamiennika '{}' dla indeksu [{}]", exactName, anim.name, targetIdx);
                     return true;
                 }
             }
@@ -2693,7 +2694,7 @@ void createCrematorium(Scene* scena) {
         crematoriumPuzzle.Init(scena, ruraModel->rootModel, panelModel.get(), nullptr, cornerPosition);
     }
     else {
-        spdlog::error("Model rury albo panelu nie zostal poprawnie zaladowany!");
+        //spdlog::error("Model rury albo panelu nie zostal poprawnie zaladowany!");
     }
 }
 
