@@ -53,8 +53,8 @@ public:
         // Blokuj duplikaty jeśli komponent ma flagę unique
         if constexpr (T::Unique) {
             if (GetComponent<T>() != nullptr) {
-                spdlog::warn("Ostrzezenie");
-                spdlog::warn("Komponent {} już istnieje na obiekcie {}", typeid(T).name(), name);
+                //spdlog::warn("Ostrzezenie");
+                //spdlog::warn("Komponent {} już istnieje na obiekcie {}", typeid(T).name(), name);
                 return GetComponent<T>();
             }
         }
