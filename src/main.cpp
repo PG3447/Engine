@@ -194,7 +194,6 @@ std::unique_ptr<Prefab> wallModel;
 std::unique_ptr<Prefab> wallModel2;
 std::unique_ptr<Prefab> wallModel3;
 std::unique_ptr<Prefab> NormalDoor;
-std::unique_ptr<Prefab> szkloModel;
 std::unique_ptr<Prefab> cockroachModel;
 
 std::unique_ptr<Prefab> puzel1;
@@ -930,35 +929,27 @@ int main(int, char**)
 
     postacGracza = std::make_unique<Prefab>("res/models/postac_test.glb");
     groundModel = std::make_unique<Prefab>("res/models/podloze.glb");
-    sunModel    = std::make_unique<Prefab>("res/models/Sun.glb");
-    szkloModel = std::make_unique<Prefab>("res/models/szklo.glb");
-    
-    GameObject* szklo = szkloModel->Instantiate(*scena1, nullptr, nullptr);
-    szklo->name = "SZKLO";
-    for (auto& mesh : szklo->GetComponent<RenderComponent>()->meshes)
-    {
-        mesh.material->surfaceType = SurfaceType::Transparent;
-    }
+    //sunModel    = std::make_unique<Prefab>("res/models/Sun.glb");
 
-    GameObject* obb3 = sunModel->Instantiate(*scena1, nullptr, nullptr);
-    obb3->GetComponent<TransformComponent>()->scale    = glm::vec3(25.0f);
-    obb3->GetComponent<TransformComponent>()->position = glm::vec3(75.0f, 250.0f, 0.0f);
+    //GameObject* obb3 = sunModel->Instantiate(*scena1, nullptr, nullptr);
+    //obb3->GetComponent<TransformComponent>()->scale    = glm::vec3(25.0f);
+    //obb3->GetComponent<TransformComponent>()->position = glm::vec3(75.0f, 250.0f, 0.0f);
 
-    obb3->AddComponent<RigidbodyComponent>()->useGravity = false;
-    obb3->AddComponent<ColliderComponent>()->halfSize    = glm::vec3{ 25, 25, 25 };
+    //obb3->AddComponent<RigidbodyComponent>()->useGravity = false;
+    //obb3->AddComponent<ColliderComponent>()->halfSize    = glm::vec3{ 25, 25, 25 };
 
-    GLuint diff = ResourceManager::LoadTexture("diffuse_brick.png",  "res/textures/").id;
-    GLuint spec = ResourceManager::LoadTexture("specular_brick.png", "res/textures/").id;
-    GLuint norm = ResourceManager::LoadTexture("normal_brick.png",   "res/textures/").id;
+    //GLuint diff = ResourceManager::LoadTexture("diffuse_brick.png",  "res/textures/").id;
+    //GLuint spec = ResourceManager::LoadTexture("specular_brick.png", "res/textures/").id;
+    //GLuint norm = ResourceManager::LoadTexture("normal_brick.png",   "res/textures/").id;
 
-    auto brickMat           = std::make_shared<Material>();
-    brickMat->shader        = nullptr;
-    brickMat->diffuseMap    = diff;
-    brickMat->specularMap   = spec;
-    brickMat->normalMap     = norm;
-    brickMat->shininess     = 64.0f;
+    //auto brickMat           = std::make_shared<Material>();
+    //brickMat->shader        = nullptr;
+    //brickMat->diffuseMap    = diff;
+    //brickMat->specularMap   = spec;
+    //brickMat->normalMap     = norm;
+    //brickMat->shininess     = 64.0f;
 
-    RenderHelper::SetMaterial(obb3, brickMat);
+    //RenderHelper::SetMaterial(obb3, brickMat);
 
     //Tworzenie gracza nr.1
     GameObject* gracz1 = scena1->CreateGameObject(nullptr);
@@ -2103,7 +2094,7 @@ void LoadPlayerAnimations() {
 }
 
 void connectAllModels() {
-    bed1Model        = std::make_unique<Prefab>("res/models/samochod.glb");
+    bed1Model        = std::make_unique<Prefab>("res/models/bed.glb");
     bed2Model        = std::make_unique<Prefab>("res/models/bed2.glb");
     bed3Model        = std::make_unique<Prefab>("res/models/bed3.glb");
     placeholderModel = std::make_unique<Prefab>("res/models/placeholder.glb");
@@ -2150,7 +2141,7 @@ void connectAllModels() {
     cupModel = std::make_unique<Prefab>("res/models/cup.glb");
     corkBoardModel = std::make_unique<Prefab>("res/models/cork_board.glb");
     clockModel = std::make_unique<Prefab>("res/models/clock.glb");
-    computer_pbrModel = std::make_unique<Prefab>("res/models/computer_pbr.glb");
+    computer_pbrModel = std::make_unique<Prefab>("res/models/computer_no_alpha.glb");
     laboratoryStuff1Model = std::make_unique<Prefab>("res/models/laboratory_stuff_1.glb");
     laboratoryStuff2Model = std::make_unique<Prefab>("res/models/laboratory_stuff_2.glb");
     laboratoryStuff3Model = std::make_unique<Prefab>("res/models/laboratory_stuff_3.glb");
