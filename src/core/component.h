@@ -29,7 +29,7 @@ struct NodeAnimCache {
     int lastScaleIndex = 0;
 };
 
-static uint32_t staticCounterAnimator = 1;
+extern uint32_t staticCounterAnimator;
 
 struct Component {
     static constexpr bool Unique = false;

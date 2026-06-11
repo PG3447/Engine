@@ -55,6 +55,7 @@
 #include "systems/NpcSystem.h"
 #include "utils/render_helper.h"
 #include "utils/animation_helper.h"
+#include "utils/player_animation_helper.h"
 
 #include "gameplay/crematorium_puzzle.h"
 
@@ -75,13 +76,16 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 
-void processCameraInput(ECS& ecs, CameraComponent& cam, TransformComponent& transformCamera,
+bool processCameraInput(ECS& ecs, CameraComponent& cam, TransformComponent& transform,
     const std::string& up,
     const std::string& down,
     const std::string& left,
     const std::string& right);
 
-void processCameraGamepad(ECS& ecs, CameraComponent& cam, TransformComponent& transformCamera, TransformComponent& playerTransform, int gamepad_id);
+bool processCameraGamepad(ECS& ecs,
+    CameraComponent& cam,
+    TransformComponent& transform,
+    int gamepad_id);
 
 void imgui_begin();
 void imgui_render(SceneManager& sceneManager);
@@ -153,6 +157,7 @@ std::unique_ptr<Prefab> bad1Model;
 std::unique_ptr<Prefab> bad2Model;
 std::unique_ptr<Prefab> bad3Model;
 std::unique_ptr<Prefab> bossModel;
+std::unique_ptr<Prefab> bossCapsuleModel;
 std::unique_ptr<Prefab> characterModel;
 std::unique_ptr<Prefab> vial1Model;
 std::unique_ptr<Prefab> vial2Model;
@@ -203,7 +208,6 @@ std::unique_ptr<Prefab> czerwonaTablica;
 std::unique_ptr<Prefab> zielonaTablica;
 std::unique_ptr<Prefab> Rentgen;
 
-std::unique_ptr<Prefab> bossCapsuleModel;
 std::unique_ptr<Prefab> kredensModel;
 std::unique_ptr<Prefab> eksp1Model;
 std::unique_ptr<Prefab> fiolka2Model;
@@ -352,11 +356,9 @@ GameObject* CreateRaycastTestObject(
     return go;
 }
 
-void processCameraInput(ECS& ecs, CameraComponent& cam, TransformComponent& playerTransform,
-                        const std::string& up,
-                        const std::string& down,
-                        const std::string& left,
-                        const std::string& right)
+bool processCameraInput(ECS& ecs, CameraComponent& cam, TransformComponent& transform,
+    const std::string& up, const std::string& down,
+    const std::string& left, const std::string& right)
 {
     const auto& hid = ecs.GetSystem<HID>();
     glm::vec3 dir(0.0f);
@@ -376,10 +378,12 @@ void processCameraInput(ECS& ecs, CameraComponent& cam, TransformComponent& play
 
     if (glm::length(dir) > 0.0f) {
         dir = glm::normalize(dir);
-        playerTransform.position += dir * MovementSpeed * 0.04f; //deltaTime; aktualnie fixedDeltaTime
-        playerTransform.isDirty   = true;
+        transform.position += dir * MovementSpeed * 0.04f; //deltaTime; aktualnie fixedDeltaTime
+        transform.isDirty   = true;
         cam.dirty = true;
+        return true;
     }
+    return false;
 }
 
 const float sensitivityCamera = 1200.0f;
@@ -403,7 +407,7 @@ void processCameraMouse(ECS& ecs, CameraComponent& cam, TransformComponent& tran
 
 float lookDeadzone = 0.0f;
 
-void processCameraGamepad(ECS& ecs, CameraComponent& cam, TransformComponent& transformCamera, TransformComponent& playerTransform, int gamepad_id)
+bool processCameraGamepad(ECS& ecs, CameraComponent& cam, TransformComponent& transform, int gamepad_id)
 {
     const auto& hid = ecs.GetSystem<HID>();
 
@@ -411,11 +415,9 @@ void processCameraGamepad(ECS& ecs, CameraComponent& cam, TransformComponent& tr
     float ly = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_LEFT_Y, gamepad_id);
 
     glm::vec3 dir(0.0f);
-
     glm::vec3 camFront = cam.state.Front;
     camFront.y = 0.0f;
     camFront = glm::normalize(camFront);
-
     glm::vec3 camRight = cam.state.Right;
     camRight.y = 0.0f;
     camRight = glm::normalize(camRight);
@@ -423,30 +425,32 @@ void processCameraGamepad(ECS& ecs, CameraComponent& cam, TransformComponent& tr
     dir += camFront * (-ly);
     dir += camRight * lx;
 
+    bool isMoving = false;
     if (glm::length(dir) > 0.0f) {
         dir = glm::normalize(dir);
-        playerTransform.position += dir * MovementSpeed * 0.04f;// deltaTime; aktualnie fixedDeltaTime
-        playerTransform.isDirty = true;
+        transform.position += dir * MovementSpeed * 0.04f;
+        transform.isDirty = true;
         cam.dirty = true;
+        isMoving = true;
     }
 
     float rx = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_RIGHT_X, gamepad_id);
     float ry = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_RIGHT_Y, gamepad_id);
 
-
     if (lookDeadzone <= 0.01f)
         lookDeadzone += 0.0005f;
     else if (glm::abs(rx) < lookDeadzone && glm::abs(ry) < lookDeadzone)
-        return;
-    
-    playerTransform.rotation.y -= rx * sensitivityCamera /10.0f * deltaTime;// deltaTime; aktualnie fixedDeltaTime
-    playerTransform.isDirty = true;
- 
-    CameraHelper::ProcessMouseMovement(cam, transformCamera, 0.0f, ry * sensitivityCamera * deltaTime);
+        return isMoving;
+
+    const float sensitivity = 600.0f;
+    CameraHelper::ProcessMouseMovement(cam, transform, rx * sensitivity * deltaTime, ry * sensitivity * deltaTime);
+
+    return isMoving;
 }
 
 void addAllSystems(ECS& ecs);
 void connectAllModels();
+void LoadPlayerAnimations();
 
 struct PuzzleSlot {
     glm::vec3 targetRotation;
@@ -507,7 +511,9 @@ void HandlePlayerInteraction(
     Scene* scene,
     std::unordered_map<GameObject*, float>& rotatingObjects,
     std::unordered_set<GameObject*>& rotatingInProgress,
-    float& outShakeTimer
+    float& outShakeTimer,
+    AnimatorComponent* playerAnimator,
+    Prefab* playerPrefab
 ) {
     if (!ecs.GetSystem<HID>()->is_action_just_pressed(inputAction)) return;
     //upuszczanie
@@ -574,6 +580,7 @@ void HandlePlayerInteraction(
                 if (!rotatingInProgress.count(hit.hitObject)) {
                     rotatingObjects[hit.hitObject] = 60.0f;
                     rotatingInProgress.insert(hit.hitObject);
+                    PlayerAnimationHelper::TriggerAction(playerAnimator, playerPrefab, PlayerAnimationHelper::INTERACT_ANIM_INDEX);
                 }
             }
             // PAIN
@@ -586,6 +593,7 @@ void HandlePlayerInteraction(
                 } else {
                     outShakeTimer = SHAKE_DURATION;
                 }
+                PlayerAnimationHelper::TriggerAction(playerAnimator, playerPrefab, PlayerAnimationHelper::INTERACT_ANIM_INDEX);
             }
             // Otwieranie drzwi
             else if (toiletDoorsMap.count(hit.hitObject)) {
@@ -598,6 +606,7 @@ void HandlePlayerInteraction(
                         col->halfSize = state.isOpen ? glm::vec3{ 1.0f, 10.0f, 1.0f } : glm::vec3{ 0.8f, 10.0f, 4.0f };
                         col->offset   = state.isOpen ? glm::vec3(0.0f) : state.originalOffset;
                     }
+                    PlayerAnimationHelper::TriggerAction(playerAnimator, playerPrefab, PlayerAnimationHelper::INTERACT_ANIM_INDEX);
                 }
             }
             // Otwieranie szafki
@@ -619,6 +628,7 @@ void HandlePlayerInteraction(
                             }
                         }
                     }
+                    PlayerAnimationHelper::TriggerAction(playerAnimator, playerPrefab, PlayerAnimationHelper::INTERACT_ANIM_INDEX);
                 }
             }
             if (puzzleSlotsMap.count(hit.hitObject)) {
@@ -638,6 +648,8 @@ void HandlePlayerInteraction(
                         rb->useGravity = false;
                         rb->isStatic   = true;
                     }
+
+                    PlayerAnimationHelper::TriggerAction(playerAnimator, playerPrefab, PlayerAnimationHelper::PICKUP_ANIM_INDEX);
                 }
             }
             // Podnoszenie (zabezpieczone przed wyrwaniem obiektu drugiemu graczowi)
@@ -662,10 +674,13 @@ void HandlePlayerInteraction(
                     rb->useGravity = false;
                     rb->isStatic   = true;
                 }
+
+                PlayerAnimationHelper::TriggerAction(playerAnimator, playerPrefab, PlayerAnimationHelper::PICKUP_ANIM_INDEX);
             }
             // zagadka z trumnami
             else if (hit.hitObject->name.find("Coffin") != std::string::npos) {
                 crematoriumPuzzle.ToggleCoffin(hit.hitObject);
+                PlayerAnimationHelper::TriggerAction(playerAnimator, playerPrefab, PlayerAnimationHelper::INTERACT_ANIM_INDEX);
             }
         }
     }
@@ -913,7 +928,7 @@ int main(int, char**)
 
     addAllSystems(ecs);
 
-    postacGracza = std::make_unique<Prefab>("res/models/postac_srodek.glb");
+    postacGracza = std::make_unique<Prefab>("res/models/postac_test.glb");
     groundModel = std::make_unique<Prefab>("res/models/podloze.glb");
     sunModel    = std::make_unique<Prefab>("res/models/Sun.glb");
     szkloModel = std::make_unique<Prefab>("res/models/szklo.glb");
@@ -962,8 +977,8 @@ int main(int, char**)
     GameObject* camera1 = scena1->CreateGameObject(nullptr);//groundModel->Instantiate(*scena1, nullptr, ourShader.get());
     camera1->name = "Kamera";
     gracz1->AddChild(camera1);
-    camera1->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 4.5f, 1.0f);
-    camera1->GetComponent<TransformComponent>()->rotation = glm::vec3(0.0f, -180.0f, 0.0f);
+    camera1->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 4.7f, 2.0f);
+    camera1->GetComponent<TransformComponent>()->rotation = glm::vec3(0.0f, 0.0f, 0.0f);
     CameraComponent* camCompLeft = camera1->AddComponent<CameraComponent>();
     RaycastComponent*  player1Raycast   = camera1->AddComponent<RaycastComponent>();
     player1Raycast->debugDraw = false;
@@ -986,6 +1001,11 @@ int main(int, char**)
     GameObject* modelPostac1 = postacGracza->Instantiate(*scena1, nullptr, nullptr);
     gracz1->AddChild(modelPostac1);
     modelPostac1->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 0.9f, 0.0f);
+    AnimatorComponent* p1Animator = modelPostac1->GetComponent<AnimatorComponent>();
+    if (p1Animator == nullptr) {
+        p1Animator = modelPostac1->AddComponent<AnimatorComponent>();
+        p1Animator->currentSkeleton = &postacGracza->rootModel->skeleton;
+    }
 
     //Tworzenie gracza nr.2
     GameObject* gracz2 = scena1->CreateGameObject(nullptr);
@@ -1003,7 +1023,7 @@ int main(int, char**)
     GameObject* camera2 = scena1->CreateGameObject(nullptr);
     camera2->name = "Kamera";
     gracz2->AddChild(camera2);
-    camera2->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 4.5f, 1.0f);
+    camera2->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 4.7f, -2.0f);
     camera2->GetComponent<TransformComponent>()->rotation = glm::vec3(0.0f, -180.0f, 0.0f);
     CameraComponent* camCompRight = camera2->AddComponent<CameraComponent>();
     RaycastComponent* player2Raycast = camera2->AddComponent<RaycastComponent>();
@@ -1026,6 +1046,12 @@ int main(int, char**)
     GameObject* modelPostac2 = postacGracza->Instantiate(*scena1, nullptr, nullptr);
     gracz2->AddChild(modelPostac2);
     modelPostac2->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 0.9f, 0.0f);
+	modelPostac2->GetComponent<TransformComponent>()->rotation = glm::vec3(0.0f, 180.0f, 0.0f);
+    AnimatorComponent* p2Animator = modelPostac2->GetComponent<AnimatorComponent>();
+    if (p2Animator == nullptr) {
+        p2Animator = modelPostac2->AddComponent<AnimatorComponent>();
+        p2Animator->currentSkeleton = &postacGracza->rootModel->skeleton;
+    }
     
     auto* t0 = gracz1->GetComponent<TransformComponent>();
     auto* t1 = gracz2->GetComponent<TransformComponent>();    
@@ -1067,6 +1093,7 @@ int main(int, char**)
     player2InteractionInfo->layer              = 1;
 
     connectAllModels();
+    LoadPlayerAnimations();
 
     GameObject* model1 = bed1Model->Instantiate(*scena1, nullptr, nullptr);
     model1->GetComponent<TransformComponent>()->position.x = 0.0f;
@@ -1380,8 +1407,9 @@ int main(int, char**)
             else ++it;
         }
 
-        HandlePlayerInteraction(ecs, "interact_p1", player1Raycast, camera1, p1HeldObject, p2HeldObject, scena1, rotatingObjects, rotatingInProgress, p1ShakeTimer);
-        HandlePlayerInteraction(ecs, "interact_p2", player2Raycast, camera2, p2HeldObject, p1HeldObject, scena1, rotatingObjects,rotatingInProgress , p2ShakeTimer);
+        HandlePlayerInteraction(ecs, "interact_p1", player1Raycast, camera1, p1HeldObject, p2HeldObject, scena1, rotatingObjects, rotatingInProgress, p1ShakeTimer, p1Animator, postacGracza.get());
+        HandlePlayerInteraction(ecs, "interact_p2", player2Raycast, camera2, p2HeldObject, p1HeldObject, scena1, rotatingObjects, rotatingInProgress, p2ShakeTimer, p2Animator, postacGracza.get());
+
         HandleAltRotate(ecs, "alt_interact_p1", player1Raycast, rotatingObjects, rotatingInProgress);
         HandleAltRotate(ecs, "alt_interact_p2", player2Raycast, rotatingObjects, rotatingInProgress);
 
@@ -1414,17 +1442,24 @@ int main(int, char**)
 
         input();
 
-        if (focused) {
-            processCameraInput(ecs, *camCompLeft, *t0,
-                "move_up", "move_down", "move_left", "move_right");
+        bool p1IsMoving = false;
+        bool p2IsMoving = false;
 
-            processCameraInput(ecs, *camCompRight, *t1,
-                "move_up_2", "move_down_2", "move_left_2", "move_right_2");
+        if (focused) {
+            p1IsMoving |= processCameraInput(ecs, *camCompLeft, *t0, "move_up", "move_down", "move_left", "move_right");
+            p2IsMoving |= processCameraInput(ecs, *camCompRight, *t1, "move_up_2", "move_down_2", "move_left_2", "move_right_2");
 
             processCameraMouse(ecs, *camCompLeft, *camTransform1, *t0);
-            processCameraGamepad(ecs, *camCompLeft, *camTransform1, *t0, 0);
-            processCameraGamepad(ecs, *camCompRight, *camTransform2, *t1, 1);
+
+            p1IsMoving |= processCameraGamepad(ecs, *camCompLeft, *t0, 0);
+            p2IsMoving |= processCameraGamepad(ecs, *camCompRight, *t1, 1);
         }
+
+        bool p1IsHolding = (p1HeldObject != nullptr);
+        bool p2IsHolding = (p2HeldObject != nullptr);
+
+        PlayerAnimationHelper::UpdateAnimation(p1Animator, postacGracza.get(), p1IsMoving, p1IsHolding);
+        PlayerAnimationHelper::UpdateAnimation(p2Animator, postacGracza.get(), p2IsMoving, p2IsHolding);
 
         if (p1ShakeTimer > 0.0f) p1ShakeTimer -= deltaTime;
         if (p2ShakeTimer > 0.0f) p2ShakeTimer -= deltaTime;
@@ -2018,6 +2053,55 @@ void addAllSystems(ECS& ecs) {
     ecs.AddSystem<NpcSystem>(ecs);
 }
 
+void LoadPlayerAnimations() {
+    spdlog::info("Mapowanie animacji z pojedynczego pliku .glb gracza...");
+
+    if (!postacGracza || !postacGracza->rootModel) return;
+
+    std::vector<AnimationClip> rawAnimations = postacGracza->rootModel->animations;
+    postacGracza->rootModel->animations.clear();
+    postacGracza->rootModel->animations.resize(7);
+
+    auto findAndMap = [&](const std::string& exactName, int targetIdx, const std::string& fallbackName = "") {
+        for (auto& anim : rawAnimations) {
+            if (anim.name == exactName) {
+                postacGracza->rootModel->animations[targetIdx] = anim;
+                spdlog::info("Zmapowano animację '{}' pod indeks [{}]", anim.name, targetIdx);
+                return true;
+            }
+        }
+
+        for (auto& anim : rawAnimations) {
+            if (anim.name.find(exactName) != std::string::npos) {
+                postacGracza->rootModel->animations[targetIdx] = anim;
+                spdlog::info("Zmapowano (częściowo) animację '{}' pod indeks [{}]", anim.name, targetIdx);
+                return true;
+            }
+        }
+
+        if (!fallbackName.empty()) {
+            for (auto& anim : rawAnimations) {
+                if (anim.name.find(fallbackName) != std::string::npos) {
+                    postacGracza->rootModel->animations[targetIdx] = anim;
+                    spdlog::warn("Brak '{}', użyto zamiennika '{}' dla indeksu [{}]", exactName, anim.name, targetIdx);
+                    return true;
+                }
+            }
+        }
+        return false;
+        };
+
+    findAndMap("idle", 0);
+    findAndMap("walk", 1, "idle");
+    findAndMap("pick", 2, "idle");
+
+    findAndMap("idle", 3, "idle");
+
+    findAndMap("idle_pick", 4, "idle");
+    findAndMap("walk_pick", 5, "walk");
+    findAndMap("interaction", 6, "idle");
+}
+
 void connectAllModels() {
     bed1Model        = std::make_unique<Prefab>("res/models/samochod.glb");
     bed2Model        = std::make_unique<Prefab>("res/models/bed2.glb");
@@ -2076,6 +2160,9 @@ void connectAllModels() {
     Rentgen = std::make_unique<Prefab>("res/models/Rentgen.glb");
 
     cockroachModel   = std::make_unique<Prefab>("res/models/cockroach.glb");
+
+    bossModel = std::make_unique<Prefab>("res/models/demon_animations_with_textures.glb");
+    bossCapsuleModel = std::make_unique<Prefab>("res/models/boss_capsule.glb");
 }
 
 void createFirstRoom(Scene* scena1) {
@@ -2538,6 +2625,39 @@ void createMainRooom(Scene* scena) {
         cabState.buttonTargetPos = cabState.buttonStartPos + glm::vec3{ 0.0f, 0.0f, -0.15f };
 
         cabinetsMap[cabState.button] = cabState;
+    }
+
+    glm::vec3 bossRoomCenter = glm::vec3(-35.0f, 5.3f, -190.0f);
+
+    // kapsuła
+
+    //GameObject* capsuleObj = CreateStaticObject(
+    //    scena,
+    //    bossCapsuleModel.get(),
+    //    nullptr,
+    //    "BossCapsule",
+    //    bossRoomCenter,
+    //    glm::vec3(3.0f),
+    //    std::nullopt,
+    //    glm::vec3(3.0f, 8.0f, 3.0f),
+    //    true
+    //);
+
+    GameObject* bossObj = bossModel->Instantiate(*scena, nullptr, nullptr);
+    bossObj->name = "DemonBoss";
+
+    TransformComponent* bossTr = bossObj->GetComponent<TransformComponent>();
+    bossTr->position = glm::vec3(bossRoomCenter.x - 2.2f, bossRoomCenter.y + 8.7f, bossRoomCenter.z - 3.9f);
+    bossTr->scale = glm::vec3(3.0f);
+    bossTr->rotation = glm::vec3(0.0f, -140.0f, 0.0f);
+    bossTr->isDirty = true;
+
+    AnimatorComponent* bossAnimator = bossObj->AddComponent<AnimatorComponent>();
+
+    if (bossModel->rootModel && !bossModel->rootModel->animations.empty()) {
+        AnimationClip* defaultBossClip = &bossModel->rootModel->animations[0];
+
+        AnimationHelper::Play(bossAnimator, defaultBossClip, true, 1.0f);
     }
 }
 
