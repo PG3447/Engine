@@ -132,11 +132,25 @@ void PhysicsSystem::FixedUpdate(float fixedDeltaTime)
 
                 float dir = (delta.x > 0 ? 1.0f : -1.0f);
 
+                float e = std::min(rbA->bounce, rbB->bounce);
+
+                // względna prędkość wzdłuż osi kolizji
+                float relVelY = rbA->velocity.y - rbB->velocity.y;
+
+                // impuls
+                float impulse = -(1.0f + e) * relVelY;
+
+                float massA = rbA->isStatic ? 0.0f : 1.0f / rbA->mass;
+                float massB = rbB->isStatic ? 0.0f : 1.0f / rbB->mass;
+                float totalInvMass = massA + massB;
+
+                if (totalInvMass > 0.0f)
+                    impulse /= totalInvMass;
+
                 if (!rbA->isStatic)
                 {
                     rbA->physicsPosition.x += overlapX * dir;
-                    rbA->velocity.x = 0;
-                    rbA->acceleration.x = 0;
+                    rbA->velocity.x += impulse * massA;
                     rbA->physicsPosition.x = rbA->physicsPosition.x;
                     //tA->isDirty = true;
                 }
@@ -144,8 +158,7 @@ void PhysicsSystem::FixedUpdate(float fixedDeltaTime)
                 if (!rbB->isStatic)
                 {
                     rbB->physicsPosition.x -= overlapX * dir;
-                    rbB->velocity.x = 0;
-                    rbB->acceleration.x = 0;
+                    rbB->velocity.x -= impulse * massB;
                     rbB->physicsPosition.x = rbB->physicsPosition.x;
                     //tB->isDirty = true;
                 }
@@ -155,11 +168,25 @@ void PhysicsSystem::FixedUpdate(float fixedDeltaTime)
 
                 float dir = (delta.y > 0 ? 1.0f : -1.0f);
 
+                float e = std::min(rbA->bounce, rbB->bounce);
+
+                // względna prędkość wzdłuż osi kolizji
+                float relVelY = rbA->velocity.y - rbB->velocity.y;
+
+                // impuls
+                float impulse = -(1.0f + e) * relVelY;
+
+                float massA = rbA->isStatic ? 0.0f : 1.0f / rbA->mass;
+                float massB = rbB->isStatic ? 0.0f : 1.0f / rbB->mass;
+                float totalInvMass = massA + massB;
+
+                if (totalInvMass > 0.0f)
+                    impulse /= totalInvMass;
+
                 if (!rbA->isStatic)
                 {
                     rbA->physicsPosition.y += overlapY * dir;
-                    rbA->velocity.y = 0;
-                    rbA->acceleration.y = 0;
+                    rbA->velocity.y += impulse * massA;
                     rbA->physicsPosition.y = rbA->physicsPosition.y;
                     //tA->isDirty = true;
                 }
@@ -167,8 +194,7 @@ void PhysicsSystem::FixedUpdate(float fixedDeltaTime)
                 if (!rbB->isStatic)
                 {
                     rbB->physicsPosition.y -= overlapY * dir;
-                    rbB->velocity.y = 0;
-                    rbB->acceleration.y = 0;
+                    rbB->velocity.y -= impulse * massB;
                     rbB->physicsPosition.y = rbB->physicsPosition.y;
                     //tB->isDirty = true;
                 }
@@ -178,11 +204,25 @@ void PhysicsSystem::FixedUpdate(float fixedDeltaTime)
 
                 float dir = (delta.z > 0 ? 1.0f : -1.0f);
 
+                float e = std::min(rbA->bounce, rbB->bounce);
+
+                // względna prędkość wzdłuż osi kolizji
+                float relVelY = rbA->velocity.y - rbB->velocity.y;
+
+                // impuls
+                float impulse = -(1.0f + e) * relVelY;
+
+                float massA = rbA->isStatic ? 0.0f : 1.0f / rbA->mass;
+                float massB = rbB->isStatic ? 0.0f : 1.0f / rbB->mass;
+                float totalInvMass = massA + massB;
+
+                if (totalInvMass > 0.0f)
+                    impulse /= totalInvMass;
+
                 if (!rbA->isStatic)
                 {
                     rbA->physicsPosition.z += overlapZ * dir;
-                    rbA->velocity.z = 0;
-                    rbA->acceleration.z = 0;
+                    rbA->velocity.z += impulse * massA;
                     rbA->physicsPosition.z = rbA->physicsPosition.z;
                     //tA->isDirty = true;
                 }
@@ -190,8 +230,7 @@ void PhysicsSystem::FixedUpdate(float fixedDeltaTime)
                 if (!rbB->isStatic)
                 {
                     rbB->physicsPosition.z -= overlapZ * dir;
-                    rbB->velocity.z = 0;
-                    rbB->acceleration.z = 0;
+                    rbB->velocity.z -= impulse * massB;
                     rbB->physicsPosition.z = rbB->physicsPosition.z;
                     //tB->isDirty = true;
                 }

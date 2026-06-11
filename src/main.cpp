@@ -1608,6 +1608,38 @@ void ShowTransformEditor(TransformComponent& transform)
         TransformHelper::setLocalScale(transform, scale);
 }
 
+void ShowRigidbodyEditor(RigidbodyComponent& rb)
+{
+    ImGui::Text("Rigidbody");
+
+    ImGui::DragFloat("Mass", &rb.mass, 0.01f, 0.0f, 1000.0f);
+    ImGui::DragFloat("Bounce", &rb.bounce, 0.01f, 0.0f, 1.0f);
+    ImGui::DragFloat("Angular Damping", &rb.angularDamping, 0.01f, 0.0f, 1.0f);
+
+    ImGui::Separator();
+    ImGui::Checkbox("Use Gravity", &rb.useGravity);
+    ImGui::Checkbox("Is Static", &rb.isStatic);
+
+    ImGui::Separator();
+    ImGui::DragFloat3("Velocity", &rb.velocity.x, 0.01f);
+    ImGui::DragFloat3("Acceleration", &rb.acceleration.x, 0.01f);
+    ImGui::DragFloat3("Angular Velocity", &rb.angularVelocity.x, 0.01f);
+    ImGui::DragFloat3("Torque", &rb.torque.x, 0.01f);
+
+    ImGui::Separator();
+    ImGui::BeginDisabled();
+    ImGui::DragFloat3("Physics Position", &rb.physicsPosition.x, 0.01f);
+    ImGui::DragFloat3("Previous Position", &rb.previousPosition.x, 0.01f);
+    ImGui::EndDisabled();
+
+    if (ImGui::Button("Reset Velocity")) {
+        rb.velocity = glm::vec3(0.0f);
+        rb.angularVelocity = glm::vec3(0.0f);
+        rb.torque = glm::vec3(0.0f);
+        rb.acceleration = glm::vec3(0.0f);
+    }
+}
+
 void ShowColliderEditor(ColliderComponent& col)
 {
     ImGui::Text("Collider");
@@ -1618,9 +1650,9 @@ void ShowColliderEditor(ColliderComponent& col)
     ImGui::Checkbox("Is Walkable", &col.isWalkable);
 }
 
-
 void ShowLightEditor(LightComponent& light)
 {
+    ImGui::Text("Light");
     ImGui::Checkbox("Enabled", &light.isOn);
 
     const char* lightTypes[] = { "Directional", "Point", "Spot" };
@@ -1707,6 +1739,10 @@ void imgui_render(SceneManager& sceneManager)
         ImGui::Separator();
         ImGui::Text("Selected Entity: %s", selectedGameObject->name.c_str());
         ShowTransformEditor(*selectedGameObject->GetComponent<TransformComponent>());
+
+        RigidbodyComponent* rb = selectedGameObject->GetComponent<RigidbodyComponent>();
+        if (rb != nullptr)
+            ShowRigidbodyEditor(*rb);
 
         ColliderComponent* col = selectedGameObject->GetComponent<ColliderComponent>();
         if (col != nullptr)

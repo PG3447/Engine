@@ -123,6 +123,7 @@ struct RigidbodyComponent : Component {
     static constexpr uint64_t ComponentBit = 1ull << 2;
 
     float mass = 1.0f;
+    float bounce = 0.1f;
     glm::vec3 velocity{ 0.0f };
     glm::vec3 acceleration{ 0.0f };
     glm::vec3 angularVelocity = glm::vec3(0);
@@ -133,7 +134,9 @@ struct RigidbodyComponent : Component {
 
     // rotacja
     //glm::quat previousRotation = glm::quat(1, 0, 0, 0);
-    //glm::quat physicsRotation = glm::quat(1, 0, 0, 0);
+    //glm::quat physicsRotation = glm::quat(1, 0, 0, 0);}
+    glm::vec3 torque{ 0.0f };
+    float angularDamping = 0.98f;
 
     bool useGravity = true;
     bool isStatic = false;
