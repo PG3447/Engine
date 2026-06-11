@@ -534,6 +534,15 @@ public:
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, materialSSBO);
         glBufferData(GL_SHADER_STORAGE_BUFFER, materials.size() * sizeof(GPUMaterial), materials.data(), GL_STATIC_DRAW);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+        size_t bytes = materials.size() * sizeof(GPUMaterial);
+
+        spdlog::info(
+            "Material SSBO: {} materials, {} bytes ({:.2f} MB)",
+            materials.size(),
+            bytes,
+            bytes / (1024.0 * 1024.0)
+        );
         spdlog::warn("Materialy sie wysylaja");
     }
 

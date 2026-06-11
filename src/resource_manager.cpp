@@ -76,6 +76,8 @@ std::shared_ptr<Model> ResourceManager::LoadModel(const std::string& path)
     return model;
 }
 
+inline static size_t TotalTextureMemory = 0;
+
 TextureData ResourceManager::loadTextureFromFile(const std::string& path, const std::string& directory, const aiTexture* aiTex)
 {
     unsigned int textureID = 0;
@@ -111,15 +113,25 @@ TextureData ResourceManager::loadTextureFromFile(const std::string& path, const 
         glGenTextures(1, &textureID);
 
         GLenum format = GL_RED;
-        if (nrComponents == 1) format = GL_RED;
-        else if (nrComponents == 3) format = GL_RGB;
+        GLenum internalFormat = GL_COMPRESSED_RED;
+        if (nrComponents == 1)
+        {
+            format = GL_RED;
+            internalFormat = GL_COMPRESSED_RED;
+        }
+        else if (nrComponents == 3)
+        {
+            format = GL_RGB;
+            internalFormat = GL_COMPRESSED_RGB;
+        }
         else if (nrComponents == 4) {
             hasAlpha = true;
             format = GL_RGBA;
+            internalFormat = GL_COMPRESSED_RGBA;
         }
 
         glBindTexture(GL_TEXTURE_2D, textureID);
-        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+        glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -138,6 +150,27 @@ TextureData ResourceManager::loadTextureFromFile(const std::string& path, const 
             stbi_image_free(data);
 
         spdlog::info("ResourceManager: Zaladowano teksture {}", path);
+
+        size_t textureBytes = width * height * nrComponents;
+        size_t textureBytesWithMipmaps =
+            static_cast<size_t>(textureBytes * 1.333333f);
+
+        spdlog::info(
+            "Texture {}: {}x{} {}ch -> {:.2f} MB ({:.2f} MB with mipmaps)",
+            path,
+            width,
+            height,
+            nrComponents,
+            textureBytes / (1024.0 * 1024.0),
+            textureBytesWithMipmaps / (1024.0 * 1024.0)
+        );
+
+        TotalTextureMemory += textureBytesWithMipmaps;
+
+        spdlog::info(
+            "Total texture memory: {:.2f} MB",
+            TotalTextureMemory / (1024.0 * 1024.0)
+        );
     }
     else
     {
@@ -166,7 +199,7 @@ TextureData ResourceManager::CreateTextureFromColor(const std::string& name, con
     glGenTextures(1, &tex);
 
     glBindTexture(GL_TEXTURE_2D, tex);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
     glGenerateMipmap(GL_TEXTURE_2D);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);

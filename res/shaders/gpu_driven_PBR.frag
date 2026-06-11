@@ -193,6 +193,12 @@ vec3 CalcPointLightPBR(in GPULight light, vec3 normal, vec3 viewDir, vec3 F0, ve
     {
         attenuation = pow(clamp(1.0 - pow(distance / range, 4.0), 0.0, 1.0), 2.0) / (distance * distance + 1.0);
     }
+
+    if (range >= 10000.0f)
+    {
+        attenuation = clamp(1.0 - distance / (range/10000.0f ), 0.0, 1.0);
+    }
+
     vec3 radiance = light.diffuse.rgb * light.params1.w * attenuation;
                 
     
@@ -231,6 +237,12 @@ vec3 CalcSpotLightPBR(in GPULight light, vec3 normal, vec3 viewDir, vec3 F0, vec
     {
         attenuation = pow(clamp(1.0 - pow(distance / range, 4.0), 0.0, 1.0), 2.0) / (distance * distance + 1.0);
     }
+
+    if (range >= 10000.0f)
+    {
+        attenuation = clamp(1.0 - distance / (range/10000.0f ), 0.0, 1.0);
+    }
+
     // sto¿ek spotlighta – identyczny jak w Blinn-Phong
     float theta = dot(L, normalize(-light.direction.xyz));
     float intensity = smoothstep(light.params2.y, light.params2.x, theta);
