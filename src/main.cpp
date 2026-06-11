@@ -76,16 +76,13 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 
-bool processCameraInput(ECS& ecs, CameraComponent& cam, TransformComponent& transform,
+bool processCameraInput(ECS& ecs, CameraComponent& cam, TransformComponent& playerTransform,
     const std::string& up,
     const std::string& down,
     const std::string& left,
     const std::string& right);
 
-bool processCameraGamepad(ECS& ecs,
-    CameraComponent& cam,
-    TransformComponent& transform,
-    int gamepad_id);
+bool processCameraGamepad(ECS& ecs, CameraComponent& cam, TransformComponent& transformCamera, TransformComponent& playerTransform, int gamepad_id);
 
 void imgui_begin();
 void imgui_render(SceneManager& sceneManager);
@@ -355,20 +352,23 @@ GameObject* CreateRaycastTestObject(
     return go;
 }
 
-bool processCameraInput(ECS& ecs, CameraComponent& cam, TransformComponent& transform,
-    const std::string& up, const std::string& down,
-    const std::string& left, const std::string& right)
+
+bool processCameraInput(ECS& ecs, CameraComponent& cam, TransformComponent& playerTransform,
+    const std::string& up,
+    const std::string& down,
+    const std::string& left,
+    const std::string& right)
 {
     const auto& hid = ecs.GetSystem<HID>();
     glm::vec3 dir(0.0f);
 
     glm::vec3 camFront = cam.state.Front;
     camFront.y = 0.0f;
-    camFront   = glm::normalize(camFront);
+    camFront = glm::normalize(camFront);
 
     glm::vec3 camRight = cam.state.Right;
     camRight.y = 0.0f;
-    camRight   = glm::normalize(camRight);
+    camRight = glm::normalize(camRight);
 
     if (hid->is_action_pressed(up))    dir += camFront;
     if (hid->is_action_pressed(down))  dir -= camFront;
@@ -377,13 +377,14 @@ bool processCameraInput(ECS& ecs, CameraComponent& cam, TransformComponent& tran
 
     if (glm::length(dir) > 0.0f) {
         dir = glm::normalize(dir);
-        transform.position += dir * MovementSpeed * 0.04f; //deltaTime; aktualnie fixedDeltaTime
-        transform.isDirty   = true;
+        playerTransform.position += dir * MovementSpeed * 0.04f; //deltaTime; aktualnie fixedDeltaTime
+        playerTransform.isDirty = true;
         cam.dirty = true;
         return true;
     }
     return false;
 }
+
 
 const float sensitivityCamera = 1200.0f;
 
@@ -396,17 +397,16 @@ void processCameraMouse(ECS& ecs, CameraComponent& cam, TransformComponent& tran
 
     if (glm::abs(dx) < epsilon && glm::abs(dy) < epsilon)
         return;
-    
+
     playerTransform.rotation.y -= dx * sensitivityCamera / 600.0f * 0.04f;// deltaTime; aktualnie fixedDeltaTime
     playerTransform.isDirty = true;
 
     CameraHelper::ProcessMouseMovement(cam, transformCamera, 0.0f, dy);
 }
 
-
 float lookDeadzone = 0.0f;
 
-bool processCameraGamepad(ECS& ecs, CameraComponent& cam, TransformComponent& transform, int gamepad_id)
+bool processCameraGamepad(ECS& ecs, CameraComponent& cam, TransformComponent& transformCamera, TransformComponent& playerTransform, int gamepad_id)
 {
     const auto& hid = ecs.GetSystem<HID>();
 
@@ -414,9 +414,11 @@ bool processCameraGamepad(ECS& ecs, CameraComponent& cam, TransformComponent& tr
     float ly = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_LEFT_Y, gamepad_id);
 
     glm::vec3 dir(0.0f);
+
     glm::vec3 camFront = cam.state.Front;
     camFront.y = 0.0f;
     camFront = glm::normalize(camFront);
+
     glm::vec3 camRight = cam.state.Right;
     camRight.y = 0.0f;
     camRight = glm::normalize(camRight);
@@ -427,8 +429,8 @@ bool processCameraGamepad(ECS& ecs, CameraComponent& cam, TransformComponent& tr
     bool isMoving = false;
     if (glm::length(dir) > 0.0f) {
         dir = glm::normalize(dir);
-        transform.position += dir * MovementSpeed * 0.04f;
-        transform.isDirty = true;
+        playerTransform.position += dir * MovementSpeed * 0.04f;// deltaTime; aktualnie fixedDeltaTime
+        playerTransform.isDirty = true;
         cam.dirty = true;
         isMoving = true;
     }
@@ -436,16 +438,19 @@ bool processCameraGamepad(ECS& ecs, CameraComponent& cam, TransformComponent& tr
     float rx = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_RIGHT_X, gamepad_id);
     float ry = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_RIGHT_Y, gamepad_id);
 
+
     if (lookDeadzone <= 0.01f)
         lookDeadzone += 0.0005f;
     else if (glm::abs(rx) < lookDeadzone && glm::abs(ry) < lookDeadzone)
         return isMoving;
 
-    const float sensitivity = 600.0f;
-    CameraHelper::ProcessMouseMovement(cam, transform, rx * sensitivity * deltaTime, ry * sensitivity * deltaTime);
+    playerTransform.rotation.y -= rx * sensitivityCamera / 10.0f * deltaTime;// deltaTime; aktualnie fixedDeltaTime
+    playerTransform.isDirty = true;
 
+    CameraHelper::ProcessMouseMovement(cam, transformCamera, 0.0f, ry * sensitivityCamera * deltaTime);
     return isMoving;
 }
+
 
 void addAllSystems(ECS& ecs);
 void connectAllModels();
@@ -1442,8 +1447,8 @@ int main(int, char**)
 
             processCameraMouse(ecs, *camCompLeft, *camTransform1, *t0);
 
-            p1IsMoving |= processCameraGamepad(ecs, *camCompLeft, *t0, 0);
-            p2IsMoving |= processCameraGamepad(ecs, *camCompRight, *t1, 1);
+            p1IsMoving |= processCameraGamepad(ecs, *camCompLeft, *camTransform1, *t0, 0);
+            p2IsMoving |= processCameraGamepad(ecs, *camCompRight,*camTransform2, *t1, 1);
         }
 
         bool p1IsHolding = (p1HeldObject != nullptr);
