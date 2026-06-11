@@ -5,7 +5,7 @@
 #include "NavPathSystem.h"
 #include "NavMeshSystem.h"
 #include "systems/DebugDrawSystem.h"
-#include <spdlog/spdlog.h>
+//#include <spdlog/spdlog.h>
 #include <algorithm>
 #include <cmath>
 #include <random>

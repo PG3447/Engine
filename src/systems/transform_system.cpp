@@ -1,5 +1,5 @@
 ﻿#include "transform_system.h"
-#include <spdlog/spdlog.h>
+//#include <spdlog/spdlog.h>
 
 void TransformSystem::updateSelfAndChild(GameObject* obj) {
     auto* tComp = obj->GetComponent<TransformComponent>();
