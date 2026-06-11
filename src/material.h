@@ -28,6 +28,7 @@ public:
 
     glm::vec4 diffuseColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
     float shininess = 32.0f;
+    float opacitiy = 0.0f;
 
     Material() = default;
 

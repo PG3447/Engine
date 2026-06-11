@@ -524,7 +524,7 @@ void HandlePlayerInteraction(
         }
         else {
             // ── Gracz patrzy gdzie indziej — normalne upuszczenie ──
-            heldTr->position = TransformHelper::getGlobalPosition(*camTr) + (camComp->state.Front * 7.5f);
+            heldTr->position = TransformHelper::getGlobalPosition(*camTr) + (camComp->state.Front * 5.0f);
             heldTr->rotation = objectOriginalRotations.count(myHeldObject)
                                    ? objectOriginalRotations[myHeldObject]
                                    : glm::vec3(0.0f);
@@ -533,6 +533,8 @@ void HandlePlayerInteraction(
             if (auto rb = myHeldObject->GetComponent<RigidbodyComponent>()) {
                 rb->useGravity = true;
                 rb->isStatic   = false;
+                rb->previousPosition = heldTr->position;
+                rb->physicsPosition = heldTr->position;
                 rb->velocity   = glm::vec3(0.0f);
                 rb->acceleration   = glm::vec3(0.0f);
             }
