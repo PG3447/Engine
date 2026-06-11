@@ -5,7 +5,7 @@
 #include "NavPathSystem.h"
 #include "NavMeshSystem.h"
 #include "systems/DebugDrawSystem.h"
-#include <spdlog/spdlog.h>
+//#include <spdlog/spdlog.h>
 #include <algorithm>
 #include <cmath>
 #include <random>
@@ -60,7 +60,7 @@ void NavPathSystem::Update(ECS& ecs, float dt)
                 comp->lastCheckedPos   = tr->position;
                 comp->state = NavAgentState::Moving;
             } else {
-                spdlog::warn("[NavPath] Nie znaleziono sciezki");
+                //spdlog::warn("[NavPath] Nie znaleziono sciezki");
                 if (comp->goalPosition == glm::vec3(0.0f)) {
                     comp->goalPosition = RandomPointOnNavMesh(navData);
                 } else {
