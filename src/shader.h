@@ -3,7 +3,7 @@
 
 #include <glad/glad.h>
 #include <glm/glm.hpp>
-#include <spdlog/spdlog.h>
+//#include <spdlog/spdlog.h>
 
 #include <glm/gtc/type_ptr.hpp>
 #include <vector>
@@ -55,11 +55,11 @@ public:
                 geometryCode = geometryShaderStream.str();
             }
 
-            spdlog::info("Load file");
+            //spdlog::info("Load file");
         }
         catch (std::ifstream::failure& e)
         {
-            spdlog::error("ERROR::SHADER::FILE_NOT_SUCCESSFULLY_READ: {}", e.what());
+            //spdlog::error("ERROR::SHADER::FILE_NOT_SUCCESSFULLY_READ: {}", e.what());
         }
 
         //source code
@@ -209,11 +209,11 @@ private:
             if (!success)
             {
                 glGetShaderInfoLog(shader, 1024, NULL, infoLog);
-                spdlog::error("ERROR::SHADER_COMPILATION_ERROR of type: {}\n{}", typeShader, infoLog);
+                //spdlog::error("ERROR::SHADER_COMPILATION_ERROR of type: {}\n{}", typeShader, infoLog);
             }
             else
             {
-                spdlog::info("Compile success shader");
+                //spdlog::info("Compile success shader");
             }
         }
         else
@@ -224,11 +224,11 @@ private:
             if (!success)
             {
                 glGetProgramInfoLog(shader, 512, NULL, infoLog);
-                spdlog::error("ERROR::SHADER::PROGRAM::LINK_FAILED\n{}", infoLog);
+                //spdlog::error("ERROR::SHADER::PROGRAM::LINK_FAILED\n{}", infoLog);
             }
             else
             {
-                spdlog::info("Link success to program object");
+                //spdlog::info("Link success to program object");
             }
         }
     }

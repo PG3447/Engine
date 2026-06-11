@@ -15,7 +15,7 @@
 #include <algorithm>
 #include <cmath>
 #include <imgui.h>
-#include <spdlog/spdlog.h>
+//#include <spdlog/spdlog.h>
 #include <algorithm>
 
 

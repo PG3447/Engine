@@ -9,7 +9,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <GLFW/glfw3.h>
 
-#include <spdlog/spdlog.h>
+//#include <spdlog/spdlog.h>
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include <map>
@@ -47,8 +47,8 @@ public:
     {
         spriteQuery = ecs.CreateQuery<SpriteComponent>();
 
-        if (FT_Init_FreeType(&ft))
-            spdlog::error("SpriteSystem: FreeType does not work");
+        if (FT_Init_FreeType(&ft)){}
+            //spdlog::error("SpriteSystem: FreeType does not work");
 
         Init();
     }
@@ -274,7 +274,7 @@ private:
         FT_Face face;
         if (FT_New_Face(ft, path.c_str(), 0, &face))
         {
-            spdlog::error("SpriteSystem: cant load font {}", path);
+            //spdlog::error("SpriteSystem: cant load font {}", path);
             fontCache[key] = chars;
             return fontCache[key];
         }
@@ -286,7 +286,7 @@ private:
         {
             if (FT_Load_Char(face, c, FT_LOAD_RENDER))
             {
-                spdlog::warn("SpriteSystem: character skipped '{}'", c);
+                //spdlog::warn("SpriteSystem: character skipped '{}'", c);
                 continue;
             }
 
@@ -316,7 +316,7 @@ private:
         glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 
         fontCache[key] = std::move(chars);
-        spdlog::info("SpriteSystem: font loaded {}:{}", path, size);
+        //spdlog::info("SpriteSystem: font loaded {}:{}", path, size);
         return fontCache[key];
     }
 

@@ -3,7 +3,7 @@
 
 #include <glad/glad.h>
 #include <glm/glm.hpp>
-#include <spdlog/spdlog.h>
+//#include <spdlog/spdlog.h>
 #include "shader.h"
 
 enum class SurfaceType {
@@ -67,7 +67,7 @@ public:
         Shader* activeShader = shader;
 
         if (!activeShader) {
-            spdlog::warn("Material probuje zostac wyrenderowany, ale nie ma przypisanego shadera!");
+            //spdlog::warn("Material probuje zostac wyrenderowany, ale nie ma przypisanego shadera!");
             return;
         }
 

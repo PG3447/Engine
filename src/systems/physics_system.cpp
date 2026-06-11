@@ -1,6 +1,6 @@
 #include "physics_system.h"
 #include "transform.h"
-#include <spdlog/spdlog.h>
+//#include <spdlog/spdlog.h>
 
 
 PhysicsSystem::PhysicsSystem(ECS& ecs) {

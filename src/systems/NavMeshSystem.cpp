@@ -1,7 +1,7 @@
 #include "NavMeshSystem.h"
 #include "core/scene.h"
 //#include "systems/DebugDrawSystem.h" // DebugDrawSystem::AddLine / AddAABB
-#include <spdlog/spdlog.h>
+//#include <spdlog/spdlog.h>
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -84,7 +84,7 @@ NavMeshComponent* NavMeshSystem::GetNavMesh() const {
 //  Bake - glowna sciezka
 
 void NavMeshSystem::Bake(Scene& scene) {
-    spdlog::info("[NavMesh] Bake start...");
+    //spdlog::info("[NavMesh] Bake start...");
 
     navMeshGO_ = scene.CreateGameObject(nullptr);
     navMeshGO_->name = "__NavMesh__";
@@ -93,27 +93,27 @@ void NavMeshSystem::Bake(Scene& scene) {
 
     auto surfaces = CollectWalkableSurfaces(scene);
     if (surfaces.empty()) {
-        spdlog::warn("[NavMesh] Brak walkable surface'ow - upewnij sie ze podlogi maja ColliderComponent z isWalkable=true");
+    //    spdlog::warn("[NavMesh] Brak walkable surface'ow - upewnij sie ze podlogi maja ColliderComponent z isWalkable=true");
         return;
     }
-    spdlog::info("[NavMesh] Znaleziono {} walkable surface(s)", surfaces.size());
+    //spdlog::info("[NavMesh] Znaleziono {} walkable surface(s)", surfaces.size());
 
     auto samplePoints = GenerateSamplePoints(surfaces, nm->voxelSize);
-    spdlog::info("[NavMesh] Wygenerowano {} punktow probkowania", samplePoints.size());
+    //spdlog::info("[NavMesh] Wygenerowano {} punktow probkowania", samplePoints.size());
 
     if (samplePoints.size() < 3) {
-        spdlog::warn("[NavMesh] Za malo punktow do triangulacji (minimum 3)");
+        //spdlog::warn("[NavMesh] Za malo punktow do triangulacji (minimum 3)");
         return;
     }
 
     auto obstacles = CollectObstacles(scene);
-    spdlog::info("[NavMesh] Znaleziono {} przeszkod", obstacles.size());
+    //spdlog::info("[NavMesh] Znaleziono {} przeszkod", obstacles.size());
 
     auto filteredPoints = FilterBlockedPoints(samplePoints, obstacles, nm->agentRadius, nm->agentHeight);
-    spdlog::info("[NavMesh] Po filtrowaniu: {} punktow", filteredPoints.size());
+    //spdlog::info("[NavMesh] Po filtrowaniu: {} punktow", filteredPoints.size());
 
     if (filteredPoints.size() < 3) {
-        spdlog::warn("[NavMesh] Za malo punktow po filtrowaniu");
+        //spdlog::warn("[NavMesh] Za malo punktow po filtrowaniu");
         return;
     }
 
@@ -128,8 +128,8 @@ void NavMeshSystem::Bake(Scene& scene) {
 
     nm->data.isBaked = true;
 
-    spdlog::info("[NavMesh] Bake zakończony: {} wierzcholkow, {} trojkatow",
-                 nm->data.vertices.size(), nm->data.triangles.size());
+   // spdlog::info("[NavMesh] Bake zakończony: {} wierzcholkow, {} trojkatow",
+   //              nm->data.vertices.size(), nm->data.triangles.size());
 }
 
 
@@ -317,7 +317,7 @@ void NavMeshSystem::MarkBlockedTriangles(
         }
     }
 
-    spdlog::info("[NavMesh] Oznaczono {} trojkatow jako niechodzalne", blockedCount);
+    //spdlog::info("[NavMesh] Oznaczono {} trojkatow jako niechodzalne", blockedCount);
 }
 
 //  Krok 4: Triangulacja Bowyer-Watson
@@ -502,8 +502,8 @@ NavMeshData NavMeshSystem::BowyerWatson(const std::vector<glm::vec3>& points3D) 
         result.triangles.push_back(navTri);
     }
 
-    spdlog::info("[NavMesh] Bowyer-Watson: {} trojkatow z {} punktow",
-                 result.triangles.size(), points3D.size());
+    //spdlog::info("[NavMesh] Bowyer-Watson: {} trojkatow z {} punktow",
+    //             result.triangles.size(), points3D.size());
 
     return result;
 }
