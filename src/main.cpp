@@ -177,7 +177,9 @@ std::unique_ptr<Prefab> zaslonaModel;
 std::unique_ptr<Prefab> roomModel;
 std::unique_ptr<Prefab> placeholderModel;
 std::unique_ptr<Prefab> doorsToiletModel;
-std::unique_ptr<Prefab> toiletPaperModel;
+std::unique_ptr<Prefab> toiletPaperRedModel;
+std::unique_ptr<Prefab> toiletPaperGreenModel;
+std::unique_ptr<Prefab> toiletPaperBlueModel;
 std::unique_ptr<Prefab> mirrorModel1;
 std::unique_ptr<Prefab> mirrorModel2;
 std::unique_ptr<Prefab> mirrorModel3;
@@ -2005,7 +2007,9 @@ void connectAllModels() {
     sinkModel        = std::make_unique<Prefab>("res/models/sink_2.glb");
     toiletModel      = std::make_unique<Prefab>("res/models/toilet_f.glb");
     doorsToiletModel = std::make_unique<Prefab>("res/models/doors_toliet_tex6.glb");
-    toiletPaperModel = std::make_unique<Prefab>("res/models/papier1.glb");
+    toiletPaperRedModel = std::make_unique<Prefab>("res/models/papier_czerwony.glb");
+    toiletPaperGreenModel = std::make_unique<Prefab>("res/models/papier_zielony.glb");
+    toiletPaperBlueModel = std::make_unique<Prefab>("res/models/papier_niebieski.glb");
     mirrorModel1     = std::make_unique<Prefab>("res/models/glass1_v2.glb");
     mirrorModel2     = std::make_unique<Prefab>("res/models/lustro_puste.glb");
     mirrorModel3     = std::make_unique<Prefab>("res/models/glass2_v2.glb");
@@ -2117,7 +2121,13 @@ void createFirstRoom(Scene* scena1) {
 
     // Papier toaletowy
     for (int i = 0; i < 6; i++) {
-        tablicaPapierowKibel[i] = toiletPaperModel->Instantiate(*scena1, nullptr, nullptr);
+        if (i == 0 || i == 3)
+            tablicaPapierowKibel[i] = toiletPaperGreenModel->Instantiate(*scena1, nullptr, nullptr);
+        if (i == 1 || i == 5)
+            tablicaPapierowKibel[i] = toiletPaperRedModel->Instantiate(*scena1, nullptr, nullptr);
+        if (i == 2 || i == 4)
+            tablicaPapierowKibel[i] = toiletPaperBlueModel->Instantiate(*scena1, nullptr, nullptr);
+
         tablicaKibli[i]->name = "PapierKibel" + std::to_string(i);
         tablicaPapierowKibel[i]->GetComponent<TransformComponent>()->scale    = glm::vec3{ 2, 2, 2 };
         tablicaPapierowKibel[i]->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 90, 0 };
