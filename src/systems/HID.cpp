@@ -1,4 +1,6 @@
 #include "HID.h"
+
+#include <optional>
 //#include <spdlog/spdlog.h>
 
 

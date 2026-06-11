@@ -118,7 +118,7 @@ public:
         // HiZ
         InitHiZ(w, h);
 
-        spdlog::info("RendererManager::Init {}x{}", w, h);
+        //spdlog::info("RendererManager::Init {}x{}", w, h);
     }
 
     void InitHiZ(int w, int h)
@@ -134,7 +134,7 @@ public:
         glTextureParameteri(hizTexture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glBindTexture(GL_TEXTURE_2D, 0);
 
-        spdlog::info("RendererManager: HiZ {}x{} mips={}", w, h, hizMipLevels);
+        //spdlog::info("RendererManager: HiZ {}x{} mips={}", w, h, hizMipLevels);
     }
 
     void AttachCameraHiZ(GLuint hizTexture, int hizMipLevels, int vpW, int vpH, bool frustumEnabled, bool occlusionEnabled, int vpX = 0, int vpY = 0)
@@ -182,7 +182,7 @@ public:
             entry.renderer->UploadMaterials();
         }
 
-        spdlog::info("RendererManager: zainicjalizowano {} passów", passes.size());
+        //spdlog::info("RendererManager: zainicjalizowano {} passów", passes.size());
     }
 
 
@@ -287,7 +287,7 @@ public:
             entry.renderer->UploadMeshes();
             entry.renderer->UploadMaterials();
             it->second = false;
-            spdlog::info("RendererManager: flush pass {}", entry.passID);
+            //spdlog::info("RendererManager: flush pass {}", entry.passID);
         }
     }
 
@@ -338,7 +338,7 @@ public:
             entry.renderer->UploadMeshes();
             entry.renderer->UploadMaterials();
             it->second = false;
-            spdlog::info("RendererManager: flush pass {}", entry.passID);
+            //spdlog::info("RendererManager: flush pass {}", entry.passID);
         }
     }
 
@@ -584,7 +584,7 @@ public:
         entry.renderer->shaderHizDownsample = shaderHizDownsample;
         entry.renderer->shaderRender = cfg.shader ? cfg.shader : defaultShaderRender;
         entry.renderer->AttachHiZ(hizTexture, hizMipLevels, screenWidth, screenHeight);
-        spdlog::info("Add pass");
+        //spdlog::info("Add pass");
         passes.push_back(std::move(entry));
 
         std::sort(passes.begin(), passes.end(),
@@ -715,36 +715,36 @@ public:
 
     void DebugRenderFrameInput(const PassEntry& entry, const glm::vec3& cameraPos)
     {
-        spdlog::info("=== PassID={} type={} objects={} transparentBuffer={} ===",
+        /*spdlog::info("=== PassID={} type={} objects={} transparentBuffer={} ===",
             entry.passID,
             entry.config.type == RenderPassType::Transparent ? "Transparent" : "Opaque",
             entry.objects.size(),
             entry.transparentBuffer.size()
-        );
+        );*/
 
         for (size_t i = 0; i < entry.objects.size(); ++i)
         {
             const RenderData& rd = entry.objects[i];
             glm::vec3 pos = glm::vec3(rd.modelMatrix[3]);
 
-            spdlog::info("  [{}] meshID={} matID={} skelID={} pos=({:.2f},{:.2f},{:.2f})",
+            /*spdlog::info("  [{}] meshID={} matID={} skelID={} pos=({:.2f},{:.2f},{:.2f})",
                 i,
                 rd.meshID,
                 rd.materialID,
                 rd.skeletonID,
                 pos.x, pos.y, pos.z
-            );
+            );*/
 
-            if (rd.meshID == UINT32_MAX)
-                spdlog::error("    ^ meshID UINT32_MAX!");
-            if (rd.materialID == UINT32_MAX)
-                spdlog::error("    ^ materialID UINT32_MAX!");
-            if (rd.skeletonID != NO_SKELETON)
-                spdlog::info("    ^ animowany, skeletonID={}", rd.skeletonID);
+            if (rd.meshID == UINT32_MAX){}
+                //spdlog::error("    ^ meshID UINT32_MAX!");
+            if (rd.materialID == UINT32_MAX){}
+                //spdlog::error("    ^ materialID UINT32_MAX!");
+            if (rd.skeletonID != NO_SKELETON){}
+                //spdlog::info("    ^ animowany, skeletonID={}", rd.skeletonID);
         }
 
-        if (entry.objects.empty())
-            spdlog::warn("  PUSTY — nic nie idzie do GPU!");
+        if (entry.objects.empty()){}
+            //spdlog::warn("  PUSTY — nic nie idzie do GPU!");
     }
 
     // Główna pętla renderowania
@@ -866,9 +866,9 @@ public:
         uint32_t pid = AddPass(cfg);
         registry[shader] = pid;
 
-        spdlog::info("RendererManager: nowy pass {} shader={} type={}",
-            pid, (void*)shader,
-            isTransparent ? "Transparent" : "Opaque");
+        //spdlog::info("RendererManager: nowy pass {} shader={} type={}",
+        //    pid, (void*)shader,
+        //    isTransparent ? "Transparent" : "Opaque");
         return pid;
     }
 };

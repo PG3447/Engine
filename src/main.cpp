@@ -468,13 +468,13 @@ GameObject* puzzleRewardObject = nullptr;
 
 
 void OnPuzzleSolved(Scene* scene) {
-    spdlog::info("Puzzle rozwiązany!");
+    //spdlog::info("Puzzle rozwiązany!");
 
     // Zabezpieczenie przed wielokrotnym wywołaniem
     if (puzzleRewardObject != nullptr) return;
 
     if (placeholderModel == nullptr) {
-        spdlog::error("placeholderModel nie zaladowany!");
+        //spdlog::error("placeholderModel nie zaladowany!");
         return;
     }
 
