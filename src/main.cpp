@@ -483,6 +483,7 @@ void HandlePlayerInteraction(
     GameObject* otherPlayerHeldObject,
     Scene* scene,
     std::unordered_map<GameObject*, float>& rotatingObjects,
+    std::unordered_set<GameObject*>& rotatingInProgress,
     float& outShakeTimer
 ) {
     if (!ecs.GetSystem<HID>()->is_action_just_pressed(inputAction)) return;
@@ -547,7 +548,10 @@ void HandlePlayerInteraction(
         if (hit.hitObject != nullptr) {
             // Obracanie
             if (rotatableObjects.count(hit.hitObject)) {
-                if (!rotatingObjects.count(hit.hitObject)) rotatingObjects[hit.hitObject] = 60.0f;
+                if (!rotatingInProgress.count(hit.hitObject)) {
+                    rotatingObjects[hit.hitObject] = 60.0f;
+                    rotatingInProgress.insert(hit.hitObject);
+                }
             }
             // PAIN
             if (majorDoors.count(hit.hitObject)) {
@@ -640,6 +644,25 @@ void HandlePlayerInteraction(
             else if (hit.hitObject->name.find("Coffin") != std::string::npos) {
                 crematoriumPuzzle.ToggleCoffin(hit.hitObject);
             }
+        }
+    }
+}
+
+void HandleAltRotate(
+    ECS& ecs,
+    const std::string& inputAction,
+    RaycastComponent* playerRaycast,
+    std::unordered_map<GameObject*, float>& rotatingObjects,
+    std::unordered_set<GameObject*>& rotatingInProgress
+) {
+    if (!ecs.GetSystem<HID>()->is_action_just_pressed(inputAction)) return;
+    if (!playerRaycast->anyHit()) return;
+
+    RaycastHit hit = playerRaycast->closestHit();
+    if (hit.hitObject && rotatableObjects.count(hit.hitObject)) {
+        if (!rotatingInProgress.count(hit.hitObject)) {
+            rotatingObjects[hit.hitObject] = -60.0f;
+            rotatingInProgress.insert(hit.hitObject);
         }
     }
 }
@@ -1085,6 +1108,7 @@ int main(int, char**)
 
     // obracanie
     std::unordered_map<GameObject*, float> rotatingObjects;
+    std::unordered_set<GameObject*> rotatingInProgress;
 
     auto normalizeAngle = [](float angle) -> float {
         angle = fmod(angle, 360.0f);
@@ -1304,26 +1328,35 @@ int main(int, char**)
         for (auto it = rotatingObjects.begin(); it != rotatingObjects.end(); )
         {
             TransformComponent* transform = it->first->GetComponent<TransformComponent>();
-            if (transform == nullptr) { it = rotatingObjects.erase(it); continue; }
+            if (transform == nullptr) {
+                rotatingInProgress.erase(it->first);
+                it = rotatingObjects.erase(it);
+                continue;
+            }
 
+            float remaining = std::abs(it->second);
             float step = 90.0f * deltaTime;
-            if (step > it->second) step = it->second;
+            if (step > remaining) step = remaining;
             transform->isDirty = true;
 
-            transform->rotation.z -= step;
-            it->second            -= step;
+            float dir = (it->second > 0.0f) ? -1.0f : 1.0f;
+            transform->rotation.z += dir * step;
+            it->second = (it->second > 0.0f) ? it->second - step : it->second + step;
 
-            if (it->second <= 0.0f) {
+            if (std::abs(it->second) <= 0.0f) {
                 spdlog::info("Rotated to: {:.2f}", transform->rotation.z);
                 transform->isDirty = false;
+                rotatingInProgress.erase(it->first);
                 it = rotatingObjects.erase(it);
                 checkKibelUstawienia();
             }
             else ++it;
         }
 
-        HandlePlayerInteraction(ecs, "interact_p1", player1Raycast, camera1, p1HeldObject, p2HeldObject, scena1, rotatingObjects, p1ShakeTimer);
-        HandlePlayerInteraction(ecs, "interact_p2", player2Raycast, camera2, p2HeldObject, p1HeldObject, scena1, rotatingObjects, p2ShakeTimer);
+        HandlePlayerInteraction(ecs, "interact_p1", player1Raycast, camera1, p1HeldObject, p2HeldObject, scena1, rotatingObjects, rotatingInProgress, p1ShakeTimer);
+        HandlePlayerInteraction(ecs, "interact_p2", player2Raycast, camera2, p2HeldObject, p1HeldObject, scena1, rotatingObjects,rotatingInProgress , p2ShakeTimer);
+        HandleAltRotate(ecs, "alt_interact_p1", player1Raycast, rotatingObjects, rotatingInProgress);
+        HandleAltRotate(ecs, "alt_interact_p2", player2Raycast, rotatingObjects, rotatingInProgress);
 
         // testy animacji
         if (ecs.GetSystem<HID>()->is_action_just_pressed("anim_play_dying")) {

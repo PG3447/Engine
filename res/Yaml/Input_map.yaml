@@ -19,6 +19,7 @@ input:
     gamma_down: [GLFW_KEY_9]
     play_sound: [GLFW_KEY_H]
     interact_p1: [GLFW_KEY_E]
+    alt_interact_p1: [GLFW_KEY_Q]
   mouse:
     interact_p1: [GLFW_MOUSE_BUTTON_LEFT]
     right_click: [GLFW_MOUSE_BUTTON_RIGHT]
@@ -27,3 +28,7 @@ input:
       - {button: GLFW_GAMEPAD_BUTTON_TRIANGLE, id: 0}
     interact_p2:
       - {button: GLFW_GAMEPAD_BUTTON_TRIANGLE, id: 1}
+    alt_interact_p1:
+      - {button: GLFW_GAMEPAD_BUTTON_SQUARE, id: 0}
+    alt_interact_p2:
+      - {button: GLFW_GAMEPAD_BUTTON_SQUARE, id: 1}
