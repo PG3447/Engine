@@ -110,6 +110,8 @@ void PhysicsSystem::FixedUpdate(float fixedDeltaTime)
             auto* rbA = rigidbodies[i];
             auto* rbB = rigidbodies[j];
 
+            if (rbA->isStatic && rbB->isStatic) continue;
+
             glm::vec3 posA = rbA->physicsPosition + cA->offset;
             glm::vec3 posB = rbB->physicsPosition + cB->offset;
 
@@ -246,6 +248,7 @@ void PhysicsSystem::FixedUpdate(float fixedDeltaTime)
     for (size_t i = 0; i < query->gameobjects.size(); i++) {
         auto* rb = rigidbodies[i];
         auto* cA = colliders[i];
+        if (rb->isStatic) continue;
 
         for (size_t j = 0; j < colliderOnlyQuery->gameobjects.size(); j++) {
             auto* tB = coTransforms[j];
@@ -271,22 +274,19 @@ void PhysicsSystem::FixedUpdate(float fixedDeltaTime)
                 float dir = (delta.x > 0 ? 1.0f : -1.0f);
                 rb->physicsPosition.x += overlapX * dir;
                 rb->previousPosition.x = rb->physicsPosition.x;
-                rb->velocity.x = 0;
-                rb->acceleration.x = 0;
+                rb->velocity.x = -rb->velocity.x * rb->bounce;
             }
             else if (overlapY < overlapZ) {
                 float dir = (delta.y > 0 ? 1.0f : -1.0f);
                 rb->physicsPosition.y += overlapY * dir;
                 rb->previousPosition.y = rb->physicsPosition.y;
-                rb->velocity.y = 0;
-                rb->acceleration.y = 0;
+                rb->velocity.y = -rb->velocity.y * rb->bounce;
             }
             else {
                 float dir = (delta.z > 0 ? 1.0f : -1.0f);
                 rb->physicsPosition.z += overlapZ * dir;
                 rb->previousPosition.z = rb->physicsPosition.z;
-                rb->velocity.z = 0;
-                rb->acceleration.z = 0;
+                rb->velocity.z = -rb->velocity.z * rb->bounce;
             }
         }
     }

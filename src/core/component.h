@@ -123,7 +123,7 @@ struct RigidbodyComponent : Component {
     static constexpr uint64_t ComponentBit = 1ull << 2;
 
     float mass = 1.0f;
-    float bounce = 0.1f;
+    float bounce = 0.2f;
     glm::vec3 velocity{ 0.0f };
     glm::vec3 acceleration{ 0.0f };
     glm::vec3 angularVelocity = glm::vec3(0);

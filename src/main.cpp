@@ -907,6 +907,8 @@ int main(int, char**)
     RigidbodyComponent* rigidBodyCamera1 = gracz1->AddComponent<RigidbodyComponent>();
     gracz1->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 20.0f, -20.0f);
     gracz1->GetComponent<TransformComponent>()->rotation = glm::vec3(0.0f, -180.0f, 0.0f);
+    gracz1->GetComponent<RigidbodyComponent>()->mass = 10.0f;
+    gracz1->GetComponent<RigidbodyComponent>()->bounce = 0.1f;
     gracz1->GetComponent<RigidbodyComponent>()->useGravity = true;
     gracz1->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1.0f, 5.25f, 1.0f };
 
@@ -947,6 +949,8 @@ int main(int, char**)
     RigidbodyComponent* rigidBodyCamera2 = gracz2->AddComponent<RigidbodyComponent>();
     gracz2->GetComponent<TransformComponent>()->position = glm::vec3(-10.0f, 20.0f, -20.0f);
     gracz2->GetComponent<TransformComponent>()->rotation = glm::vec3(0.0f, -180.0f, 0.0f);
+    gracz2->GetComponent<RigidbodyComponent>()->mass = 10.0f;
+    gracz2->GetComponent<RigidbodyComponent>()->bounce = 0.1f;
     gracz2->GetComponent<RigidbodyComponent>()->useGravity = true;
     gracz2->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1.0f, 5.25f, 1.0f };
 
