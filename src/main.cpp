@@ -1565,6 +1565,7 @@ void imgui_begin()
 
 GameObject* selectedGameObject = nullptr;
 
+
 void ShowGameObjectTree(GameObject* obj)
 {
     if (!obj) return;
@@ -1607,10 +1608,16 @@ void ShowTransformEditor(TransformComponent& transform)
         TransformHelper::setLocalScale(transform, scale);
 }
 
-void ShowColliderEditor(ColliderComponent& collider)
+void ShowColliderEditor(ColliderComponent& col)
 {
-    ImGui::Checkbox("Is Trigger", &collider.isTrigger);
+    ImGui::Text("Collider");
+    ImGui::DragFloat3("Offset", &col.offset.x, 0.01f);
+    ImGui::DragFloat3("HalfSize", &col.halfSize.x, 0.01f, 0.0f);
+    ImGui::Checkbox("Is Trigger", &col.isTrigger);
+    ImGui::Checkbox("Affects NavMesh", &col.affectsNavMesh);
+    ImGui::Checkbox("Is Walkable", &col.isWalkable);
 }
+
 
 void ShowLightEditor(LightComponent& light)
 {
@@ -1700,6 +1707,10 @@ void imgui_render(SceneManager& sceneManager)
         ImGui::Separator();
         ImGui::Text("Selected Entity: %s", selectedGameObject->name.c_str());
         ShowTransformEditor(*selectedGameObject->GetComponent<TransformComponent>());
+
+        ColliderComponent* col = selectedGameObject->GetComponent<ColliderComponent>();
+        if (col != nullptr)
+            ShowColliderEditor(*col);
 
         LightComponent* light = selectedGameObject->GetComponent<LightComponent>();
         if (light != nullptr)
