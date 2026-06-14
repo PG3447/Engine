@@ -215,7 +215,9 @@ public:
     ComputeShader* shaderBuildCmds = nullptr;
     ComputeShader* shaderHizDownsample = nullptr;
     Shader* shaderRender = nullptr;
+    Shader* shaderShadowRender = nullptr;
 
+    bool shadowMode = false;
     bool dirtyInstance = true;
     bool frustumsEnabled = false;
     bool occlussionEnabled = false;
@@ -604,8 +606,8 @@ public:
         glUniform2f(glGetUniformLocation(shaderHizWritePass->ID, "screenSize"), (float)(vpWidth > 0 ? vpWidth : screenWidth), (float)(vpHeight > 0 ? vpHeight : screenHeight));
         glUniform1i(glGetUniformLocation(shaderHizWritePass->ID, "hizMipLevels"), hizTexture ? hizMipLevels : 0); // 0 = wyłącz HiZ
         glUniform1ui(glGetUniformLocation(shaderHizWritePass->ID, "objectCount"), objectCount);
-        glUniform1i(glGetUniformLocation(shaderHizWritePass->ID, "enableOcclusion"), occlussionEnabled ? GL_TRUE : GL_FALSE); // 0 = wyłącz HiZ
-        glUniform1i(glGetUniformLocation(shaderHizWritePass->ID, "enableFrustumCulling"), frustumsEnabled ? GL_TRUE : GL_FALSE);
+        glUniform1i(glGetUniformLocation(shaderHizWritePass->ID, "enableOcclusion"), occlussionEnabled ? (shadowMode ? GL_FALSE : GL_TRUE) : GL_FALSE); // 0 = wyłącz HiZ
+        glUniform1i(glGetUniformLocation(shaderHizWritePass->ID, "enableFrustumCulling"), frustumsEnabled ? (shadowMode ? GL_FALSE : GL_TRUE) : GL_FALSE);
 
         glTextureParameteri(hizTexture, GL_TEXTURE_COMPARE_MODE, GL_NONE);
         glBindTextureUnit(0, hizTexture);
@@ -720,6 +722,30 @@ public:
         dirtyInstance = false;
     }
     
+    void RenderShadow(bool firstRender, const std::vector<RenderData>& objects)
+    {
+        shadowMode = true;
+        
+        if (firstRender)
+        {
+            uint32_t objCount = (uint32_t)objects.size();
+            UploadObjects(objects);
+            
+            if (dirtyInstance)
+                BuildInstance(objCount);
+
+            DispatchWritePass(glm::mat4(1.0f), objCount);
+
+            DispatchBuildCommands();
+        }
+
+        
+        shaderShadowRender->use();
+
+        Draw();
+        
+        shadowMode = false;
+    }
 
     void RenderFrame(const glm::mat4& viewProj, const std::vector<RenderData>& objects, GLuint depthTexturePrevFrame, glm::vec3 currentCameraPos, bool cameraDirty)
     {

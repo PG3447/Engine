@@ -49,6 +49,44 @@ struct FrameUBO {
 };
 
 
+struct ShadowMapArray {
+    GLuint fboShadow = 0;
+    GLuint depthArray = 0;
+    int resolution = 1024;
+    int maxLayers = 8;
+
+    void Init(int res, int layers) {
+        resolution = res;
+        maxLayers = layers;
+
+        // tekstura
+        glGenTextures(1, &depthArray);
+        glBindTexture(GL_TEXTURE_2D_ARRAY, depthArray);
+        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT32F, res, res, layers, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+        float borderColor[] = { 1.0, 1.0, 1.0, 1.0 };
+        glTexParameterfv(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BORDER_COLOR, borderColor);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+
+        // FBO (bez attachmentu — ustawiamy per warstwa)
+        glGenFramebuffers(1, &fboShadow);
+        glBindFramebuffer(GL_FRAMEBUFFER, fboShadow);
+        glDrawBuffer(GL_NONE);
+        glReadBuffer(GL_NONE);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
+
+    void Destroy() {
+        glDeleteTextures(1, &depthArray);
+        glDeleteFramebuffers(1, &fboShadow);
+    }
+};
+
+
 class GPUDrivenManager {
 public:
     int      screenWidth = 0;
@@ -90,6 +128,7 @@ public:
     std::unordered_map<AnimatorComponent*, uint32_t> animatorIDMap;
     std::vector<glm::mat4> boneMatricesCache;
 
+    ShadowMapArray shadowMapArray;
 
     void Init(int w, int h)
     {
@@ -745,6 +784,81 @@ public:
 
         if (entry.objects.empty())
             spdlog::warn("  PUSTY — nic nie idzie do GPU!");
+    }
+
+    int SHADOW_RESOLUTION = 1024;
+    void RenderShadow(std::vector<LightComponent*>& lights, std::vector<TransformComponent*>& transforms)
+    {
+        uint32_t count = std::min((uint32_t)lights.size(), (uint32_t)MAX_UBO_LIGHTS);
+
+        if (shadowMapArray.maxLayers != count)
+        {
+            if (shadowMapArray.fboShadow != 0)
+                shadowMapArray.Destroy();
+            
+            shadowMapArray.Init(SHADOW_RESOLUTION, count);
+        }
+
+        glViewport(0, 0, shadowMapArray.resolution, shadowMapArray.resolution);
+        glBindFramebuffer(GL_FRAMEBUFFER, shadowMapArray.fboShadow);
+        glEnable(GL_DEPTH_TEST);
+        glCullFace(GL_FRONT);
+
+        for (uint32_t i = 0; i < count; i++) {
+            LightComponent* light = lights[i];
+            TransformComponent* transform = transforms[i];
+            if (!light || !transform) continue;
+
+            const bool on = light->isOn;
+            const glm::vec3 zero(0.0f);
+
+            float near_plane = 1.0f, far_plane = 7.5f;
+            glm::mat4 lightProjection, lightView;
+            glm::mat4 lightSpaceMatrix;
+            glm::vec3 direction = (glm::length2(light->direction) < 0.0001f) ? glm::vec4(TransformHelper::getForward(*transform), 0.0f) : glm::vec4(light->direction, 0.0f);
+
+            if (light->type == Directional) {
+                lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
+                lightView = glm::lookAt(TransformHelper::getGlobalPosition(*transform), glm::vec3(0.0f), direction);
+                lightSpaceMatrix = lightProjection * lightView;
+            }
+
+            if (light->type == Spot)
+            {
+                float fov = glm::acos(light->outerCutOff) * 2.0f;
+                lightProjection = glm::perspective(fov, 1.0f, near_plane, far_plane);
+                lightView = glm::lookAt(TransformHelper::getGlobalPosition(*transform), glm::vec3(0.0f), direction);
+                lightSpaceMatrix = lightProjection * lightView;
+            }
+
+            UploadFrameUBO(viewProj, cameraPos, ambientStrength, numLights, zNear, zFar);
+
+            simpleDepthShader.use();
+            simpleDepthShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
+
+            glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, shadowMapArray.depthArray, 0, i);
+            glClear(GL_DEPTH_BUFFER_BIT);
+            
+
+            //Render depth texture - shadow map
+            for (auto& entry : passes)
+            {
+                if (entry.config.type == RenderPassType::Skybox)
+                {
+                    continue;
+                }
+
+                if (entry.renderer);
+                {
+                    entry.renderer->RenderShadow(true, entry.objects);
+                }
+
+            }
+
+
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        }
     }
 
     // Główna pętla renderowania

@@ -1,5 +1,4 @@
 #version 460 core
-#define MAX_SHADOW_LIGHTS 32
 
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec3 aNormal;
@@ -9,12 +8,6 @@ layout (location = 4) in vec3 aBitangent;
 layout (location = 5) in ivec4 boneIds;
 layout (location = 6) in vec4 weights;
 
-out vec3 FragPos;
-out vec2 TexCoords;
-out vec3 Normal;
-out mat3 TBN;
-out vec4 FragPosLightSpace[MAX_SHADOW_LIGHTS];
-flat out uint materialID;
 
 struct InstanceData {
     mat4 model;
@@ -33,7 +26,6 @@ layout(std140, binding = 0) uniform FrameUBO
     float zFar;
     float ambientStrength;
     int numLights;
-    int numShadowLigths;
 };
 
 // Jedna p³aska tablica wszystkich macierzy koœci dla WSZYSTKICH szkieletów.
@@ -51,23 +43,6 @@ layout(std430, binding = 4) readonly buffer BoneMatrices
     mat4 boneMatrices[]; //rozmiar MAX_BONES * maxSkeletons
 };
 
-layout(std430, binding = 8) readonly buffer ShadowMatrices
-{
-    mat4 lightSpaceMatrices[]; // tylko œwiat³a z castShadows, max MAX_SHADOW_LIGHTS
-};
-
-
-mat3 cofactorMatrix(mat4 m)
-{
-    vec3 c0 = m[0].xyz;
-    vec3 c1 = m[1].xyz;
-    vec3 c2 = m[2].xyz;
-    return mat3(
-        cross(c1, c2),
-        cross(c2, c0),
-        cross(c0, c1)
-    );
-}
 
 void main()
 {
@@ -75,7 +50,6 @@ void main()
     // gl_InstanceID   = który to egzemplarz w tej instancji (0..instanceCount-1)
     InstanceData inst = instances[gl_BaseInstance + gl_InstanceID];
 
-    materialID = inst.materialID;
     mat4 model = inst.model;
 
     // Skinning
@@ -98,18 +72,7 @@ void main()
     mat4 finalModel = model * boneTransform;
 
     vec4 worldPos = finalModel * vec4(aPos, 1.0);
-    FragPos   = worldPos.xyz;
-    TexCoords = aTexCoords;
 
-    mat3 normalMatrix = mat3(transpose(inverse(finalModel))); // cofactorMatrix(finalModel);
-    vec3 T = normalize(normalMatrix * aTangent);
-    vec3 B = normalize(normalMatrix * aBitangent);
-    vec3 N = normalize(normalMatrix * aNormal);
-    Normal = N;
-    TBN    = mat3(T, B, N);
-
-    for (int i = 0; i < numShadowLights; i++)
-        FragPosLightSpace[i] = lights[i].lightSpaceMatrix * vec4(worldPos, 1.0);
 
     gl_Position = viewProjection * worldPos;
 }
