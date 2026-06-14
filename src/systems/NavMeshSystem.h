@@ -39,9 +39,6 @@ public:
 
     // Dostep do danych
     NavMeshComponent* GetNavMesh() const;
-
-private:
-
     //  Krok 1: Zbierz punkty probkowania z walkable colliderow
     struct WalkableSurface {
         glm::vec3 min;

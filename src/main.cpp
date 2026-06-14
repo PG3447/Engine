@@ -56,6 +56,7 @@
 #include "utils/render_helper.h"
 #include "utils/animation_helper.h"
 #include "utils/player_animation_helper.h"
+#include "systems/NavMeshBenchmark.h"
 
 #include "gameplay/crematorium_puzzle.h"
 
@@ -1125,7 +1126,19 @@ int main(int, char**)
     createCrematorium(scena1);
     createRentgenRoom(scena1);
 
-    ecs.GetSystem<NavMeshSystem>()->Bake(*scena1);
+    NavMeshBenchmarkSystem* benchSys =
+            ecs.GetSystem<NavMeshBenchmarkSystem>();
+
+    if (benchSys) {
+        // Pełny benchmark: Delaunay → Recast → Voronoi → Grid
+        // Po każdej metodzie dane są czyszczone i bakowane kolejną.
+        benchSys->RunFullBenchmark(*scena1, "navmesh_benchmark.txt");
+
+        // Po benchmarku zostaw aktywną siatkę do gry.
+        benchSys->BakeWithMethod(*scena1, NavMeshMethod::Delaunay);
+
+        spdlog::info("[Main] NavMesh gotowy. Wyniki: navmesh_benchmark.txt");
+    }
 
     dyingModelPrefab   = std::make_unique<Prefab>("res/models/Dying.fbx");
     jumpSkeletonPrefab = std::make_unique<Prefab>("res/models/Jump.fbx");
@@ -2043,7 +2056,7 @@ void addAllSystems(ECS& ecs) {
     ecs.AddSystem<PostProcessingSystem>(ecs, window);
     ecs.AddSystem<SpriteSystem>(ecs, window);
     ecs.AddSystem<RaycastSystem>(ecs);
-    ecs.AddSystem<NavMeshSystem>(ecs);
+    ecs.AddSystem<NavMeshBenchmarkSystem>(ecs);
     ecs.AddSystem<NavPathSystem>(ecs);
     ecs.AddSystem<AudioSystem>(ecs);
     ecs.AddSystem<NpcSystem>(ecs);
