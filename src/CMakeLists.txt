@@ -38,6 +38,7 @@ add_executable(${PROJECT_NAME} ${HEADER_FILES} ${SOURCE_FILES} ${ASSETS_FILES} "
 		systems/NpcSystem.h
 		systems/NavMeshBenchmark.cpp
 		systems/NavMeshBenchmark.h
+		systems/NavPathSystembenchmark.cpp
 )
 
 
