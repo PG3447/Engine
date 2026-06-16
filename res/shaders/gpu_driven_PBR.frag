@@ -24,7 +24,7 @@ struct MaterialGPU
 
 struct GPULight {
     vec4 position;  // xyz=pos,  w=type (0=dir, 1=point, 2=spot)
-    vec4 direction; // xyz=dir,  w=unused
+    vec4 direction; // xyz=dir,  w=shadowON-shadowOFF
     vec4 ambient;
     vec4 diffuse;
     vec4 specular;

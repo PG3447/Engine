@@ -188,6 +188,7 @@ public:
     //GLuint drawCountSSBO = 0; // bind 5
     GLuint meshDataSSBO = 0; // bind 6
     GLuint materialSSBO = 0; /// bind 7
+    GLuint shadowMatrixSSBO = 0; /// bind 7
     //GLuint lightsSSBO = 0;
     GLuint boneMatricesSSBO = 0;
 
@@ -243,6 +244,7 @@ public:
         glDeleteBuffers(1, &drawCmdSSBO);
         glDeleteBuffers(1, &meshDataSSBO);
         glDeleteBuffers(1, &materialSSBO);
+        glDeleteBuffers(1, &shadowMatrixSSBO);
         //glDeleteBuffers(1, &frameUBO);
         //glDeleteBuffers(1, &lightsUBO);
         glDeleteBuffers(1, &boneMatricesSSBO);
@@ -307,6 +309,7 @@ public:
      /*   glGenBuffers(1, &drawCountSSBO);*/
         glGenBuffers(1, &meshDataSSBO);
         glGenBuffers(1, &materialSSBO);
+        glGenBuffers(1, &shadowMatrixSSBO);
      /*   glGenBuffers(1, &lightsSSBO);*/
         glGenBuffers(1, &boneMatricesSSBO);
 
@@ -552,6 +555,13 @@ public:
         spdlog::warn("Materialy sie wysylaja");
     }
 
+    void UploadShadowMatrix(const std::vector<glm::mat4>& shadowsMatrix)
+    {
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, shadowMatrixSSBO);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, shadowsMatrix.size() * sizeof(glm::mat4), shadowsMatrix.data(), GL_STATIC_DRAW);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    }
+
     void UploadAllBoneMatrices(const std::vector<glm::mat4>& allBones)
     {
         if (allBones.empty()) return;
@@ -691,6 +701,7 @@ public:
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, instanceSSBO); // vertex shader
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, boneMatricesSSBO); // vertex shader
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, materialSSBO);   // fragment shader
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 8, shadowMatrixSSBO); // fragment shader
     }
 
 
@@ -725,7 +736,9 @@ public:
     void RenderShadow(bool firstRender, const std::vector<RenderData>& objects)
     {
         shadowMode = true;
-        
+
+
+
         if (firstRender)
         {
             uint32_t objCount = (uint32_t)objects.size();
@@ -747,7 +760,7 @@ public:
         shadowMode = false;
     }
 
-    void RenderFrame(const glm::mat4& viewProj, const std::vector<RenderData>& objects, GLuint depthTexturePrevFrame, glm::vec3 currentCameraPos, bool cameraDirty)
+    void RenderFrame(const glm::mat4& viewProj, const std::vector<RenderData>& objects, GLuint depthTexturePrevFrame, GLuint shadowTexture, glm::vec3 currentCameraPos, bool cameraDirty)
     {
         uint32_t objCount = (uint32_t)objects.size();
         // 0. Aktualizuj obiekty na GPU
@@ -774,6 +787,10 @@ public:
         // barrier wewnątrz DispatchBuildCommands
 
         shaderRender->use();
+        glUniform1i(glGetUniformLocation(shaderRender->shaderProgramID, "shadowMap"), 0); // unit 0
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D_ARRAY, shadowTexture);
         //shaderRender->setMat4("viewProjection", viewProj);
         //shaderRender->setVec3("viewPos", currentCameraPos);
         //shaderRender->setInt("numLights", (int)gpuLights.size());

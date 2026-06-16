@@ -729,6 +729,8 @@ public:
         uint32_t count = std::min((uint32_t)lights.size(), (uint32_t)MAX_UBO_LIGHTS);
         gpuLights.resize(count);
 
+        std::vector<glm::mat4> lightSpaceMatrix(count);
+
         for (uint32_t i = 0; i < count; i++) {
             LightComponent* light = lights[i];
             TransformComponent* transform = transforms[i];
@@ -745,11 +747,39 @@ public:
             g.specular = glm::vec4(on ? light->specular : zero, 0.0f);
             g.params1 = glm::vec4(light->constant, light->linear, light->quadratic, light->intensity);
             g.params2 = glm::vec4(light->cutOff, light->outerCutOff, on ? 1.0f : 0.0f, light->range);
+
+            float near_plane = 1.0f, far_plane = 7.5f;
+            glm::mat4 lightProjection, lightView;
+
+            if (light->type == Directional) {
+                lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
+                lightView = glm::lookAt(TransformHelper::getGlobalPosition(*transform), glm::vec3(0.0f), glm::vec3(g.direction));
+                lightSpaceMatrix[i] = lightProjection * lightView;
+            }
+
+            if (light->type == Spot)
+            {
+                float fov = glm::acos(light->outerCutOff) * 2.0f;
+                lightProjection = glm::perspective(fov, 1.0f, near_plane, far_plane);
+                lightView = glm::lookAt(TransformHelper::getGlobalPosition(*transform), glm::vec3(0.0f), glm::vec3(g.direction));
+                lightSpaceMatrix[i] = lightProjection * lightView;
+            }
         }
 
         glBindBuffer(GL_UNIFORM_BUFFER, lightsUBO);
         glBufferSubData(GL_UNIFORM_BUFFER, 0, count * sizeof(GPULight), gpuLights.data());
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    
+        for (auto& entry : passes) {
+            if (entry.config.type == RenderPassType::Skybox) {
+                continue;
+            }
+
+            if (entry.renderer)
+            {
+                entry.renderer->UploadShadowMatrix(lightSpaceMatrix);
+            }
+        }
     }
 
     void DebugRenderFrameInput(const PassEntry& entry, const glm::vec3& cameraPos)
@@ -809,27 +839,6 @@ public:
             TransformComponent* transform = transforms[i];
             if (!light || !transform) continue;
 
-            const bool on = light->isOn;
-            const glm::vec3 zero(0.0f);
-
-            float near_plane = 1.0f, far_plane = 7.5f;
-            glm::mat4 lightProjection, lightView;
-            glm::mat4 lightSpaceMatrix;
-            glm::vec3 direction = (glm::length2(light->direction) < 0.0001f) ? glm::vec4(TransformHelper::getForward(*transform), 0.0f) : glm::vec4(light->direction, 0.0f);
-
-            if (light->type == Directional) {
-                lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
-                lightView = glm::lookAt(TransformHelper::getGlobalPosition(*transform), glm::vec3(0.0f), direction);
-                lightSpaceMatrix = lightProjection * lightView;
-            }
-
-            if (light->type == Spot)
-            {
-                float fov = glm::acos(light->outerCutOff) * 2.0f;
-                lightProjection = glm::perspective(fov, 1.0f, near_plane, far_plane);
-                lightView = glm::lookAt(TransformHelper::getGlobalPosition(*transform), glm::vec3(0.0f), direction);
-                lightSpaceMatrix = lightProjection * lightView;
-            }
 
             UploadFrameUBO(viewProj, cameraPos, ambientStrength, numLights, zNear, zFar);
 
@@ -894,7 +903,7 @@ public:
             if (entry.renderer);
             {
                 //DebugRenderFrameInput(entry, cameraPos);
-                entry.renderer->RenderFrame(viewProj, entry.objects, prevDepth, cameraPos, cameraDirty);
+                entry.renderer->RenderFrame(viewProj, entry.objects, prevDepth, shadowMapArray.depthArray, cameraPos, cameraDirty);
             }
         }
 
