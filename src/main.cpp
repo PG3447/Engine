@@ -1237,10 +1237,10 @@ int main(int, char**)
     FMOD::Sound* sndCoffinCollide = nullptr;
     FMOD::Sound* sndCoffinClose = nullptr;
 
-    audioSys->createSound("res/sound/coffin_slide_out.wav", sndCoffinSlideOut, true);
-    audioSys->createSound("res/sound/coffin_slide_in.wav", sndCoffinSlideIn, true);
-    audioSys->createSound("res/sound/coffin_collide.wav", sndCoffinCollide, false);
-    audioSys->createSound("res/sound/coffin_close.wav", sndCoffinClose, false);
+    audioSys->createSound("res/sound/coffin_open.wav", sndCoffinSlideOut, true);
+    audioSys->createSound("res/sound/coffin_open.wav", sndCoffinSlideIn, true);
+    audioSys->createSound("res/sound/coffin_collision.wav", sndCoffinCollide, false);
+    audioSys->createSound("res/sound/coffin_closed.wav", sndCoffinClose, false);
 
     crematoriumPuzzle.SetupAudio(audioSys, sndCoffinSlideOut, sndCoffinSlideIn, sndCoffinCollide, sndCoffinClose);
 
@@ -2206,7 +2206,7 @@ void connectAllModels() {
     NormalDoor       = std::make_unique<Prefab>("res/models/doors.glb");
     szafkaModel      = std::make_unique<Prefab>("res/models/szafka_pop_main.glb");
     ruraModel        = std::make_unique<Prefab>("res/models/placeholder_rura_wysuwana.glb");
-    panelModel       = std::make_unique<Prefab>("res/models/Panel_5x5.glb");
+    panelModel       = std::make_unique<Prefab>("res/models/Panel.glb");
     puzel1       = std::make_unique<Prefab>("res/models/Puzel1.glb");
     puzel2       = std::make_unique<Prefab>("res/models/Puzel2.glb");
     puzel3       = std::make_unique<Prefab>("res/models/Puzel3.glb");
@@ -2760,13 +2760,13 @@ void createCrematorium(Scene* scena) {
     CreateStaticObject(scena, wallModel2.get(), nullptr, "ScianaKoncowaKrematorium", glm::vec3(180, 0, -180), glm::vec3(80, 50, 1), std::nullopt, glm::vec3(1, 50, 80));
     CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaKremLewa",       glm::vec3(120.180, 0, -259.680), glm::vec3(60, 50, 1), std::nullopt, glm::vec3(60, 100, 1));
 
-    crematoriumPuzzle.spacingHorizontal = 6.0f;
-    crematoriumPuzzle.spacingVertical   = 4.5f;
+    crematoriumPuzzle.spacingHorizontal = 10.0f;
+    crematoriumPuzzle.spacingVertical   = 6.0f;
 
-    crematoriumPuzzle.minExtensionDistance = 9.5f;
-    crematoriumPuzzle.maxExtensionDistance = 34.0f;
+    crematoriumPuzzle.minExtensionDistance = 15.0f;
+    crematoriumPuzzle.maxExtensionDistance = 45.0f;
 
-    crematoriumPuzzle.coffinDimensions = glm::vec3(1.25f, 1.0f, 30.0f);
+    crematoriumPuzzle.coffinDimensions = glm::vec3(1.25f, 1.0f, 31.0f);
 
     crematoriumPuzzle.wallOffset = 17.0f;
 

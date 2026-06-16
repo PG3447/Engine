@@ -35,24 +35,41 @@ struct CoffinData {
 
 class CrematoriumPuzzle {
 public:
-    int rows = 5;
-    int cols = 5;
+    int rows = 4;
+    int cols = 4;
 
     std::vector<std::vector<int>> configLeftWall = {
-        {3, 3, 2, 5, 0},
-        {5, 5, 4, 2, 1},
-        {2, 1, 4, 3, 2},
-        {4, 0, 5, 0, 0},
-        {4, 2, 3, 4, 3}
+        {4, 4, 3, 1},
+        {2, 3, 2, 1},
+        {4, 4, 0, 2},
+        {1, 4, 2, 1}
     };
 
     std::vector<std::vector<int>> configRightWall = {
-        {2, 3, 3, 5, 2},
-        {2, 0, 2, 5, 5},
-        {1, 3, 2, 0, 4},
-        {4, 4, 2, 5, 4},
-        {0, 2, 0, 5, 1}
+        {3, 2, 4, 0},
+        {4, 3, 2, 1},
+        {1, 2, 3, 3},
+        {3, 1, 3, 4}
     };
+
+    //int rows = 5;
+    //int cols = 5;
+
+    //std::vector<std::vector<int>> configLeftWall = {
+    //    {3, 3, 2, 5, 0},
+    //    {5, 5, 4, 2, 1},
+    //    {2, 1, 4, 3, 2},
+    //    {4, 0, 5, 0, 0},
+    //    {4, 2, 3, 4, 3}
+    //};
+
+    //std::vector<std::vector<int>> configRightWall = {
+    //    {2, 3, 3, 5, 2},
+    //    {2, 0, 2, 5, 5},
+    //    {1, 3, 2, 0, 4},
+    //    {4, 4, 2, 5, 4},
+    //    {0, 2, 0, 5, 1}
+    //};
 
     AudioSystem* audioSystem = nullptr;
     FMOD::Sound* soundSlideOut = nullptr;
@@ -60,10 +77,16 @@ public:
     FMOD::Sound* soundCollide = nullptr;
     FMOD::Sound* soundClose = nullptr;
 
-    std::pair<int, int> leftStart = { 0, 0 };
-    std::pair<int, int> leftEnd = { 4, 4 };
+    //std::pair<int, int> leftStart = { 0, 0 };
+    //std::pair<int, int> leftEnd = { 4, 4 };
 
-    std::pair<int, int> rightStart = { 4, 4 };
+    //std::pair<int, int> rightStart = { 4, 4 };
+    //std::pair<int, int> rightEnd = { 0, 0 };
+
+    std::pair<int, int> leftStart = { 0, 0 };
+    std::pair<int, int> leftEnd = { 3, 3 };
+
+    std::pair<int, int> rightStart = { 3, 3 };
     std::pair<int, int> rightEnd = { 0, 0 };
 
     std::unordered_map<GameObject*, std::shared_ptr<Material>> activeMaterials;
