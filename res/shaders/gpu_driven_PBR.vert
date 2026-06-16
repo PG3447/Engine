@@ -13,7 +13,6 @@ out vec3 FragPos;
 out vec2 TexCoords;
 out vec3 Normal;
 out mat3 TBN;
-out vec4 FragPosLightSpace[MAX_SHADOW_LIGHTS];
 flat out uint materialID;
 
 struct InstanceData {
@@ -50,12 +49,6 @@ layout(std430, binding = 4) readonly buffer BoneMatrices
 {
     mat4 boneMatrices[]; //rozmiar MAX_BONES * maxSkeletons
 };
-
-layout(std430, binding = 8) readonly buffer ShadowMatrices
-{
-    mat4 lightSpaceMatrices[]; // tylko œwiat³a z castShadows, max MAX_SHADOW_LIGHTS
-};
-
 
 mat3 cofactorMatrix(mat4 m)
 {
@@ -107,9 +100,6 @@ void main()
     vec3 N = normalize(normalMatrix * aNormal);
     Normal = N;
     TBN    = mat3(T, B, N);
-
-    for (int i = 0; i < numShadowLights; i++)
-        FragPosLightSpace[i] = lights[i].lightSpaceMatrix * vec4(worldPos, 1.0);
 
     gl_Position = viewProjection * worldPos;
 }

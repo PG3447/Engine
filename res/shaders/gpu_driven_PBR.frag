@@ -8,7 +8,6 @@ in vec3 FragPos;
 in vec3 Normal;
 in vec2 TexCoords;
 in mat3 TBN;
-in vec4 FragPosLightSpace[MAX_SHADOW_LIGHTS];
 flat in uint materialID;
 
 struct MaterialGPU
@@ -43,6 +42,7 @@ layout(std140, binding = 0) uniform FrameUBO
     float zFar;
     float ambientStrength;
     int numLights;
+    int numShadowLigths;
 };
 
 #define MAX_LIGHTS 512
@@ -54,6 +54,11 @@ layout(std140, binding = 1) uniform Lights
 layout(std430, binding = 7) readonly restrict buffer Materials
 {
     MaterialGPU materials[];
+};
+
+layout(std430, binding = 8) readonly buffer ShadowMatrices
+{
+    mat4 lightSpaceMatrices[]; // tylko światła z castShadows, max MAX_SHADOW_LIGHTS
 };
 
 const float PI = 3.14159265359;
@@ -312,7 +317,12 @@ vec3 CalcSpotLightPBR(in GPULight light, vec3 normal, vec3 viewDir, vec3 F0, vec
     vec3 kD = vec3(1.0) - kS;
     kD *= 1.0 - metallic;
     
+    
     float shadow = 0.0f;// ShadowCalculation();
+    if (layer < numShadowLigths) {
+        vec4 fragPosLS = lightSpaceMatrices[layer] * vec4(FragPos, 1.0);
+        shadow = ShadowCalculation(fragPosLS, normal, light.position.xyz, layer);
+    }
 
     // dodaj do wynikowej radiancji Lo
     float NdotL = max(dot(normal, L), 0.0);                
