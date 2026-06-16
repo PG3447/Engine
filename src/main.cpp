@@ -521,7 +521,12 @@ void HandlePlayerInteraction(
     AudioSystem* audioSystem = nullptr,
     FMOD::Sound* soundPaper = nullptr,
     FMOD::Sound* soundDoorOpen = nullptr,
-    FMOD::Sound* soundDoorCloseStart = nullptr
+    FMOD::Sound* soundDoorCloseStart = nullptr,
+    FMOD::Sound* soundBtnClick = nullptr,
+    FMOD::Sound* soundUnlock = nullptr,
+    FMOD::Sound* soundPickup = nullptr,
+    FMOD::Sound* soundInsert = nullptr,
+    FMOD::Sound* soundDoorLocked = nullptr
 ) {
     if (!ecs.GetSystem<HID>()->is_action_just_pressed(inputAction)) return;
     //upuszczanie
@@ -552,6 +557,10 @@ void HandlePlayerInteraction(
             targetSlot->occupant = myHeldObject;
             if (IsPuzzleSolved())
                 OnPuzzleSolved(scene);
+
+            if (audioSystem && soundInsert) {
+                audioSystem->playSound(soundInsert);
+            }
 
             if (auto rb = myHeldObject->GetComponent<RigidbodyComponent>()) {
                 rb->useGravity = false;
@@ -602,8 +611,12 @@ void HandlePlayerInteraction(
                         TransformComponent* t = door->GetComponent<TransformComponent>();
                         if (t) t->position = glm::vec3(-1000.0f, -1000.0f, -1000.0f);
                     }
-                } else {
+                }
+                else {
                     outShakeTimer = SHAKE_DURATION;
+                    if (audioSystem && soundDoorLocked) {
+                        audioSystem->playSound(soundDoorLocked);
+                    }
                 }
                 PlayerAnimationHelper::TriggerAction(playerAnimator, playerPrefab, PlayerAnimationHelper::INTERACT_ANIM_INDEX);
             }
@@ -640,6 +653,11 @@ void HandlePlayerInteraction(
                     state.isOpen          = true;
                     state.targetAngle     = 90.0f;
 
+                    if (audioSystem) {
+                        if (soundBtnClick) audioSystem->playSound(soundBtnClick);
+                        if (soundUnlock)   audioSystem->playSound(soundUnlock);
+                    }
+
                     for (GameObject* hinge : mainRoomDoors) {
                         if (hinge && toiletDoorsMap.count(hinge)) {
                             DoorState& dState  = toiletDoorsMap[hinge];
@@ -672,6 +690,8 @@ void HandlePlayerInteraction(
                         rb->isStatic   = true;
                     }
 
+                    if (audioSystem && soundPickup) audioSystem->playSound(soundPickup);
+
                     PlayerAnimationHelper::TriggerAction(playerAnimator, playerPrefab, PlayerAnimationHelper::PICKUP_ANIM_INDEX);
                 }
             }
@@ -697,6 +717,8 @@ void HandlePlayerInteraction(
                     rb->useGravity = false;
                     rb->isStatic   = true;
                 }
+
+                if (audioSystem && soundPickup) audioSystem->playSound(soundPickup);
 
                 PlayerAnimationHelper::TriggerAction(playerAnimator, playerPrefab, PlayerAnimationHelper::PICKUP_ANIM_INDEX);
             }
@@ -1191,6 +1213,15 @@ int main(int, char**)
     FMOD::Sound* sound = nullptr;
     audioSys->createSound("res/sound/door_unlock.wav", sound);
 
+    FMOD::Sound* sndBtnClick = nullptr;
+    FMOD::Sound* sndPickup = nullptr;
+    FMOD::Sound* sndInsert = nullptr;
+    FMOD::Sound* sndDoorLocked = nullptr;
+    audioSys->createSound("res/sound/button_click.wav", sndBtnClick, false);
+    audioSys->createSound("res/sound/pick_up.wav", sndPickup, false);
+    audioSys->createSound("res/sound/insert_puzzle.wav", sndInsert, false);
+    audioSys->createSound("res/sound/door_locked.wav", sndDoorLocked, false);
+
     FMOD::Sound* sndPaperRoll = nullptr;
     FMOD::Sound* sndDoorOpen = nullptr;
     FMOD::Sound* sndDoorClosed = nullptr;
@@ -1460,8 +1491,8 @@ int main(int, char**)
             else ++it;
         }
 
-        HandlePlayerInteraction(ecs, "interact_p1", player1Raycast, camera1, p1HeldObject, p2HeldObject, scena1, rotatingObjects, rotatingInProgress, p1ShakeTimer, p1Animator, postacGracza.get(), audioSys, sndPaperRoll, sndDoorOpen, sndDoorCloseStart);
-        HandlePlayerInteraction(ecs, "interact_p2", player2Raycast, camera2, p2HeldObject, p1HeldObject, scena1, rotatingObjects, rotatingInProgress, p2ShakeTimer, p2Animator, postacGracza.get(), audioSys, sndPaperRoll, sndDoorOpen, sndDoorCloseStart);
+        HandlePlayerInteraction(ecs, "interact_p1", player1Raycast, camera1, p1HeldObject, p2HeldObject, scena1, rotatingObjects, rotatingInProgress, p1ShakeTimer, p1Animator, postacGracza.get(), audioSys, sndPaperRoll, sndDoorOpen, sndDoorCloseStart, sndBtnClick, sound, sndPickup, sndInsert, sndDoorLocked);
+        HandlePlayerInteraction(ecs, "interact_p2", player2Raycast, camera2, p2HeldObject, p1HeldObject, scena1, rotatingObjects, rotatingInProgress, p2ShakeTimer, p2Animator, postacGracza.get(), audioSys, sndPaperRoll, sndDoorOpen, sndDoorCloseStart, sndBtnClick, sound, sndPickup, sndInsert, sndDoorLocked);
 
         HandleAltRotate(ecs, "alt_interact_p1", player1Raycast, rotatingObjects, rotatingInProgress, audioSys, sndPaperRoll);
         HandleAltRotate(ecs, "alt_interact_p2", player2Raycast, rotatingObjects, rotatingInProgress, audioSys, sndPaperRoll);
