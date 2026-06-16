@@ -76,6 +76,7 @@ public:
     FMOD::Sound* soundSlideIn = nullptr;
     FMOD::Sound* soundCollide = nullptr;
     FMOD::Sound* soundClose = nullptr;
+    FMOD::Sound* soundPuzzleSolved = nullptr;
 
     //std::pair<int, int> leftStart = { 0, 0 };
     //std::pair<int, int> leftEnd = { 4, 4 };
@@ -102,7 +103,7 @@ public:
     float minExtensionDistance = 12.0f;
     float maxExtensionDistance = 40.5f;
 
-    float wallOffset = 18.0f;
+    float wallOffset = 16.0f;
 
     glm::vec3 renderScale = glm::vec3(1.0f, 1.0f, 1.0f);
 
@@ -121,7 +122,7 @@ public:
     uint64_t activationCounter = 1;
 
     void Init(Scene* scene, std::shared_ptr<Model> coffinModel, Prefab* panelPrefab, Shader* shader, glm::vec3 cornerPosition);
-    void SetupAudio(AudioSystem* audioSys, FMOD::Sound* slideOut, FMOD::Sound* slideIn, FMOD::Sound* collide, FMOD::Sound* close);
+    void SetupAudio(AudioSystem* audioSys, FMOD::Sound* slideOut, FMOD::Sound* slideIn, FMOD::Sound* collide, FMOD::Sound* close, FMOD::Sound* puzzleSolved = nullptr);
     void Update(float deltaTime);
     void ToggleCoffin(GameObject* clickedObject);
 };

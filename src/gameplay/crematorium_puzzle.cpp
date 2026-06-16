@@ -549,18 +549,22 @@ void CrematoriumPuzzle::Update(float deltaTime)
 
         if (isLeftSolved && isRightSolved && !isPuzzleSolved) {
             spdlog::warn("ZAGADKA KREMATORIUM ZOSTALA ROZWIAZANA W PELNI WOOOOOOOOOOOW");
+
+            // DWIÊK: Rozwi¹zanie zagadki krematorium!
+            if (audioSystem && soundPuzzleSolved) {
+                audioSystem->playSoundEx(soundPuzzleSolved);
+            }
+
             isPuzzleSolved = true;
-        }
-        else if ((!isLeftSolved || !isRightSolved) && isPuzzleSolved) {
-            isPuzzleSolved = false;
         }
     }
 }
 
-void CrematoriumPuzzle::SetupAudio(AudioSystem* audioSys, FMOD::Sound* slideOut, FMOD::Sound* slideIn, FMOD::Sound* collide, FMOD::Sound* close) {
+void CrematoriumPuzzle::SetupAudio(AudioSystem* audioSys, FMOD::Sound* slideOut, FMOD::Sound* slideIn, FMOD::Sound* collide, FMOD::Sound* close, FMOD::Sound* puzzleSolved) {
     audioSystem = audioSys;
     soundSlideOut = slideOut;
     soundSlideIn = slideIn;
     soundCollide = collide;
     soundClose = close;
+    soundPuzzleSolved = puzzleSolved;
 }

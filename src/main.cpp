@@ -526,7 +526,8 @@ void HandlePlayerInteraction(
     FMOD::Sound* soundUnlock = nullptr,
     FMOD::Sound* soundPickup = nullptr,
     FMOD::Sound* soundInsert = nullptr,
-    FMOD::Sound* soundDoorLocked = nullptr
+    FMOD::Sound* soundDoorLocked = nullptr,
+    FMOD::Sound* soundPuzzleSolved = nullptr
 ) {
     if (!ecs.GetSystem<HID>()->is_action_just_pressed(inputAction)) return;
     //upuszczanie
@@ -555,11 +556,19 @@ void HandlePlayerInteraction(
             heldTr->rotation = targetSlot->targetRotation;
             heldTr->isDirty  = true;
             targetSlot->occupant = myHeldObject;
-            if (IsPuzzleSolved())
-                OnPuzzleSolved(scene);
 
             if (audioSystem && soundInsert) {
                 audioSystem->playSound(soundInsert);
+            }
+
+            if (IsPuzzleSolved()) {
+                static bool rentgenPuzzleSolvedPlayed = false;
+                if (!rentgenPuzzleSolvedPlayed && audioSystem && soundPuzzleSolved) {
+                    audioSystem->playSound(soundPuzzleSolved);
+                    rentgenPuzzleSolvedPlayed = true;
+                }
+
+                OnPuzzleSolved(scene);
             }
 
             if (auto rb = myHeldObject->GetComponent<RigidbodyComponent>()) {
@@ -1213,14 +1222,26 @@ int main(int, char**)
     FMOD::Sound* sound = nullptr;
     audioSys->createSound("res/sound/door_unlock.wav", sound);
 
+    FMOD::Sound* sndAmbient = nullptr;
+    audioSys->createSound("res/sound/ambient.aiff", sndAmbient, true);
+
+    if (audioSys && sndAmbient) {
+        FMOD::Channel* ambientChannel = audioSys->playSoundEx(sndAmbient);
+        //if (ambientChannel) {
+        //    ambientChannel->setVolume(0.4f);
+        //}
+    }
+
     FMOD::Sound* sndBtnClick = nullptr;
     FMOD::Sound* sndPickup = nullptr;
     FMOD::Sound* sndInsert = nullptr;
     FMOD::Sound* sndDoorLocked = nullptr;
+    FMOD::Sound* sndGear = nullptr;
     audioSys->createSound("res/sound/button_click.wav", sndBtnClick, false);
     audioSys->createSound("res/sound/pick_up.wav", sndPickup, false);
     audioSys->createSound("res/sound/insert_puzzle.wav", sndInsert, false);
     audioSys->createSound("res/sound/door_locked.wav", sndDoorLocked, false);
+    audioSys->createSound("res/sound/falling_gear.wav", sndGear, false);
 
     FMOD::Sound* sndPaperRoll = nullptr;
     FMOD::Sound* sndDoorOpen = nullptr;
@@ -1242,7 +1263,7 @@ int main(int, char**)
     audioSys->createSound("res/sound/coffin_collision.wav", sndCoffinCollide, false);
     audioSys->createSound("res/sound/coffin_closed.wav", sndCoffinClose, false);
 
-    crematoriumPuzzle.SetupAudio(audioSys, sndCoffinSlideOut, sndCoffinSlideIn, sndCoffinCollide, sndCoffinClose);
+    crematoriumPuzzle.SetupAudio(audioSys, sndCoffinSlideOut, sndCoffinSlideIn, sndCoffinCollide, sndCoffinClose, sndGear);
 
     // obracanie
     std::unordered_map<GameObject*, float> rotatingObjects;
@@ -1491,8 +1512,8 @@ int main(int, char**)
             else ++it;
         }
 
-        HandlePlayerInteraction(ecs, "interact_p1", player1Raycast, camera1, p1HeldObject, p2HeldObject, scena1, rotatingObjects, rotatingInProgress, p1ShakeTimer, p1Animator, postacGracza.get(), audioSys, sndPaperRoll, sndDoorOpen, sndDoorCloseStart, sndBtnClick, sound, sndPickup, sndInsert, sndDoorLocked);
-        HandlePlayerInteraction(ecs, "interact_p2", player2Raycast, camera2, p2HeldObject, p1HeldObject, scena1, rotatingObjects, rotatingInProgress, p2ShakeTimer, p2Animator, postacGracza.get(), audioSys, sndPaperRoll, sndDoorOpen, sndDoorCloseStart, sndBtnClick, sound, sndPickup, sndInsert, sndDoorLocked);
+        HandlePlayerInteraction(ecs, "interact_p1", player1Raycast, camera1, p1HeldObject, p2HeldObject, scena1, rotatingObjects, rotatingInProgress, p1ShakeTimer, p1Animator, postacGracza.get(), audioSys, sndPaperRoll, sndDoorOpen, sndDoorCloseStart, sndBtnClick, sound, sndPickup, sndInsert, sndDoorLocked, sndGear);
+        HandlePlayerInteraction(ecs, "interact_p2", player2Raycast, camera2, p2HeldObject, p1HeldObject, scena1, rotatingObjects, rotatingInProgress, p2ShakeTimer, p2Animator, postacGracza.get(), audioSys, sndPaperRoll, sndDoorOpen, sndDoorCloseStart, sndBtnClick, sound, sndPickup, sndInsert, sndDoorLocked, sndGear);
 
         HandleAltRotate(ecs, "alt_interact_p1", player1Raycast, rotatingObjects, rotatingInProgress, audioSys, sndPaperRoll);
         HandleAltRotate(ecs, "alt_interact_p2", player2Raycast, rotatingObjects, rotatingInProgress, audioSys, sndPaperRoll);
