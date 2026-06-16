@@ -1153,8 +1153,23 @@ int main(int, char**)
     rigidBodyCamera2->useGravity = true;
 
     // FMOD
+    AudioSystem* audioSys = ecs.GetSystem<AudioSystem>();
+
     FMOD::Sound* sound = nullptr;
-    ecs.GetSystem<AudioSystem>()->createSound("res/sound/door_unlock.wav", sound);
+    audioSys->createSound("res/sound/door_unlock.wav", sound);
+
+    FMOD::Sound* sndCoffinSlideOut = nullptr;
+    FMOD::Sound* sndCoffinSlideIn = nullptr;
+    FMOD::Sound* sndCoffinCollide = nullptr;
+    FMOD::Sound* sndCoffinClose = nullptr;
+
+    audioSys->createSound("res/sound/coffin_open.wav", sndCoffinSlideOut, true);
+    audioSys->createSound("res/sound/coffin_close.wav", sndCoffinSlideIn, true);
+
+    audioSys->createSound("res/sound/coffin_collision.wav", sndCoffinCollide, false);
+    audioSys->createSound("res/sound/coffin_closed.wav", sndCoffinClose, false);
+
+    crematoriumPuzzle.SetupAudio(audioSys, sndCoffinSlideOut, sndCoffinSlideIn, sndCoffinCollide, sndCoffinClose);
 
     // obracanie
     std::unordered_map<GameObject*, float> rotatingObjects;

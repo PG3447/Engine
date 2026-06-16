@@ -5,6 +5,7 @@
 #include "shader.h"
 #include <vector>
 #include <algorithm>
+#include <systems/AudioSystem.h>
 
 enum class WallSide {
     Left,
@@ -20,7 +21,6 @@ struct CoffinData {
 
     bool isInteractable = true;
     bool isActivated = false;
-    //uint64_t activationOrder = 0;
 
     int preDeterminedLevel = 0;
     bool isBouncingBack = false;
@@ -29,6 +29,8 @@ struct CoffinData {
     float currentExtensionAnim = 0.0f;
 
     glm::vec3 basePosition;
+
+    FMOD::Channel* slidingChannel = nullptr;
 };
 
 class CrematoriumPuzzle {
@@ -51,6 +53,12 @@ public:
         {4, 4, 2, 5, 4},
         {0, 2, 0, 5, 1}
     };
+
+    AudioSystem* audioSystem = nullptr;
+    FMOD::Sound* soundSlideOut = nullptr;
+    FMOD::Sound* soundSlideIn = nullptr;
+    FMOD::Sound* soundCollide = nullptr;
+    FMOD::Sound* soundClose = nullptr;
 
     std::pair<int, int> leftStart = { 0, 0 };
     std::pair<int, int> leftEnd = { 4, 4 };
@@ -90,6 +98,7 @@ public:
     uint64_t activationCounter = 1;
 
     void Init(Scene* scene, std::shared_ptr<Model> coffinModel, Prefab* panelPrefab, Shader* shader, glm::vec3 cornerPosition);
+    void SetupAudio(AudioSystem* audioSys, FMOD::Sound* slideOut, FMOD::Sound* slideIn, FMOD::Sound* collide, FMOD::Sound* close);
     void Update(float deltaTime);
     void ToggleCoffin(GameObject* clickedObject);
 };

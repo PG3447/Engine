@@ -197,9 +197,25 @@ void CrematoriumPuzzle::ToggleCoffin(GameObject* clickedObject)
         clickedData->isActivated = false;
         clickedData->isBouncingBack = false;
         clickedData->currentTargetLevel = 0;
+
+        if (clickedData->slidingChannel) {
+            clickedData->slidingChannel->stop();
+            clickedData->slidingChannel = nullptr;
+        }
+        if (audioSystem && soundSlideIn) {
+            clickedData->slidingChannel = audioSystem->playSoundEx(soundSlideIn);
+        }
     }
     else {
         clickedData->isActivated = true;
+
+        if (clickedData->slidingChannel) {
+            clickedData->slidingChannel->stop();
+            clickedData->slidingChannel = nullptr;
+        }
+        if (audioSystem && soundSlideOut) {
+            clickedData->slidingChannel = audioSystem->playSoundEx(soundSlideOut);
+        }
 
         std::vector<bool> gridOccupied(rows * cols * cols, false);
 
@@ -262,10 +278,24 @@ void CrematoriumPuzzle::Update(float deltaTime)
                 coffin.currentExtensionAnim += animSpeed * deltaTime;
                 if (coffin.currentExtensionAnim >= targetDistance) {
                     coffin.currentExtensionAnim = targetDistance;
+
+                    if (coffin.slidingChannel) {
+                        coffin.slidingChannel->stop();
+                        coffin.slidingChannel = nullptr;
+                    }
+
                     if (coffin.isBouncingBack) {
+                        if (audioSystem && soundCollide) {
+                            audioSystem->playSoundEx(soundCollide);
+                        }
+
                         coffin.isActivated = false;
                         coffin.isBouncingBack = false;
                         coffin.currentTargetLevel = 0;
+
+                        if (audioSystem && soundSlideIn) {
+                            coffin.slidingChannel = audioSystem->playSoundEx(soundSlideIn);
+                        }
                     }
                 }
             }
@@ -273,8 +303,17 @@ void CrematoriumPuzzle::Update(float deltaTime)
         else {
             if (coffin.currentExtensionAnim > 0.0f) {
                 coffin.currentExtensionAnim -= animSpeed * deltaTime;
-                if (coffin.currentExtensionAnim < 0.0f)
+                if (coffin.currentExtensionAnim <= 0.0f) {
                     coffin.currentExtensionAnim = 0.0f;
+
+                    if (coffin.slidingChannel) {
+                        coffin.slidingChannel->stop();
+                        coffin.slidingChannel = nullptr;
+                    }
+                    if (audioSystem && soundClose) {
+                        audioSystem->playSoundEx(soundClose);
+                    }
+                }
             }
         }
 
@@ -496,4 +535,12 @@ void CrematoriumPuzzle::Update(float deltaTime)
             isPuzzleSolved = false;
         }
     }
+}
+
+void CrematoriumPuzzle::SetupAudio(AudioSystem* audioSys, FMOD::Sound* slideOut, FMOD::Sound* slideIn, FMOD::Sound* collide, FMOD::Sound* close) {
+    audioSystem = audioSys;
+    soundSlideOut = slideOut;
+    soundSlideIn = slideIn;
+    soundCollide = collide;
+    soundClose = close;
 }

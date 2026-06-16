@@ -3,6 +3,7 @@
 
  #include <core/ecs.h>
  #include <fmod.hpp>
+ #include <string>
 
  class AudioSystem : public System {
  private:
@@ -25,12 +26,22 @@
          system->release();
      }
 
-     void createSound(std::string name, FMOD::Sound*& sound) {
-         system->createSound(name.c_str(), FMOD_DEFAULT, nullptr, &sound);
+     void createSound(std::string name, FMOD::Sound*& sound, bool loop = false) {
+         FMOD_MODE mode = FMOD_DEFAULT;
+         if (loop) {
+             mode |= FMOD_LOOP_NORMAL;
+         }
+         system->createSound(name.c_str(), mode, nullptr, &sound);
      }
 
      void playSound(FMOD::Sound* sound) {
          system->playSound(sound, nullptr, false, &channel);
+     }
+
+     FMOD::Channel* playSoundEx(FMOD::Sound* sound) {
+         FMOD::Channel* channel = nullptr;
+         system->playSound(sound, nullptr, false, &channel);
+         return channel;
      }
 
  };
