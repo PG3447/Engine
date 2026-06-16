@@ -517,7 +517,11 @@ void HandlePlayerInteraction(
     std::unordered_set<GameObject*>& rotatingInProgress,
     float& outShakeTimer,
     AnimatorComponent* playerAnimator,
-    Prefab* playerPrefab
+    Prefab* playerPrefab,
+    AudioSystem* audioSystem = nullptr,
+    FMOD::Sound* soundPaper = nullptr,
+    FMOD::Sound* soundDoorOpen = nullptr,
+    FMOD::Sound* soundDoorCloseStart = nullptr
 ) {
     if (!ecs.GetSystem<HID>()->is_action_just_pressed(inputAction)) return;
     //upuszczanie
@@ -585,6 +589,10 @@ void HandlePlayerInteraction(
                     rotatingObjects[hit.hitObject] = 60.0f;
                     rotatingInProgress.insert(hit.hitObject);
                     PlayerAnimationHelper::TriggerAction(playerAnimator, playerPrefab, PlayerAnimationHelper::INTERACT_ANIM_INDEX);
+
+                    if (audioSystem && soundPaper) {
+                        audioSystem->playSound(soundPaper);
+                    }
                 }
             }
             // PAIN
@@ -603,14 +611,25 @@ void HandlePlayerInteraction(
             else if (toiletDoorsMap.count(hit.hitObject)) {
                 DoorState& state = toiletDoorsMap[hit.hitObject];
                 if (state.canBeClicked) {
-                    state.isOpen      = !state.isOpen;
+                    state.isOpen = !state.isOpen;
                     state.targetAngle = state.isOpen ? state.openAngle : state.closedAngle;
 
                     if (auto col = hit.hitObject->GetComponent<ColliderComponent>()) {
                         col->halfSize = state.isOpen ? glm::vec3{ 1.0f, 10.0f, 1.0f } : glm::vec3{ 0.8f, 10.0f, 4.0f };
-                        col->offset   = state.isOpen ? glm::vec3(0.0f) : state.originalOffset;
+                        col->offset = state.isOpen ? glm::vec3(0.0f) : state.originalOffset;
                     }
                     PlayerAnimationHelper::TriggerAction(playerAnimator, playerPrefab, PlayerAnimationHelper::INTERACT_ANIM_INDEX);
+
+                    if (state.isOpen) {
+                        if (audioSystem && soundDoorOpen) {
+                            audioSystem->playSound(soundDoorOpen);
+                        }
+                    }
+                    else {
+                        if (audioSystem && soundDoorCloseStart) {
+                            audioSystem->playSound(soundDoorCloseStart);
+                        }
+                    }
                 }
             }
             // Otwieranie szafki
@@ -695,7 +714,9 @@ void HandleAltRotate(
     const std::string& inputAction,
     RaycastComponent* playerRaycast,
     std::unordered_map<GameObject*, float>& rotatingObjects,
-    std::unordered_set<GameObject*>& rotatingInProgress
+    std::unordered_set<GameObject*>& rotatingInProgress,
+    AudioSystem* audioSystem = nullptr,
+    FMOD::Sound* soundPaper = nullptr
 ) {
     if (!ecs.GetSystem<HID>()->is_action_just_pressed(inputAction)) return;
     if (!playerRaycast->anyHit()) return;
@@ -705,26 +726,38 @@ void HandleAltRotate(
         if (!rotatingInProgress.count(hit.hitObject)) {
             rotatingObjects[hit.hitObject] = -60.0f;
             rotatingInProgress.insert(hit.hitObject);
+
+            if (audioSystem && soundPaper) {
+                audioSystem->playSound(soundPaper);
+            }
         }
     }
 }
 
-void UpdateDoors(float deltaTime) {
+void UpdateDoors(float deltaTime, AudioSystem* audioSystem = nullptr, FMOD::Sound* soundClosed = nullptr) {
     float doorAnimSpeed = 180.0f;
     for (auto& [doorObj, state] : toiletDoorsMap) {
         if (std::abs(state.currentAngle - state.targetAngle) > 0.1f) {
             float direction = (state.targetAngle > state.currentAngle) ? 1.0f : -1.0f;
             state.currentAngle += direction * doorAnimSpeed * deltaTime;
 
+            bool justFinished = false;
             if ((direction > 0.0f && state.currentAngle > state.targetAngle) ||
                 (direction < 0.0f && state.currentAngle < state.targetAngle)) {
                 state.currentAngle = state.targetAngle;
+                justFinished = true;
             }
 
             TransformComponent* hingeTr = state.hinge->GetComponent<TransformComponent>();
             if (hingeTr) {
                 hingeTr->rotation.y = state.currentAngle;
                 hingeTr->isDirty = true;
+            }
+
+            if (justFinished && !state.isOpen) {
+                if (audioSystem && soundClosed) {
+                    audioSystem->playSound(soundClosed);
+                }
             }
         }
     }
@@ -1158,16 +1191,25 @@ int main(int, char**)
     FMOD::Sound* sound = nullptr;
     audioSys->createSound("res/sound/door_unlock.wav", sound);
 
+    FMOD::Sound* sndPaperRoll = nullptr;
+    FMOD::Sound* sndDoorOpen = nullptr;
+    FMOD::Sound* sndDoorClosed = nullptr;
+    FMOD::Sound* sndDoorCloseStart = nullptr;
+
+    audioSys->createSound("res/sound/paper_roll.wav", sndPaperRoll, false);
+    audioSys->createSound("res/sound/bathroom_door_open.wav", sndDoorOpen, false);
+    audioSys->createSound("res/sound/bathroom_door_closed.wav", sndDoorClosed, false);
+    audioSys->createSound("res/sound/door_close_start.wav", sndDoorCloseStart, false);
+
     FMOD::Sound* sndCoffinSlideOut = nullptr;
     FMOD::Sound* sndCoffinSlideIn = nullptr;
     FMOD::Sound* sndCoffinCollide = nullptr;
     FMOD::Sound* sndCoffinClose = nullptr;
 
-    audioSys->createSound("res/sound/coffin_open.wav", sndCoffinSlideOut, true);
-    audioSys->createSound("res/sound/coffin_close.wav", sndCoffinSlideIn, true);
-
-    audioSys->createSound("res/sound/coffin_collision.wav", sndCoffinCollide, false);
-    audioSys->createSound("res/sound/coffin_closed.wav", sndCoffinClose, false);
+    audioSys->createSound("res/sound/coffin_slide_out.wav", sndCoffinSlideOut, true);
+    audioSys->createSound("res/sound/coffin_slide_in.wav", sndCoffinSlideIn, true);
+    audioSys->createSound("res/sound/coffin_collide.wav", sndCoffinCollide, false);
+    audioSys->createSound("res/sound/coffin_close.wav", sndCoffinClose, false);
 
     crematoriumPuzzle.SetupAudio(audioSys, sndCoffinSlideOut, sndCoffinSlideIn, sndCoffinCollide, sndCoffinClose);
 
@@ -1286,7 +1328,7 @@ int main(int, char**)
             }
         }
 
-        UpdateDoors(deltaTime);
+        UpdateDoors(deltaTime, audioSys, sndDoorClosed);
         UpdateCabinets(deltaTime);
 
         auto inputStart = std::chrono::high_resolution_clock::now();
@@ -1418,11 +1460,11 @@ int main(int, char**)
             else ++it;
         }
 
-        HandlePlayerInteraction(ecs, "interact_p1", player1Raycast, camera1, p1HeldObject, p2HeldObject, scena1, rotatingObjects, rotatingInProgress, p1ShakeTimer, p1Animator, postacGracza.get());
-        HandlePlayerInteraction(ecs, "interact_p2", player2Raycast, camera2, p2HeldObject, p1HeldObject, scena1, rotatingObjects, rotatingInProgress, p2ShakeTimer, p2Animator, postacGracza.get());
+        HandlePlayerInteraction(ecs, "interact_p1", player1Raycast, camera1, p1HeldObject, p2HeldObject, scena1, rotatingObjects, rotatingInProgress, p1ShakeTimer, p1Animator, postacGracza.get(), audioSys, sndPaperRoll, sndDoorOpen, sndDoorCloseStart);
+        HandlePlayerInteraction(ecs, "interact_p2", player2Raycast, camera2, p2HeldObject, p1HeldObject, scena1, rotatingObjects, rotatingInProgress, p2ShakeTimer, p2Animator, postacGracza.get(), audioSys, sndPaperRoll, sndDoorOpen, sndDoorCloseStart);
 
-        HandleAltRotate(ecs, "alt_interact_p1", player1Raycast, rotatingObjects, rotatingInProgress);
-        HandleAltRotate(ecs, "alt_interact_p2", player2Raycast, rotatingObjects, rotatingInProgress);
+        HandleAltRotate(ecs, "alt_interact_p1", player1Raycast, rotatingObjects, rotatingInProgress, audioSys, sndPaperRoll);
+        HandleAltRotate(ecs, "alt_interact_p2", player2Raycast, rotatingObjects, rotatingInProgress, audioSys, sndPaperRoll);
 
         // testy animacji
         if (ecs.GetSystem<HID>()->is_action_just_pressed("anim_play_dying")) {
