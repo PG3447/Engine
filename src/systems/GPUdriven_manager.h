@@ -124,6 +124,7 @@ public:
     ComputeShader* shaderBuildCmds = nullptr;
     ComputeShader* shaderHizDownsample = nullptr;
     Shader* defaultShaderRender = nullptr;
+    Shader* depthShadowShader = nullptr;
 
     std::unordered_map<AnimatorComponent*, uint32_t> animatorIDMap;
     std::vector<glm::mat4> boneMatricesCache;
@@ -141,6 +142,7 @@ public:
         shaderBuildCmds = new ComputeShader("res/shaders/build_commands.comp");
         shaderHizDownsample = new ComputeShader("res/shaders/hiz_build.comp");
         defaultShaderRender = new Shader("res/shaders/gpu_driven_PBR.vert", "res/shaders/gpu_driven_PBR.frag");
+        depthShadowShader = new Shader("res/shaders/shadowDepth.vert", "res/shaders/shadowDepth.frag");
 
         glGenBuffers(1, &frameUBO);
         glBindBuffer(GL_UNIFORM_BUFFER, frameUBO);
@@ -835,10 +837,6 @@ public:
         glCullFace(GL_FRONT);
 
         for (uint32_t i = 0; i < count; i++) {
-            LightComponent* light = lights[i];
-            TransformComponent* transform = transforms[i];
-            if (!light || !transform) continue;
-
 
             UploadFrameUBO(viewProj, cameraPos, ambientStrength, numLights, zNear, zFar);
 
