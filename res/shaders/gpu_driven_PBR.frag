@@ -81,6 +81,35 @@ vec3 ACESFilmic(vec3 x)
     return clamp((x*(a*x+b))/(x*(c*x+d)+e), 0.0, 1.0);
 }
 
+/*
+float ShadowCalculation(vec4 fragPosLightSpace, vec3 norm, vec3 lightDir, int layer)
+{
+    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+    projCoords = projCoords * 0.5 + 0.5;
+
+    // poza frustumem światła = brak cienia
+    if (projCoords.z > 1.0 || any(lessThan(projCoords.xy, vec2(0.0))) || any(greaterThan(projCoords.xy, vec2(1.0))))
+        return 0.0;
+
+    float currentDepth = projCoords.z;
+
+    // bias zależny od kąta — znacznie mniejsze wartości
+    float cosTheta = max(dot(normalize(norm), normalize(lightDir)), 0.0);
+    float bias = mix(0.0005, 0.00005, cosTheta);
+
+    float shadow = 0.0;
+    vec2 texelSize = 1.0 / textureSize(shadowMap, 0).xy;
+    for (int x = -1; x <= 1; ++x)
+        for (int y = -1; y <= 1; ++y)
+            shadow += texture(shadowMap,
+                vec4(projCoords.xy + vec2(x, y) * texelSize,
+                     float(layer),
+                     currentDepth - bias));
+
+    return 1.0 - (shadow / 9.0);
+}
+*/
+
 float ShadowCalculation(vec4 fragPosLightSpace, vec3 norm, vec3 lightPos, int layer)
 {
      // perform perspective divide
