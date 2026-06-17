@@ -701,7 +701,7 @@ public:
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, instanceSSBO); // vertex shader
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, boneMatricesSSBO); // vertex shader
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, materialSSBO);   // fragment shader
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 8, shadowMatrixSSBO); // fragment shader
+        //glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 8, shadowMatrixSSBO); // fragment shader
     }
 
 

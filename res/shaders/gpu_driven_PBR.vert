@@ -1,5 +1,4 @@
 #version 460 core
-#define MAX_SHADOW_LIGHTS 32
 
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec3 aNormal;
@@ -32,7 +31,7 @@ layout(std140, binding = 0) uniform FrameUBO
     int numLights;
     int numShadowLigths;
     int padding;
-};;
+};
 
 // Jedna p³aska tablica wszystkich macierzy koœci dla WSZYSTKICH szkieletów.
 // Uk³ad: skeleton 0 zajmuje [0 .. MAX_BONES-1],
@@ -48,6 +47,7 @@ layout(std430, binding = 4) readonly buffer BoneMatrices
 {
     mat4 boneMatrices[]; //rozmiar MAX_BONES * maxSkeletons
 };
+
 
 mat3 cofactorMatrix(mat4 m)
 {
