@@ -41,6 +41,11 @@ public:
     Query<Components...>* CreateQuery() {
         return ecs.CreateQuery<Components...>();
     }
+    
+    void DestroyGameObject(GameObject* go) {
+        if (!go || go == root.get()) return;
+        go->SetParent(nullptr);
+    }
 
     void Update(float deltaTime);
 
