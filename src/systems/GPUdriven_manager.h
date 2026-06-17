@@ -751,20 +751,30 @@ public:
             g.params1 = glm::vec4(light->constant, light->linear, light->quadratic, light->intensity);
             g.params2 = glm::vec4(light->cutOff, light->outerCutOff, on ? 1.0f : 0.0f, light->range);
 
-            float near_plane = 1.0f, far_plane = 1000.0f;
+            float near_plane = 1.0f, far_plane = 500.0f;
             glm::mat4 lightProjection, lightView;
 
+            auto safeUp = [](glm::vec3 dir) -> glm::vec3 {
+                // unikamy równoległości forward/up
+                dir = glm::normalize(dir);
+                return (glm::abs(glm::dot(dir, glm::vec3(0, 1, 0))) > 0.99f)
+                    ? glm::vec3(0, 0, 1)
+                    : glm::vec3(0, 1, 0);
+                };
+
+            glm::vec3 pos = TransformHelper::getGlobalPosition(*transform);
+            glm::vec3 dir = glm::normalize(glm::vec3(g.direction)); // już ustawiony wyżej
+
             if (light->type == Directional) {
-                lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
-                lightView = glm::lookAt(TransformHelper::getGlobalPosition(*transform), glm::vec3(0.0f), glm::vec3(g.direction));
+                lightProjection = glm::ortho(-10.f, 10.f, -10.f, 10.f, near_plane, far_plane);
+                lightView = glm::lookAt(pos, pos + dir, safeUp(dir));
                 lightSpaceMatrix[i] = lightProjection * lightView;
             }
 
-            if (light->type == Spot)
-            {
-                float fov = glm::acos(light->outerCutOff) * 2.0f;
-                lightProjection = glm::perspective(fov, 1.0f, near_plane, far_plane);
-                lightView = glm::lookAt(TransformHelper::getGlobalPosition(*transform), glm::vec3(0.0f), glm::vec3(g.direction));
+            if (light->type == Spot) {
+                float fov = glm::acos(glm::clamp(light->outerCutOff, -1.f, 1.f)) * 2.f;
+                lightProjection = glm::perspective(fov, 1.f, near_plane, far_plane);
+                lightView = glm::lookAt(pos, pos + dir, safeUp(dir));
                 lightSpaceMatrix[i] = lightProjection * lightView;
             }
         }
