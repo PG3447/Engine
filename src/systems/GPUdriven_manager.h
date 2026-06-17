@@ -750,7 +750,7 @@ public:
             g.params1 = glm::vec4(light->constant, light->linear, light->quadratic, light->intensity);
             g.params2 = glm::vec4(light->cutOff, light->outerCutOff, on ? 1.0f : 0.0f, light->range);
 
-            float near_plane = 1.0f, far_plane = 7.5f;
+            float near_plane = 1.0f, far_plane = 1000.0f;
             glm::mat4 lightProjection, lightView;
 
             if (light->type == Directional) {
@@ -822,6 +822,7 @@ public:
     void RenderShadow(const glm::mat4& viewProj, glm::vec3 cameraPos)
     {
         const int numLights = (int)gpuLights.size();
+        if (numLights == 0) return;
         if (shadowMapArray.maxLayers != numLights)
         {
             if (shadowMapArray.fboShadow != 0)
@@ -847,10 +848,11 @@ public:
         glBindFramebuffer(GL_FRAMEBUFFER, shadowMapArray.fboShadow);
         glEnable(GL_DEPTH_TEST);
         glCullFace(GL_FRONT);
+        bool first = true;
 
         for (uint32_t i = 0; i < numLights; i++) {
 
-            UploadFrameUBO(viewProj, cameraPos, 0.0f, numLights, i);
+            UploadFrameUBO(glm::mat4(1.0f), glm::vec3(1.0f), 0.0f, numLights, i);
 
             glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, shadowMapArray.depthArray, 0, i);
             glClear(GL_DEPTH_BUFFER_BIT);
@@ -864,16 +866,13 @@ public:
                     continue;
                 }
 
-                if (entry.renderer);
+                if (entry.renderer)
                 {
-                    entry.renderer->RenderShadow(true, entry.objects);
+                    entry.renderer->RenderShadow(first, entry.objects);
                 }
 
             }
-
-
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
+            first = false;
         }
 
         glBindFramebuffer(GL_FRAMEBUFFER, prevFBO);
@@ -913,7 +912,7 @@ public:
             ApplyPassState(entry.config);
             
 
-            if (entry.renderer);
+            if (entry.renderer)
             {
                 //DebugRenderFrameInput(entry, cameraPos);
                 entry.renderer->RenderFrame(viewProj, entry.objects, prevDepth, shadowMapArray.depthArray, cameraPos, cameraDirty);
@@ -1005,6 +1004,117 @@ public:
             pid, (void*)shader,
             isTransparent ? "Transparent" : "Opaque");
         return pid;
+    }
+
+
+    void DebugShadowMapImGui(GPUDrivenManager& mgr)
+    {
+        ImGui::Begin("Shadow Debug");
+
+        // --- Info ogólny ---
+        ImGui::Text("Lights: %d", (int)mgr.gpuLights.size());
+        ImGui::Text("Shadow layers: %d / %d",
+            mgr.shadowMapArray.maxLayers,
+            mgr.shadowMapArray.maxLayers);
+        ImGui::Text("Resolution: %dx%d",
+            mgr.shadowMapArray.resolution,
+            mgr.shadowMapArray.resolution);
+        ImGui::Text("FBO: %u  DepthArray: %u",
+            mgr.shadowMapArray.fboShadow,
+            mgr.shadowMapArray.depthArray);
+
+        ImGui::Separator();
+
+        // --- Podgląd wybranej warstwy ---
+        static int layer = 0;
+        static float previewSize = 256.0f;
+        static float near_z = 0.1f, far_z = 7.5f;
+
+        int numLayers = (int)mgr.gpuLights.size();
+        if (numLayers > 0)
+        {
+            ImGui::SliderInt("Layer", &layer, 0, numLayers - 1);
+            ImGui::SliderFloat("Preview size", &previewSize, 128.0f, 512.0f);
+            ImGui::SliderFloat("Near", &near_z, 0.01f, 1.0f);
+            ImGui::SliderFloat("Far", &far_z, 1.0f, 100.0f);
+
+            // Blit wybranej warstwy do tymczasowej tekstury 2D i pokaż w ImGui
+            // (najprostszy sposób: blitujemy przez FBO do tekstury pomocniczej)
+            static GLuint debugTex = 0;
+            static GLuint debugFBO = 0;
+            static int debugRes = 0;
+
+            int res = mgr.shadowMapArray.resolution;
+            if (debugTex == 0 || debugRes != res)
+            {
+                if (debugTex) glDeleteTextures(1, &debugTex);
+                if (debugFBO) glDeleteFramebuffers(1, &debugFBO);
+
+                glGenTextures(1, &debugTex);
+                glBindTexture(GL_TEXTURE_2D, debugTex);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, res, res, 0,
+                    GL_RED, GL_FLOAT, nullptr);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glBindTexture(GL_TEXTURE_2D, 0);
+
+                glGenFramebuffers(1, &debugFBO);
+                glBindFramebuffer(GL_READ_FRAMEBUFFER, debugFBO);
+                glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                    GL_TEXTURE_2D, debugTex, 0);
+                glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+
+                debugRes = res;
+            }
+
+            // Kopiuj warstwę N z array do debugTex przez compute/shader lub
+            // prościej: użyj glCopyImageSubData (OpenGL 4.3+)
+            if (mgr.shadowMapArray.depthArray && layer < numLayers)
+            {
+                glCopyImageSubData(
+                    mgr.shadowMapArray.depthArray, GL_TEXTURE_2D_ARRAY, 0, 0, 0, layer,
+                    debugTex, GL_TEXTURE_2D, 0, 0, 0, 0,
+                    res, res, 1);
+            }
+
+            // Wyświetl w ImGui (głębokość jest nielinear — linearyzuj przez near/far)
+            ImGui::Text("Depth map — layer %d  (near=%.2f far=%.2f)", layer, near_z, far_z);
+            ImGui::Image((ImTextureID)(intptr_t)debugTex,
+                ImVec2(previewSize, previewSize));
+
+            ImGui::TextDisabled("Jasny = blisko, ciemny = daleko (nieliniowy)");
+        }
+        else
+        {
+            ImGui::TextColored(ImVec4(1, 0.4f, 0.4f, 1), "Brak swiatel — shadowmapa nie renderowana");
+        }
+
+        ImGui::Separator();
+
+        // --- Lista swiatел ---
+        if (ImGui::CollapsingHeader("GPULights"))
+        {
+            for (int i = 0; i < (int)mgr.gpuLights.size(); i++)
+            {
+                const GPULight& g = mgr.gpuLights[i];
+                ImGui::PushID(i);
+                char label[32];
+                snprintf(label, sizeof(label), "Light %d", i);
+                if (ImGui::TreeNode(label))
+                {
+                    ImGui::Text("pos  (%.2f, %.2f, %.2f) type=%.0f",
+                        g.position.x, g.position.y, g.position.z, g.position.w);
+                    ImGui::Text("dir  (%.2f, %.2f, %.2f)",
+                        g.direction.x, g.direction.y, g.direction.z);
+                    ImGui::Text("on   %.0f  intensity=%.2f  range=%.2f",
+                        g.params2.z, g.params1.w, g.params2.w);
+                    ImGui::TreePop();
+                }
+                ImGui::PopID();
+            }
+        }
+
+        ImGui::End();
     }
 };
 

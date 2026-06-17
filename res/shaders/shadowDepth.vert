@@ -27,8 +27,8 @@ layout(std140, binding = 0) uniform FrameUBO
     int numShadowLigths;
     int padding;
 };
-// Jedna p³aska tablica wszystkich macierzy koœci dla WSZYSTKICH szkieletów.
-// Uk³ad: skeleton 0 zajmuje [0 .. MAX_BONES-1],
+// Jedna pÅ‚aska tablica wszystkich macierzy koÅ›ci dla WSZYSTKICH szkieletÃ³w.
+// UkÅ‚ad: skeleton 0 zajmuje [0 .. MAX_BONES-1],
 //        skeleton 1 zajmuje [MAX_BONES .. 2*MAX_BONES-1], itd.
 const uint MAX_BONES = 200u;
 
@@ -44,13 +44,13 @@ layout(std430, binding = 4) readonly buffer BoneMatrices
 
 layout(std430, binding = 8) readonly buffer ShadowMatrices
 {
-    mat4 lightSpaceMatrices[]; // tylko œwiat³a z castShadows, max MAX_SHADOW_LIGHTS
+    mat4 lightSpaceMatrices[]; // tylko Å›wiatÅ‚a z castShadows, max MAX_SHADOW_LIGHTS
 };
 
 void main()
 {
     // gl_BaseInstance = instanceOffset z DrawCommand (offset w instanceSSBO)
-    // gl_InstanceID   = który to egzemplarz w tej instancji (0..instanceCount-1)
+    // gl_InstanceID   = ktÃ³ry to egzemplarz w tej instancji (0..instanceCount-1)
     InstanceData inst = instances[gl_BaseInstance + gl_InstanceID];
 
     mat4 model = inst.model;
@@ -72,7 +72,5 @@ void main()
         }
     }
 
-    mat4 finalModel = lightSpaceMatrices[numShadowLigths] * model * boneTransform;
-
-    gl_Position = finalModel * vec4(aPos, 1.0);
+    gl_Position = lightSpaceMatrices[numShadowLigths] * model * boneTransform * vec4(aPos, 1.0);
 }

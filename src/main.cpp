@@ -2026,6 +2026,7 @@ void imgui_render(SceneManager& sceneManager)
 
     ImGui::End();
 
+
     if (ImGui::Begin("Debug hizTexture")) {
         auto system = sceneManager.GetActiveScene()->GetECS().GetSystem<RenderSystem>();
         static int debugMip = 0;
@@ -2033,8 +2034,9 @@ void imgui_render(SceneManager& sceneManager)
         int i = 0;
         for (auto& [cam, hiz] : system->cameraHiZ) {
             ImGui::Text("Kamera %d", i++);
-            if (hiz.hizTexture != 0)
-                system->ShowR32FTextureImGui(hiz.hizTexture, debugMip);
+            /*if (hiz.hizTexture != 0)
+                system->ShowR32FTextureImGui(hiz.hizTexture, debugMip);*/
+            system->drivenManager.DebugShadowMapImGui(system->drivenManager);
             //system->drivenManager.ShowShadowMapImGui(debugMip);
         }
     }
