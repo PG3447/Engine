@@ -36,13 +36,12 @@ uniform sampler2DArrayShadow shadowMap;
 
 layout(std140, binding = 0) uniform FrameUBO
 {
-    mat4  viewProjection;
-    vec4  viewPos;   // xyz = pozycja kamery
-    float zNear;
-    float zFar;
+    mat4 viewProjection;
+    vec4 viewPos;   // xyz = pozycja kamery
     float ambientStrength;
     int numLights;
     int numShadowLigths;
+    int padding;
 };
 
 #define MAX_LIGHTS 512
@@ -319,10 +318,10 @@ vec3 CalcSpotLightPBR(in GPULight light, vec3 normal, vec3 viewDir, vec3 F0, vec
     
     
     float shadow = 0.0f;// ShadowCalculation();
-    if (layer < numShadowLigths) {
-        vec4 fragPosLS = lightSpaceMatrices[layer] * vec4(FragPos, 1.0);
-        shadow = ShadowCalculation(fragPosLS, normal, light.position.xyz, layer);
-    }
+//    if (layer < numShadowLigths) {
+//        vec4 fragPosLS = lightSpaceMatrices[layer] * vec4(FragPos, 1.0);
+//        shadow = ShadowCalculation(fragPosLS, normal, light.position.xyz, layer);
+//    }
 
     // dodaj do wynikowej radiancji Lo
     float NdotL = max(dot(normal, L), 0.0);                

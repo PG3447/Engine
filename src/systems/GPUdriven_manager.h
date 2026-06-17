@@ -42,12 +42,11 @@ struct PassEntry {
 struct FrameUBO {
     glm::mat4 viewProjection;
     glm::vec4 viewPos;   // xyz=kamera, w=unused
-    float     zNear;
-    float     zFar;
-    float     ambientStrength;
-    int       numLights;
+    float ambientStrength;
+    int numLights;
+    int numShadowLigths;
+    int padding;
 };
-
 
 struct ShadowMapArray {
     GLuint fboShadow = 0;
@@ -624,6 +623,7 @@ public:
         entry.renderer->shaderBuildCmds = shaderBuildCmds;
         entry.renderer->shaderHizDownsample = shaderHizDownsample;
         entry.renderer->shaderRender = cfg.shader ? cfg.shader : defaultShaderRender;
+        entry.renderer->shaderShadowRender = depthShadowShader;
         entry.renderer->AttachHiZ(hizTexture, hizMipLevels, screenWidth, screenHeight);
         spdlog::info("Add pass");
         passes.push_back(std::move(entry));
@@ -819,29 +819,38 @@ public:
     }
 
     int SHADOW_RESOLUTION = 1024;
-    void RenderShadow(std::vector<LightComponent*>& lights, std::vector<TransformComponent*>& transforms)
+    void RenderShadow(const glm::mat4& viewProj, glm::vec3 cameraPos)
     {
-        uint32_t count = std::min((uint32_t)lights.size(), (uint32_t)MAX_UBO_LIGHTS);
-
-        if (shadowMapArray.maxLayers != count)
+        const int numLights = (int)gpuLights.size();
+        if (shadowMapArray.maxLayers != numLights)
         {
             if (shadowMapArray.fboShadow != 0)
                 shadowMapArray.Destroy();
             
-            shadowMapArray.Init(SHADOW_RESOLUTION, count);
+            shadowMapArray.Init(SHADOW_RESOLUTION, numLights);
         }
+
+        // ── zapis aktualnego stanu ──
+        GLint  prevViewport[4];
+        glGetIntegerv(GL_VIEWPORT, prevViewport);
+
+        GLint  prevFBO = 0;
+        glGetIntegerv(GL_FRAMEBUFFER_BINDING, &prevFBO);
+
+        GLboolean prevDepthTest = glIsEnabled(GL_DEPTH_TEST);
+
+        GLint  prevCullFaceMode = GL_BACK;
+        glGetIntegerv(GL_CULL_FACE_MODE, &prevCullFaceMode);
+
 
         glViewport(0, 0, shadowMapArray.resolution, shadowMapArray.resolution);
         glBindFramebuffer(GL_FRAMEBUFFER, shadowMapArray.fboShadow);
         glEnable(GL_DEPTH_TEST);
         glCullFace(GL_FRONT);
 
-        for (uint32_t i = 0; i < count; i++) {
+        for (uint32_t i = 0; i < numLights; i++) {
 
-            UploadFrameUBO(viewProj, cameraPos, ambientStrength, numLights, zNear, zFar);
-
-            simpleDepthShader.use();
-            simpleDepthShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
+            UploadFrameUBO(viewProj, cameraPos, 0.0f, numLights, i);
 
             glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, shadowMapArray.depthArray, 0, i);
             glClear(GL_DEPTH_BUFFER_BIT);
@@ -866,13 +875,19 @@ public:
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         }
+
+        glBindFramebuffer(GL_FRAMEBUFFER, prevFBO);
+        glViewport(prevViewport[0], prevViewport[1], prevViewport[2], prevViewport[3]);
+        glCullFace(prevCullFaceMode);
+        if (!prevDepthTest)
+            glDisable(GL_DEPTH_TEST);
     }
 
     // Główna pętla renderowania
     void RenderFrame(const glm::mat4& view, const glm::mat4& projection, const glm::mat4& viewProj, glm::vec3 cameraPos, float ambientStrength, GLuint prevDepth, bool cameraDirty, float zNear = 0.1f, float zFar = 1000.0f)
     {
         const int numLights = (int)gpuLights.size();
-        UploadFrameUBO(viewProj, cameraPos, ambientStrength, numLights, zNear, zFar);
+        UploadFrameUBO(viewProj, cameraPos, ambientStrength, numLights, numLights);
 
         //if (prevDepth && hizTexture) {
         //    glCopyImageSubData(prevDepth, GL_TEXTURE_2D, 0, 0, 0, 0,
@@ -922,15 +937,14 @@ public:
         }
     }
 
-    void UploadFrameUBO(const glm::mat4& viewProj, const glm::vec3& cameraPos, float ambientStrength, int numLights, float zNear, float zFar)
+    void UploadFrameUBO(const glm::mat4& viewProj, const glm::vec3& cameraPos, float ambientStrength, int numLights, int numShadowLights)
     {
         FrameUBO data{};
         data.viewProjection = viewProj;
         data.viewPos = glm::vec4(cameraPos, 1.0f);
-        data.zNear = zNear;
-        data.zFar = zFar;
         data.ambientStrength = ambientStrength;
         data.numLights = numLights;
+        data.numShadowLigths = numShadowLights;
 
         glBindBuffer(GL_UNIFORM_BUFFER, frameUBO);
         glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(FrameUBO), &data);

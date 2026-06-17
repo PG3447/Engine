@@ -738,7 +738,6 @@ public:
         shadowMode = true;
 
 
-
         if (firstRender)
         {
             uint32_t objCount = (uint32_t)objects.size();
@@ -787,10 +786,11 @@ public:
         // barrier wewnątrz DispatchBuildCommands
 
         shaderRender->use();
-        glUniform1i(glGetUniformLocation(shaderRender->shaderProgramID, "shadowMap"), 0); // unit 0
+        //glUniform1i(glGetUniformLocation(shaderRender->shaderProgramID, "shadowMap"), 0); // unit 0
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D_ARRAY, shadowTexture);
+        //glActiveTexture(GL_TEXTURE0);
+        //glBindTexture(GL_TEXTURE_2D_ARRAY, shadowTexture);
+        
         //shaderRender->setMat4("viewProjection", viewProj);
         //shaderRender->setVec3("viewPos", currentCameraPos);
         //shaderRender->setInt("numLights", (int)gpuLights.size());

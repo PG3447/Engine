@@ -20,14 +20,13 @@ struct InstanceData {
 
 layout(std140, binding = 0) uniform FrameUBO
 {
-    mat4  viewProjection;
-    vec4  viewPos;   // xyz = pozycja kamery
-    float zNear;
-    float zFar;
+    mat4 viewProjection;
+    vec4 viewPos;   // xyz = pozycja kamery
     float ambientStrength;
     int numLights;
+    int numShadowLigths;
+    int padding;
 };
-
 // Jedna p³aska tablica wszystkich macierzy koœci dla WSZYSTKICH szkieletów.
 // Uk³ad: skeleton 0 zajmuje [0 .. MAX_BONES-1],
 //        skeleton 1 zajmuje [MAX_BONES .. 2*MAX_BONES-1], itd.
@@ -43,6 +42,10 @@ layout(std430, binding = 4) readonly buffer BoneMatrices
     mat4 boneMatrices[]; //rozmiar MAX_BONES * maxSkeletons
 };
 
+layout(std430, binding = 8) readonly buffer ShadowMatrices
+{
+    mat4 lightSpaceMatrices[]; // tylko œwiat³a z castShadows, max MAX_SHADOW_LIGHTS
+};
 
 void main()
 {
@@ -69,7 +72,7 @@ void main()
         }
     }
 
-    mat4 finalModel = model * boneTransform;
+    mat4 finalModel = lightSpaceMatrices[numShadowLigths] * boneTransform;
 
     vec4 worldPos = finalModel * vec4(aPos, 1.0);
 
