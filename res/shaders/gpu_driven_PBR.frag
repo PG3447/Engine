@@ -81,7 +81,7 @@ vec3 ACESFilmic(vec3 x)
     return clamp((x*(a*x+b))/(x*(c*x+d)+e), 0.0, 1.0);
 }
 
-/*
+
 float ShadowCalculation(vec4 fragPosLightSpace, vec3 norm, vec3 lightDir, int layer)
 {
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
@@ -108,8 +108,8 @@ float ShadowCalculation(vec4 fragPosLightSpace, vec3 norm, vec3 lightDir, int la
 
     return 1.0 - (shadow / 9.0);
 }
-*/
 
+/*
 float ShadowCalculation(vec4 fragPosLightSpace, vec3 norm, vec3 lightPos, int layer)
 {
      // perform perspective divide
@@ -148,7 +148,7 @@ float ShadowCalculation(vec4 fragPosLightSpace, vec3 norm, vec3 lightPos, int la
     shadow = 1.0 - shadow;
     return shadow;
 }
-
+*/
 void main()
 {
     MaterialGPU mat = materials[materialID];
