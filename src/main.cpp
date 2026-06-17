@@ -58,6 +58,7 @@
 #include "utils/player_animation_helper.h"
 
 #include "gameplay/crematorium_puzzle.h"
+#include "systems/SurfaceDecorationSystem.h"
 
 
 static void glfw_error_callback(int error, const char* description)
@@ -130,6 +131,7 @@ unsigned int cubemapTexture;
 unsigned int skyboxVAO;
 
 CrematoriumPuzzle crematoriumPuzzle;
+SurfaceDecorationSystem decorSystem;
 
 GLuint VBO;
 GLuint VAO;
@@ -1825,6 +1827,21 @@ static std::unordered_map<std::string, Prefab> prefabs;
 
 void imgui_render(SceneManager& sceneManager)
 {
+    std::vector<std::pair<std::string, Prefab*>> availablePrefabs;
+    for (auto& [name, weakModel] : ResourceManager::Models)
+    {
+        if (!prefabs.contains(name))
+            prefabs.emplace(name, Prefab(weakModel));
+        availablePrefabs.push_back({ name, &prefabs.at(name) });
+    }
+
+    std::vector<GameObject*> sceneObjects;
+    Scene* activeScene = sceneManager.GetActiveScene();
+    activeScene->GetRoot()->TraverseChildren([&](GameObject* go) {
+        sceneObjects.push_back(go);
+    });
+    decorSystem.DrawImGui(availablePrefabs, sceneObjects, *activeScene, nullptr);
+
     if (show_demo_window) { }
 
     ImGui::Begin("Hello, world!");
