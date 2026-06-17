@@ -20,8 +20,9 @@
 #include <random>
 #include <numeric>
 
+// ─────────────────────────────────────────────────────────────────────────────
 //  Helpers
-
+// ─────────────────────────────────────────────────────────────────────────────
 
 float SurfaceDecorationSystem::RandRange(float lo, float hi)
 {
@@ -32,23 +33,29 @@ float SurfaceDecorationSystem::RandRange(float lo, float hi)
     return dist(rng);
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
 //  Voronoi density
+// ─────────────────────────────────────────────────────────────────────────────
 
 std::vector<glm::vec2> SurfaceDecorationSystem::GenerateVoronoiCentroids(
     float originX, float originZ,
     float width,   float depth,
     int   count) const
 {
+    // Deterministyczne centroidy oparte na siatce z niewielkim jitterem
+    // — brak zewnętrznego seeda, używamy pozycji obszaru jako "seeda"
     std::vector<glm::vec2> centroids;
     centroids.reserve(count);
 
     if (count <= 0) return centroids;
 
+    // Układamy centroidy w siatce sqrt(count) x sqrt(count)
     int gridSide = std::max(1, (int)std::ceil(std::sqrt((float)count)));
 
     float cellW = width  / (float)gridSide;
     float cellD = depth  / (float)gridSide;
 
+    // Seed z pozycji obszaru — deterministyczny ale unikalny per-obszar
     uint32_t areaSeed =
         ((uint32_t)(std::abs(originX) * 100.0f) * 73856093u) ^
         ((uint32_t)(std::abs(originZ) * 100.0f) * 19349663u) ^
@@ -98,7 +105,12 @@ float SurfaceDecorationSystem::VoronoiDensityWeight(
     float typicalDist = std::sqrt((width * depth) / (float)centroids.size()) * 0.5f;
     float t = std::min(minDist / (typicalDist * 1.5f), 1.0f);
 
+    // t=0 -> blisko centroidu (centrum Voronoi)
+    // t=1 -> daleko od centroidu (granica komórki)
 
+    // weight jako funkcja odległości:
+    // denseCenter=true  -> blisko centroidu = duży weight (gęściej w środku komórki)
+    // denseCenter=false -> daleko od centroidu = duży weight (gęściej na brzegach)
     float w;
     if (denseCenter)
         w = std::pow(1.0f - t, falloff * 2.0f + 0.5f);   // maleje od centrum
@@ -166,7 +178,9 @@ std::optional<glm::vec2> SurfaceDecorationSystem::SamplePoint(
     return std::nullopt;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
 //  Weighted pick
+// ─────────────────────────────────────────────────────────────────────────────
 
 const SurfaceDecorationCandidate* SurfaceDecorationSystem::PickWeighted(
     const std::vector<SurfaceDecorationCandidate>& candidates) const
@@ -189,8 +203,9 @@ const SurfaceDecorationCandidate* SurfaceDecorationSystem::PickWeighted(
     return &candidates.back();
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
 //  Config management
-
+// ─────────────────────────────────────────────────────────────────────────────
 
 SurfaceDecorationConfig& SurfaceDecorationSystem::AddConfig(const SurfaceDecorationConfig& cfg)
 {
@@ -215,7 +230,9 @@ void SurfaceDecorationSystem::ClearConfigs()
     m_configs.clear();
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
 //  Spawn
+// ─────────────────────────────────────────────────────────────────────────────
 
 int SurfaceDecorationSystem::SpawnConfig(
     const SurfaceDecorationConfig& cfg,
@@ -229,6 +246,7 @@ int SurfaceDecorationSystem::SpawnConfig(
         return 0;
     }
 
+    // ── Pobierz górną powierzchnię kolidera ──────────────────────────────
     auto* tr  = cfg.targetObject->GetComponent<TransformComponent>();
     auto* col = cfg.targetObject->GetComponent<ColliderComponent>();
 
@@ -253,9 +271,11 @@ int SurfaceDecorationSystem::SpawnConfig(
         return 0;
     }
 
+    // ── Generuj centroidy Voronoi ────────────────────────────────────────
     auto centroids = GenerateVoronoiCentroids(
         originX, originZ, width, depth, cfg.voronoiPoints);
 
+    // ── Rejection sampling ───────────────────────────────────────────────
     std::vector<glm::vec2> placed;
     placed.reserve(cfg.totalCount);
 
@@ -281,6 +301,7 @@ int SurfaceDecorationSystem::SpawnConfig(
 
         placed.push_back(*point);
 
+        // ── Wybierz kandydata i utwórz obiekt ───────────────────────────
         const SurfaceDecorationCandidate* chosen = PickWeighted(cfg.candidates);
         if (!chosen || !chosen->prefab) continue;
 
@@ -306,7 +327,7 @@ int SurfaceDecorationSystem::SpawnConfig(
             objTr->isDirty = true;
         }
 
-        m_spawned.push_back({ go, chosen, cfg.name });
+        m_spawned.push_back({ go, chosen, chosen->label, cfg.name });
         ++created;
     }
 
@@ -350,7 +371,9 @@ void SurfaceDecorationSystem::DespawnAll(Scene& scene)
     spdlog::info("[SurfaceDecoration] DespawnAll(): ukryto {} dekoracji.", count);
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
 //  ImGui
+// ─────────────────────────────────────────────────────────────────────────────
 
 bool SurfaceDecorationSystem::DrawConfigEditor(
     SurfaceDecorationConfig&                            cfg,
@@ -361,11 +384,13 @@ bool SurfaceDecorationSystem::DrawConfigEditor(
     bool changed = false;
     ImGui::PushID(cfgIndex);
 
+    // ── Nazwa i aktywność ────────────────────────────────────────────────
     changed |= ImGui::InputText("Nazwa##cfgname", cfg.name, sizeof(cfg.name));
     changed |= ImGui::Checkbox("Aktywna", &cfg.enabled);
 
     ImGui::Separator();
 
+    // ── Wybór obiektu-powierzchni ────────────────────────────────────────
     ImGui::Text("Obiekt źródłowy (kolider)");
 
     // Aktualny indeks w liście sceneObjects
@@ -414,6 +439,7 @@ bool SurfaceDecorationSystem::DrawConfigEditor(
 
     ImGui::Separator();
 
+    // ── Parametry generowania ────────────────────────────────────────────
     ImGui::Text("Generowanie");
     changed |= ImGui::DragInt  ("Liczba obiektów",   &cfg.totalCount,  1, 0, 2000);
     changed |= ImGui::DragFloat("Min. dystans",      &cfg.minDistance, 0.01f, 0.0f, 50.0f);
@@ -421,6 +447,7 @@ bool SurfaceDecorationSystem::DrawConfigEditor(
 
     ImGui::Separator();
 
+    // ── Voronoi density ──────────────────────────────────────────────────
     ImGui::Text("Voronoi density");
     ImGui::SameLine();
     ImGui::TextDisabled("(?)");
@@ -459,12 +486,14 @@ bool SurfaceDecorationSystem::DrawConfigEditor(
 
     ImGui::Separator();
 
+    // ── Bazowa skala ─────────────────────────────────────────────────────
     ImGui::Text("Bazowa skala");
     changed |= ImGui::DragFloat3("Skala##bs",
         reinterpret_cast<float*>(&cfg.baseScale), 0.01f, 0.001f, 100.0f);
 
     ImGui::Separator();
 
+    // ── Kandydaci ────────────────────────────────────────────────────────
     ImGui::Text("Kandydaci (%d)", (int)cfg.candidates.size());
 
     int toRemove = -1;
@@ -564,6 +593,7 @@ bool SurfaceDecorationSystem::DrawImGui(
 
     ImGui::Begin("Surface Decoration System");
 
+    // ── Akcje globalne ───────────────────────────────────────────────────
     if (ImGui::Button("Generuj wszystkie"))
     {
         DespawnAll(scene);
@@ -578,6 +608,7 @@ bool SurfaceDecorationSystem::DrawImGui(
 
     ImGui::Separator();
 
+    // ── YAML ─────────────────────────────────────────────────────────────
     ImGui::InputText("Plik YAML##yaml", m_yamlPath, sizeof(m_yamlPath));
     if (ImGui::Button("Zapisz##save"))
     {
@@ -599,7 +630,19 @@ bool SurfaceDecorationSystem::DrawImGui(
     }
 
     ImGui::Separator();
+    ImGui::TextDisabled("Zapis dokładnego układu (pozycje/rotacje/skale) — do wczytania w runtime:");
+    ImGui::InputText("Plik instancji##instyaml", m_instancesYamlPath, sizeof(m_instancesYamlPath));
+    if (ImGui::Button("Zapisz układ instancji"))
+    {
+        if (SaveInstancesToYaml(m_instancesYamlPath))
+            spdlog::info("[SurfaceDecoration] Zapisano układ instancji do {}", m_instancesYamlPath);
+        else
+            spdlog::error("[SurfaceDecoration] Błąd zapisu instancji do {}", m_instancesYamlPath);
+    }
 
+    ImGui::Separator();
+
+    // ── Lista konfiguracji (lewy panel) ─────────────────────────────────
     ImGui::Text("Konfiguracje (%d)", (int)m_configs.size());
 
     ImGui::BeginChild("##cfglist", ImVec2(200, 300), true);
@@ -624,6 +667,7 @@ bool SurfaceDecorationSystem::DrawImGui(
 
     ImGui::SameLine();
 
+    // ── Edytor wybranej konfiguracji (prawy panel) ───────────────────────
     ImGui::BeginGroup();
 
     if (m_selectedConfig >= 0 && m_selectedConfig < (int)m_configs.size())
@@ -683,7 +727,10 @@ bool SurfaceDecorationSystem::DrawImGui(
     return changed;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
 //  YAML Serialization
+// ─────────────────────────────────────────────────────────────────────────────
+
 bool SurfaceDecorationSystem::SaveToYaml(const std::string& path) const
 {
     YAML::Emitter out;
@@ -843,4 +890,126 @@ bool SurfaceDecorationSystem::LoadFromYaml(
     }
 
     return true;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Instance YAML — zapis/wczyt dokładnych transformacji (runtime)
+// ─────────────────────────────────────────────────────────────────────────────
+
+bool SurfaceDecorationSystem::SaveInstancesToYaml(const std::string& path) const
+{
+    YAML::Emitter out;
+    out << YAML::BeginMap;
+    out << YAML::Key << "instances" << YAML::Value << YAML::BeginSeq;
+
+    for (const auto& s : m_spawned)
+    {
+        if (!s.gameObject || s.prefabLabel.empty()) continue;
+
+        auto* tr = s.gameObject->GetComponent<TransformComponent>();
+        if (!tr) continue;
+
+        out << YAML::BeginMap;
+        out << YAML::Key << "prefab"     << YAML::Value << s.prefabLabel;
+        out << YAML::Key << "config"     << YAML::Value << s.configName;
+
+        out << YAML::Key << "posX" << YAML::Value << tr->position.x;
+        out << YAML::Key << "posY" << YAML::Value << tr->position.y;
+        out << YAML::Key << "posZ" << YAML::Value << tr->position.z;
+
+        out << YAML::Key << "rotX" << YAML::Value << tr->rotation.x;
+        out << YAML::Key << "rotY" << YAML::Value << tr->rotation.y;
+        out << YAML::Key << "rotZ" << YAML::Value << tr->rotation.z;
+
+        out << YAML::Key << "scaleX" << YAML::Value << tr->scale.x;
+        out << YAML::Key << "scaleY" << YAML::Value << tr->scale.y;
+        out << YAML::Key << "scaleZ" << YAML::Value << tr->scale.z;
+        out << YAML::EndMap;
+    }
+
+    out << YAML::EndSeq;
+    out << YAML::EndMap;
+
+    std::ofstream fs(path);
+    if (!fs.is_open()) return false;
+    fs << out.c_str();
+
+    spdlog::info("[SurfaceDecoration] Zapisano {} instancji do {}", (int)m_spawned.size(), path);
+    return fs.good();
+}
+
+int SurfaceDecorationSystem::LoadInstancesFromYaml(
+    const std::string& path,
+    const std::vector<std::pair<std::string, Prefab*>>& availablePrefabs,
+    Scene& scene, Shader* shader)
+{
+    YAML::Node root;
+    try {
+        root = YAML::LoadFile(path);
+    }
+    catch (const YAML::Exception& e) {
+        spdlog::error("[SurfaceDecoration] LoadInstancesFromYaml: {}", e.what());
+        return 0;
+    }
+
+    if (!root["instances"])
+    {
+        spdlog::warn("[SurfaceDecoration] Brak sekcji 'instances' w {}", path);
+        return 0;
+    }
+
+    auto getF = [](const YAML::Node& n, const char* key, float def) -> float {
+        return n[key] ? n[key].as<float>(def) : def;
+    };
+
+    int created = 0;
+
+    for (const auto& node : root["instances"])
+    {
+        std::string prefabLabel = node["prefab"] ? node["prefab"].as<std::string>("") : "";
+        std::string configName  = node["config"] ? node["config"].as<std::string>("") : "";
+
+        // Znajdź prefab po nazwie
+        Prefab* prefab = nullptr;
+        for (const auto& [name, ptr] : availablePrefabs)
+        {
+            if (name == prefabLabel) { prefab = ptr; break; }
+        }
+
+        if (!prefab)
+        {
+            spdlog::warn("[SurfaceDecoration] Nie znaleziono prefabu '{}' przy wczytywaniu instancji.",
+                prefabLabel);
+            continue;
+        }
+
+        GameObject* go = prefab->Instantiate(scene, nullptr, shader);
+        if (!go) continue;
+
+        if (auto* tr = go->GetComponent<TransformComponent>())
+        {
+            tr->position = glm::vec3(
+                getF(node, "posX", 0.0f),
+                getF(node, "posY", 0.0f),
+                getF(node, "posZ", 0.0f));
+
+            tr->rotation = glm::vec3(
+                getF(node, "rotX", 0.0f),
+                getF(node, "rotY", 0.0f),
+                getF(node, "rotZ", 0.0f));
+
+            tr->scale = glm::vec3(
+                getF(node, "scaleX", 1.0f),
+                getF(node, "scaleY", 1.0f),
+                getF(node, "scaleZ", 1.0f));
+
+            tr->isDirty = true;
+        }
+
+        m_spawned.push_back({ go, nullptr, prefabLabel, configName });
+        ++created;
+    }
+
+    spdlog::info("[SurfaceDecoration] Wczytano {} instancji z {}", created, path);
+    return created;
 }

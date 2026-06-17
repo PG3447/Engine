@@ -1344,6 +1344,11 @@ int main(int, char**)
     const glm::vec2 CH2_CENTER(1440.0f, 540.0f);
 
     // Main loop
+    /*decorSystem.LoadInstancesFromYaml(
+    "res/level1_decorations.yaml",
+    availablePrefabs,
+    *scena1,
+    nullptr);*/
     while (!glfwWindowShouldClose(window))
     {
         float currentFrame = static_cast<float>(glfwGetTime());
