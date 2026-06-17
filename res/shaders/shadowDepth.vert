@@ -72,10 +72,7 @@ void main()
         }
     }
 
-    mat4 finalModel = lightSpaceMatrices[numShadowLigths] * boneTransform;
+    mat4 finalModel = lightSpaceMatrices[numShadowLigths] * model * boneTransform;
 
-    vec4 worldPos = finalModel * vec4(aPos, 1.0);
-
-
-    gl_Position = viewProjection * worldPos;
+    gl_Position = finalModel * vec4(aPos, 1.0);
 }

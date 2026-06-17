@@ -2035,6 +2035,7 @@ void imgui_render(SceneManager& sceneManager)
             ImGui::Text("Kamera %d", i++);
             if (hiz.hizTexture != 0)
                 system->ShowR32FTextureImGui(hiz.hizTexture, debugMip);
+            //system->drivenManager.ShowShadowMapImGui(debugMip);
         }
     }
     ImGui::End();

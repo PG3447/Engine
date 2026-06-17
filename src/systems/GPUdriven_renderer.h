@@ -701,7 +701,7 @@ public:
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, instanceSSBO); // vertex shader
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, boneMatricesSSBO); // vertex shader
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, materialSSBO);   // fragment shader
-        //glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 8, shadowMatrixSSBO); // fragment shader
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 8, shadowMatrixSSBO); // fragment shader
     }
 
 
@@ -786,10 +786,10 @@ public:
         // barrier wewnątrz DispatchBuildCommands
 
         shaderRender->use();
-        //glUniform1i(glGetUniformLocation(shaderRender->shaderProgramID, "shadowMap"), 0); // unit 0
+        glUniform1i(glGetUniformLocation(shaderRender->shaderProgramID, "shadowMap"), 0); // unit 0
 
-        //glActiveTexture(GL_TEXTURE0);
-        //glBindTexture(GL_TEXTURE_2D_ARRAY, shadowTexture);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D_ARRAY, shadowTexture);
         
         //shaderRender->setMat4("viewProjection", viewProj);
         //shaderRender->setVec3("viewPos", currentCameraPos);

@@ -116,6 +116,8 @@ float ShadowCalculation(vec4 fragPosLightSpace, vec3 norm, vec3 lightPos, int la
     // keep the shadow at 0.0 when outside the far_plane region of the light's frustum.
     if(projCoords.z > 1.0)
         shadow = 0.0;
+
+    shadow = 1.0 - shadow;
     return shadow;
 }
 
@@ -318,10 +320,9 @@ vec3 CalcSpotLightPBR(in GPULight light, vec3 normal, vec3 viewDir, vec3 F0, vec
     
     
     float shadow = 0.0f;// ShadowCalculation();
-//    if (layer < numShadowLigths) {
-//        vec4 fragPosLS = lightSpaceMatrices[layer] * vec4(FragPos, 1.0);
-//        shadow = ShadowCalculation(fragPosLS, normal, light.position.xyz, layer);
-//    }
+    vec4 fragPosLS = lightSpaceMatrices[layer] * vec4(FragPos, 1.0);
+    shadow = ShadowCalculation(fragPosLS, normal, light.position.xyz, layer);
+
 
     // dodaj do wynikowej radiancji Lo
     float NdotL = max(dot(normal, L), 0.0);                

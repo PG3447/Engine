@@ -514,8 +514,8 @@ public:
         }
 
         drivenManager.AttachCameraHiZ(hiz.hizTexture, hiz.hizMipLevels, vpW, vpH, frustumCullingEnabled, occlusionCullingEnabled, vpX, vpY);
-        //drivenManager.RenderShadow(projection, currentCameraPos);
-        //ApplyViewport(cam.viewport, width, height);
+        drivenManager.RenderShadow(projection, currentCameraPos);
+        ApplyViewport(cam.viewport, width, height);
         drivenManager.RenderFrame(view, projection, vp, currentCameraPos, ambientStrength, occlusionCullingEnabled ? hiz.depthPrev : 0, cam.dirty);
         cam.dirty = false;
         //drivenManager.RenderFrame(vp, currentCameraPos, depthTexturePrev);
