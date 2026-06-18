@@ -1095,7 +1095,7 @@ int main(int, char**)
 
     GameObject* latarka2 = scena1->CreateGameObject(nullptr);
     latarka2->name = "Latarka";
-    camera2->AddChild(latarka1);
+    camera2->AddChild(latarka2);
     LightComponent* light3 = latarka2->AddComponent<LightComponent>();
 
     light3->type = Spot;

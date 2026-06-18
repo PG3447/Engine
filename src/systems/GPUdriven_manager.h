@@ -753,10 +753,10 @@ public:
             g.params2 = glm::vec4(light->cutOff, light->outerCutOff, on ? 1.0f : 0.0f, light->range);
 
 
-            spdlog::info("[Light {}] type={} pos=({:.3f}, {:.3f}, {:.3f}) dir=({:.3f}, {:.3f}, {:.3f})",
-                i, (int)light->type,
-                g.position.x, g.position.y, g.position.z,
-                g.direction.x, g.direction.y, g.direction.z);
+            //spdlog::info("[Light {}] type={} pos=({:.3f}, {:.3f}, {:.3f}) dir=({:.3f}, {:.3f}, {:.3f})",
+            //    i, (int)light->type,
+            //    g.position.x, g.position.y, g.position.z,
+            //    g.direction.x, g.direction.y, g.direction.z);
 
             float near_plane = 1.0f, far_plane = 500.0f;
             glm::mat4 lightProjection, lightView;
@@ -835,7 +835,7 @@ public:
             spdlog::warn("  PUSTY — nic nie idzie do GPU!");
     }
 
-    int SHADOW_RESOLUTION = 1024;
+    int SHADOW_RESOLUTION = 512;
     void RenderShadow()
     {
         const int numLights = (int)gpuLights.size();
