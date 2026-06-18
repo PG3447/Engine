@@ -835,7 +835,7 @@ public:
             spdlog::warn("  PUSTY — nic nie idzie do GPU!");
     }
 
-    int SHADOW_RESOLUTION = 512;
+    int SHADOW_RESOLUTION = 1024;
     void RenderShadow()
     {
         const int numLights = (int)gpuLights.size();
