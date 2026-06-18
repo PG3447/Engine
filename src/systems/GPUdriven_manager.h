@@ -51,7 +51,7 @@ struct FrameUBO {
 struct ShadowMapArray {
     GLuint fboShadow = 0;
     GLuint depthArray = 0;
-    int resolution = 1024;
+    int resolution = 256;
     int maxLayers = -1;
 
     void Init(int res, int layers) {
@@ -835,7 +835,7 @@ public:
             spdlog::warn("  PUSTY — nic nie idzie do GPU!");
     }
 
-    int SHADOW_RESOLUTION = 1024;
+    int SHADOW_RESOLUTION = 256;
     void RenderShadow()
     {
         const int numLights = (int)gpuLights.size();
