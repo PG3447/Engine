@@ -68,7 +68,8 @@ struct ShadowMapArray {
         glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
         float borderColor[] = { 1.0, 1.0, 1.0, 1.0 };
         glTexParameterfv(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BORDER_COLOR, borderColor);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+        //glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_MODE, GL_NONE);
         glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
 
         // FBO (bez attachmentu — ustawiamy per warstwa)
@@ -751,9 +752,14 @@ public:
             g.params1 = glm::vec4(light->constant, light->linear, light->quadratic, light->intensity);
             g.params2 = glm::vec4(light->cutOff, light->outerCutOff, on ? 1.0f : 0.0f, light->range);
 
+
+            spdlog::info("[Light {}] type={} pos=({:.3f}, {:.3f}, {:.3f}) dir=({:.3f}, {:.3f}, {:.3f})",
+                i, (int)light->type,
+                g.position.x, g.position.y, g.position.z,
+                g.direction.x, g.direction.y, g.direction.z);
+
             float near_plane = 1.0f, far_plane = 500.0f;
             glm::mat4 lightProjection, lightView;
-
             auto safeUp = [](glm::vec3 dir) -> glm::vec3 {
                 // unikamy równoległości forward/up
                 dir = glm::normalize(dir);
@@ -764,7 +770,6 @@ public:
 
             glm::vec3 pos = TransformHelper::getGlobalPosition(*transform);
             glm::vec3 dir = glm::normalize(glm::vec3(g.direction)); // już ustawiony wyżej
-
             if (light->type == Directional) {
                 lightProjection = glm::ortho(-10.f, 10.f, -10.f, 10.f, near_plane, far_plane);
                 lightView = glm::lookAt(pos, pos + dir, safeUp(dir));
@@ -773,8 +778,9 @@ public:
 
             if (light->type == Spot) {
                 float fov = glm::acos(glm::clamp(light->outerCutOff, -1.f, 1.f)) * 2.f;
-                lightProjection = glm::perspective(fov, 1.f, near_plane, far_plane);
-                lightView = glm::lookAt(pos, pos + dir, safeUp(dir));
+                lightProjection = glm::perspective(fov, 1.0f, near_plane, far_plane);
+                //lightView = glm::lookAt(pos, pos + dir, safeUp(dir));
+                lightView = glm::lookAt(pos, glm::vec3(g.position) + TransformHelper::getForward(*transform), glm::vec3(0.0f, 1.0f, 0.0f));
                 lightSpaceMatrix[i] = lightProjection * lightView;
             }
         }

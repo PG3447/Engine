@@ -32,7 +32,8 @@ struct GPULight {
     vec4 params2;   // x=cutOff,   y=outerCutOff, z=enabled, w=range
 };
 
-uniform sampler2DArrayShadow shadowMap;
+//uniform sampler2DArrayShadow shadowMap;
+uniform sampler2DArray shadowMap;
 
 layout(std140, binding = 0) uniform FrameUBO
 {
@@ -82,34 +83,33 @@ vec3 ACESFilmic(vec3 x)
 }
 
 
-float ShadowCalculation(vec4 fragPosLightSpace, vec3 norm, vec3 lightDir, int layer)
-{
-    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
-    projCoords = projCoords * 0.5 + 0.5;
+//float ShadowCalculation(vec4 fragPosLightSpace, vec3 norm, vec3 lightDir, int layer)
+//{
+//    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+//    projCoords = projCoords * 0.5 + 0.5;
+//
+//    // poza frustumem światła = brak cienia
+//    if (projCoords.z > 1.0 || any(lessThan(projCoords.xy, vec2(0.0))) || any(greaterThan(projCoords.xy, vec2(1.0))))
+//        return 0.0;
+//
+//    float currentDepth = projCoords.z;
+//
+//    // bias zależny od kąta — znacznie mniejsze wartości
+//    float cosTheta = max(dot(normalize(norm), normalize(lightDir)), 0.0);
+//    float bias = mix(0.0005, 0.00005, cosTheta);
+//
+//    float shadow = 0.0;
+//    vec2 texelSize = 1.0 / textureSize(shadowMap, 0).xy;
+//    for (int x = -1; x <= 1; ++x)
+//        for (int y = -1; y <= 1; ++y)
+//            shadow += texture(shadowMap,
+//                vec4(projCoords.xy + vec2(x, y) * texelSize,
+//                     float(layer),
+//                     currentDepth - bias));
+//
+//    return 1.0 - (shadow / 9.0);
+//}
 
-    // poza frustumem światła = brak cienia
-    if (projCoords.z > 1.0 || any(lessThan(projCoords.xy, vec2(0.0))) || any(greaterThan(projCoords.xy, vec2(1.0))))
-        return 0.0;
-
-    float currentDepth = projCoords.z;
-
-    // bias zależny od kąta — znacznie mniejsze wartości
-    float cosTheta = max(dot(normalize(norm), normalize(lightDir)), 0.0);
-    float bias = mix(0.0005, 0.00005, cosTheta);
-
-    float shadow = 0.0;
-    vec2 texelSize = 1.0 / textureSize(shadowMap, 0).xy;
-    for (int x = -1; x <= 1; ++x)
-        for (int y = -1; y <= 1; ++y)
-            shadow += texture(shadowMap,
-                vec4(projCoords.xy + vec2(x, y) * texelSize,
-                     float(layer),
-                     currentDepth - bias));
-
-    return 1.0 - (shadow / 9.0);
-}
-
-/*
 float ShadowCalculation(vec4 fragPosLightSpace, vec3 norm, vec3 lightPos, int layer)
 {
      // perform perspective divide
@@ -124,7 +124,7 @@ float ShadowCalculation(vec4 fragPosLightSpace, vec3 norm, vec3 lightPos, int la
     // calculate bias (based on depth map resolution and slope)
     vec3 normal = normalize(norm);
     vec3 lightDir = normalize(lightPos - FragPos);
-    float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
+    float bias = max(0.001 * (1.0 - dot(normal, lightDir)), 0.0005);
     // check whether current frag pos is in shadow
     // float shadow = currentDepth - bias > closestDepth  ? 1.0 : 0.0;
     // PCF
@@ -137,7 +137,9 @@ float ShadowCalculation(vec4 fragPosLightSpace, vec3 norm, vec3 lightPos, int la
             //float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r; 
             //float pcfDepth = texture(shadowMap, vec4(projCoords.xy +  vec2(x, y) * texelSize, float(layer), currentDepth - bias));
             //shadow += currentDepth - bias > pcfDepth  ? 1.0 : 0.0;        
-            shadow += texture(shadowMap, vec4(projCoords.xy +  vec2(x, y) * texelSize, float(layer), currentDepth - bias));      
+            //shadow += texture(shadowMap, vec4(projCoords.xy +  vec2(x, y) * texelSize, float(layer), currentDepth - bias)); 
+            float pcfDepth = texture(shadowMap, vec3(projCoords.xy + vec2(x, y) * texelSize, float(layer))).r;
+            shadow += (currentDepth - bias > pcfDepth) ? 1.0 : 0.0;
         }    
     }
     shadow /= 9.0;
@@ -145,10 +147,66 @@ float ShadowCalculation(vec4 fragPosLightSpace, vec3 norm, vec3 lightPos, int la
     // keep the shadow at 0.0 when outside the far_plane region of the light's frustum.
     if(projCoords.z > 1.0)
         shadow = 0.0;
-    shadow = 1.0 - shadow;
     return shadow;
 }
-*/
+
+
+//float ShadowCalculation(
+//    vec4 fragPosLightSpace,
+//    vec3 norm,
+//    vec3 lightPos,
+//    int layer)
+//{
+//    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+//    projCoords = projCoords * 0.5 + 0.5;
+//
+//    if (projCoords.z > 1.0 ||
+//        projCoords.x < 0.0 || projCoords.x > 1.0 ||
+//        projCoords.y < 0.0 || projCoords.y > 1.0)
+//    {
+//        return 0.0;
+//    }
+//
+//    float currentDepth = projCoords.z;
+//
+//    vec3 normal = normalize(norm);
+//    vec3 lightDir = normalize(lightPos - FragPos);
+//
+//    float bias = max(
+//        0.005 * (1.0 - dot(normal, lightDir)),
+//        0.0005
+//    );
+//
+//    float shadow = 0.0;
+//
+//    vec2 texelSize =
+//        1.0 / vec2(textureSize(shadowMap, 0).xy);
+//
+//    for (int x = -1; x <= 1; ++x)
+//    {
+//        for (int y = -1; y <= 1; ++y)
+//        {
+//            float pcfDepth =
+//                texture(
+//                    shadowMap,
+//                    vec3(
+//                        projCoords.xy + vec2(x, y) * texelSize,
+//                        float(layer)
+//                    )
+//                ).r;
+//
+//            shadow +=
+//                (currentDepth - bias > pcfDepth)
+//                ? 1.0
+//                : 0.0;
+//        }
+//    }
+//
+//    shadow /= 9.0;
+//
+//    return shadow;
+//}
+
 void main()
 {
     MaterialGPU mat = materials[materialID];
@@ -348,11 +406,14 @@ vec3 CalcSpotLightPBR(in GPULight light, vec3 normal, vec3 viewDir, vec3 F0, vec
     
     
     float shadow = 0.0f;// ShadowCalculation();
-    if (layer < numShadowLigths)
-    {
-        vec4 fragPosLS = lightSpaceMatrices[layer] * vec4(FragPos, 1.0);
+
+    vec4 fragPosLS = lightSpaceMatrices[layer] * vec4(FragPos, 1.0);
+
+//return vec3(
+//    fragPosLS.xyz / fragPosLS.w * 0.5 + 0.5
+//);
         shadow = ShadowCalculation(fragPosLS, normal, light.position.xyz, layer);
-    }
+    
 
     // dodaj do wynikowej radiancji Lo
     float NdotL = max(dot(normal, L), 0.0);                

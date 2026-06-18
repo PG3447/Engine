@@ -1045,8 +1045,10 @@ int main(int, char**)
     RaycastComponent*  player1Raycast   = camera1->AddComponent<RaycastComponent>();
     player1Raycast->debugDraw = false;
 
-    camera1->AddComponent<LightComponent>();
-    LightComponent* light2 = camera1->GetComponent<LightComponent>();
+    GameObject* latarka1 = scena1->CreateGameObject(nullptr);
+    latarka1->name = "Latarka";
+    gracz1->AddChild(latarka1);
+    LightComponent* light2 = latarka1->AddComponent<LightComponent>();
 
     light2->type      = Spot;
     light2->index     = 0;
@@ -1091,8 +1093,11 @@ int main(int, char**)
     RaycastComponent* player2Raycast = camera2->AddComponent<RaycastComponent>();
     player2Raycast->debugDraw = false;
 
-    camera2->AddComponent<LightComponent>();
-    LightComponent* light3 = camera2->AddComponent<LightComponent>();
+    GameObject* latarka2 = scena1->CreateGameObject(nullptr);
+    latarka2->name = "Latarka";
+    gracz2->AddChild(latarka1);
+    LightComponent* light3 = latarka2->AddComponent<LightComponent>();
+
     light3->type = Spot;
     light3->index = 2;
     light3->ambient = glm::vec3(0.25f);

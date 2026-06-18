@@ -790,7 +790,10 @@ public:
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D_ARRAY, shadowTexture);
-        
+        glTextureParameteri(
+            shadowTexture,
+            GL_TEXTURE_COMPARE_MODE,
+            GL_NONE);
         //shaderRender->setMat4("viewProjection", viewProj);
         //shaderRender->setVec3("viewPos", currentCameraPos);
         //shaderRender->setInt("numLights", (int)gpuLights.size());
