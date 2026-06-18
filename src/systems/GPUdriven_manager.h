@@ -878,7 +878,7 @@ public:
             //Render depth texture - shadow map
             for (auto& entry : passes)
             {
-                if (entry.config.type == RenderPassType::Skybox)
+                if (entry.config.type == RenderPassType::Skybox || entry.config.type == RenderPassType::Transparent)
                 {
                     continue;
                 }
