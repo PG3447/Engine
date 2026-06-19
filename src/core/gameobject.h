@@ -168,6 +168,53 @@ public:
         }
     }
 
+    Component* GetComponentByType(std::type_index type)
+    {
+        auto it = componentMap.find(type);
+        if (it == componentMap.end())
+            return nullptr;
+
+        auto& vec = it->second;
+        if (vec.empty())
+            return nullptr;
+
+        return vec[0];
+    }
+
+    Component* GetComponentByName(const std::string& name)
+    {
+        for (auto& [type, vec] : componentMap)
+        {
+            if (vec.empty())
+                continue;
+
+            if (name == vec[0]->GetTypeName())
+                return vec[0];
+
+            for (Component* c : vec)
+            {
+                if (name == c->GetTypeName())
+                    return c;
+            }
+        }
+
+        return nullptr;
+    }
+
+    Component* GetComponentByBit(uint64_t bit)
+    {
+        if (!(componentMask & bit))
+            return nullptr;
+
+        for (auto& [type, vec] : componentMap)
+        {
+            if (!vec.empty() && vec[0]->ComponentBit == bit)
+                return vec[0];
+        }
+
+        return nullptr;
+    }
+
     std::vector<Component*> GetAllComponents()
     {
         std::vector<Component*> result;

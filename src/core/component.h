@@ -32,6 +32,7 @@ struct NodeAnimCache {
 extern uint32_t staticCounterAnimator;
 
 struct Component {
+    static constexpr uint64_t ComponentBit = 0;
     static constexpr bool Unique = false;
     virtual ~Component() {}
 
@@ -47,6 +48,7 @@ struct Component {
 
 struct TransformComponent : Component {
     static constexpr uint64_t ComponentBit = 1ull << 0;
+    static constexpr bool Unique = true;
 
     glm::vec3 position{ 0.0f, 0.0f, 0.0f };
     glm::vec3 rotation{ 0.0f, 0.0f, 0.0f };
@@ -116,6 +118,11 @@ struct RenderComponent : Component {
     //Model* model = nullptr;
     //Shader* shader = nullptr;
     //std::shared_ptr<Material> materialOverride = nullptr;
+
+
+    void Serialize(YAML::Node& node) override;
+    void Deserialize(const YAML::Node& node) override;
+
 };
 
 
@@ -245,6 +252,8 @@ struct ColliderComponent : Component {
         node["offset"] = offset;
         node["halfSize"] = halfSize;
         node["isTrigger"] = isTrigger;
+        node["affectsNavMesh"] = affectsNavMesh;
+        node["isWalkable"] = isWalkable;
     }
 
     void Deserialize(const YAML::Node& node) override
@@ -257,6 +266,12 @@ struct ColliderComponent : Component {
 
         if (node["isTrigger"])
             isTrigger = node["isTrigger"].as<bool>();
+
+        if (node["affectsNavMesh"])
+            affectsNavMesh = node["affectsNavMesh"].as<bool>();
+
+        if (node["isWalkable"])
+            isWalkable = node["isWalkable"].as<bool>();
     }
 
 };
@@ -297,8 +312,6 @@ struct LightComponent : Component {
 
     void Serialize(YAML::Node& node) override
     {
-        node["type"] = "Light";
-
         node["index"] = index;
         node["isOn"] = isOn;
 

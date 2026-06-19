@@ -188,6 +188,7 @@ public:
     //GLuint drawCountSSBO = 0; // bind 5
     GLuint meshDataSSBO = 0; // bind 6
     GLuint materialSSBO = 0; /// bind 7
+    GLuint shadowMatrixSSBO = 0; /// bind 7
     //GLuint lightsSSBO = 0;
     GLuint boneMatricesSSBO = 0;
 
@@ -215,7 +216,10 @@ public:
     ComputeShader* shaderBuildCmds = nullptr;
     ComputeShader* shaderHizDownsample = nullptr;
     Shader* shaderRender = nullptr;
+    Shader* shaderShadowRender = nullptr;
 
+    bool firstFrame = true;
+    bool shadowMode = false;
     bool dirtyInstance = true;
     bool frustumsEnabled = false;
     bool occlussionEnabled = false;
@@ -241,6 +245,7 @@ public:
         glDeleteBuffers(1, &drawCmdSSBO);
         glDeleteBuffers(1, &meshDataSSBO);
         glDeleteBuffers(1, &materialSSBO);
+        glDeleteBuffers(1, &shadowMatrixSSBO);
         //glDeleteBuffers(1, &frameUBO);
         //glDeleteBuffers(1, &lightsUBO);
         glDeleteBuffers(1, &boneMatricesSSBO);
@@ -305,6 +310,7 @@ public:
      /*   glGenBuffers(1, &drawCountSSBO);*/
         glGenBuffers(1, &meshDataSSBO);
         glGenBuffers(1, &materialSSBO);
+        glGenBuffers(1, &shadowMatrixSSBO);
      /*   glGenBuffers(1, &lightsSSBO);*/
         glGenBuffers(1, &boneMatricesSSBO);
 
@@ -541,13 +547,20 @@ public:
 
         size_t bytes = materials.size() * sizeof(GPUMaterial);
 
-        spdlog::info(
-            "Material SSBO: {} materials, {} bytes ({:.2f} MB)",
-            materials.size(),
-            bytes,
-            bytes / (1024.0 * 1024.0)
-        );
-        spdlog::warn("Materialy sie wysylaja");
+        //spdlog::info(
+        //    "Material SSBO: {} materials, {} bytes ({:.2f} MB)",
+        //    materials.size(),
+        //    bytes,
+        //    bytes / (1024.0 * 1024.0)
+        //);
+        //spdlog::warn("Materialy sie wysylaja");
+    }
+
+    void UploadShadowMatrix(const std::vector<glm::mat4>& shadowsMatrix)
+    {
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, shadowMatrixSSBO);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, shadowsMatrix.size() * sizeof(glm::mat4), shadowsMatrix.data(), GL_STATIC_DRAW);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     }
 
     void UploadAllBoneMatrices(const std::vector<glm::mat4>& allBones)
@@ -604,8 +617,8 @@ public:
         glUniform2f(glGetUniformLocation(shaderHizWritePass->ID, "screenSize"), (float)(vpWidth > 0 ? vpWidth : screenWidth), (float)(vpHeight > 0 ? vpHeight : screenHeight));
         glUniform1i(glGetUniformLocation(shaderHizWritePass->ID, "hizMipLevels"), hizTexture ? hizMipLevels : 0); // 0 = wyłącz HiZ
         glUniform1ui(glGetUniformLocation(shaderHizWritePass->ID, "objectCount"), objectCount);
-        glUniform1i(glGetUniformLocation(shaderHizWritePass->ID, "enableOcclusion"), occlussionEnabled ? GL_TRUE : GL_FALSE); // 0 = wyłącz HiZ
-        glUniform1i(glGetUniformLocation(shaderHizWritePass->ID, "enableFrustumCulling"), frustumsEnabled ? GL_TRUE : GL_FALSE);
+        glUniform1i(glGetUniformLocation(shaderHizWritePass->ID, "enableOcclusion"), occlussionEnabled ? (shadowMode ? GL_FALSE : GL_TRUE) : GL_FALSE); // 0 = wyłącz HiZ
+        glUniform1i(glGetUniformLocation(shaderHizWritePass->ID, "enableFrustumCulling"), frustumsEnabled ? (shadowMode ? GL_FALSE : GL_TRUE) : GL_FALSE);
 
         glTextureParameteri(hizTexture, GL_TEXTURE_COMPARE_MODE, GL_NONE);
         glBindTextureUnit(0, hizTexture);
@@ -689,6 +702,7 @@ public:
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, instanceSSBO); // vertex shader
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, boneMatricesSSBO); // vertex shader
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, materialSSBO);   // fragment shader
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 8, shadowMatrixSSBO); // fragment shader
     }
 
 
@@ -719,13 +733,50 @@ public:
         DispatchPrefixSum(objectCount);
         dirtyInstance = false;
     }
-    
 
-    void RenderFrame(const glm::mat4& viewProj, const std::vector<RenderData>& objects, GLuint depthTexturePrevFrame, glm::vec3 currentCameraPos, bool cameraDirty)
+    void FirstInTheFrame(const std::vector<RenderData>& objects)
     {
         uint32_t objCount = (uint32_t)objects.size();
-        // 0. Aktualizuj obiekty na GPU
         UploadObjects(objects);
+
+        if (dirtyInstance)
+            BuildInstance(objCount);
+
+        firstFrame = false;
+    }
+    
+    void RenderShadow(bool firstRender, const std::vector<RenderData>& objects)
+    {
+        shadowMode = true;
+
+        if (firstRender)
+        {
+            uint32_t objCount = (uint32_t)objects.size();
+
+            if (firstFrame)
+                FirstInTheFrame(objects);
+
+            DispatchWritePass(glm::mat4(1.0), objCount);
+
+            DispatchBuildCommands();
+        }
+
+        
+        shaderShadowRender->use();
+
+        Draw();
+        
+        shadowMode = false;
+    }
+
+    void RenderFrame(const glm::mat4& viewProj, const std::vector<RenderData>& objects, GLuint depthTexturePrevFrame, GLuint shadowTexture, glm::vec3 currentCameraPos, bool cameraDirty)
+    {
+        uint32_t objCount = (uint32_t)objects.size();
+
+        if (firstFrame)
+            FirstInTheFrame(objects);
+        // 0. Aktualizuj obiekty na GPU
+       /* UploadObjects(objects);*/
         //UploadLights();
         //DebugReadBuffers(objCount, (uint32_t)meshesData.size());
 
@@ -735,8 +786,8 @@ public:
         //    //CopyDepthToHiZ(depthTexturePrevFrame);
         //    BuildHiZ(depthTexturePrevFrame);
         //}
-        if (dirtyInstance)
-            BuildInstance(objCount);
+       /* if (dirtyInstance)
+            BuildInstance(objCount);*/
         //DebugPipelineState(objCount);
   
         // 5. WRITE PASS: zapis instancji
@@ -748,12 +799,18 @@ public:
         // barrier wewnątrz DispatchBuildCommands
 
         shaderRender->use();
+        glUniform1i(glGetUniformLocation(shaderRender->shaderProgramID, "shadowMap"), 0); // unit 0
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D_ARRAY, shadowTexture);
         //shaderRender->setMat4("viewProjection", viewProj);
         //shaderRender->setVec3("viewPos", currentCameraPos);
         //shaderRender->setInt("numLights", (int)gpuLights.size());
         //DebugPipelineState(objCount);
         // 7. Rysuj
         Draw();
+
+        firstFrame = true;
     }
 
     void DebugShowHiZ(int mipLevel = 0)

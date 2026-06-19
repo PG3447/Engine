@@ -470,6 +470,8 @@ public:
         drivenManager.CollectAllPasses(*renderQuery, rebuildCollectData);
         if (rebuildCollectData)
             rebuildCollectData = false;
+        drivenManager.RenderShadow();
+        glBindFramebuffer(GL_FRAMEBUFFER, sceneFBO);
         //if (gpuRendererReady) {
         //    
         //}

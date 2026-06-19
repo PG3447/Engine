@@ -8,11 +8,6 @@ layout (location = 4) in vec3 aBitangent;
 layout (location = 5) in ivec4 boneIds;
 layout (location = 6) in vec4 weights;
 
-out vec3 FragPos;
-out vec2 TexCoords;
-out vec3 Normal;
-out mat3 TBN;
-flat out uint materialID;
 
 struct InstanceData {
     mat4 model;
@@ -32,9 +27,8 @@ layout(std140, binding = 0) uniform FrameUBO
     int numShadowLigths;
     int padding;
 };
-
-// Jedna p�aska tablica wszystkich macierzy ko�ci dla WSZYSTKICH szkielet�w.
-// Uk�ad: skeleton 0 zajmuje [0 .. MAX_BONES-1],
+// Jedna płaska tablica wszystkich macierzy kości dla WSZYSTKICH szkieletów.
+// Układ: skeleton 0 zajmuje [0 .. MAX_BONES-1],
 //        skeleton 1 zajmuje [MAX_BONES .. 2*MAX_BONES-1], itd.
 const uint MAX_BONES = 200u;
 
@@ -48,26 +42,17 @@ layout(std430, binding = 4) readonly buffer BoneMatrices
     mat4 boneMatrices[]; //rozmiar MAX_BONES * maxSkeletons
 };
 
-
-mat3 cofactorMatrix(mat4 m)
+layout(std430, binding = 8) readonly buffer ShadowMatrices
 {
-    vec3 c0 = m[0].xyz;
-    vec3 c1 = m[1].xyz;
-    vec3 c2 = m[2].xyz;
-    return mat3(
-        cross(c1, c2),
-        cross(c2, c0),
-        cross(c0, c1)
-    );
-}
+    mat4 lightSpaceMatrices[]; // tylko światła z castShadows, max MAX_SHADOW_LIGHTS
+};
 
 void main()
 {
     // gl_BaseInstance = instanceOffset z DrawCommand (offset w instanceSSBO)
-    // gl_InstanceID   = kt�ry to egzemplarz w tej instancji (0..instanceCount-1)
+    // gl_InstanceID   = który to egzemplarz w tej instancji (0..instanceCount-1)
     InstanceData inst = instances[gl_BaseInstance + gl_InstanceID];
 
-    materialID = inst.materialID;
     mat4 model = inst.model;
 
     // Skinning
@@ -87,18 +72,5 @@ void main()
         }
     }
 
-    mat4 finalModel = model * boneTransform;
-
-    vec4 worldPos = finalModel * vec4(aPos, 1.0);
-    FragPos   = worldPos.xyz;
-    TexCoords = aTexCoords;
-
-    mat3 normalMatrix = mat3(transpose(inverse(finalModel))); // cofactorMatrix(finalModel);
-    vec3 T = normalize(normalMatrix * aTangent);
-    vec3 B = normalize(normalMatrix * aBitangent);
-    vec3 N = normalize(normalMatrix * aNormal);
-    Normal = N;
-    TBN    = mat3(T, B, N);
-
-    gl_Position = viewProjection * worldPos;
+    gl_Position = lightSpaceMatrices[numShadowLigths] * model * boneTransform * vec4(aPos, 1.0);
 }

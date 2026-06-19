@@ -1051,13 +1051,16 @@ int main(int, char**)
     camera1->name = "Kamera";
     gracz1->AddChild(camera1);
     camera1->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 4.7f, 0.0f);
-    camera1->GetComponent<TransformComponent>()->rotation = glm::vec3(0.0f, -180.0f, 0.0f);
     CameraComponent* camCompLeft = camera1->AddComponent<CameraComponent>();
     RaycastComponent*  player1Raycast   = camera1->AddComponent<RaycastComponent>();
     player1Raycast->debugDraw = false;
 
-    camera1->AddComponent<LightComponent>();
-    LightComponent* light2 = camera1->GetComponent<LightComponent>();
+    GameObject* latarka1 = scena1->CreateGameObject(nullptr);
+    latarka1->name = "Latarka";
+    camera1->AddChild(latarka1);
+    latarka1->GetComponent<TransformComponent>()->position = glm::vec3(1.5f, -1.0f, 0.5f);
+    latarka1->GetComponent<TransformComponent>()->rotation = glm::vec3(3.0f, 4.5f, 0.0f);
+    LightComponent* light2 = latarka1->AddComponent<LightComponent>();
 
     light2->type      = Spot;
     light2->index     = 0;
@@ -1067,13 +1070,14 @@ int main(int, char**)
     light2->constant  = 1.0f;
     light2->linear    = 0.10f;
     light2->quadratic = 0.00001f;
-    light2->intensity = 450.0f;
+    light2->intensity = 650.0f;
     light2->cutOff      = glm::cos(glm::radians(8.0f));
     light2->outerCutOff = glm::cos(glm::radians(22.0f));
 
     GameObject* modelPostac1 = postacGracza->Instantiate(*scena1, nullptr, nullptr);
     gracz1->AddChild(modelPostac1);
-    modelPostac1->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 0.9f, -1.7f);
+    modelPostac1->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 0.9f, 1.7f);
+    modelPostac1->GetComponent<TransformComponent>()->rotation = glm::vec3(0.0f, -180.0f, 0.0f);
     AnimatorComponent* p1Animator = modelPostac1->GetComponent<AnimatorComponent>();
     if (p1Animator == nullptr) {
         p1Animator = modelPostac1->AddComponent<AnimatorComponent>();
@@ -1097,13 +1101,17 @@ int main(int, char**)
     camera2->name = "Kamera";
     gracz2->AddChild(camera2);
     camera2->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 4.7f, 0.0f);
-    camera2->GetComponent<TransformComponent>()->rotation = glm::vec3(0.0f, 0.0f, 0.0f);
     CameraComponent* camCompRight = camera2->AddComponent<CameraComponent>();
     RaycastComponent* player2Raycast = camera2->AddComponent<RaycastComponent>();
     player2Raycast->debugDraw = false;
 
-    camera2->AddComponent<LightComponent>();
-    LightComponent* light3 = camera2->AddComponent<LightComponent>();
+    GameObject* latarka2 = scena1->CreateGameObject(nullptr);
+    latarka2->name = "Latarka";
+    camera2->AddChild(latarka2);
+    latarka2->GetComponent<TransformComponent>()->position = glm::vec3(1.5f, -1.0f, 0.5f);
+    latarka2->GetComponent<TransformComponent>()->rotation = glm::vec3(3.0f, 4.5f, 0.0f);
+    LightComponent* light3 = latarka2->AddComponent<LightComponent>();
+
     light3->type = Spot;
     light3->index = 2;
     light3->ambient = glm::vec3(0.25f);
@@ -1112,14 +1120,14 @@ int main(int, char**)
     light3->constant = 1.0f;
     light3->linear = 0.10f;
     light3->quadratic = 0.00001f;
-    light3->intensity = 450.0f;
+    light3->intensity = 650.0f;
     light3->cutOff = glm::cos(glm::radians(8.0f));
     light3->outerCutOff = glm::cos(glm::radians(22.0f));
 
     GameObject* modelPostac2 = postacGracza->Instantiate(*scena1, nullptr, nullptr);
     gracz2->AddChild(modelPostac2);
     modelPostac2->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 0.9f, 1.7f);
-	modelPostac2->GetComponent<TransformComponent>()->rotation = glm::vec3(0.0f, 180.0f, 0.0f);
+    modelPostac2->GetComponent<TransformComponent>()->rotation = glm::vec3(0.0f, -180.0f, 0.0f);
     AnimatorComponent* p2Animator = modelPostac2->GetComponent<AnimatorComponent>();
     if (p2Animator == nullptr) {
         p2Animator = modelPostac2->AddComponent<AnimatorComponent>();
@@ -1989,6 +1997,9 @@ void imgui_render(SceneManager& sceneManager)
     if (ImGui::Button("Zapisz"))
         sceneManager.Save();
 
+    if (ImGui::Button("Wczytaj"))
+        sceneManager.Load();
+
     ImGui::Separator();
 
     Scene& scene = *sceneManager.GetActiveScene();
@@ -2042,6 +2053,7 @@ void imgui_render(SceneManager& sceneManager)
 
     ImGui::End();
 
+
     if (ImGui::Begin("Debug hizTexture")) {
         auto system = sceneManager.GetActiveScene()->GetECS().GetSystem<RenderSystem>();
         static int debugMip = 0;
@@ -2051,6 +2063,7 @@ void imgui_render(SceneManager& sceneManager)
             ImGui::Text("Kamera %d", i++);
             if (hiz.hizTexture != 0)
                 system->ShowR32FTextureImGui(hiz.hizTexture, debugMip);
+            //system->drivenManager.DebugShadowMapImGui();
         }
     }
     ImGui::End();
@@ -2334,10 +2347,12 @@ void createFirstRoom(Scene* scena1) {
     CreateStaticObject(scena1, wallModel.get(),  nullptr, "GoraPrzejscieDoMainRoom",    glm::vec3(0, 70, -100),  glm::vec3(100, 50, 1), glm::vec3(0), glm::vec3(100,50,1), true);
 
     // Kibel
+    GameObject* kible = scena1->CreateGameObject(nullptr);
+    kible->name = "Kible";
     GameObject* tablicaKibli[8];
     for (int i = 0; i < 8; i++) {
         if (i !=2 && i != 3) {
-            tablicaKibli[i] = toiletModel->Instantiate(*scena1, nullptr, nullptr);
+            tablicaKibli[i] = toiletModel->Instantiate(*scena1, kible, nullptr);
             tablicaKibli[i]->name = "Kibel" + std::to_string(i);
             tablicaKibli[i]->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1.5, 1.5, 1.5 };
             tablicaKibli[i]->AddComponent<ColliderComponent>();
@@ -2350,7 +2365,7 @@ void createFirstRoom(Scene* scena1) {
         }
 
         if (i == 2 || i == 3) {
-            tablicaKibli[i] = urinModel->Instantiate(*scena1, nullptr, nullptr);
+            tablicaKibli[i] = urinModel->Instantiate(*scena1, kible, nullptr);
             tablicaKibli[i]->name = "Kibel" + std::to_string(i);
             tablicaKibli[i]->GetComponent<TransformComponent>()->scale    = glm::vec3{ 12, 12, 12 };
             tablicaKibli[i]->AddComponent<ColliderComponent>();
@@ -2364,10 +2379,12 @@ void createFirstRoom(Scene* scena1) {
     }
 
     // Zaslony
+    GameObject* zaslony = scena1->CreateGameObject(nullptr);
+    zaslony->name = "Zasolony";
     GameObject* tablicaZaslon[9];
     for (int i = 0; i < 9; i++) {
 
-        tablicaZaslon[i] = wallModel3->Instantiate(*scena1, nullptr, nullptr);
+        tablicaZaslon[i] = wallModel3->Instantiate(*scena1, zaslony, nullptr);
         tablicaZaslon[i]->GetComponent<TransformComponent>()->scale = glm::vec3{ 0.3, 30, 20 };
         tablicaZaslon[i]->name = "Zaslona" + std::to_string(i);
         tablicaZaslon[i]->AddComponent<ColliderComponent>();
@@ -2427,9 +2444,11 @@ void createFirstRoom(Scene* scena1) {
     }
 
     // Zlewy - pozycja X z MainRoomIPoprawkiModeli (-20.5)
+    GameObject* zlewy = scena1->CreateGameObject(nullptr);
+    zlewy->name = "Zlewy";
     GameObject* tablicaSink[8];
     for (int i = 0; i < 8; i++) {
-        tablicaSink[i] = sinkModel->Instantiate(*scena1, nullptr, nullptr);
+        tablicaSink[i] = sinkModel->Instantiate(*scena1, zlewy, nullptr);
         tablicaSink[i]->name = "Sink" + std::to_string(i);
         tablicaSink[i]->GetComponent<TransformComponent>()->scale    = glm::vec3{ 3, 3, 3 };
         tablicaSink[i]->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 90, 0 };
@@ -2452,27 +2471,29 @@ void createFirstRoom(Scene* scena1) {
         tablicaurin[i]->GetComponent<TransformComponent>()->position    = glm::vec3{ -17.5 + (10 * i), 2.0, -12.5 };
     }*/
 
+    GameObject* lustra = scena1->CreateGameObject(nullptr);
+    lustra->name = "Lustra";
     // Lustra 1-3
-    GameObject* lustro1 = mirrorModel1->Instantiate(*scena1, nullptr, nullptr);
+    GameObject* lustro1 = mirrorModel1->Instantiate(*scena1, lustra, nullptr);
     lustro1->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1, 2, 8 };
     lustro1->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, -180, 0 };
     lustro1->AddComponent<ColliderComponent>();
     lustro1->GetComponent<TransformComponent>()->position   = glm::vec3{ -8.5, 12.0, -25 + (-20 * 0) };
 
-    GameObject* lustro2 = mirrorModel2->Instantiate(*scena1, nullptr, nullptr);
+    GameObject* lustro2 = mirrorModel2->Instantiate(*scena1, lustra, nullptr);
     lustro2->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1, 2, 8 };
     lustro2->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, -180, 0 };
     lustro2->AddComponent<ColliderComponent>();
     lustro2->GetComponent<TransformComponent>()->position   = glm::vec3{ -8.5, 12.0, -25 + (-20 * 1) };
 
-    GameObject* lustro3 = mirrorModel3->Instantiate(*scena1, nullptr, nullptr);
+    GameObject* lustro3 = mirrorModel3->Instantiate(*scena1, lustra, nullptr);
     lustro3->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1, 2, 8 };
     lustro3->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, -180, 0 };
     lustro3->AddComponent<ColliderComponent>();
     lustro3->GetComponent<TransformComponent>()->position   = glm::vec3{ -8.5, 12.0, -25 + (-20 * 2) };
 
     // Lustro 4 - dodane z mirrorModel4 (lustro_puste.glb)
-    GameObject* lustro4 = mirrorModel4->Instantiate(*scena1, nullptr, nullptr);
+    GameObject* lustro4 = mirrorModel4->Instantiate(*scena1, lustra, nullptr);
     lustro4->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1, 2, 8 };
     lustro4->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, -180, 0 };
     lustro4->AddComponent<ColliderComponent>();
@@ -2623,12 +2644,15 @@ void createMainRooom(Scene* scena) {
     ksiazka->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -45.0f, 0.0f };
     ksiazka->GetComponent<TransformComponent>()->position = glm::vec3{ 56.920 ,8.560, -150.740  + 15 };
 
-    GameObject * probowka7 = probowka7Model->Instantiate(*scena, nullptr, nullptr);
+    GameObject* probowki = scena->CreateGameObject(nullptr);
+    probowki->name = "probowki";
+
+    GameObject* probowka7 = probowka7Model->Instantiate(*scena, probowki, nullptr);
     probowka7->name = "probowka7";
     probowka7->GetComponent<TransformComponent>()->scale    = glm::vec3{ 2, 2, 2 };
     probowka7->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -45.0f, 0.0f };
     probowka7->GetComponent<TransformComponent>()->position = glm::vec3{ 57.570 ,9, -174.640f  + 15 };
-    GameObject * probowka7b = probowka7Model->Instantiate(*scena, nullptr, nullptr);
+    GameObject * probowka7b = probowka7Model->Instantiate(*scena, probowki, nullptr);
     probowka7b->name = "probowka7b";
     probowka7b->GetComponent<TransformComponent>()->scale    = glm::vec3{ 2, 2, 2 };
     probowka7b->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -30.0f, 0.0f };
@@ -2639,18 +2663,18 @@ void createMainRooom(Scene* scena) {
     probowka7c->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, 45.0f, 0.0f };
     probowka7c->GetComponent<TransformComponent>()->position = glm::vec3{ 21.360+7 ,9, -182.860  + 15 };
 
-    GameObject * probowka6 = probowka6Model->Instantiate(*scena, nullptr, nullptr);
+    GameObject * probowka6 = probowka6Model->Instantiate(*scena, probowki, nullptr);
     probowka6->name = "probowka6";
     probowka6->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1.5, 1.5, 1.5 };
     probowka6->GetComponent<TransformComponent>()->rotation = glm::vec3{ 90.0f, -66.900, 0.0f };
     probowka6->GetComponent<TransformComponent>()->position = glm::vec3{ 56.930 ,8.580, -172.450 + 15  };
-    GameObject * probowka6b = probowka6Model->Instantiate(*scena, nullptr, nullptr);
+    GameObject * probowka6b = probowka6Model->Instantiate(*scena, probowki, nullptr);
     probowka6b->name = "probowka6b";
     probowka6b->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1.5, 1.5, 1.5 };
     probowka6b->GetComponent<TransformComponent>()->rotation = glm::vec3{ 90.0f, -115.900, 0.0f };
     probowka6b->GetComponent<TransformComponent>()->position = glm::vec3{ 56.930 ,8.580, -174.460  + 15 };
 
-    GameObject * probowka5 = probowka5Model->Instantiate(*scena, nullptr, nullptr);
+    GameObject * probowka5 = probowka5Model->Instantiate(*scena, probowki, nullptr);
     probowka5->name = "probowka5";
     probowka5->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1.5, 1.5, 1.5 };
     probowka5->GetComponent<TransformComponent>()->rotation = glm::vec3{ 90.0f, -45.0f, 0.0f };
@@ -2661,24 +2685,24 @@ void createMainRooom(Scene* scena) {
     probowka5b->GetComponent<TransformComponent>()->rotation = glm::vec3{ 90.0f, -112.0f, 0.0f };
     probowka5b->GetComponent<TransformComponent>()->position = glm::vec3{ 25.880+7 ,8.570, -147.370  + 15 };
 
-    GameObject * probowkaArka_1 = probowkaArka_1_Model->Instantiate(*scena, nullptr, nullptr);
+    GameObject * probowkaArka_1 = probowkaArka_1_Model->Instantiate(*scena, probowki, nullptr);
     probowkaArka_1->name = "probowkaArka_1";
     probowkaArka_1->GetComponent<TransformComponent>()->scale    = glm::vec3{ 0.250, 0.250, 0.250 };
     probowkaArka_1->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -11.300, 0.0f };
     probowkaArka_1->GetComponent<TransformComponent>()->position = glm::vec3{ 57.550 ,9.260, -184.430 + 15  };
 
-    GameObject * probowka3 = probowka3Model->Instantiate(*scena, nullptr, nullptr);
+    GameObject * probowka3 = probowka3Model->Instantiate(*scena, probowki, nullptr);
     probowka3->name = "probowka3";
     probowka3->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1.500, 1.500, 1.500 };
     probowka3->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -151.800, 0.0f };
     probowka3->GetComponent<TransformComponent>()->position = glm::vec3{ 55.760 ,9.640, -185.700 + 15  };
 
-    GameObject * probowka4 = probowka4Model->Instantiate(*scena, nullptr, nullptr);
+    GameObject * probowka4 = probowka4Model->Instantiate(*scena, probowki, nullptr);
     probowka4->name = "probowka4";
     probowka4->GetComponent<TransformComponent>()->scale    = glm::vec3{ 0.250, 0.250, 0.250 };
     probowka4->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -45.0f, 0.0f };
     probowka4->GetComponent<TransformComponent>()->position = glm::vec3{ 56.080 ,10.500, -162.990  + 15 };
-    GameObject * probowka4b = probowka4Model->Instantiate(*scena, nullptr, nullptr);
+    GameObject * probowka4b = probowka4Model->Instantiate(*scena, probowki, nullptr);
     probowka4b->name = "probowka4b";
     probowka4b->GetComponent<TransformComponent>()->scale    = glm::vec3{ 0.250, 0.250, 0.250 };
     probowka4b->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -45.0f, 0.0f };

@@ -79,6 +79,7 @@ public:
         }
 
         transform.rotation = rot;
+        transform.isDirty = true;
 
         // update Front, Right and Up Vectors using the updated Euler angles
         updateCameraVectors(cam, transform);
