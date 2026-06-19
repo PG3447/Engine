@@ -2378,12 +2378,12 @@ void createFirstRoom(Scene* scena1) {
     GameObject* floor = CreateStaticObject(scena1, floorModel.get(), nullptr,
     "PodlogawLazience", glm::vec3(25, 0, -60), glm::vec3(50, 1, 50));
     floor->GetComponent<ColliderComponent>()->isWalkable = true;
-    CreateStaticObject(scena1, floorModel.get(), nullptr, "SufitWKiblu",       glm::vec3(0, 20, 0),  glm::vec3(100, 1, 100), glm::vec3(0), glm::vec3(100, 1, 100));
+    CreateStaticObject(scena1, floorModel.get(), nullptr, "SufitWKiblu",       glm::vec3(0, 20, 0),  glm::vec3(100, 1, 100), glm::vec3(0)); //glm::vec3(100, 1, 100)
 
     // Sciany
-    CreateStaticObject(scena1, wallModel.get(),  nullptr, "ScianaTylnaKibel",           glm::vec3(0, 0, -10),    glm::vec3(50, 50, 1),  glm::vec3(0), glm::vec3(50, 50, 1));
-    CreateStaticObject(scena1, wallModel2.get(), nullptr, "ScianaKiblowa",              glm::vec3(35, 0, 0),     glm::vec3(100, 50, 1), glm::vec3(0,90,0), glm::vec3(1, 50, 100));
-    CreateStaticObject(scena1, wallModel2.get(), nullptr, "ScianaSinkowa",              glm::vec3(-10, 0, 0),    glm::vec3(100, 50, 1), glm::vec3(0,90,0), glm::vec3(1, 50, 100));
+    CreateStaticObject(scena1, wallModel.get(),  nullptr, "ScianaTylnaKibel",           glm::vec3(0, 0, -10),    glm::vec3(50, 50, 1),  glm::vec3(0)); // glm::vec3(50, 50, 1)
+    CreateStaticObject(scena1, wallModel2.get(), nullptr, "ScianaKiblowa",              glm::vec3(35, 0, 0),     glm::vec3(100, 50, 1), glm::vec3(0,90,0)); // glm::vec3(1, 50, 100)
+    CreateStaticObject(scena1, wallModel2.get(), nullptr, "ScianaSinkowa",              glm::vec3(-10, 0, 0),    glm::vec3(100, 50, 1), glm::vec3(0,90,0)); // glm::vec3(1, 50, 100)
     CreateStaticObject(scena1, wallModel.get(),  nullptr, "ScianaDrzwiDoMainRoomPrawa", glm::vec3(110, 0, -100), glm::vec3(100, 50, 1), glm::vec3(0), glm::vec3(100,50,1), true);
     CreateStaticObject(scena1, wallModel.get(),  nullptr, "ScianaDrzwiDoMainRoomLewa",  glm::vec3(-110, 0, -100),glm::vec3(110, 50, 1), glm::vec3(0), glm::vec3(110,50,1), true);
     CreateStaticObject(scena1, wallModel.get(),  nullptr, "GoraPrzejscieDoMainRoom",    glm::vec3(0, 70, -100),  glm::vec3(100, 50, 1), glm::vec3(0), glm::vec3(100,50,1), true);
@@ -2624,22 +2624,22 @@ void createMainRooom(Scene* scena) {
 
     GameObject * bossCapsule = bossCapsuleModel->Instantiate(*scena, nullptr, nullptr);
     bossCapsule->name = "BossCapsule";
-    bossCapsule->AddComponent<ColliderComponent>();
     bossCapsule->GetComponent<TransformComponent>()->scale    = glm::vec3{ 2, 2, 2 };
     bossCapsule->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -45.0f, 0.0f };
     bossCapsule->GetComponent<TransformComponent>()->position = glm::vec3{51.58 ,5, -180.960}; //194
+    bossCapsule->AddComponent<ColliderComponent>();
     bossCapsule->GetComponent<ColliderComponent>()->halfSize    = glm::vec3{ 5.34, 5.34f, 5.34f };
 
-    CreateStaticObject(scena, kredensModel.get(), nullptr, "kredens1",     glm::vec3(56, 4.8, -176+15), glm::vec3(8, 8, 8), glm::vec3(0, -90, 0), glm::vec3(2, 5, 13));
-    CreateStaticObject(scena, kredensModel.get(), nullptr, "kredens2",     glm::vec3(56, 4.8, -152+15), glm::vec3(8, 8, 8), glm::vec3(0, -90, 0), glm::vec3(2, 5, 13));
-    CreateStaticObject(scena, kredensModel.get(), nullptr, "kredens3",     glm::vec3(20+7, 4.8, -176+15), glm::vec3(8, 8, 8), glm::vec3(0, -90, 0), glm::vec3(2, 5, 13));
-    CreateStaticObject(scena, kredensModel.get(), nullptr, "kredens4",     glm::vec3(20+7, 4.8, -152+15), glm::vec3(8, 8, 8), glm::vec3(0, -90, 0), glm::vec3(2, 5, 13));
-    GameObject * kredens5 = CreateStaticObject(scena, kredensModel.get(), nullptr, "kredens5",     glm::vec3(27.7+7, 4.8, -177+15), glm::vec3(8, 8, 8), glm::vec3(0, -270, 0), glm::vec3(4, 5, 13));
-    GameObject * kredens6 = CreateStaticObject(scena, kredensModel.get(), nullptr, "kredens6",     glm::vec3(27.7+7, 4.8, -153+15), glm::vec3(8, 8, 8), glm::vec3(0, -270, 0), glm::vec3(4, 5, 13));
-    GameObject * kredens7 = CreateStaticObject(scena, kredensModel.get(), nullptr, "kredens7",     glm::vec3(-12.230+7, 4.8, -122.540), glm::vec3(8, 8, 8), glm::vec3(0, -270, 0), glm::vec3(4, 5, 13));
-    kredens5->GetComponent<ColliderComponent>()->offset = glm::vec3{ -2.0f, 0.0f, 0.0f };
-    kredens6->GetComponent<ColliderComponent>()->offset = glm::vec3{ -2.0f, 0.0f, 0.0f };
-    kredens7->GetComponent<ColliderComponent>()->offset = glm::vec3{ -2.0f, 0.0f, 0.0f };
+    CreateStaticObject(scena, kredensModel.get(), nullptr, "kredens1",     glm::vec3(56, 4.8, -176+15), glm::vec3(8, 8, 8), glm::vec3(0, -90, 0)); // glm::vec3(2, 5, 13)
+    CreateStaticObject(scena, kredensModel.get(), nullptr, "kredens2",     glm::vec3(56, 4.8, -152+15), glm::vec3(8, 8, 8), glm::vec3(0, -90, 0)); // glm::vec3(2, 5, 13)
+    CreateStaticObject(scena, kredensModel.get(), nullptr, "kredens3",     glm::vec3(20+7, 4.8, -176+15), glm::vec3(8, 8, 8), glm::vec3(0, -90, 0)); // glm::vec3(2, 5, 13)
+    CreateStaticObject(scena, kredensModel.get(), nullptr, "kredens4",     glm::vec3(20+7, 4.8, -152+15), glm::vec3(8, 8, 8), glm::vec3(0, -90, 0)); // glm::vec3(2, 5, 13)
+    GameObject * kredens5 = CreateStaticObject(scena, kredensModel.get(), nullptr, "kredens5",     glm::vec3(27.7+7, 4.8, -177+15), glm::vec3(8, 8, 8), glm::vec3(0, -270, 0)); //glm::vec3(4, 5, 13)
+    GameObject * kredens6 = CreateStaticObject(scena, kredensModel.get(), nullptr, "kredens6",     glm::vec3(27.7+7, 4.8, -153+15), glm::vec3(8, 8, 8), glm::vec3(0, -270, 0)); //glm::vec3(4, 5, 13)
+    GameObject * kredens7 = CreateStaticObject(scena, kredensModel.get(), nullptr, "kredens7",     glm::vec3(-12.230+7, 4.8, -122.540), glm::vec3(8, 8, 8), glm::vec3(0, -270, 0)); //glm::vec3(4, 5, 13)
+    //kredens5->GetComponent<ColliderComponent>()->offset = glm::vec3{ -2.0f, 0.0f, 0.0f };
+    //kredens6->GetComponent<ColliderComponent>()->offset = glm::vec3{ -2.0f, 0.0f, 0.0f };
+    //kredens7->GetComponent<ColliderComponent>()->offset = glm::vec3{ -2.0f, 0.0f, 0.0f };
 
     GameObject * eksp1 = eksp1Model->Instantiate(*scena, nullptr, nullptr);
     eksp1->name = "eksp1";
