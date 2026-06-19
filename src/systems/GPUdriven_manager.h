@@ -837,10 +837,6 @@ public:
             shadowMapArray.Init(SHADOW_RESOLUTION, numLights);
         }
 
-
-        GLint  prevFBO = 0;
-        glGetIntegerv(GL_FRAMEBUFFER_BINDING, &prevFBO);
-
         glViewport(0, 0, shadowMapArray.resolution, shadowMapArray.resolution);
         glBindFramebuffer(GL_FRAMEBUFFER, shadowMapArray.fboShadow);
         glEnable(GL_DEPTH_TEST);
@@ -875,7 +871,7 @@ public:
             first = false;
         }
 
-        glBindFramebuffer(GL_FRAMEBUFFER, prevFBO);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
     // Główna pętla renderowania
