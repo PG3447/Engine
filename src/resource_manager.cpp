@@ -14,6 +14,31 @@
 std::unordered_map<std::string, TextureData> ResourceManager::Textures;
 std::unordered_map<std::string, std::shared_ptr<Model>> ResourceManager::Models;
 
+std::unordered_map<GLuint, std::string> ResourceManager::TextureIDToPath;
+std::unordered_map<uint32_t, std::string> ResourceManager::MeshNodeToModelPath;
+
+void ResourceManager::RegisterMeshNodes(ModelNode* node, const std::string& path)
+{
+    if (!node) return;
+    for (auto& mesh : node->meshes)
+        MeshNodeToModelPath[mesh.meshNodeID] = path;
+    for (auto& child : node->children)
+        RegisterMeshNodes(child.get(), path);
+}
+
+std::string ResourceManager::GetModelPathByMeshNodeID(uint32_t id)
+{
+    auto it = MeshNodeToModelPath.find(id);
+    return it != MeshNodeToModelPath.end() ? it->second : "";
+}
+
+std::string ResourceManager::GetTexturePath(GLuint id)
+{
+    if (id == 0) return "";
+    auto it = TextureIDToPath.find(id);
+    return it != TextureIDToPath.end() ? it->second : "";
+}
+
 TextureData ResourceManager::LoadTexture(const std::string& path, const std::string& directory, const aiTexture* aiTex)
 {
     std::string fullPath = path;
@@ -45,8 +70,8 @@ TextureData ResourceManager::LoadTexture(const std::string& path, const std::str
     if (textureData.id != 0) {
         Textures[fullPath].id = textureData.id;
         Textures[fullPath].hasAlpha = textureData.hasAlpha;
+        TextureIDToPath[textureData.id] = fullPath;
     }
-
 
     return textureData;
 }
@@ -71,7 +96,7 @@ std::shared_ptr<Model> ResourceManager::LoadModel(const std::string& path)
     }
 
     Models[path] = model;
-
+    RegisterMeshNodes(model->rootNode.get(), path);
     spdlog::info("ResourceManager: Zaladowano model {}", path);
     return model;
 }
@@ -241,7 +266,7 @@ void ResourceManager::SaveAsset()
 
         YAML::Node modelNode;
         modelNode["path"] = modelPath;
-
+        
         assetsNode["Assets"]["Models"][i++] = modelNode;
     }
 
@@ -272,5 +297,6 @@ void ResourceManager::Clear()
 {
     Textures.clear();
     Models.clear();
+    MeshNodeToModelPath.clear();
     spdlog::info("ResourceManager: Wyczyszczono pamiec tekstur.");
 }

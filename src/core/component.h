@@ -116,6 +116,11 @@ struct RenderComponent : Component {
     //Model* model = nullptr;
     //Shader* shader = nullptr;
     //std::shared_ptr<Material> materialOverride = nullptr;
+
+
+    void Serialize(YAML::Node& node) override;
+    void Deserialize(const YAML::Node& node) override;
+
 };
 
 
