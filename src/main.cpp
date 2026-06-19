@@ -1064,7 +1064,7 @@ int main(int, char**)
     light2->constant  = 1.0f;
     light2->linear    = 0.10f;
     light2->quadratic = 0.00001f;
-    light2->intensity = 750.0f;
+    light2->intensity = 650.0f;
     light2->cutOff      = glm::cos(glm::radians(8.0f));
     light2->outerCutOff = glm::cos(glm::radians(22.0f));
 
@@ -1114,7 +1114,7 @@ int main(int, char**)
     light3->constant = 1.0f;
     light3->linear = 0.10f;
     light3->quadratic = 0.00001f;
-    light3->intensity = 750.0f;
+    light3->intensity = 650.0f;
     light3->cutOff = glm::cos(glm::radians(8.0f));
     light3->outerCutOff = glm::cos(glm::radians(22.0f));
 

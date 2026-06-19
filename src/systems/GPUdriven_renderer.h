@@ -756,7 +756,7 @@ public:
             if (firstFrame)
                 FirstInTheFrame(objects);
 
-            DispatchWritePass(glm::mat4(1.0f), objCount);
+            DispatchWritePass(glm::mat4(1.0), objCount);
 
             DispatchBuildCommands();
         }

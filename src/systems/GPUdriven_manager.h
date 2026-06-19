@@ -761,6 +761,7 @@ public:
         if (entry.objects.empty())
             spdlog::warn("  PUSTY — nic nie idzie do GPU!");
     }
+    std::vector<glm::mat4> lightSpaceMatrix;
 
     void UpdateAndUploadLights(std::vector<LightComponent*>& lights, std::vector<TransformComponent*>& transforms)
     {
@@ -768,8 +769,7 @@ public:
 
         uint32_t count = std::min((uint32_t)lights.size(), (uint32_t)MAX_UBO_LIGHTS);
         gpuLights.resize(count);
-
-        std::vector<glm::mat4> lightSpaceMatrix(count);
+        lightSpaceMatrix.resize(count);
 
         for (uint32_t i = 0; i < count; i++) {
             LightComponent* light = lights[i];

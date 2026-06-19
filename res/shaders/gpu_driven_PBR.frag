@@ -153,11 +153,8 @@ void main()
     float metallic = 0.0;
     float roughness = 0.5;
     float ao = 1.0;
-
-    if (mat.aoHandle != uvec2(0))
-    {
-        ao = texture(sampler2D(mat.aoHandle), TexCoords).r;
-    }
+    ao = texture(sampler2D(mat.aoHandle), TexCoords).r;
+    
     
     if (mat.metallicRoughnessMap != uvec2(0))
     {
@@ -247,19 +244,19 @@ vec3 CalcPointLightPBR(in GPULight light, vec3 normal, vec3 viewDir, vec3 F0, ve
     
     float attenuation = 1.0;
     float range = light.params2.w;
-    if (range == 0.0f)
-    {
-        attenuation = 1.0 / (distance * distance);
-    }
-    else
-    {
-        attenuation = pow(clamp(1.0 - pow(distance / range, 4.0), 0.0, 1.0), 2.0) / (distance * distance + 1.0);
-    }
-
-    if (range >= 10000.0f)
-    {
-        attenuation = clamp(1.0 - distance / (range/10000.0f ), 0.0, 1.0);
-    }
+    attenuation = 1.0 / (distance * distance);
+//    if (range == 0.0f)
+//    {
+//    }
+//    else
+//    {
+//        attenuation = pow(clamp(1.0 - pow(distance / range, 4.0), 0.0, 1.0), 2.0) / (distance * distance + 1.0);
+//    }
+//
+//    if (range >= 10000.0f)
+//    {
+//        attenuation = clamp(1.0 - distance / (range/10000.0f ), 0.0, 1.0);
+//    }
 
     vec3 radiance = light.diffuse.rgb * light.params1.w * attenuation;
                 
@@ -291,14 +288,14 @@ vec3 CalcSpotLightPBR(in GPULight light, vec3 normal, vec3 viewDir, vec3 F0, vec
     //float attenuation = 1.0 / (lights[i].params1.x + lights[i].params1.y * distance + lights[i].params1.z * distance * distance);
     float attenuation = 1.0;
     float range = light.params2.w;
-    if (range == 0.0f)
-    {
-        attenuation = 1.0 / (distance * distance);
-    }
-    else
-    {
-        attenuation = pow(clamp(1.0 - pow(distance / range, 4.0), 0.0, 1.0), 2.0) / (distance * distance + 1.0);
-    }
+    attenuation = 1.0 / (distance * distance);
+//    if (range == 0.0f)
+//    {
+//    }
+//    else
+//    {
+//        attenuation = pow(clamp(1.0 - pow(distance / range, 4.0), 0.0, 1.0), 2.0) / (distance * distance + 1.0);
+//    }
 //
 //    if (range >= 10000.0f)
 //    {
