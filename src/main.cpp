@@ -2490,7 +2490,7 @@ void createMainRooom(Scene* scena) {
     CreateStaticObject(scena, wallModel2.get(), nullptr, "ScianaLewaDoKrematorium",      glm::vec3(60, 0, -169.010),   glm::vec3(48.650, 50, 1), std::nullopt, glm::vec3(1, 50, 48.650));
     CreateStaticObject(scena, wallModel2.get(), nullptr, "ScianaPrawaWRentgenie",      glm::vec3(60, 0, -260.350),   glm::vec3(41.79, 50, 1), std::nullopt, glm::vec3(1, 50, 41.79));
     CreateStaticObject(scena, wallModel2.get(), nullptr, "ScianaPrawaDoATOMU",           glm::vec3(-17.000, 0, -105.440),  glm::vec3(4.660, 50, 1), std::nullopt, glm::vec3(1, 50, 4.660));
-    CreateStaticObject(scena, wallModel2.get(), nullptr, "ScianaLewaDoATOMU",            glm::vec3(-17.000, 0,  -169.010),  glm::vec3(48.650, 50, 1), std::nullopt, glm::vec3(1, 50, 48.650));
+    CreateStaticObject(scena, wallModel2.get(), nullptr, "ScianaLewaDoATOMU",            glm::vec3(-17.000, 0,  -161.700),  glm::vec3(40.740, 50, 1), std::nullopt, glm::vec3(1, 50, 40.740));
 
     // Gora przejscia-169.010
     CreateStaticObject(scena, wallModel.get(), nullptr, "GoraPrzejscieDoRentgena",              glm::vec3(0, 70, -218+15),   glm::vec3(100, 50, 1));
@@ -2847,6 +2847,7 @@ void createRentgenRoom(Scene* scena) {
         tablicaKibli[i]->GetComponent<ColliderComponent>()->isWalkable     = false;
         tablicaKibli[i]->GetComponent<ColliderComponent>()->affectsNavMesh = true;
     }*/
+    CreateStaticObject(scena, wallModel.get(),  nullptr, "LewaScianaRentgen",    glm::vec3(-58.740, 0.000, -249.490),  glm::vec3(46.310, 50.000, 1), glm::vec3(180, 90, 180), glm::vec3(1,50.000,46.310), true);
     GameObject * objPuzel1 = puzel1->Instantiate(*scena, nullptr, nullptr);
     objPuzel1->name = "puzel1";
     objPuzel1->GetComponent<TransformComponent>()->position = glm::vec3(-10, 3, -280);
