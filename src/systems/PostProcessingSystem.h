@@ -18,7 +18,7 @@ private:
     GLuint quadVAO = 0;
     GLuint quadVBO = 0;
 
-    float gamma = 1.0f;
+    float gamma = 1.5f;
     float time = 0.0f;
 
     void InitQuad() {
