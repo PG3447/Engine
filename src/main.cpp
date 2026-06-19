@@ -1055,6 +1055,7 @@ int main(int, char**)
     camera1->AddChild(latarka1);
     latarka1->GetComponent<TransformComponent>()->position.x = 1.5;
     latarka1->GetComponent<TransformComponent>()->position.y = -1.0;
+    latarka1->GetComponent<TransformComponent>()->position.z = 0.25;
     latarka1->GetComponent<TransformComponent>()->rotation.x = 3.0;
     latarka1->GetComponent<TransformComponent>()->rotation.y = 4.5;
     LightComponent* light2 = latarka1->AddComponent<LightComponent>();
@@ -1067,7 +1068,7 @@ int main(int, char**)
     light2->constant  = 1.0f;
     light2->linear    = 0.10f;
     light2->quadratic = 0.00001f;
-    light2->intensity = 450.0f;
+    light2->intensity = 650.0f;
     light2->cutOff      = glm::cos(glm::radians(8.0f));
     light2->outerCutOff = glm::cos(glm::radians(22.0f));
 
@@ -1107,6 +1108,7 @@ int main(int, char**)
     camera2->AddChild(latarka2);
     latarka2->GetComponent<TransformComponent>()->position.x = 1.5;
     latarka2->GetComponent<TransformComponent>()->position.y = -1.0;
+    latarka2->GetComponent<TransformComponent>()->position.z = 0.25;
     latarka2->GetComponent<TransformComponent>()->rotation.x = 3.0;
     latarka2->GetComponent<TransformComponent>()->rotation.y = 4.5;
     LightComponent* light3 = latarka2->AddComponent<LightComponent>();
@@ -1119,7 +1121,7 @@ int main(int, char**)
     light3->constant = 1.0f;
     light3->linear = 0.10f;
     light3->quadratic = 0.00001f;
-    light3->intensity = 450.0f;
+    light3->intensity = 650.0f;
     light3->cutOff = glm::cos(glm::radians(8.0f));
     light3->outerCutOff = glm::cos(glm::radians(22.0f));
 
