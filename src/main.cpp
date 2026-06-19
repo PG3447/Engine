@@ -1818,20 +1818,38 @@ void ShowGameObjectTree(GameObject* obj)
     }
 }
 
-void ShowTransformEditor(TransformComponent& transform)
+void ShowTransformEditor(GameObject* owner, TransformComponent& transform)
 {
     glm::vec3 pos   = TransformHelper::getLocalPosition(transform);
     glm::vec3 rot   = TransformHelper::getLocalRotation(transform);
     glm::vec3 scale = TransformHelper::getLocalScale(transform);
 
     if (ImGui::DragFloat3("Position", &pos.x, 0.01f))
+    {
         TransformHelper::setLocalPosition(transform, pos);
+        if (auto* collider = owner->GetComponent<ColliderComponent>())
+        {
+            collider->Recalculate(owner);
+        }
+    }
 
     if (ImGui::DragFloat3("Rotation", &rot.x, 0.1f))
+    {
         TransformHelper::setLocalRotation(transform, rot);
+        if (auto* collider = owner->GetComponent<ColliderComponent>())
+        {
+            collider->Recalculate(owner);
+        }
+    }
 
     if (ImGui::DragFloat3("Scale", &scale.x, 0.01f, 0.01f))
+    {
         TransformHelper::setLocalScale(transform, scale);
+        if (auto* collider = owner->GetComponent<ColliderComponent>())
+        {
+            collider->Recalculate(owner);
+        }
+    }
 }
 
 void ShowRigidbodyEditor(RigidbodyComponent& rb)
@@ -1979,7 +1997,7 @@ void imgui_render(SceneManager& sceneManager)
     if (selectedGameObject) {
         ImGui::Separator();
         ImGui::Text("Selected Entity: %s", selectedGameObject->name.c_str());
-        ShowTransformEditor(*selectedGameObject->GetComponent<TransformComponent>());
+        ShowTransformEditor(selectedGameObject, *selectedGameObject->GetComponent<TransformComponent>());
 
         RigidbodyComponent* rb = selectedGameObject->GetComponent<RigidbodyComponent>();
         if (rb != nullptr)

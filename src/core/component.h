@@ -274,6 +274,8 @@ struct ColliderComponent : Component {
             isWalkable = node["isWalkable"].as<bool>();
     }
 
+    void Recalculate(GameObject* owner);
+
 };
 
 enum LightType {
