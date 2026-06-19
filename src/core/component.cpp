@@ -42,6 +42,9 @@ void ColliderComponent::OnEnable(GameObject* owner) {
             absRot[i][j] = std::abs(absRot[i][j]);
 
     halfSize = absRot * localHalfSize;
+
+    glm::mat3 rota = glm::mat3(glm::yawPitchRoll(glm::radians(transformComponent->rotation.y), glm::radians(transformComponent->rotation.x), glm::radians(transformComponent->rotation.z)));
+    offset = rota * (renderComponent->localObjectAABB.centerLocal * transformComponent->scale);
     //if (renderComponent != nullptr && transformComponent != nullptr)
     //{
     //    this->halfSize = (renderComponent->localObjectAABB.max - renderComponent->localObjectAABB.min) * 0.5f;
@@ -75,6 +78,9 @@ void ColliderComponent::Recalculate(GameObject* owner)
     }
 
     halfSize = absRot * localHalfSize;
+
+    glm::mat3 rota = glm::mat3(glm::yawPitchRoll(glm::radians(transformComponent->rotation.y), glm::radians(transformComponent->rotation.x), glm::radians(transformComponent->rotation.z)));
+    offset = rota * (renderComponent->localObjectAABB.centerLocal * transformComponent->scale);
 }
 
 void  RenderComponent::Serialize(YAML::Node& node)

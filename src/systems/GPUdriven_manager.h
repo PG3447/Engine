@@ -425,6 +425,61 @@ public:
             RenderComponent* rc = renderers[i];
             if (!t || !rc) continue;
 
+          
+
+
+
+            for (auto& mesh : rc->meshes)
+            {
+                if (!mesh.cpuData) continue;
+
+                const AABB& localAABB = mesh.cpuData->aabb;
+
+                glm::vec3 worldMin(FLT_MAX), worldMax(-FLT_MAX);
+
+                glm::vec3 corners[8] = {
+                    {localAABB.min.x, localAABB.min.y, localAABB.min.z},
+                    {localAABB.max.x, localAABB.min.y, localAABB.min.z},
+                    {localAABB.min.x, localAABB.max.y, localAABB.min.z},
+                    {localAABB.max.x, localAABB.max.y, localAABB.min.z},
+                    {localAABB.min.x, localAABB.min.y, localAABB.max.z},
+                    {localAABB.max.x, localAABB.min.y, localAABB.max.z},
+                    {localAABB.min.x, localAABB.max.y, localAABB.max.z},
+                    {localAABB.max.x, localAABB.max.y, localAABB.max.z},
+                };
+
+                for (auto& c : corners)
+                {
+                    glm::vec3 w = glm::vec3(transforms[i]->modelMatrix * glm::vec4(c, 1.0f));
+                    worldMin = glm::min(worldMin, w);
+                    worldMax = glm::max(worldMax, w);
+                }
+
+                DebugDrawSystem::AddAABB(worldMin, worldMax, glm::vec4(1, 1, 0, 1));
+            }
+            const AABB& localAABB = rc->localObjectAABB;
+
+            glm::vec3 worldMin(FLT_MAX), worldMax(-FLT_MAX);
+
+            glm::vec3 corners[8] = {
+                {localAABB.min.x, localAABB.min.y, localAABB.min.z},
+                {localAABB.max.x, localAABB.min.y, localAABB.min.z},
+                {localAABB.min.x, localAABB.max.y, localAABB.min.z},
+                {localAABB.max.x, localAABB.max.y, localAABB.min.z},
+                {localAABB.min.x, localAABB.min.y, localAABB.max.z},
+                {localAABB.max.x, localAABB.min.y, localAABB.max.z},
+                {localAABB.min.x, localAABB.max.y, localAABB.max.z},
+                {localAABB.max.x, localAABB.max.y, localAABB.max.z},
+            };
+
+            for (auto& c : corners)
+            {
+                glm::vec3 w = glm::vec3(transforms[i]->modelMatrix * glm::vec4(c, 1.0f));
+                worldMin = glm::min(worldMin, w);
+                worldMax = glm::max(worldMax, w);
+            }
+
+            DebugDrawSystem::AddAABB(worldMin, worldMax, glm::vec4(1, 0, 0, 1));
 
             if (!rc->rendererDirty && !t->rendererDirty && !rebuildCollectData && !isTransparent)
             {
