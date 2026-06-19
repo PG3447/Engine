@@ -2296,6 +2296,8 @@ void connectAllModels() {
     bossModel = std::make_unique<Prefab>("res/models/demon_animations_with_textures.glb");
     bossCapsuleModel = std::make_unique<Prefab>("res/models/boss_capsule.glb");
     pokrywkaRolkiModel = std::make_unique<Prefab>("res/models/do_rolki.glb");
+
+    krzesloModel = std::make_unique<Prefab>("res/models/krzeslo.glb");
 }
 
 void createFirstRoom(Scene* scena1) {
@@ -2743,6 +2745,18 @@ void createMainRooom(Scene* scena) {
     laboratoryStuff3->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, 7.500, 0.0f };
     laboratoryStuff3->GetComponent<TransformComponent>()->position = glm::vec3{ 23.540 ,8.540, -178.320  + 15 };
 
+    GameObject * krzeslo1 = krzesloModel->Instantiate(*scena, nullptr, nullptr);
+    krzeslo1->name = "krzeslo1";
+    krzeslo1->GetComponent<TransformComponent>()->scale    = glm::vec3{ 7 };
+    krzeslo1->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, 159.200, 0.0f };
+    krzeslo1->GetComponent<TransformComponent>()->position = glm::vec3{ 48.160 ,4.590, -126.720 };
+    krzeslo1->AddComponent<ColliderComponent>();
+    GameObject * krzeslo2 = krzesloModel->Instantiate(*scena, nullptr, nullptr);
+    laboratoryStuff3->name = "krzeslo2";
+    krzeslo2->GetComponent<TransformComponent>()->scale    = glm::vec3{ 3, 3, 3 };
+    krzeslo2->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, 106.100, 0.0f };
+    krzeslo2->GetComponent<TransformComponent>()->position = glm::vec3{ 48.160 ,4.590, -139.860};
+    krzeslo2->AddComponent<ColliderComponent>();
     if (cabState.button) {
         ColliderComponent* btnCol = cabState.button->AddComponent<ColliderComponent>();
         btnCol->halfSize = glm::vec3{ 1.0f, 1.0f, 1.0f };
@@ -2785,6 +2799,7 @@ void createMainRooom(Scene* scena) {
 
         AnimationHelper::Play(bossAnimator, defaultBossClip, true, 1.0f);
     }
+
 }
 
 void createNuclearRooom(Scene* scena) {
