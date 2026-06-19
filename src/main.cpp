@@ -171,7 +171,6 @@ std::unique_ptr<Prefab> szafa2Model;
 std::unique_ptr<Prefab> szafa3Model;
 std::unique_ptr<Prefab> telephoneModel;
 std::unique_ptr<Prefab> toiletModel;
-std::unique_ptr<Prefab> wozekModel;
 std::unique_ptr<Prefab> zaslonaModel;
 std::unique_ptr<Prefab> roomModel;
 std::unique_ptr<Prefab> placeholderModel;
@@ -213,6 +212,12 @@ std::unique_ptr<Prefab> fiolka2Model;
 std::unique_ptr<Prefab> fiolka1Model;
 std::unique_ptr<Prefab> ksiazkaModel;
 std::unique_ptr<Prefab> eksp2Model;
+std::unique_ptr<Prefab> eksp3Model;
+std::unique_ptr<Prefab> eksp4Model;
+std::unique_ptr<Prefab> wozekModel;
+std::unique_ptr<Prefab> szafka_inna1Model;
+std::unique_ptr<Prefab> szafka_inna2Model;
+std::unique_ptr<Prefab> fiolka_nastModel;
 
 std::unique_ptr<Prefab> probowka7Model;
 std::unique_ptr<Prefab> probowka6Model;
@@ -2300,6 +2305,12 @@ void connectAllModels() {
     pokrywkaRolkiModel = std::make_unique<Prefab>("res/models/do_rolki.glb");
 
     krzesloModel = std::make_unique<Prefab>("res/models/krzeslo.glb");
+    wozekModel = std::make_unique<Prefab>("res/models/wozek.glb");
+    eksp3Model = std::make_unique<Prefab>("res/models/eksperyment3.glb");
+    eksp4Model = std::make_unique<Prefab>("res/models/eksperyment4.glb");
+    szafka_inna1Model = std::make_unique<Prefab>("res/models/szafka_inna1.glb");
+    szafka_inna2Model = std::make_unique<Prefab>("res/models/szafka_inna2.glb");
+    fiolka_nastModel = std::make_unique<Prefab>("res/models/fiolka_nast.glb");
 }
 
 void createFirstRoom(Scene* scena1) {
@@ -2319,7 +2330,7 @@ void createFirstRoom(Scene* scena1) {
     CreateStaticObject(scena1, wallModel2.get(), nullptr, "ScianaKiblowa",              glm::vec3(35, 0, 0),     glm::vec3(100, 50, 1), glm::vec3(0,90,0), glm::vec3(1, 50, 100));
     CreateStaticObject(scena1, wallModel2.get(), nullptr, "ScianaSinkowa",              glm::vec3(-10, 0, 0),    glm::vec3(100, 50, 1), glm::vec3(0,90,0), glm::vec3(1, 50, 100));
     CreateStaticObject(scena1, wallModel.get(),  nullptr, "ScianaDrzwiDoMainRoomPrawa", glm::vec3(110, 0, -100), glm::vec3(100, 50, 1), glm::vec3(0), glm::vec3(100,50,1), true);
-    CreateStaticObject(scena1, wallModel.get(),  nullptr, "ScianaDrzwiDoMainRoomLewa",  glm::vec3(-110, 0, -100),glm::vec3(110, 50, 1), glm::vec3(0), glm::vec3(100,50,1), true);
+    CreateStaticObject(scena1, wallModel.get(),  nullptr, "ScianaDrzwiDoMainRoomLewa",  glm::vec3(-110, 0, -100),glm::vec3(110, 50, 1), glm::vec3(0), glm::vec3(110,50,1), true);
     CreateStaticObject(scena1, wallModel.get(),  nullptr, "GoraPrzejscieDoMainRoom",    glm::vec3(0, 70, -100),  glm::vec3(100, 50, 1), glm::vec3(0), glm::vec3(100,50,1), true);
 
     // Kibel
@@ -2562,8 +2573,10 @@ void createMainRooom(Scene* scena) {
     CreateStaticObject(scena, kredensModel.get(), nullptr, "kredens4",     glm::vec3(20, 4.8, -152+15), glm::vec3(8, 8, 8), glm::vec3(0, -90, 0), glm::vec3(2, 5, 13));
     GameObject * kredens5 = CreateStaticObject(scena, kredensModel.get(), nullptr, "kredens5",     glm::vec3(27.7, 4.8, -177+15), glm::vec3(8, 8, 8), glm::vec3(0, -270, 0), glm::vec3(4, 5, 13));
     GameObject * kredens6 = CreateStaticObject(scena, kredensModel.get(), nullptr, "kredens6",     glm::vec3(27.7, 4.8, -153+15), glm::vec3(8, 8, 8), glm::vec3(0, -270, 0), glm::vec3(4, 5, 13));
+    GameObject * kredens7 = CreateStaticObject(scena, kredensModel.get(), nullptr, "kredens7",     glm::vec3(-12.230, 4.8, -122.540), glm::vec3(8, 8, 8), glm::vec3(0, -270, 0), glm::vec3(4, 5, 13));
     kredens5->GetComponent<ColliderComponent>()->offset = glm::vec3{ -2.0f, 0.0f, 0.0f };
     kredens6->GetComponent<ColliderComponent>()->offset = glm::vec3{ -2.0f, 0.0f, 0.0f };
+    kredens7->GetComponent<ColliderComponent>()->offset = glm::vec3{ -2.0f, 0.0f, 0.0f };
 
     GameObject * eksp1 = eksp1Model->Instantiate(*scena, nullptr, nullptr);
     eksp1->name = "eksp1";
@@ -2762,14 +2775,14 @@ void createMainRooom(Scene* scena) {
     GameObject * Szafka_lab1 = szafka_labModel->Instantiate(*scena, nullptr, nullptr);
     Szafka_lab1->name = "Szafka_lab1";
     Szafka_lab1->GetComponent<TransformComponent>()->scale    = glm::vec3{ 10 };
-    Szafka_lab1->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, 90.000, 0.0f };
+    Szafka_lab1->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, 91.000, 0.0f };
     Szafka_lab1->GetComponent<TransformComponent>()->position = glm::vec3{ -13.160 ,6.680, -190.470+14};
     Szafka_lab1->AddComponent<ColliderComponent>();
     Szafka_lab1->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 5.0f, 5, 10.0f };
     GameObject * Szafka_lab2 = szafka_labModel->Instantiate(*scena, nullptr, nullptr);
     Szafka_lab2->name = "Szafka_lab2";
     Szafka_lab2->GetComponent<TransformComponent>()->scale    = glm::vec3{ 10 };
-    Szafka_lab2->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, 90, 0.0f };
+    Szafka_lab2->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, 88, 0.0f };
     Szafka_lab2->GetComponent<TransformComponent>()->position = glm::vec3{ -13.160 ,6.680, -176.930+14};
     Szafka_lab2->AddComponent<ColliderComponent>();
     Szafka_lab2->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 5.0f, 5, 10.0f };
@@ -2816,6 +2829,53 @@ void createMainRooom(Scene* scena) {
         AnimationHelper::Play(bossAnimator, defaultBossClip, true, 1.0f);
     }
 
+    GameObject * szafka_inna1 = szafka_inna1Model->Instantiate(*scena, nullptr, nullptr);
+    szafka_inna1->name = "szafka_inna1a";
+    szafka_inna1->GetComponent<TransformComponent>()->scale    = glm::vec3{ 6 };
+    szafka_inna1->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, 0, 0.0f };
+    szafka_inna1->GetComponent<TransformComponent>()->position = glm::vec3{ 53.500 ,4.120, -103.230};
+    szafka_inna1->AddComponent<ColliderComponent>();
+    szafka_inna1->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 4.520, 5, 2.420f };
+    szafka_inna1->GetComponent<ColliderComponent>()->offset = glm::vec3{ 3.210, 0, 0 };
+    GameObject * szafka_inna1b = szafka_inna1Model->Instantiate(*scena, nullptr, nullptr);
+    szafka_inna1b->name = "szafka_inna1b";
+    szafka_inna1b->GetComponent<TransformComponent>()->scale    = glm::vec3{ 7 };
+    szafka_inna1b->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, 180, 0.0f };
+    szafka_inna1b->GetComponent<TransformComponent>()->position = glm::vec3{ -9.520 ,4.660, -107.320};
+    szafka_inna1b->AddComponent<ColliderComponent>();
+    szafka_inna1b->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 4.520, 5, 2.420f };
+    szafka_inna1b->GetComponent<ColliderComponent>()->offset = glm::vec3{ -3.430, 0, 0 };
+    GameObject * szafka_inna2 = szafka_inna2Model->Instantiate(*scena, nullptr, nullptr);
+    szafka_inna2->name = "szafka_inna2";
+    szafka_inna2->GetComponent<TransformComponent>()->scale    = glm::vec3{ 7 };
+    szafka_inna2->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, 90, 0.0f };
+    szafka_inna2->GetComponent<TransformComponent>()->position = glm::vec3{ -8.820 ,4.550, -102.990};
+    szafka_inna2->AddComponent<ColliderComponent>();
+    szafka_inna2->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 5.910, 4.100, 2.760 };
+    szafka_inna2->GetComponent<ColliderComponent>()->offset = glm::vec3{ -3.470, 0, 0.0f };
+    GameObject * wozek = wozekModel->Instantiate(*scena, nullptr, nullptr);
+    wozek->name = "wozek";
+    wozek->GetComponent<TransformComponent>()->scale    = glm::vec3{ 7 };
+    wozek->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, 122.800, 0.0f };
+    wozek->GetComponent<TransformComponent>()->position = glm::vec3{ 6.630 ,4.800, -145.800};
+    wozek->AddComponent<ColliderComponent>();
+    wozek->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 4.0f, 5, 5.130 };
+
+    GameObject * eksperyment3 = eksp3Model->Instantiate(*scena, nullptr, nullptr);
+    eksperyment3->name = "eksperyment3";
+    eksperyment3->GetComponent<TransformComponent>()->scale    = glm::vec3{ 5 };
+    eksperyment3->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, 102.700, 0.0f };
+    eksperyment3->GetComponent<TransformComponent>()->position = glm::vec3{ -11.400 ,9.860, -107.600};
+    GameObject * ekperyment4 = eksp4Model->Instantiate(*scena, nullptr, nullptr);
+    ekperyment4->name = "ekperyment4";
+    ekperyment4->GetComponent<TransformComponent>()->scale    = glm::vec3{ 5 };
+    ekperyment4->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, 0, 0.0f };
+    ekperyment4->GetComponent<TransformComponent>()->position = glm::vec3{ -13.140 ,7.760, -160.130};
+    GameObject * fiolka_nast = fiolka_nastModel->Instantiate(*scena, nullptr, nullptr);
+    fiolka_nast->name = "fiolka_nast";
+    fiolka_nast->GetComponent<TransformComponent>()->scale    = glm::vec3{ 10 };
+    fiolka_nast->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, 90, 0.0f };
+    fiolka_nast->GetComponent<TransformComponent>()->position = glm::vec3{ 6.910 ,7.650, -145.210};
 }
 
 void createNuclearRooom(Scene* scena) {
@@ -2991,7 +3051,6 @@ void createRentgenRoom(Scene* scena) {
 
         GameObject* lightGO = scena->CreateGameObject(nullptr);
         lightGO->name = "PuzzleLight_" + expected->name;
-
         TransformComponent* lightTr = lightGO->AddComponent<TransformComponent>();
         lightTr->position = pos + glm::vec3(0.0f, 2.0f, 1.0);
 
