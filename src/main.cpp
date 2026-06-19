@@ -298,6 +298,10 @@ struct DoorState {
     GameObject* hinge  = nullptr;
     glm::vec3 originalOffset = glm::vec3(0.0f);
     bool canBeClicked  = true;
+
+    glm::vec3 closedHalfSize = glm::vec3(0.8f, 10.0f, 4.0f);
+    glm::vec3 openHalfSize   = glm::vec3(1.0f, 10.0f, 1.0f);
+    glm::vec3 openOffset     = glm::vec3(0.0f);
 };
 
 std::unordered_map<GameObject*, CabinetState> cabinetsMap;
@@ -652,8 +656,8 @@ void HandlePlayerInteraction(
                     state.targetAngle = state.isOpen ? state.openAngle : state.closedAngle;
 
                     if (auto col = hit.hitObject->GetComponent<ColliderComponent>()) {
-                        col->halfSize = state.isOpen ? glm::vec3{ 1.0f, 10.0f, 1.0f } : glm::vec3{ 0.8f, 10.0f, 4.0f };
-                        col->offset = state.isOpen ? glm::vec3(0.0f) : state.originalOffset;
+                        col->halfSize = state.isOpen ? state.openHalfSize : state.closedHalfSize;
+                        col->offset   = state.isOpen ? state.openOffset   : state.originalOffset;
                     }
                     PlayerAnimationHelper::TriggerAction(playerAnimator, playerPrefab, PlayerAnimationHelper::INTERACT_ANIM_INDEX);
 
@@ -849,7 +853,9 @@ GameObject* CreateInteractableDoor(Scene* scene, Prefab* prefab, Shader* shader,
     const glm::vec3& pivotOffset,
     const glm::vec3& colliderHalfSize,
     float openAngle,
-    float baseRotationY = 90.0f)
+    float baseRotationY = 90.0f,
+    std::optional<glm::vec3> openColliderHalfSize = std::nullopt,
+    std::optional<glm::vec3> openColliderOffset   = std::nullopt)
 {
     GameObject* hinge  = scene->CreateGameObject(nullptr);
     hinge->name        = "Hinge_" + name;
@@ -862,7 +868,6 @@ GameObject* CreateInteractableDoor(Scene* scene, Prefab* prefab, Shader* shader,
     doorTr->scale      = scale;
     doorTr->rotation   = glm::vec3(0.0f, baseRotationY, 0.0f);
     doorTr->position   = -pivotOffset;
-
 
     ColliderComponent* col = hinge->AddComponent<ColliderComponent>();
     col->halfSize       = colliderHalfSize;
@@ -877,6 +882,9 @@ GameObject* CreateInteractableDoor(Scene* scene, Prefab* prefab, Shader* shader,
     state.currentAngle   = 0.0f;
     state.targetAngle    = 0.0f;
     state.originalOffset = -pivotOffset;
+    state.closedHalfSize = colliderHalfSize;
+    state.openHalfSize   = openColliderHalfSize.value_or(glm::vec3(1.0f, 10.0f, 1.0f));
+    state.openOffset     = openColliderOffset.value_or(glm::vec3(0.0f));
     toiletDoorsMap[hinge] = state;
     return hinge;
 }
@@ -3010,10 +3018,12 @@ void createNuclearRooom(Scene* scena) {
 
 void createCrematorium(Scene* scena) {
 
+    /*
     CreateStaticObject(scena, floorModel.get(), nullptr, "PodlogaKrematorium",   glm::vec3(120, 0, -180),  glm::vec3(60, 1, 80));
     CreateStaticObject(scena, floorModel.get(), nullptr, "SufitCrematorium",     glm::vec3(120, 25, -180), glm::vec3(60, 1, 80));
     CreateStaticObject(scena, wallModel2.get(), nullptr, "ScianaKoncowaKrematorium", glm::vec3(180, 0, -180), glm::vec3(80, 50, 1), std::nullopt, glm::vec3(1, 50, 80));
     CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaKremLewa",       glm::vec3(120.180, 0, -259.680), glm::vec3(60, 50, 1), std::nullopt, glm::vec3(60, 100, 1));
+    */
 
     crematoriumPuzzle.spacingHorizontal = 10.0f;
     crematoriumPuzzle.spacingVertical   = 6.0f;
@@ -3207,14 +3217,31 @@ void createRentgenRoom(Scene* scena) {
 }
 void createRentgenCorridor(Scene * scena){
     CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaLewaKorytarzRentgen",         glm::vec3(-50.470, 0, -137.540),  glm::vec3(41.440, 50, 1));
-    CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaPrawaKorytarzRentgen",         glm::vec3(-50.470, 0, -152.440),  glm::vec3(41.440, 50, 1));
+    CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaPrawaKorytarzRentgen1",         glm::vec3(-86.440, 0, -153.020),  glm::vec3(4.630, 50, 1));
+    CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaPrawaKorytarzRentgen2",         glm::vec3(-41.200, 0, -153.020),  glm::vec3(30.460, 50, 1));
     CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaKoncowaKorytarzRentgen",         glm::vec3(-91.890, 0, -144.780),  glm::vec3(1, 90, 7.870));
     CreateStaticObject(scena, floorModel.get(), nullptr, "PodlogaKorytarzRentgen",    glm::vec3(-52.440, 0, -145.900),  glm::vec3(43.520, 1, 8.070));
     CreateStaticObject(scena, floorModel.get(), nullptr, "SufitKorytarzRentgen",    glm::vec3(-52.440, 20, -145.900),  glm::vec3(43.520, 1, 8.070));
+    GameObject* hingeDrzwiDoRentgen = CreateInteractableDoor(
+        scena, NormalDoor.get(), nullptr, "DrzwiDoRentgen",
+        glm::vec3(-76.540, 3.000f, -152.310), glm::vec3(2.25, 2.2, 1),
+        glm::vec3(5.0f, 0.0f, 0.0f), glm::vec3(5.0f, 20.0f, 1.0f), -90.0f, 0.0f, glm::vec3(1.0f, 20.0f, 5.0f), glm::vec3(0.0f, 0.0f, -5.680)
+    );
+    unlockedDoors.insert(hingeDrzwiDoRentgen);
 
 }
 
 void createCrematoriumCorridor(Scene * scena){
-    CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaLewaKorytarzKrematorium",         glm::vec3(-30, 0, -203+14),  glm::vec3(30, 50, 1));
-    CreateStaticObject(scena, floorModel.get(), nullptr, "PodlogaKorytarzKrematorium",    glm::vec3(0.040, 0, -257.800),  glm::vec3(60, 1, 40));
+    CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaLewaKorytarzKrematorium",         glm::vec3(102.160, 0, -107.230),  glm::vec3(41.440, 50, 1));
+    CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaPrawaKorytarzKrematorium1",         glm::vec3(135.720, 0, -121.660),  glm::vec3(4.630, 50, 1));
+    CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaPrawaKorytarzKrematorium2",         glm::vec3(90.570, 0, -121.660),  glm::vec3(30.460, 50, 1));
+    CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaKoncowaKorytarzKrematorium",         glm::vec3(141.810, 0, -113.790),  glm::vec3(1, 90, 7.870));
+    CreateStaticObject(scena, floorModel.get(), nullptr, "PodlogaKorytarzKrematorium",    glm::vec3(102.610, 0, -115.010),  glm::vec3(43.520, 1, 8.070));
+    CreateStaticObject(scena, floorModel.get(), nullptr, "SufitKorytarzKrematorium",    glm::vec3(102.610, 20, -115.010),  glm::vec3(43.520, 1, 8.070));
+    GameObject* hingeDrzwiDoRentgen = CreateInteractableDoor(
+        scena, NormalDoor.get(), nullptr, "DrzwiDoKrematorium",
+        glm::vec3(131.390-5, 3.0f, -121.670), glm::vec3(2.25, 2.2, 1),
+        glm::vec3(5.0f, 0.0f, 0.0f), glm::vec3(5.0f, 20.0f, 1.0f), -90.0f, 0.0f, glm::vec3(1.0f, 20.0f, 5.0f), glm::vec3(0.0f, 0.0f, -5.680)
+    );
+    unlockedDoors.insert(hingeDrzwiDoRentgen);
 }
