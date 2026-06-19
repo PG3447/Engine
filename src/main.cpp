@@ -194,6 +194,7 @@ std::unique_ptr<Prefab> wallModel2;
 std::unique_ptr<Prefab> wallModel3;
 std::unique_ptr<Prefab> NormalDoor;
 std::unique_ptr<Prefab> cockroachModel;
+std::unique_ptr<Prefab> szafka_labModel;;
 
 std::unique_ptr<Prefab> puzel1;
 std::unique_ptr<Prefab> puzel2;
@@ -2253,6 +2254,7 @@ void connectAllModels() {
     urinModel        = std::make_unique<Prefab>("res/models/uniral_v2.glb");
     NormalDoor       = std::make_unique<Prefab>("res/models/doors.glb");
     szafkaModel      = std::make_unique<Prefab>("res/models/szafka_pop_main.glb");
+    szafka_labModel      = std::make_unique<Prefab>("res/models/szafka_lab.glb");
     ruraModel        = std::make_unique<Prefab>("res/models/placeholder_rura_wysuwana.glb");
     panelModel       = std::make_unique<Prefab>("res/models/Panel.glb");
     puzel1       = std::make_unique<Prefab>("res/models/Puzel1.glb");
@@ -2486,16 +2488,16 @@ void createMainRooom(Scene* scena) {
     CreateStaticObject(scena, floorModel.get(), nullptr, "SufitMainRoom",   glm::vec3(0, 25, -200), glm::vec3(100, 1, 100), std::nullopt, glm::vec3(100, 1, 100));
 
     // Sciany
-    CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaDoRentgenaPrawa",        glm::vec3(35, 0, -203),   glm::vec3(25, 50, 1));
-    CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaDoRentgenaLewa",         glm::vec3(-30, 0, -203),  glm::vec3(30, 50, 1));
+    CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaDoRentgenaPrawa",        glm::vec3(35, 0, -203+14),   glm::vec3(25, 50, 1));
+    CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaDoRentgenaLewa",         glm::vec3(-30, 0, -203+14),  glm::vec3(30, 50, 1));
     CreateStaticObject(scena, wallModel2.get(), nullptr, "ScianaPrawaDoKrematorium",     glm::vec3(60, 0, -105.440),   glm::vec3(4.660, 50, 1), std::nullopt, glm::vec3(1, 50, 4.660));
     CreateStaticObject(scena, wallModel2.get(), nullptr, "ScianaLewaDoKrematorium",      glm::vec3(60, 0, -169.010),   glm::vec3(48.650, 50, 1), std::nullopt, glm::vec3(1, 50, 48.650));
     CreateStaticObject(scena, wallModel2.get(), nullptr, "ScianaPrawaWRentgenie",      glm::vec3(60, 0, -260.350),   glm::vec3(41.79, 50, 1), std::nullopt, glm::vec3(1, 50, 41.79));
-    CreateStaticObject(scena, wallModel2.get(), nullptr, "ScianaPrawaDoATOMU",           glm::vec3(-17.000, 0, -105.440),  glm::vec3(4.660, 50, 1), std::nullopt, glm::vec3(1, 50, 4.660));
-    CreateStaticObject(scena, wallModel2.get(), nullptr, "ScianaLewaDoATOMU",            glm::vec3(-17.000, 0,  -161.700),  glm::vec3(40.740, 50, 1), std::nullopt, glm::vec3(1, 50, 40.740));
+    CreateStaticObject(scena, wallModel2.get(), nullptr, "ScianaPrawaDoATOMU",           glm::vec3(-17.000, 0, -120.810),  glm::vec3(20.090, 50, 1), std::nullopt, glm::vec3(1, 50, 20.090));
+    CreateStaticObject(scena, wallModel2.get(), nullptr, "ScianaLewaDoATOMU",            glm::vec3(-17.000, 0,  -169.580),  glm::vec3(18.900, 50, 1), std::nullopt, glm::vec3(1, 50, 18.900));
 
     // Gora przejscia-169.010
-    CreateStaticObject(scena, wallModel.get(), nullptr, "GoraPrzejscieDoRentgena",              glm::vec3(0, 70, -218+15),   glm::vec3(100, 50, 1));
+    CreateStaticObject(scena, wallModel.get(), nullptr, "GoraPrzejscieDoRentgena",              glm::vec3(0, 70, -218+15+14),   glm::vec3(100, 50, 1));
     CreateStaticObject(scena, wallModel.get(), nullptr, "GoraPrzejscieDoKrematorium",           glm::vec3(60, 70, -209.590),  glm::vec3(100, 50, 1), glm::vec3(0, 90, 0));
     CreateStaticObject(scena, wallModel.get(), nullptr, "GoraPrzejscieDoREAKTORAATOMOWEGO",     glm::vec3(-17.000, 70, -209.590), glm::vec3(100, 50, 1), glm::vec3(0, 90, 0));
 
@@ -2512,7 +2514,7 @@ void createMainRooom(Scene* scena) {
 
     GameObject* hingeRentgen = CreateInteractableDoor(
         scena, NormalDoor.get(), nullptr, "DrzwiDoRentgen",
-        glm::vec3(5.440f, 2.750f, -217.800f+15), scaleDoors,
+        glm::vec3(5.440f, 2.750f, -217.800f+15+14), scaleDoors,
         glm::vec3(5.0f, 0.0f, 0.0f), glm::vec3(5.0f, 20.0f, 0.8f), 90.0f, 0.0f
     );
     toiletDoorsMap[hingeRentgen].canBeClicked = false;
@@ -2520,7 +2522,7 @@ void createMainRooom(Scene* scena) {
 
     GameObject* hingeATOM = CreateInteractableDoor(
         scena, NormalDoor.get(), nullptr, "DrzwiDoATOMU",
-        glm::vec3(-17.000, 2.750f, -115.590), scaleDoors,
+        glm::vec3(-17.000, 2.750f, -146.010), scaleDoors,
         glm::vec3(0.0f, 0.0f, -5.0f), glm::vec3(0.8f, 20.0f, 5.0f), -90.0f, 90.0f
     );
     toiletDoorsMap[hingeATOM].canBeClicked = false;
@@ -2530,7 +2532,7 @@ void createMainRooom(Scene* scena) {
     szafkaObj->name = "Szafka";
 
     TransformComponent* szafkaTr = szafkaObj->GetComponent<TransformComponent>();
-    szafkaTr->position = glm::vec3{ 27.0f, 9.0f, -216.490f +15};
+    szafkaTr->position = glm::vec3{ 27.0f, 9.0f, -216.490f +15+14};
     szafkaTr->scale    = glm::vec3{ 8.0f, 8.0f, 8.0f };
     szafkaTr->rotation = glm::vec3{ 0.0f, -90.0f, 0.0f };
 
@@ -2551,7 +2553,7 @@ void createMainRooom(Scene* scena) {
     bossCapsule->AddComponent<ColliderComponent>();
     bossCapsule->GetComponent<TransformComponent>()->scale    = glm::vec3{ 2, 2, 2 };
     bossCapsule->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -45.0f, 0.0f };
-    bossCapsule->GetComponent<TransformComponent>()->position = glm::vec3{51.58 ,5, -209.64f +15 };
+    bossCapsule->GetComponent<TransformComponent>()->position = glm::vec3{51.58 ,5, -180.960}; //194
     bossCapsule->GetComponent<ColliderComponent>()->halfSize    = glm::vec3{ 5.34, 5.34f, 5.34f };
 
     CreateStaticObject(scena, kredensModel.get(), nullptr, "kredens1",     glm::vec3(56, 4.8, -176+15), glm::vec3(8, 8, 8), glm::vec3(0, -90, 0), glm::vec3(2, 5, 13));
@@ -2708,13 +2710,13 @@ void createMainRooom(Scene* scena) {
     corkBoard->name = "corkBoard";
     corkBoard->GetComponent<TransformComponent>()->scale    = glm::vec3{ 2, 2, 2 };
     corkBoard->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -90.000, 0.0f };
-    corkBoard->GetComponent<TransformComponent>()->position = glm::vec3{ 58.740 ,17.690, -177.210  + 15 };
+    corkBoard->GetComponent<TransformComponent>()->position = glm::vec3{ 58.740 ,13.320, -177.210  + 15 };
 
     GameObject * clock = clockModel->Instantiate(*scena, nullptr, nullptr);
     clock->name = "clock";
     clock->GetComponent<TransformComponent>()->scale    = glm::vec3{ 2, 2, 2 };
     clock->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, 180.000, 0.0f };
-    clock->GetComponent<TransformComponent>()->position = glm::vec3{ 58.840 ,13.980, -147.150  + 15 };
+    clock->GetComponent<TransformComponent>()->position = glm::vec3{ 58.840 ,17.080, -147.150  + 15 };
 
     GameObject * computer_pbr = computer_pbrModel->Instantiate(*scena, nullptr, nullptr);
     computer_pbr->name = "computer_pbr";
@@ -2753,10 +2755,24 @@ void createMainRooom(Scene* scena) {
     krzeslo1->AddComponent<ColliderComponent>();
     GameObject * krzeslo2 = krzesloModel->Instantiate(*scena, nullptr, nullptr);
     laboratoryStuff3->name = "krzeslo2";
-    krzeslo2->GetComponent<TransformComponent>()->scale    = glm::vec3{ 3, 3, 3 };
+    krzeslo2->GetComponent<TransformComponent>()->scale    = glm::vec3{ 7 };
     krzeslo2->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, 106.100, 0.0f };
     krzeslo2->GetComponent<TransformComponent>()->position = glm::vec3{ 48.160 ,4.590, -139.860};
     krzeslo2->AddComponent<ColliderComponent>();
+    GameObject * Szafka_lab1 = szafka_labModel->Instantiate(*scena, nullptr, nullptr);
+    Szafka_lab1->name = "Szafka_lab1";
+    Szafka_lab1->GetComponent<TransformComponent>()->scale    = glm::vec3{ 10 };
+    Szafka_lab1->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, 90.000, 0.0f };
+    Szafka_lab1->GetComponent<TransformComponent>()->position = glm::vec3{ -13.160 ,6.680, -190.470+14};
+    Szafka_lab1->AddComponent<ColliderComponent>();
+    Szafka_lab1->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 5.0f, 5, 10.0f };
+    GameObject * Szafka_lab2 = szafka_labModel->Instantiate(*scena, nullptr, nullptr);
+    Szafka_lab2->name = "Szafka_lab2";
+    Szafka_lab2->GetComponent<TransformComponent>()->scale    = glm::vec3{ 10 };
+    Szafka_lab2->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, 90, 0.0f };
+    Szafka_lab2->GetComponent<TransformComponent>()->position = glm::vec3{ -13.160 ,6.680, -176.930+14};
+    Szafka_lab2->AddComponent<ColliderComponent>();
+    Szafka_lab2->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 5.0f, 5, 10.0f };
     if (cabState.button) {
         ColliderComponent* btnCol = cabState.button->AddComponent<ColliderComponent>();
         btnCol->halfSize = glm::vec3{ 1.0f, 1.0f, 1.0f };
@@ -2787,7 +2803,7 @@ void createMainRooom(Scene* scena) {
     bossObj->name = "DemonBoss";
 
     TransformComponent* bossTr = bossObj->GetComponent<TransformComponent>();
-    bossTr->position = glm::vec3(52.590, 7.320, -196.120);
+    bossTr->position = glm::vec3(52.590, 7.320, -196.120+14);
     bossTr->scale = glm::vec3(1.5f);
     bossTr->rotation = glm::vec3(0.0f, 130.000, 0.0f);
     bossTr->isDirty = true;
