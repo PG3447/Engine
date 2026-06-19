@@ -1054,7 +1054,7 @@ int main(int, char**)
     camera1->AddChild(latarka1);
     latarka1->GetComponent<TransformComponent>()->position.x = 1.5;
     latarka1->GetComponent<TransformComponent>()->position.y = -1.0;
-    latarka1->GetComponent<TransformComponent>()->position.z = 0.25;
+    latarka1->GetComponent<TransformComponent>()->position.z = 0.5;
     latarka1->GetComponent<TransformComponent>()->rotation.x = 3.0;
     latarka1->GetComponent<TransformComponent>()->rotation.y = 4.5;
     LightComponent* light2 = latarka1->AddComponent<LightComponent>();
@@ -1107,7 +1107,7 @@ int main(int, char**)
     camera2->AddChild(latarka2);
     latarka2->GetComponent<TransformComponent>()->position.x = 1.5;
     latarka2->GetComponent<TransformComponent>()->position.y = -1.0;
-    latarka2->GetComponent<TransformComponent>()->position.z = 0.25;
+    latarka2->GetComponent<TransformComponent>()->position.z = 0.5;
     latarka2->GetComponent<TransformComponent>()->rotation.x = 3.0;
     latarka2->GetComponent<TransformComponent>()->rotation.y = 4.5;
     LightComponent* light3 = latarka2->AddComponent<LightComponent>();
