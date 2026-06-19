@@ -1997,6 +1997,30 @@ void imgui_render(SceneManager& sceneManager)
     if (selectedGameObject) {
         ImGui::Separator();
         ImGui::Text("Selected Entity: %s", selectedGameObject->name.c_str());
+
+        if (ImGui::BeginMenu("Add Component"))
+        {
+            if (ImGui::MenuItem("Rigidbody"))
+            {
+                if (!selectedGameObject->GetComponent<RigidbodyComponent>())
+                    selectedGameObject->AddComponent<RigidbodyComponent>();
+            }
+
+            if (ImGui::MenuItem("Collider"))
+            {
+                if (!selectedGameObject->GetComponent<ColliderComponent>())
+                    selectedGameObject->AddComponent<ColliderComponent>();
+            }
+
+            if (ImGui::MenuItem("Light"))
+            {
+                if (!selectedGameObject->GetComponent<LightComponent>())
+                    selectedGameObject->AddComponent<LightComponent>();
+            }
+
+            ImGui::EndMenu();
+        }
+
         ShowTransformEditor(selectedGameObject, *selectedGameObject->GetComponent<TransformComponent>());
 
         RigidbodyComponent* rb = selectedGameObject->GetComponent<RigidbodyComponent>();
