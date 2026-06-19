@@ -2329,10 +2329,12 @@ void createFirstRoom(Scene* scena1) {
     CreateStaticObject(scena1, wallModel.get(),  nullptr, "GoraPrzejscieDoMainRoom",    glm::vec3(0, 70, -100),  glm::vec3(100, 50, 1), glm::vec3(0), glm::vec3(100,50,1), true);
 
     // Kibel
+    GameObject* kible = scena1->CreateGameObject(nullptr);
+    kible->name = "Kible";
     GameObject* tablicaKibli[8];
     for (int i = 0; i < 8; i++) {
         if (i !=2 && i != 3) {
-            tablicaKibli[i] = toiletModel->Instantiate(*scena1, nullptr, nullptr);
+            tablicaKibli[i] = toiletModel->Instantiate(*scena1, kible, nullptr);
             tablicaKibli[i]->name = "Kibel" + std::to_string(i);
             tablicaKibli[i]->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1.5, 1.5, 1.5 };
             tablicaKibli[i]->AddComponent<ColliderComponent>();
@@ -2345,7 +2347,7 @@ void createFirstRoom(Scene* scena1) {
         }
 
         if (i == 2 || i == 3) {
-            tablicaKibli[i] = urinModel->Instantiate(*scena1, nullptr, nullptr);
+            tablicaKibli[i] = urinModel->Instantiate(*scena1, kible, nullptr);
             tablicaKibli[i]->name = "Kibel" + std::to_string(i);
             tablicaKibli[i]->GetComponent<TransformComponent>()->scale    = glm::vec3{ 12, 12, 12 };
             tablicaKibli[i]->AddComponent<ColliderComponent>();
@@ -2359,10 +2361,12 @@ void createFirstRoom(Scene* scena1) {
     }
 
     // Zaslony
+    GameObject* zaslony = scena1->CreateGameObject(nullptr);
+    zaslony->name = "Zasolony";
     GameObject* tablicaZaslon[9];
     for (int i = 0; i < 9; i++) {
 
-        tablicaZaslon[i] = wallModel3->Instantiate(*scena1, nullptr, nullptr);
+        tablicaZaslon[i] = wallModel3->Instantiate(*scena1, zaslony, nullptr);
         tablicaZaslon[i]->GetComponent<TransformComponent>()->scale = glm::vec3{ 0.3, 30, 20 };
         tablicaZaslon[i]->name = "Zaslona" + std::to_string(i);
         tablicaZaslon[i]->AddComponent<ColliderComponent>();
@@ -2422,9 +2426,11 @@ void createFirstRoom(Scene* scena1) {
     }
 
     // Zlewy - pozycja X z MainRoomIPoprawkiModeli (-20.5)
+    GameObject* zlewy = scena1->CreateGameObject(nullptr);
+    zlewy->name = "Zlewy";
     GameObject* tablicaSink[8];
     for (int i = 0; i < 8; i++) {
-        tablicaSink[i] = sinkModel->Instantiate(*scena1, nullptr, nullptr);
+        tablicaSink[i] = sinkModel->Instantiate(*scena1, zlewy, nullptr);
         tablicaSink[i]->name = "Sink" + std::to_string(i);
         tablicaSink[i]->GetComponent<TransformComponent>()->scale    = glm::vec3{ 3, 3, 3 };
         tablicaSink[i]->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 90, 0 };
@@ -2447,27 +2453,29 @@ void createFirstRoom(Scene* scena1) {
         tablicaurin[i]->GetComponent<TransformComponent>()->position    = glm::vec3{ -17.5 + (10 * i), 2.0, -12.5 };
     }*/
 
+    GameObject* lustra = scena1->CreateGameObject(nullptr);
+    lustra->name = "Lustra";
     // Lustra 1-3
-    GameObject* lustro1 = mirrorModel1->Instantiate(*scena1, nullptr, nullptr);
+    GameObject* lustro1 = mirrorModel1->Instantiate(*scena1, lustra, nullptr);
     lustro1->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1, 2, 8 };
     lustro1->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, -180, 0 };
     lustro1->AddComponent<ColliderComponent>();
     lustro1->GetComponent<TransformComponent>()->position   = glm::vec3{ -8.5, 12.0, -25 + (-20 * 0) };
 
-    GameObject* lustro2 = mirrorModel2->Instantiate(*scena1, nullptr, nullptr);
+    GameObject* lustro2 = mirrorModel2->Instantiate(*scena1, lustra, nullptr);
     lustro2->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1, 2, 8 };
     lustro2->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, -180, 0 };
     lustro2->AddComponent<ColliderComponent>();
     lustro2->GetComponent<TransformComponent>()->position   = glm::vec3{ -8.5, 12.0, -25 + (-20 * 1) };
 
-    GameObject* lustro3 = mirrorModel3->Instantiate(*scena1, nullptr, nullptr);
+    GameObject* lustro3 = mirrorModel3->Instantiate(*scena1, lustra, nullptr);
     lustro3->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1, 2, 8 };
     lustro3->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, -180, 0 };
     lustro3->AddComponent<ColliderComponent>();
     lustro3->GetComponent<TransformComponent>()->position   = glm::vec3{ -8.5, 12.0, -25 + (-20 * 2) };
 
     // Lustro 4 - dodane z mirrorModel4 (lustro_puste.glb)
-    GameObject* lustro4 = mirrorModel4->Instantiate(*scena1, nullptr, nullptr);
+    GameObject* lustro4 = mirrorModel4->Instantiate(*scena1, lustra, nullptr);
     lustro4->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1, 2, 8 };
     lustro4->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, -180, 0 };
     lustro4->AddComponent<ColliderComponent>();
