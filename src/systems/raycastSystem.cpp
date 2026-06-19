@@ -21,7 +21,6 @@ void RaycastSystem::Update(ECS&, float)
     }
 
     for (const auto& tgt : targets) {
-        DebugDrawSystem::AddAABB(tgt.min, tgt.max, glm::vec4(0, 1, 1, 1)); // cyjanowy
        // DebugDrawSystem::AddAABB(tgt.min, tgt.max, glm::vec4(0, 1, 1, 1)); // cyjanowy
     }
 
