@@ -792,7 +792,7 @@ public:
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
     
         for (auto& entry : passes) {
-            if (entry.config.type == RenderPassType::Skybox || entry.config.type == RenderPassType::Transparent) {
+            if (entry.config.type == RenderPassType::Skybox) {
                 continue;
             }
 
@@ -850,17 +850,9 @@ public:
             shadowMapArray.Init(SHADOW_RESOLUTION, numLights);
         }
 
-        // ── zapis aktualnego stanu ──
-        //GLint  prevViewport[4];
-        //glGetIntegerv(GL_VIEWPORT, prevViewport);
 
         GLint  prevFBO = 0;
         glGetIntegerv(GL_FRAMEBUFFER_BINDING, &prevFBO);
-
-        //GLboolean prevDepthTest = glIsEnabled(GL_DEPTH_TEST);
-
-        //GLint  prevCullFaceMode = GL_BACK;
-        //glGetIntegerv(GL_CULL_FACE_MODE, &prevCullFaceMode);
 
 
         glViewport(0, 0, shadowMapArray.resolution, shadowMapArray.resolution);
