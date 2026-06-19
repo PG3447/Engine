@@ -1,6 +1,8 @@
 #include "core/component.h"
 #include "core/gameobject.h"
 #include "resource_manager.h"
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/euler_angles.hpp>
 
 uint32_t staticCounterAnimator = 1;
 static uint32_t nextAnimatorID = 0;
@@ -23,12 +25,29 @@ void AnimatorComponent::OnEnable(GameObject* owner) {
 void ColliderComponent::OnEnable(GameObject* owner) {
     auto renderComponent = owner->GetComponent<RenderComponent>();
     auto transformComponent = owner->GetComponent<TransformComponent>();
-    if (renderComponent != nullptr && transformComponent != nullptr)
-    {
-        this->halfSize = (renderComponent->localObjectAABB.max - renderComponent->localObjectAABB.min) * 0.5f;
-        this->halfSize *= transformComponent->scale;
-        //this->halfSize = renderComponent->localObjectAABB.max * transformComponent->scale;
-    }
+
+    if (!renderComponent || !transformComponent)
+        return;
+
+    glm::vec3 localHalfSize = (renderComponent->localObjectAABB.max - renderComponent->localObjectAABB.min) * 0.5f;
+
+    localHalfSize *= transformComponent->scale;
+
+    glm::mat4 rot = glm::yawPitchRoll(glm::radians(transformComponent->rotation.y), glm::radians(transformComponent->rotation.x), glm::radians(transformComponent->rotation.z));
+
+    glm::mat3 absRot = glm::mat3(rot);
+
+    for (int i = 0; i < 3; i++)
+        for (int j = 0; j < 3; j++)
+            absRot[i][j] = std::abs(absRot[i][j]);
+
+    halfSize = absRot * localHalfSize;
+    //if (renderComponent != nullptr && transformComponent != nullptr)
+    //{
+    //    this->halfSize = (renderComponent->localObjectAABB.max - renderComponent->localObjectAABB.min) * 0.5f;
+    //    this->halfSize *= transformComponent->scale;
+    //    //this->halfSize = renderComponent->localObjectAABB.max * transformComponent->scale;
+    //}
 }
 
 void  RenderComponent::Serialize(YAML::Node& node)
