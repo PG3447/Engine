@@ -465,6 +465,8 @@ bool processCameraGamepad(ECS& ecs, CameraComponent& cam, TransformComponent& tr
 void addAllSystems(ECS& ecs);
 void connectAllModels();
 void LoadPlayerAnimations();
+void createRentgenCorridor(Scene * scena);
+void createCrematoriumCorridor(Scene * scena);
 
 struct PuzzleSlot {
     glm::vec3 targetRotation;
@@ -673,7 +675,7 @@ void HandlePlayerInteraction(
                     isCabinetButtonPushed = true;
                     CabinetState& state   = cabinetsMap[hit.hitObject];
                     state.isOpen          = true;
-                    state.targetAngle     = 90.0f;
+                    state.targetAngle     = 120.0f;
 
                     if (audioSystem) {
                         if (soundBtnClick) audioSystem->playSound(soundBtnClick);
@@ -1209,6 +1211,8 @@ int main(int, char**)
     createNuclearRooom(scena1);
     createCrematorium(scena1);
     createRentgenRoom(scena1);
+    createRentgenCorridor(scena1);
+    createCrematoriumCorridor(scena1);
 
     ecs.GetSystem<NavMeshSystem>()->Bake(*scena1);
 
@@ -2443,7 +2447,7 @@ void createFirstRoom(Scene* scena1) {
     // Drzwi do kibla
     for (int i = 0; i < 8; i++) {
         if (i != 2 && i != 3) {
-            glm::vec3 doorPos      = glm::vec3{ 15.0f, 6.0f, -24.65f + (-10.0f * i) };
+            glm::vec3 doorPos      = glm::vec3{ 15.0f, 10.050, -24.65f + (-10.0f * i) };
             glm::vec3 doorScale    = glm::vec3{ 11.0f, 10.0f, 16.0f };
             glm::vec3 pivotOffset  = glm::vec3(0.2f, 0.0f, 3.8f);
             glm::vec3 colliderSize = glm::vec3{ 0.9f, 10.0f, 4.5f };
@@ -2558,8 +2562,8 @@ void createFirstRoom(Scene* scena1) {
 
 void createMainRooom(Scene* scena) {
     // Podloga i sufit
-    CreateStaticObject(scena, floorModel.get(), nullptr, "PodlogaMainRoom", glm::vec3(0, 0, -158),  glm::vec3(60, 1, 60));
-    CreateStaticObject(scena, floorModel.get(), nullptr, "SufitMainRoom",   glm::vec3(0, 25, -200), glm::vec3(100, 1, 100), std::nullopt, glm::vec3(100, 1, 100));
+    CreateStaticObject(scena, floorModel.get(), nullptr, "PodlogaMainRoom", glm::vec3(23.300, 0, -146.390),  glm::vec3(37.070, 1, 43.540));
+    CreateStaticObject(scena, floorModel.get(), nullptr, "SufitMainRoom",   glm::vec3(23.300, 25, -146.390), glm::vec3(37.070, 1, 43.540));
 
     // Sciany
     CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaDoRentgenaPrawa",        glm::vec3(35, 0, -203+14),   glm::vec3(25, 50, 1));
@@ -2998,10 +3002,10 @@ void createMainRooom(Scene* scena) {
 }
 
 void createNuclearRooom(Scene* scena) {
-    CreateStaticObject(scena, floorModel.get(), nullptr, "PodlogaNucearRoom", glm::vec3(-120, 0, -180),  glm::vec3(60, 1, 80));
-    CreateStaticObject(scena, floorModel.get(), nullptr, "SufitATOM",         glm::vec3(-120, 20, -180), glm::vec3(60, 1, 80));
-    CreateStaticObject(scena, wallModel2.get(), nullptr, "ScianaKoncowaAtom", glm::vec3(-180, 0, -180),  glm::vec3(80, 50, 1), std::nullopt, glm::vec3(1, 50, 80));
-    CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaATOMPrawa",   glm::vec3(-120.180, 0, -259.680), glm::vec3(60, 50, 1), std::nullopt, glm::vec3(60, 100, 1));
+    //CreateStaticObject(scena, floorModel.get(), nullptr, "PodlogaNucearRoom", glm::vec3(-120, 0, -180),  glm::vec3(60, 1, 80));
+    //CreateStaticObject(scena, floorModel.get(), nullptr, "SufitATOM",         glm::vec3(-120, 20, -180), glm::vec3(60, 1, 80));
+    //CreateStaticObject(scena, wallModel2.get(), nullptr, "ScianaKoncowaAtom", glm::vec3(-180, 0, -180),  glm::vec3(80, 50, 1), std::nullopt, glm::vec3(1, 50, 80));
+    //CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaATOMPrawa",   glm::vec3(-120.180, 0, -259.680), glm::vec3(60, 50, 1), std::nullopt, glm::vec3(60, 100, 1));
 }
 
 void createCrematorium(Scene* scena) {
@@ -3200,4 +3204,17 @@ void createRentgenRoom(Scene* scena) {
     createPuzzleSlot(glm::vec3(-2, 9, -295.9), glm::vec3(180, 90, 90), objPuzel1);
     createPuzzleSlot(glm::vec3(4, 9, -295.9), glm::vec3(180, 90, 90), objPuzel3);
     createPuzzleSlot(glm::vec3(11, 9, -295.9), glm::vec3(180, 90, 90), objPuzel5);
+}
+void createRentgenCorridor(Scene * scena){
+    CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaLewaKorytarzRentgen",         glm::vec3(-50.470, 0, -137.540),  glm::vec3(41.440, 50, 1));
+    CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaPrawaKorytarzRentgen",         glm::vec3(-50.470, 0, -152.440),  glm::vec3(41.440, 50, 1));
+    CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaKoncowaKorytarzRentgen",         glm::vec3(-91.890, 0, -144.780),  glm::vec3(1, 90, 7.870));
+    CreateStaticObject(scena, floorModel.get(), nullptr, "PodlogaKorytarzRentgen",    glm::vec3(-52.440, 0, -145.900),  glm::vec3(43.520, 1, 8.070));
+    CreateStaticObject(scena, floorModel.get(), nullptr, "SufitKorytarzRentgen",    glm::vec3(-52.440, 20, -145.900),  glm::vec3(43.520, 1, 8.070));
+
+}
+
+void createCrematoriumCorridor(Scene * scena){
+    CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaLewaKorytarzKrematorium",         glm::vec3(-30, 0, -203+14),  glm::vec3(30, 50, 1));
+    CreateStaticObject(scena, floorModel.get(), nullptr, "PodlogaKorytarzKrematorium",    glm::vec3(0.040, 0, -257.800),  glm::vec3(60, 1, 40));
 }
