@@ -728,81 +728,6 @@ public:
             e.objects.clear();
     }
 
-    void UpdateAndUploadLights(std::vector<LightComponent*>& lights, std::vector<TransformComponent*>& transforms)
-    {
-        if (lights.empty()) return;
-
-        uint32_t count = std::min((uint32_t)lights.size(), (uint32_t)MAX_UBO_LIGHTS);
-        gpuLights.resize(count);
-
-        std::vector<glm::mat4> lightSpaceMatrix(count);
-
-        for (uint32_t i = 0; i < count; i++) {
-            LightComponent* light = lights[i];
-            TransformComponent* transform = transforms[i];
-            if (!light || !transform) continue;
-
-            GPULight& g = gpuLights[i];
-            const bool on = light->isOn;
-            const glm::vec3 zero(0.0f);
-
-            g.position = glm::vec4(TransformHelper::getGlobalPosition(*transform), (float)light->type);
-            g.direction = (glm::length2(light->direction) < 0.0001f) ? glm::vec4(TransformHelper::getForward(*transform), 0.0f) : glm::vec4(light->direction, 0.0f);
-            g.ambient = glm::vec4(on ? light->ambient : zero, 0.0f);
-            g.diffuse = glm::vec4(on ? light->diffuse : zero, 0.0f);
-            g.specular = glm::vec4(on ? light->specular : zero, 0.0f);
-            g.params1 = glm::vec4(light->constant, light->linear, light->quadratic, light->intensity);
-            g.params2 = glm::vec4(light->cutOff, light->outerCutOff, on ? 1.0f : 0.0f, light->range);
-
-
-            //spdlog::info("[Light {}] type={} pos=({:.3f}, {:.3f}, {:.3f}) dir=({:.3f}, {:.3f}, {:.3f})",
-            //    i, (int)light->type,
-            //    g.position.x, g.position.y, g.position.z,
-            //    g.direction.x, g.direction.y, g.direction.z);
-
-            float near_plane = 1.0f, far_plane = 500.0f;
-            glm::mat4 lightProjection, lightView;
-            auto safeUp = [](glm::vec3 dir) -> glm::vec3 {
-                // unikamy równoległości forward/up
-                dir = glm::normalize(dir);
-                return (glm::abs(glm::dot(dir, glm::vec3(0, 1, 0))) > 0.99f)
-                    ? glm::vec3(0, 0, 1)
-                    : glm::vec3(0, 1, 0);
-                };
-
-            glm::vec3 pos = TransformHelper::getGlobalPosition(*transform);
-            glm::vec3 dir = glm::normalize(glm::vec3(g.direction)); // już ustawiony wyżej
-            if (light->type == Directional) {
-                lightProjection = glm::ortho(-10.f, 10.f, -10.f, 10.f, near_plane, far_plane);
-                lightView = glm::lookAt(pos, pos + dir, safeUp(dir));
-                lightSpaceMatrix[i] = lightProjection * lightView;
-            }
-
-            if (light->type == Spot) {
-                float fov = glm::acos(glm::clamp(light->outerCutOff, -1.f, 1.f)) * 2.f;
-                lightProjection = glm::perspective(fov, 1.0f, near_plane, far_plane);
-                //lightView = glm::lookAt(pos, pos + dir, safeUp(dir));
-                lightView = glm::lookAt(pos, glm::vec3(g.position) + TransformHelper::getForward(*transform), glm::vec3(0.0f, 1.0f, 0.0f));
-                lightSpaceMatrix[i] = lightProjection * lightView;
-            }
-        }
-
-        glBindBuffer(GL_UNIFORM_BUFFER, lightsUBO);
-        glBufferSubData(GL_UNIFORM_BUFFER, 0, count * sizeof(GPULight), gpuLights.data());
-        glBindBuffer(GL_UNIFORM_BUFFER, 0);
-    
-        for (auto& entry : passes) {
-            if (entry.config.type == RenderPassType::Skybox) {
-                continue;
-            }
-
-            if (entry.renderer)
-            {
-                entry.renderer->UploadShadowMatrix(lightSpaceMatrix);
-            }
-        }
-    }
-
     void DebugRenderFrameInput(const PassEntry& entry, const glm::vec3& cameraPos)
     {
         spdlog::info("=== PassID={} type={} objects={} transparentBuffer={} ===",
@@ -837,6 +762,68 @@ public:
             spdlog::warn("  PUSTY — nic nie idzie do GPU!");
     }
 
+    void UpdateAndUploadLights(std::vector<LightComponent*>& lights, std::vector<TransformComponent*>& transforms)
+    {
+        if (lights.empty()) return;
+
+        uint32_t count = std::min((uint32_t)lights.size(), (uint32_t)MAX_UBO_LIGHTS);
+        gpuLights.resize(count);
+
+        std::vector<glm::mat4> lightSpaceMatrix(count);
+
+        for (uint32_t i = 0; i < count; i++) {
+            LightComponent* light = lights[i];
+            TransformComponent* transform = transforms[i];
+            if (!light || !transform) continue;
+
+            GPULight& g = gpuLights[i];
+            const bool on = light->isOn;
+            const glm::vec3 zero(0.0f);
+
+            g.position = glm::vec4(TransformHelper::getGlobalPosition(*transform), (float)light->type);
+            g.direction = (glm::length2(light->direction) < 0.0001f) ? glm::vec4(TransformHelper::getForward(*transform), 0.0f) : glm::vec4(light->direction, 0.0f);
+            g.ambient = glm::vec4(on ? light->ambient : zero, 0.0f);
+            g.diffuse = glm::vec4(on ? light->diffuse : zero, 0.0f);
+            g.specular = glm::vec4(on ? light->specular : zero, 0.0f);
+            g.params1 = glm::vec4(light->constant, light->linear, light->quadratic, light->intensity);
+            g.params2 = glm::vec4(light->cutOff, light->outerCutOff, on ? 1.0f : 0.0f, light->range);
+
+            float near_plane = 1.0f, far_plane = 500.0f;
+            glm::mat4 lightProjection, lightView;
+
+            glm::vec3 pos = TransformHelper::getGlobalPosition(*transform);
+            glm::vec3 dir = glm::normalize(glm::vec3(g.direction)); // już ustawiony wyżej
+            if (light->type == Directional) {
+                lightProjection = glm::ortho(-10.f, 10.f, -10.f, 10.f, near_plane, far_plane);
+                lightView = glm::lookAt(pos, glm::vec3(g.position) + TransformHelper::getForward(*transform), glm::vec3(0.0f, 1.0f, 0.0f));
+                lightSpaceMatrix[i] = lightProjection * lightView;
+            }
+
+            if (light->type == Spot) {
+                float fov = glm::acos(glm::clamp(light->outerCutOff, -1.f, 1.f)) * 2.f;
+                lightProjection = glm::perspective(fov, 1.0f, near_plane, far_plane);
+                //lightView = glm::lookAt(pos, pos + dir, safeUp(dir));
+                lightView = glm::lookAt(pos, glm::vec3(g.position) + TransformHelper::getForward(*transform), glm::vec3(0.0f, 1.0f, 0.0f));
+                lightSpaceMatrix[i] = lightProjection * lightView;
+            }
+        }
+
+        glBindBuffer(GL_UNIFORM_BUFFER, lightsUBO);
+        glBufferSubData(GL_UNIFORM_BUFFER, 0, count * sizeof(GPULight), gpuLights.data());
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    
+        for (auto& entry : passes) {
+            if (entry.config.type == RenderPassType::Skybox) {
+                continue;
+            }
+
+            if (entry.renderer)
+            {
+                entry.renderer->UploadShadowMatrix(lightSpaceMatrix);
+            }
+        }
+    }
+
     int SHADOW_RESOLUTION = 512;
     void RenderShadow()
     {
@@ -853,7 +840,6 @@ public:
 
         GLint  prevFBO = 0;
         glGetIntegerv(GL_FRAMEBUFFER_BINDING, &prevFBO);
-
 
         glViewport(0, 0, shadowMapArray.resolution, shadowMapArray.resolution);
         glBindFramebuffer(GL_FRAMEBUFFER, shadowMapArray.fboShadow);
@@ -890,10 +876,6 @@ public:
         }
 
         glBindFramebuffer(GL_FRAMEBUFFER, prevFBO);
-        //glViewport(prevViewport[0], prevViewport[1], prevViewport[2], prevViewport[3]);
-        //glCullFace(prevCullFaceMode);
-        //if (!prevDepthTest)
-        //    glDisable(GL_DEPTH_TEST);
     }
 
     // Główna pętla renderowania

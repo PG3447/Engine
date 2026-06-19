@@ -218,6 +218,7 @@ public:
     Shader* shaderRender = nullptr;
     Shader* shaderShadowRender = nullptr;
 
+    bool firstFrame = true;
     bool shadowMode = false;
     bool dirtyInstance = true;
     bool frustumsEnabled = false;
@@ -732,19 +733,28 @@ public:
         DispatchPrefixSum(objectCount);
         dirtyInstance = false;
     }
+
+    void FirstInTheFrame(const std::vector<RenderData>& objects)
+    {
+        uint32_t objCount = (uint32_t)objects.size();
+        UploadObjects(objects);
+
+        if (dirtyInstance)
+            BuildInstance(objCount);
+
+        firstFrame = false;
+    }
     
     void RenderShadow(bool firstRender, const std::vector<RenderData>& objects)
     {
         shadowMode = true;
 
-
         if (firstRender)
         {
             uint32_t objCount = (uint32_t)objects.size();
-            UploadObjects(objects);
-            
-            if (dirtyInstance)
-                BuildInstance(objCount);
+
+            if (firstFrame)
+                FirstInTheFrame(objects);
 
             DispatchWritePass(glm::mat4(1.0f), objCount);
 
@@ -762,8 +772,11 @@ public:
     void RenderFrame(const glm::mat4& viewProj, const std::vector<RenderData>& objects, GLuint depthTexturePrevFrame, GLuint shadowTexture, glm::vec3 currentCameraPos, bool cameraDirty)
     {
         uint32_t objCount = (uint32_t)objects.size();
+
+        if (firstFrame)
+            FirstInTheFrame(objects);
         // 0. Aktualizuj obiekty na GPU
-        UploadObjects(objects);
+       /* UploadObjects(objects);*/
         //UploadLights();
         //DebugReadBuffers(objCount, (uint32_t)meshesData.size());
 
@@ -773,8 +786,8 @@ public:
         //    //CopyDepthToHiZ(depthTexturePrevFrame);
         //    BuildHiZ(depthTexturePrevFrame);
         //}
-        if (dirtyInstance)
-            BuildInstance(objCount);
+       /* if (dirtyInstance)
+            BuildInstance(objCount);*/
         //DebugPipelineState(objCount);
   
         // 5. WRITE PASS: zapis instancji
@@ -796,6 +809,8 @@ public:
         //DebugPipelineState(objCount);
         // 7. Rysuj
         Draw();
+
+        firstFrame = true;
     }
 
     void DebugShowHiZ(int mipLevel = 0)
