@@ -1991,6 +1991,9 @@ void imgui_render(SceneManager& sceneManager)
     if (ImGui::Button("Zapisz"))
         sceneManager.Save();
 
+    if (ImGui::Button("Wczytaj"))
+        sceneManager.Load();
+
     ImGui::Separator();
 
     Scene& scene = *sceneManager.GetActiveScene();

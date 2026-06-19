@@ -33,6 +33,82 @@ public:
 
     void Load()
     {
+        Scene* scene = GetActiveScene();
+        ECS& ecs = scene->GetECS();
+
+        YamlConfig cfg;
+        if (!cfg.load("scene.yaml"))
+            return;
+        
+        YAML::Node sceneNode = cfg.getRoot();
+
+        if (!sceneNode["Scene"] || !sceneNode["Scene"]["GameObjects"])
+            return;
+        
+        YAML::Node objectsNode = sceneNode["Scene"]["GameObjects"];
+
+        std::unordered_map<size_t, GameObject*> idMap;
+
+        for (GameObject* obj : ecs.GetAllGameObjects())
+        {
+            idMap[obj->id] = obj;
+        }
+
+        // 1. TWORZENIE OBIEKTÓW + KOMPONENTY
+        for (auto objNode : objectsNode)
+        {
+            size_t id = objNode["id"].as<size_t>();
+
+            auto found = idMap.find(id);
+            if (found == idMap.end())
+                continue;
+
+            GameObject* obj = found->second;
+
+            //update components
+            YAML::Node compsNode = objNode["Components"];
+
+            for (auto compIt : compsNode)
+            {
+                YAML::Node compNode = compIt;
+
+                std::string type = compNode["type"].as<std::string>();
+
+                // znajdź istniejący komponent
+                if (type == "Transform" || type == "Light" || type == "Collider")
+                {
+                    Component* comp = obj->GetComponentByName(type);
+                    if (!comp)
+                        continue;
+                    comp->Deserialize(compNode);
+                }
+
+
+            }
+        }
+
+        // 2. ODTWORZENIE HIERARCHII (parent-child)
+        //for (auto it : objectsNode)
+        //{
+        //    YAML::Node objNode = it.second;
+
+        //    int id = objNode["id"].as<int>();
+        //    int parentId = objNode["parent"].as<int>();
+
+        //    GameObject* obj = idMap[id];
+
+        //    if (!obj)
+        //        continue;
+
+        //    if (parentId != -1 && idMap.count(parentId))
+        //    {
+        //        obj->SetParent(idMap[parentId]);
+        //    }
+        //    else
+        //    {
+        //        obj->SetParent(nullptr);
+        //    }
+        //}
         //for (auto compNode : node["Components"])
         //{
         //    std::string type = compNode["type"].as<std::string>();
@@ -56,14 +132,12 @@ public:
 
         YAML::Node sceneNode;
 
-        int i = 0;
-
         for (GameObject* obj : objects)
         {
             YAML::Node objNode;
             SaveGameObject(objNode, obj);
 
-            sceneNode["Scene"]["GameObjects"][i++] = objNode;
+            sceneNode["Scene"]["GameObjects"].push_back(objNode);
         }
 
 
@@ -86,6 +160,7 @@ public:
             YAML::Node compNode;
 
             compNode["type"] = comp->GetTypeName();
+            compNode["bit"] = comp->ComponentBit;
             comp->Serialize(compNode);
 
             compsNode.push_back(compNode);

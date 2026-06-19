@@ -55,61 +55,61 @@ void  RenderComponent::Serialize(YAML::Node& node)
 
 void RenderComponent::Deserialize(const YAML::Node& node)
 {
-    meshes.clear();
+    //meshes.clear();
 
-    if (!node["type"])
-        return;
+    //if (!node["type"])
+    //    return;
 
-    if (!node["pathModel"])
-        return;
+    //if (!node["pathModel"])
+    //    return;
 
-    for (const auto& it : node)
-    {
-        const std::string& name = it.first.as<std::string>();
+    //for (const auto& it : node)
+    //{
+    //    const std::string& name = it.first.as<std::string>();
 
-        // pomijamy pola globalne
-        if (name == "type" || name == "pathModel")
-            continue;
+    //    // pomijamy pola globalne
+    //    if (name == "type" || name == "pathModel")
+    //        continue;
 
-        //const YAML::Node& meshNode = it.second;
+    //    //const YAML::Node& meshNode = it.second;
 
-        //MeshData mesh;
-        //std::string modelPath = node["pathModel"].as<std::string>();
+    //    //MeshData mesh;
+    //    //std::string modelPath = node["pathModel"].as<std::string>();
 
-        //mesh.meshNodeID = ResourceManager::GetMeshNodeIDByModelPath(modelPath);
+    //    //mesh.meshNodeID = ResourceManager::GetMeshNodeIDByModelPath(modelPath);
 
-        //// surfaceType
-        //mesh.material->surfaceType =
-        //    static_cast<SurfaceType>(meshNode["surfaceType"].as<int>());
+    //    //// surfaceType
+    //    //mesh.material->surfaceType =
+    //    //    static_cast<SurfaceType>(meshNode["surfaceType"].as<int>());
 
-        //// diffuseColor (vec4 -> dziêki YAML convert)
-        //if (meshNode["diffuseColor"])
-        //    mesh.material->diffuseColor =
-        //    meshNode["diffuseColor"].as<glm::vec4>();
+    //    //// diffuseColor (vec4 -> dziêki YAML convert)
+    //    //if (meshNode["diffuseColor"])
+    //    //    mesh.material->diffuseColor =
+    //    //    meshNode["diffuseColor"].as<glm::vec4>();
 
-        //// textures
-        //if (meshNode["diffuseMap"])
-        //    mesh.material->diffuseMap =
-        //    ResourceManager::LoadTexture(meshNode["diffuseMap"].as<std::string>());
+    //    //// textures
+    //    //if (meshNode["diffuseMap"])
+    //    //    mesh.material->diffuseMap =
+    //    //    ResourceManager::LoadTexture(meshNode["diffuseMap"].as<std::string>());
 
-        //if (meshNode["ao"])
-        //    mesh.material->aoMap =
-        //    ResourceManager::LoadTexture(meshNode["ao"].as<std::string>());
+    //    //if (meshNode["ao"])
+    //    //    mesh.material->aoMap =
+    //    //    ResourceManager::LoadTexture(meshNode["ao"].as<std::string>());
 
-        //if (meshNode["metallicRoughness"])
-        //    mesh.material->metallicRoughnessMap =
-        //    ResourceManager::LoadTexture(meshNode["metallicRoughness"].as<std::string>());
+    //    //if (meshNode["metallicRoughness"])
+    //    //    mesh.material->metallicRoughnessMap =
+    //    //    ResourceManager::LoadTexture(meshNode["metallicRoughness"].as<std::string>());
 
-        //if (meshNode["normal"])
-        //    mesh.material->normalMap =
-        //    ResourceManager::LoadTexture(meshNode["normal"].as<std::string>());
+    //    //if (meshNode["normal"])
+    //    //    mesh.material->normalMap =
+    //    //    ResourceManager::LoadTexture(meshNode["normal"].as<std::string>());
 
-        //// UWAGA: masz duplikat "ao" w serialize — to nadpisuje poprzedni
-        //// mesh.material->specularMap i aoMap s¹ w konflikcie
+    //    //// UWAGA: masz duplikat "ao" w serialize — to nadpisuje poprzedni
+    //    //// mesh.material->specularMap i aoMap s¹ w konflikcie
 
-        //mesh.material->aoInMetallicRoughness =
-        //    meshNode["aoInMetallicRoughness"].as<bool>();
+    //    //mesh.material->aoInMetallicRoughness =
+    //    //    meshNode["aoInMetallicRoughness"].as<bool>();
 
-        //meshes.push_back(mesh);
-    }
+    //    //meshes.push_back(mesh);
+    //}
 }
