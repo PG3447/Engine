@@ -1048,6 +1048,10 @@ int main(int, char**)
     GameObject* latarka1 = scena1->CreateGameObject(nullptr);
     latarka1->name = "Latarka";
     camera1->AddChild(latarka1);
+    latarka1->GetComponent<TransformComponent>()->position.x = 1.5;
+    latarka1->GetComponent<TransformComponent>()->position.y = -1.0;
+    latarka1->GetComponent<TransformComponent>()->rotation.x = 1.0;
+    latarka1->GetComponent<TransformComponent>()->rotation.y = 2.0;
     LightComponent* light2 = latarka1->AddComponent<LightComponent>();
 
     light2->type      = Spot;
@@ -1096,6 +1100,10 @@ int main(int, char**)
     GameObject* latarka2 = scena1->CreateGameObject(nullptr);
     latarka2->name = "Latarka";
     camera2->AddChild(latarka2);
+    latarka2->GetComponent<TransformComponent>()->position.x = 1.5;
+    latarka2->GetComponent<TransformComponent>()->position.y = -1.0;
+    latarka2->GetComponent<TransformComponent>()->rotation.x = 1.0;
+    latarka2->GetComponent<TransformComponent>()->rotation.y = 2.0;
     LightComponent* light3 = latarka2->AddComponent<LightComponent>();
 
     light3->type = Spot;
