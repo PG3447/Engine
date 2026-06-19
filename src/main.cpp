@@ -2623,62 +2623,65 @@ void createMainRooom(Scene* scena) {
     ksiazka->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -45.0f, 0.0f };
     ksiazka->GetComponent<TransformComponent>()->position = glm::vec3{ 56.920 ,8.560, -150.740  + 15 };
 
-    GameObject * probowka7 = probowka7Model->Instantiate(*scena, nullptr, nullptr);
+    GameObject* probowki = scena->CreateGameObject(nullptr);
+    probowki->name = "probowki";
+
+    GameObject* probowka7 = probowka7Model->Instantiate(*scena, probowki, nullptr);
     probowka7->name = "probowka7";
     probowka7->GetComponent<TransformComponent>()->scale    = glm::vec3{ 2, 2, 2 };
     probowka7->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -45.0f, 0.0f };
     probowka7->GetComponent<TransformComponent>()->position = glm::vec3{ 57.570 ,9, -174.640f  + 15 };
-    GameObject * probowka7b = probowka7Model->Instantiate(*scena, nullptr, nullptr);
+    GameObject * probowka7b = probowka7Model->Instantiate(*scena, probowki, nullptr);
     probowka7b->name = "probowka7b";
     probowka7b->GetComponent<TransformComponent>()->scale    = glm::vec3{ 2, 2, 2 };
     probowka7b->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -30.0f, 0.0f };
     probowka7b->GetComponent<TransformComponent>()->position = glm::vec3{ 25.960 ,9, -174.640f + 15  };
-    GameObject * probowka7c = probowka7Model->Instantiate(*scena, nullptr, nullptr);
+    GameObject * probowka7c = probowka7Model->Instantiate(*scena, probowki, nullptr);
     probowka7c->name = "probowka7c";
     probowka7c->GetComponent<TransformComponent>()->scale    = glm::vec3{ 2, 2, 2 };
     probowka7c->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, 45.0f, 0.0f };
     probowka7c->GetComponent<TransformComponent>()->position = glm::vec3{ 21.360 ,9, -182.860  + 15 };
 
-    GameObject * probowka6 = probowka6Model->Instantiate(*scena, nullptr, nullptr);
+    GameObject * probowka6 = probowka6Model->Instantiate(*scena, probowki, nullptr);
     probowka6->name = "probowka6";
     probowka6->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1.5, 1.5, 1.5 };
     probowka6->GetComponent<TransformComponent>()->rotation = glm::vec3{ 90.0f, -66.900, 0.0f };
     probowka6->GetComponent<TransformComponent>()->position = glm::vec3{ 56.930 ,8.580, -172.450 + 15  };
-    GameObject * probowka6b = probowka6Model->Instantiate(*scena, nullptr, nullptr);
+    GameObject * probowka6b = probowka6Model->Instantiate(*scena, probowki, nullptr);
     probowka6b->name = "probowka6b";
     probowka6b->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1.5, 1.5, 1.5 };
     probowka6b->GetComponent<TransformComponent>()->rotation = glm::vec3{ 90.0f, -115.900, 0.0f };
     probowka6b->GetComponent<TransformComponent>()->position = glm::vec3{ 56.930 ,8.580, -174.460  + 15 };
 
-    GameObject * probowka5 = probowka5Model->Instantiate(*scena, nullptr, nullptr);
+    GameObject * probowka5 = probowka5Model->Instantiate(*scena, probowki, nullptr);
     probowka5->name = "probowka5";
     probowka5->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1.5, 1.5, 1.5 };
     probowka5->GetComponent<TransformComponent>()->rotation = glm::vec3{ 90.0f, -45.0f, 0.0f };
     probowka5->GetComponent<TransformComponent>()->position = glm::vec3{ 25.690 ,8.570, -144.030  + 15 };
-    GameObject * probowka5b = probowka5Model->Instantiate(*scena, nullptr, nullptr);
+    GameObject * probowka5b = probowka5Model->Instantiate(*scena, probowki, nullptr);
     probowka5b->name = "probowka5b";
     probowka5b->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1.5, 1.5, 1.5 };
     probowka5b->GetComponent<TransformComponent>()->rotation = glm::vec3{ 90.0f, -112.0f, 0.0f };
     probowka5b->GetComponent<TransformComponent>()->position = glm::vec3{ 25.880 ,8.570, -147.370  + 15 };
 
-    GameObject * probowkaArka_1 = probowkaArka_1_Model->Instantiate(*scena, nullptr, nullptr);
+    GameObject * probowkaArka_1 = probowkaArka_1_Model->Instantiate(*scena, probowki, nullptr);
     probowkaArka_1->name = "probowkaArka_1";
     probowkaArka_1->GetComponent<TransformComponent>()->scale    = glm::vec3{ 0.250, 0.250, 0.250 };
     probowkaArka_1->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -11.300, 0.0f };
     probowkaArka_1->GetComponent<TransformComponent>()->position = glm::vec3{ 57.550 ,9.260, -184.430 + 15  };
 
-    GameObject * probowka3 = probowka3Model->Instantiate(*scena, nullptr, nullptr);
+    GameObject * probowka3 = probowka3Model->Instantiate(*scena, probowki, nullptr);
     probowka3->name = "probowka3";
     probowka3->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1.500, 1.500, 1.500 };
     probowka3->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -151.800, 0.0f };
     probowka3->GetComponent<TransformComponent>()->position = glm::vec3{ 55.760 ,9.640, -185.700 + 15  };
 
-    GameObject * probowka4 = probowka4Model->Instantiate(*scena, nullptr, nullptr);
+    GameObject * probowka4 = probowka4Model->Instantiate(*scena, probowki, nullptr);
     probowka4->name = "probowka4";
     probowka4->GetComponent<TransformComponent>()->scale    = glm::vec3{ 0.250, 0.250, 0.250 };
     probowka4->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -45.0f, 0.0f };
     probowka4->GetComponent<TransformComponent>()->position = glm::vec3{ 56.080 ,10.500, -162.990  + 15 };
-    GameObject * probowka4b = probowka4Model->Instantiate(*scena, nullptr, nullptr);
+    GameObject * probowka4b = probowka4Model->Instantiate(*scena, probowki, nullptr);
     probowka4b->name = "probowka4b";
     probowka4b->GetComponent<TransformComponent>()->scale    = glm::vec3{ 0.250, 0.250, 0.250 };
     probowka4b->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -45.0f, 0.0f };
