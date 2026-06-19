@@ -546,13 +546,13 @@ public:
 
         size_t bytes = materials.size() * sizeof(GPUMaterial);
 
-        spdlog::info(
-            "Material SSBO: {} materials, {} bytes ({:.2f} MB)",
-            materials.size(),
-            bytes,
-            bytes / (1024.0 * 1024.0)
-        );
-        spdlog::warn("Materialy sie wysylaja");
+        //spdlog::info(
+        //    "Material SSBO: {} materials, {} bytes ({:.2f} MB)",
+        //    materials.size(),
+        //    bytes,
+        //    bytes / (1024.0 * 1024.0)
+        //);
+        //spdlog::warn("Materialy sie wysylaja");
     }
 
     void UploadShadowMatrix(const std::vector<glm::mat4>& shadowsMatrix)
@@ -790,10 +790,6 @@ public:
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D_ARRAY, shadowTexture);
-        glTextureParameteri(
-            shadowTexture,
-            GL_TEXTURE_COMPARE_MODE,
-            GL_NONE);
         //shaderRender->setMat4("viewProjection", viewProj);
         //shaderRender->setVec3("viewPos", currentCameraPos);
         //shaderRender->setInt("numLights", (int)gpuLights.size());

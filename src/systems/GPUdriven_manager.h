@@ -51,7 +51,7 @@ struct FrameUBO {
 struct ShadowMapArray {
     GLuint fboShadow = 0;
     GLuint depthArray = 0;
-    int resolution = 256;
+    int resolution = 512;
     int maxLayers = -1;
 
     void Init(int res, int layers) {
@@ -62,14 +62,16 @@ struct ShadowMapArray {
         glGenTextures(1, &depthArray);
         glBindTexture(GL_TEXTURE_2D_ARRAY, depthArray);
         glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT32F, res, res, layers, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        //glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        //glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
         glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
         float borderColor[] = { 1.0, 1.0, 1.0, 1.0 };
         glTexParameterfv(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BORDER_COLOR, borderColor);
-        //glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+        //glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_MODE, GL_NONE);
         glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
 
         // FBO (bez attachmentu — ustawiamy per warstwa)
@@ -790,7 +792,7 @@ public:
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
     
         for (auto& entry : passes) {
-            if (entry.config.type == RenderPassType::Skybox) {
+            if (entry.config.type == RenderPassType::Skybox || entry.config.type == RenderPassType::Transparent) {
                 continue;
             }
 
@@ -835,7 +837,7 @@ public:
             spdlog::warn("  PUSTY — nic nie idzie do GPU!");
     }
 
-    int SHADOW_RESOLUTION = 256;
+    int SHADOW_RESOLUTION = 512;
     void RenderShadow()
     {
         const int numLights = (int)gpuLights.size();
@@ -849,16 +851,16 @@ public:
         }
 
         // ── zapis aktualnego stanu ──
-        GLint  prevViewport[4];
-        glGetIntegerv(GL_VIEWPORT, prevViewport);
+        //GLint  prevViewport[4];
+        //glGetIntegerv(GL_VIEWPORT, prevViewport);
 
         GLint  prevFBO = 0;
         glGetIntegerv(GL_FRAMEBUFFER_BINDING, &prevFBO);
 
-        GLboolean prevDepthTest = glIsEnabled(GL_DEPTH_TEST);
+        //GLboolean prevDepthTest = glIsEnabled(GL_DEPTH_TEST);
 
-        GLint  prevCullFaceMode = GL_BACK;
-        glGetIntegerv(GL_CULL_FACE_MODE, &prevCullFaceMode);
+        //GLint  prevCullFaceMode = GL_BACK;
+        //glGetIntegerv(GL_CULL_FACE_MODE, &prevCullFaceMode);
 
 
         glViewport(0, 0, shadowMapArray.resolution, shadowMapArray.resolution);
@@ -868,6 +870,9 @@ public:
         bool first = true;
 
         for (uint32_t i = 0; i < numLights; i++) {
+
+            if (gpuLights[i].position.w == 1)
+                continue;
 
             UploadFrameUBO(glm::mat4(1.0f), glm::vec3(1.0f), 0.0f, numLights, i);
 
@@ -893,10 +898,10 @@ public:
         }
 
         glBindFramebuffer(GL_FRAMEBUFFER, prevFBO);
-        glViewport(prevViewport[0], prevViewport[1], prevViewport[2], prevViewport[3]);
-        glCullFace(prevCullFaceMode);
-        if (!prevDepthTest)
-            glDisable(GL_DEPTH_TEST);
+        //glViewport(prevViewport[0], prevViewport[1], prevViewport[2], prevViewport[3]);
+        //glCullFace(prevCullFaceMode);
+        //if (!prevDepthTest)
+        //    glDisable(GL_DEPTH_TEST);
     }
 
     // Główna pętla renderowania

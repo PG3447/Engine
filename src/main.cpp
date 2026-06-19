@@ -2039,10 +2039,9 @@ void imgui_render(SceneManager& sceneManager)
         int i = 0;
         for (auto& [cam, hiz] : system->cameraHiZ) {
             ImGui::Text("Kamera %d", i++);
-            /*if (hiz.hizTexture != 0)
-                system->ShowR32FTextureImGui(hiz.hizTexture, debugMip);*/
-            system->drivenManager.DebugShadowMapImGui();
-            //system->drivenManager.ShowShadowMapImGui(debugMip);
+            if (hiz.hizTexture != 0)
+                system->ShowR32FTextureImGui(hiz.hizTexture, debugMip);
+            //system->drivenManager.DebugShadowMapImGui();
         }
     }
     ImGui::End();
