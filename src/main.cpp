@@ -1010,14 +1010,14 @@ int main(int, char**)
     init_imgui();
     spdlog::info("Initialized ImGui.");
 
-    ECS ecs;
     SceneManager sceneManager;
 
-    sceneManager.CreateScene("Scena 1", ecs);
+    sceneManager.CreateScene("Scena 1");
 
     Scene* scena1 = sceneManager.GetActiveScene();
+    ECS* ecs = &scena1->GetECS();
 
-    addAllSystems(ecs);
+    addAllSystems(*ecs);
 
     postacGracza = std::make_unique<Prefab>("res/models/postac_test.glb");
     groundModel = std::make_unique<Prefab>("res/models/podloze.glb");
@@ -1211,8 +1211,8 @@ int main(int, char**)
     updateFocus();
 
 
-    renderSystem         = ecs.GetSystem<RenderSystem>();
-    postProcessingSystem = ecs.GetSystem<PostProcessingSystem>();
+    renderSystem         = ecs->GetSystem<RenderSystem>();
+    postProcessingSystem = ecs->GetSystem<PostProcessingSystem>();
 
     createFirstRoom(scena1);
     createMainRooom(scena1);
@@ -1222,7 +1222,7 @@ int main(int, char**)
     createRentgenCorridor(scena1);
     createCrematoriumCorridor(scena1);
 
-    ecs.GetSystem<NavMeshSystem>()->Bake(*scena1);
+    ecs->GetSystem<NavMeshSystem>()->Bake(*scena1);
 
     dyingModelPrefab   = std::make_unique<Prefab>("res/models/Dying.fbx");
     jumpSkeletonPrefab = std::make_unique<Prefab>("res/models/Jump.fbx");
@@ -1250,7 +1250,7 @@ int main(int, char**)
     rigidBodyCamera2->useGravity = true;
 
     // FMOD
-    AudioSystem* audioSys = ecs.GetSystem<AudioSystem>();
+    AudioSystem* audioSys = ecs->GetSystem<AudioSystem>();
 
     FMOD::Sound* sound = nullptr;
     audioSys->createSound("res/sound/door_unlock.wav", sound);
@@ -1327,7 +1327,7 @@ int main(int, char**)
         }
 
         if (allCorrect == true) {
-            ecs.GetSystem<AudioSystem>()->playSound(sound);
+            ecs->GetSystem<AudioSystem>()->playSound(sound);
         }
 
         can_open_door_1 = allCorrect;
@@ -1423,30 +1423,30 @@ int main(int, char**)
 
         auto inputStart = std::chrono::high_resolution_clock::now();
 
-        if (ecs.GetSystem<HID>()->is_action_just_pressed("right_click")) {
+        if (ecs->GetSystem<HID>()->is_action_just_pressed("right_click")) {
             focused = !focused;
             updateFocus();
         }
-        if (ecs.GetSystem<HID>()->is_action_just_pressed("toggle_frustum_culling")) {
+        if (ecs->GetSystem<HID>()->is_action_just_pressed("toggle_frustum_culling")) {
             renderSystem->frustumCullingEnabled = !renderSystem->frustumCullingEnabled;
             spdlog::info("Frustum culling: {}",
                 renderSystem->frustumCullingEnabled ? "ON" : "OFF");
         }
-        if (ecs.GetSystem<HID>()->is_action_just_pressed("toggle_oclussion_culling")) {
+        if (ecs->GetSystem<HID>()->is_action_just_pressed("toggle_oclussion_culling")) {
             renderSystem->occlusionCullingEnabled = !renderSystem->occlusionCullingEnabled;
             spdlog::info("Oclussion culling: {}",
                 renderSystem->frustumCullingEnabled ? "ON" : "OFF");
         }
 
-        if (ecs.GetSystem<HID>()->is_action_just_pressed("gamma_up")) {
+        if (ecs->GetSystem<HID>()->is_action_just_pressed("gamma_up")) {
             postProcessingSystem->set_gamma(postProcessingSystem->get_gamma() + 0.1f);
         }
-        if (ecs.GetSystem<HID>()->is_action_just_pressed("gamma_down")) {
+        if (ecs->GetSystem<HID>()->is_action_just_pressed("gamma_down")) {
             postProcessingSystem->set_gamma(postProcessingSystem->get_gamma() - 0.1f);
         }
 
-        if (ecs.GetSystem<HID>()->is_action_just_pressed("play_sound")) {
-            ecs.GetSystem<AudioSystem>()->playSound(sound);
+        if (ecs->GetSystem<HID>()->is_action_just_pressed("play_sound")) {
+            ecs->GetSystem<AudioSystem>()->playSound(sound);
         }
 
         std::string hintText = "";
@@ -1550,14 +1550,14 @@ int main(int, char**)
             else ++it;
         }
 
-        HandlePlayerInteraction(ecs, "interact_p1", player1Raycast, camera1, p1HeldObject, p2HeldObject, scena1, rotatingObjects, rotatingInProgress, p1ShakeTimer, p1Animator, postacGracza.get(), audioSys, sndPaperRoll, sndDoorOpen, sndDoorCloseStart, sndBtnClick, sound, sndPickup, sndInsert, sndDoorLocked, sndGear);
-        HandlePlayerInteraction(ecs, "interact_p2", player2Raycast, camera2, p2HeldObject, p1HeldObject, scena1, rotatingObjects, rotatingInProgress, p2ShakeTimer, p2Animator, postacGracza.get(), audioSys, sndPaperRoll, sndDoorOpen, sndDoorCloseStart, sndBtnClick, sound, sndPickup, sndInsert, sndDoorLocked, sndGear);
+        HandlePlayerInteraction(*ecs, "interact_p1", player1Raycast, camera1, p1HeldObject, p2HeldObject, scena1, rotatingObjects, rotatingInProgress, p1ShakeTimer, p1Animator, postacGracza.get(), audioSys, sndPaperRoll, sndDoorOpen, sndDoorCloseStart, sndBtnClick, sound, sndPickup, sndInsert, sndDoorLocked, sndGear);
+        HandlePlayerInteraction(*ecs, "interact_p2", player2Raycast, camera2, p2HeldObject, p1HeldObject, scena1, rotatingObjects, rotatingInProgress, p2ShakeTimer, p2Animator, postacGracza.get(), audioSys, sndPaperRoll, sndDoorOpen, sndDoorCloseStart, sndBtnClick, sound, sndPickup, sndInsert, sndDoorLocked, sndGear);
 
-        HandleAltRotate(ecs, "alt_interact_p1", player1Raycast, rotatingObjects, rotatingInProgress, audioSys, sndPaperRoll);
-        HandleAltRotate(ecs, "alt_interact_p2", player2Raycast, rotatingObjects, rotatingInProgress, audioSys, sndPaperRoll);
+        HandleAltRotate(*ecs, "alt_interact_p1", player1Raycast, rotatingObjects, rotatingInProgress, audioSys, sndPaperRoll);
+        HandleAltRotate(*ecs, "alt_interact_p2", player2Raycast, rotatingObjects, rotatingInProgress, audioSys, sndPaperRoll);
 
         // testy animacji
-        if (ecs.GetSystem<HID>()->is_action_just_pressed("anim_play_dying")) {
+        if (ecs->GetSystem<HID>()->is_action_just_pressed("anim_play_dying")) {
             auto* clip = AnimationHelper::FindAnimation(dyingModelPrefab->rootModel->animations, "mixamo.com");
             if (clip) {
                 AnimationHelper::Play(animator, clip, true, 1.0f);
@@ -1565,7 +1565,7 @@ int main(int, char**)
             }
         }
 
-        if (ecs.GetSystem<HID>()->is_action_just_pressed("anim_play_jump")) {
+        if (ecs->GetSystem<HID>()->is_action_just_pressed("anim_play_jump")) {
             auto* clip = &jumpSkeletonPrefab->rootModel->animations[0];
             if (clip) {
                 AnimationHelper::Play(animator, clip, true, 1.0f);
@@ -1573,10 +1573,10 @@ int main(int, char**)
             }
         }
 
-        if (ecs.GetSystem<HID>()->is_action_pressed("anim_slow_mo")) {
+        if (ecs->GetSystem<HID>()->is_action_pressed("anim_slow_mo")) {
             animator->playbackSpeed = 0.5f;
         }
-        else if (ecs.GetSystem<HID>()->is_action_pressed("anim_fast_forward")) {
+        else if (ecs->GetSystem<HID>()->is_action_pressed("anim_fast_forward")) {
             animator->playbackSpeed = 2.0f;
         }
         else {
@@ -1589,13 +1589,13 @@ int main(int, char**)
         bool p2IsMoving = false;
 
         if (focused) {
-            p1IsMoving |= processCameraInput(ecs, *camCompLeft, *t0, "move_up", "move_down", "move_left", "move_right");
-            p2IsMoving |= processCameraInput(ecs, *camCompRight, *t1, "move_up_2", "move_down_2", "move_left_2", "move_right_2");
+            p1IsMoving |= processCameraInput(*ecs, *camCompLeft, *t0, "move_up", "move_down", "move_left", "move_right");
+            p2IsMoving |= processCameraInput(*ecs, *camCompRight, *t1, "move_up_2", "move_down_2", "move_left_2", "move_right_2");
 
-            processCameraMouse(ecs, *camCompLeft, *camTransform1, *t0);
+            processCameraMouse(*ecs, *camCompLeft, *camTransform1, *t0);
 
-            p1IsMoving |= processCameraGamepad(ecs, *camCompLeft, *camTransform1, *t0, 0);
-            p2IsMoving |= processCameraGamepad(ecs, *camCompRight,*camTransform2, *t1, 1);
+            p1IsMoving |= processCameraGamepad(*ecs, *camCompLeft, *camTransform1, *t0, 0);
+            p2IsMoving |= processCameraGamepad(*ecs, *camCompRight,*camTransform2, *t1, 1);
         }
 
         bool p1IsHolding = (p1HeldObject != nullptr);

@@ -12,8 +12,8 @@ private:
 public:
     SceneManager() = default;
 
-    Scene* CreateScene(const std::string& name, ECS& ecs) {
-        auto scene = std::make_unique<Scene>(ecs);
+    Scene* CreateScene(const std::string& name) {
+        auto scene = std::make_unique<Scene>();
         Scene* ptr = scene.get();
         scenes[name] = std::move(scene);
         if (!activeScene) activeScene = ptr;

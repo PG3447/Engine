@@ -12,11 +12,12 @@
 
 class Scene {
 private:
-    ECS& ecs;
+    ECS ecs;
     std::unique_ptr<GameObject> root;
 
 public:
-    Scene(ECS& ecsRef) : ecs(ecsRef)
+    //Scene(ECS& ecsRef) : ecs(ecsRef)
+    Scene()
     {
         root = std::make_unique<GameObject>(&ecs);
         root->AddComponent<TransformComponent>();
