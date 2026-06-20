@@ -1011,7 +1011,7 @@ void ChangeScene(SceneManager* sceneManager, ECS*& ecs)
         ecs = &active->GetECS();
         renderSystem = ecs->GetSystem<RenderSystem>();
         postProcessingSystem = ecs->GetSystem<PostProcessingSystem>();
-        //postProcessingSystem->SetActive(false);
+        postProcessingSystem->SetActive(false);
     }
     else
     {

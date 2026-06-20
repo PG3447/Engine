@@ -83,15 +83,11 @@ public:
         glViewport(0, 0, display_w, display_h);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        if (!enabled) {
-            glBindTexture(GL_TEXTURE_2D, renderSystem->GetSceneTexture());
-            return;
-        }
-
         glDisable(GL_DEPTH_TEST);
 
         postShader->use();
         postShader->setInt("screenTexture", 0);
+        postShader->setInt("postEnabled", enabled ? 1 : 0);
         postShader->setFloat("gamma", gamma);
         postShader->setFloat("time", time);
 

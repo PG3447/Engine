@@ -4,6 +4,7 @@ in vec2 TexCoords;
 out vec4 FragColor;
 
 uniform sampler2D screenTexture;
+uniform int postEnabled;
 uniform float gamma;
 uniform float time;
 
@@ -16,6 +17,12 @@ void main() {
     //color = pow(color, vec3(2.2));
     //vec3 negative = 1.0 - color;
     //FragColor = vec4(negative, 1.0);
+    
+    if (postEnabled == 0)
+    {
+        FragColor = vec4(color, 1.0);
+        return;
+    }
 
     vec3 playerColor;
 
