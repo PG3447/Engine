@@ -56,6 +56,13 @@ public:
         systems.push_back(std::shared_ptr<System>(sys, [](System*) {}));
     }
 
+    void InformActiveECS(GLFWwindow* window)
+    {
+        for (auto& sys : systems) {
+            sys->InformedActiveECS(*this, window);
+        }
+    }
+
     //void AddSystems(std::vector<std::shared_ptr<System>> sysList)
     //{
     //    for (auto& sys : sysList) {

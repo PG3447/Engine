@@ -10,6 +10,7 @@
 
 class PostProcessingSystem : public System {
 private:
+    ECS& postECS;
     GLFWwindow* window;
     RenderSystem* renderSystem;
 
@@ -20,6 +21,7 @@ private:
 
     float gamma = 1.5f;
     float time = 0.0f;
+    bool enabled = true;
 
     void InitQuad() {
         // Fullscreen quad — dwa trójkąty pokrywające NDC [-1,1]
@@ -51,7 +53,7 @@ private:
     }
 
 public:
-    PostProcessingSystem(ECS& ecs, GLFWwindow* win)
+    PostProcessingSystem(ECS& ecs, GLFWwindow* win) : postECS(ecs)
     {
         renderSystem = ecs.GetSystem<RenderSystem>();
         window = win;
@@ -68,6 +70,11 @@ public:
         //unused
     }
 
+    void SetActive(bool postProcessingIsOn)
+    {
+        enabled = postProcessingIsOn;
+    }
+
     void Update(ECS& ecs, float dt) override {
         time += dt;
         int display_w, display_h;
@@ -75,6 +82,11 @@ public:
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(0, 0, display_w, display_h);
         glClear(GL_COLOR_BUFFER_BIT);
+
+        if (!enabled) {
+            glBindTexture(GL_TEXTURE_2D, renderSystem->GetSceneTexture());
+            return;
+        }
 
         glDisable(GL_DEPTH_TEST);
 

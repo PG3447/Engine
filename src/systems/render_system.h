@@ -129,7 +129,7 @@ private:
     //std::unordered_map<GroupKey, size_t, GroupKeyHash> lookup;
 
     bool groupsDirty = true;
-
+    ECS& rendECS;
     GLFWwindow* window = nullptr;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
     GLuint texture;
@@ -339,7 +339,7 @@ public:
         return true;
     }
 
-    RenderSystem(ECS& ecs, GLFWwindow* win) : window(win)
+    RenderSystem(ECS& ecs, GLFWwindow* win) : rendECS(ecs), window(win)
     {
         renderQuery = ecs.CreateQuery<TransformComponent, RenderComponent>();
         lightQuery = ecs.CreateQuery<TransformComponent, LightComponent>();
@@ -352,6 +352,15 @@ public:
         DebugDrawSystem::Init();
     }
 
+    void InformedActiveECS(ECS& ecs, GLFWwindow* win) override
+    {
+        if (&rendECS == &ecs)
+        {
+            InitOpenGL();
+            window = win;
+        }
+    }
+
     void Init() {
         int display_w, display_h;
         glfwGetFramebufferSize(window, &display_w, &display_h);
@@ -362,6 +371,29 @@ public:
         skybox.Init();
         drivenManager.AddSkyboxPass(&skybox);
 
+        glGenQueries(2, gpuQuery.queries);
+
+        for (int i = 0; i < 2; i++) {
+            glBeginQuery(GL_TIME_ELAPSED, gpuQuery.queries[i]);
+            glEndQuery(GL_TIME_ELAPSED);
+        }
+
+        GLuint available = 0;
+        while (!available) {
+            glGetQueryObjectuiv(gpuQuery.queries[0], GL_QUERY_RESULT_AVAILABLE, &available);
+        }
+    }
+
+    void InitOpenGL()
+    {
+        int display_w, display_h;
+        glfwGetFramebufferSize(window, &display_w, &display_h);
+        drivenManager.InitSceneOpengl(display_w, display_h);
+        InitFBO(display_w, display_h, true);
+
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glGenQueries(2, gpuQuery.queries);
 
         for (int i = 0; i < 2; i++) {
@@ -953,8 +985,8 @@ public:
     }
 
 
-    void InitFBO(int w, int h) {
-        if (fboWidth == w && fboHeight == h) return; // bez zmian
+    void InitFBO(int w, int h, bool openGL = false) {
+        if (fboWidth == w && fboHeight == h && !openGL) return; // bez zmian
         fboWidth = w; fboHeight = h;
 
         spdlog::warn("FBO sie ustawia");

@@ -127,6 +127,10 @@ float  rotationY      = 0.0f;
 ImVec4 clear_color   = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 bool   autoRotation  = false;
 
+bool sceneIsMenu = false;
+bool prevSceneIsMenu = false;
+
+
 unsigned int cubemapTexture;
 unsigned int skyboxVAO;
 
@@ -997,6 +1001,31 @@ void createNuclearRooom(Scene* scena);
 void createCrematorium(Scene* scena);
 void createRentgenRoom(Scene* scena);
 
+void ChangeScene(SceneManager* sceneManager, ECS* ecs)
+{
+
+    if (sceneIsMenu)
+    {
+        sceneManager->SetActiveScene("menu", window);
+        Scene* active = sceneManager->GetActiveScene();
+        ecs = &active->GetECS();
+        renderSystem = ecs->GetSystem<RenderSystem>();
+        postProcessingSystem = ecs->GetSystem<PostProcessingSystem>();
+        //postProcessingSystem->SetActive(false);
+    }
+    else
+    {
+        sceneManager->SetActiveScene("Scena 1", window);
+        Scene* active = sceneManager->GetActiveScene();
+        ecs = &active->GetECS();
+        renderSystem = ecs->GetSystem<RenderSystem>();
+        postProcessingSystem = ecs->GetSystem<PostProcessingSystem>();
+        //postProcessingSystem->SetActive(true);
+    }
+
+    prevSceneIsMenu = sceneIsMenu;
+}
+
 int main(int, char**)
 {
     if (!init())
@@ -1019,8 +1048,20 @@ int main(int, char**)
     ECS* ecs = &scena1->GetECS();
 
     scena1->addAllSystems(window);
+    menu->GetECS().AddSystem<HID>(menu->GetECS(), window);
     menu->GetECS().AddSystem<TransformSystem>(menu->GetECS());
-    menu->GetECS().AddExistingSystem(scena1->GetECS().GetSystem<RenderSystem>());
+    menu->GetECS().AddSystem<RenderSystem>(menu->GetECS(), window);
+    menu->GetECS().AddSystem<PostProcessingSystem>(menu->GetECS(), window);
+
+    groundModel = std::make_unique<Prefab>("res/models/podloze.glb");
+
+    GameObject* cameraMenu = menu->CreateGameObject(nullptr);//groundModel->Instantiate(*scena1, nullptr, ourShader.get());
+    cameraMenu->name = "Kamera";
+    cameraMenu->AddComponent<CameraComponent>();
+    GameObject* menuPodloze = groundModel->Instantiate(*menu, nullptr, nullptr);
+
+    sceneManager.SetActiveScene("Scena 1", window);
+    //menu->GetECS().AddExistingSystem(scena1->GetECS().GetSystem<RenderSystem>());
 
     postacGracza = std::make_unique<Prefab>("res/models/postac_test.glb");
     groundModel = std::make_unique<Prefab>("res/models/podloze.glb");
@@ -1393,6 +1434,12 @@ int main(int, char**)
         CpuTimer cpuTimer;
         cpuTimer.start();
 
+
+        if (prevSceneIsMenu != sceneIsMenu)
+        {
+            ChangeScene(&sceneManager, ecs);
+        }
+
         bool allFilled = !puzzleSlotsMap.empty() && std::all_of(
     puzzleSlotsMap.begin(), puzzleSlotsMap.end(),
     [](const auto& pair) { return pair.second.occupant != nullptr; }
@@ -1424,11 +1471,10 @@ int main(int, char**)
         UpdateDoors(deltaTime, audioSys, sndDoorClosed);
         UpdateCabinets(deltaTime);
 
+
         auto inputStart = std::chrono::high_resolution_clock::now();
 
         if (ecs->GetSystem<HID>()->is_action_just_pressed("right_click")) {
-            //sceneManager.SetActiveScene("menu");
-            //renderSystem = menu->GetECS().GetSystem<RenderSystem>();
             focused = !focused;
             updateFocus();
         }
@@ -1445,6 +1491,7 @@ int main(int, char**)
 
         if (ecs->GetSystem<HID>()->is_action_just_pressed("gamma_up")) {
             postProcessingSystem->set_gamma(postProcessingSystem->get_gamma() + 0.1f);
+            sceneIsMenu = !sceneIsMenu;
         }
         if (ecs->GetSystem<HID>()->is_action_just_pressed("gamma_down")) {
             postProcessingSystem->set_gamma(postProcessingSystem->get_gamma() - 0.1f);
@@ -1678,6 +1725,7 @@ int main(int, char**)
         imgui_begin();
         imgui_render(sceneManager);
         imgui_end();
+
 
         cpuTimer.stop();
 

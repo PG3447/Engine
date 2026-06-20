@@ -21,10 +21,15 @@ public:
         return ptr;
     }
 
-    void SetActiveScene(const std::string& name)
+    void SetActiveScene(const std::string& name, GLFWwindow* window)
     {
         auto it = scenes.find(name);
-        if (it != scenes.end()) activeScene = it->second.get();
+        if (it != scenes.end())
+        {
+            activeScene = it->second.get();
+            activeScene->GetECS().InformActiveECS(window);
+        }
+
     }
 
     Scene* GetActiveScene() { return activeScene; }

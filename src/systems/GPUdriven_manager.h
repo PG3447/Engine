@@ -165,6 +165,23 @@ public:
         spdlog::info("RendererManager::Init {}x{}", w, h);
     }
 
+    void InitSceneOpengl(int w, int h)
+    {
+        glGenBuffers(1, &frameUBO);
+        glBindBuffer(GL_UNIFORM_BUFFER, frameUBO);
+        glBufferData(GL_UNIFORM_BUFFER, sizeof(FrameUBO), nullptr, GL_DYNAMIC_DRAW);
+        glBindBufferBase(GL_UNIFORM_BUFFER, 0, frameUBO);
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+        glGenBuffers(1, &lightsUBO);
+        glBindBuffer(GL_UNIFORM_BUFFER, lightsUBO);
+        glBufferData(GL_UNIFORM_BUFFER, sizeof(LightsUBO), nullptr, GL_DYNAMIC_DRAW);
+        glBindBufferBase(GL_UNIFORM_BUFFER, 1, lightsUBO);
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+        InitHiZ(w, h);
+    }
+
     void InitHiZ(int w, int h)
     {
         hizMipLevels = static_cast<int>(std::floor(std::log2(std::max(w, h)))) + 1;
@@ -180,6 +197,8 @@ public:
 
         spdlog::info("RendererManager: HiZ {}x{} mips={}", w, h, hizMipLevels);
     }
+
+
 
     void AttachCameraHiZ(GLuint hizTexture, int hizMipLevels, int vpW, int vpH, bool frustumEnabled, bool occlusionEnabled, int vpX = 0, int vpY = 0)
     {
