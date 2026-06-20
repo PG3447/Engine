@@ -178,8 +178,6 @@ public:
         glBufferData(GL_UNIFORM_BUFFER, sizeof(LightsUBO), nullptr, GL_DYNAMIC_DRAW);
         glBindBufferBase(GL_UNIFORM_BUFFER, 1, lightsUBO);
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
-        InitHiZ(w, h);
     }
 
     void InitHiZ(int w, int h)

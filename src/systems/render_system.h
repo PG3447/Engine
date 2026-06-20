@@ -389,7 +389,6 @@ public:
         int display_w, display_h;
         glfwGetFramebufferSize(window, &display_w, &display_h);
         drivenManager.InitSceneOpengl(display_w, display_h);
-        InitFBO(display_w, display_h, true);
 
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_BLEND);
