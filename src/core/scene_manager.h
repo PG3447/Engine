@@ -8,8 +8,8 @@ class SceneManager {
 private:
     std::unordered_map<std::string, std::unique_ptr<Scene>> scenes;
     Scene* activeScene = nullptr;
-
 public:
+    
     SceneManager() = default;
 
     Scene* CreateScene(const std::string& name) {

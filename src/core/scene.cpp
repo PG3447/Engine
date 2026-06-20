@@ -6,6 +6,7 @@
 #include "systems/NavPathSystem.h"
 #include "systems/NpcSystem.h"
 #include "systems/raycastSystem.h"
+#include "systems/AudioSystem.h"
 
 
 //Scene::Scene(ECS& ecsRef) : ecs(ecsRef) {}
@@ -74,6 +75,20 @@ void Scene::Update(float deltaTime) {
 //    return ecs.GetGameObjects();
 //}
 
+void Scene::addAllSystems(GLFWwindow* window) {
+    ecs.AddSystem<TransformSystem>(ecs);
+    ecs.AddSystem<PhysicsSystem>(ecs);
+    ecs.AddSystem<AnimationSystem>(ecs);
+    ecs.AddSystem<RenderSystem>(ecs, window);
+    ecs.AddSystem<HID>(ecs, window);
+    ecs.AddSystem<PostProcessingSystem>(ecs, window);
+    ecs.AddSystem<SpriteSystem>(ecs, window);
+    ecs.AddSystem<RaycastSystem>(ecs);
+    ecs.AddSystem<NavMeshSystem>(ecs);
+    ecs.AddSystem<NavPathSystem>(ecs);
+    ecs.AddSystem<AudioSystem>(ecs);
+    ecs.AddSystem<NpcSystem>(ecs);
+}
 
 void Scene::DebugHierarchy(GameObject* obj, int depth)
 {

@@ -10,6 +10,7 @@
 #include "../systems/SpriteSystem.h"
 #include "../systems/animation_system.h"
 
+
 class Scene {
 private:
     ECS ecs;
@@ -50,6 +51,7 @@ public:
 
     void Update(float deltaTime);
 
+    void addAllSystems(GLFWwindow *window);
 
     void DebugHierarchy(GameObject* obj, int depth = 0);
     //std::vector<GameObject*> GetGameObjects();

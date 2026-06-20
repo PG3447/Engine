@@ -466,7 +466,6 @@ bool processCameraGamepad(ECS& ecs, CameraComponent& cam, TransformComponent& tr
 }
 
 
-void addAllSystems(ECS& ecs);
 void connectAllModels();
 void LoadPlayerAnimations();
 void createRentgenCorridor(Scene * scena);
@@ -1017,7 +1016,7 @@ int main(int, char**)
     Scene* scena1 = sceneManager.GetActiveScene();
     ECS* ecs = &scena1->GetECS();
 
-    addAllSystems(*ecs);
+    scena1->addAllSystems(window);
 
     postacGracza = std::make_unique<Prefab>("res/models/postac_test.glb");
     groundModel = std::make_unique<Prefab>("res/models/podloze.glb");
@@ -2243,20 +2242,20 @@ void end_frame()
 }
 
 
-void addAllSystems(ECS& ecs) {
-    ecs.AddSystem<TransformSystem>(ecs);
-    ecs.AddSystem<PhysicsSystem>(ecs);
-    ecs.AddSystem<AnimationSystem>(ecs);
-    ecs.AddSystem<RenderSystem>(ecs, window);
-    ecs.AddSystem<HID>(ecs, window);
-    ecs.AddSystem<PostProcessingSystem>(ecs, window);
-    ecs.AddSystem<SpriteSystem>(ecs, window);
-    ecs.AddSystem<RaycastSystem>(ecs);
-    ecs.AddSystem<NavMeshSystem>(ecs);
-    ecs.AddSystem<NavPathSystem>(ecs);
-    ecs.AddSystem<AudioSystem>(ecs);
-    ecs.AddSystem<NpcSystem>(ecs);
-}
+//void addAllSystems(ECS& ecs) {
+//    ecs.AddSystem<TransformSystem>(ecs);
+//    ecs.AddSystem<PhysicsSystem>(ecs);
+//    ecs.AddSystem<AnimationSystem>(ecs);
+//    ecs.AddSystem<RenderSystem>(ecs, window);
+//    ecs.AddSystem<HID>(ecs, window);
+//    ecs.AddSystem<PostProcessingSystem>(ecs, window);
+//    ecs.AddSystem<SpriteSystem>(ecs, window);
+//    ecs.AddSystem<RaycastSystem>(ecs);
+//    ecs.AddSystem<NavMeshSystem>(ecs);
+//    ecs.AddSystem<NavPathSystem>(ecs);
+//    ecs.AddSystem<AudioSystem>(ecs);
+//    ecs.AddSystem<NpcSystem>(ecs);
+//}
 
 void LoadPlayerAnimations() {
     spdlog::info("Mapowanie animacji z pojedynczego pliku .glb gracza...");

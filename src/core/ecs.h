@@ -40,6 +40,15 @@ public:
         return sys;
     }
 
+    void AddSystems(std::vector<std::unique_ptr<System>> sysList)
+    {
+        for (auto& sys : sysList) {
+            for (auto& e : gameobjects)
+                sys->OnGameObjectUpdated(e.get());
+            systems.emplace_back(std::move(sys));
+        }
+    }
+
     template<typename T>
     T* GetSystem() {
         for (auto& sys : systems) {

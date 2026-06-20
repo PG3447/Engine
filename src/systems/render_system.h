@@ -371,9 +371,7 @@ public:
 
         GLuint available = 0;
         while (!available) {
-            glGetQueryObjectuiv(gpuQuery.queries[0],
-                               GL_QUERY_RESULT_AVAILABLE,
-                               &available);
+            glGetQueryObjectuiv(gpuQuery.queries[0], GL_QUERY_RESULT_AVAILABLE, &available);
         }
     }
 
