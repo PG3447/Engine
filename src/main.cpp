@@ -1049,6 +1049,7 @@ int main(int, char**)
     menu->GetECS().AddSystem<HID>(menu->GetECS(), window);
     menu->GetECS().AddSystem<TransformSystem>(menu->GetECS());
     menu->GetECS().AddSystem<RenderSystem>(menu->GetECS(), window);
+    menu->GetECS().AddSystem<SpriteSystem>(menu->GetECS(), window);
     menu->GetECS().AddSystem<PostProcessingSystem>(menu->GetECS(), window);
     menu->GetECS().GetSystem<PostProcessingSystem>()->SetActive(false);
     groundModel = std::make_unique<Prefab>("res/models/podloze.glb");
