@@ -55,10 +55,7 @@ public:
     {
         renderSystem = ecs.GetSystem<RenderSystem>();
         window = win;
-        postShader = std::make_unique<Shader>(
-            "res/shaders/postprocess.vert",
-            "res/shaders/postprocess.frag"
-        );
+        postShader = std::make_unique<Shader>("res/shaders/postprocess.vert", "res/shaders/postprocess.frag");
         InitQuad();
     }
 

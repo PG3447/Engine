@@ -12,7 +12,8 @@ public:
     
     SceneManager() = default;
 
-    Scene* CreateScene(const std::string& name) {
+    Scene* CreateScene(const std::string& name)
+    {
         auto scene = std::make_unique<Scene>();
         Scene* ptr = scene.get();
         scenes[name] = std::move(scene);
@@ -20,12 +21,20 @@ public:
         return ptr;
     }
 
-    void SetActiveScene(const std::string& name) {
+    void SetActiveScene(const std::string& name)
+    {
         auto it = scenes.find(name);
         if (it != scenes.end()) activeScene = it->second.get();
     }
 
     Scene* GetActiveScene() { return activeScene; }
+
+    Scene* GetScene(const std::string& name)
+    {
+        auto it = scenes.find(name);
+        if (it != scenes.end()) return it->second.get();
+        return nullptr;
+    }
 
     void Update(float deltaTime) {
         if (activeScene) activeScene->Update(deltaTime);

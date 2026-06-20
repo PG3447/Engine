@@ -1012,11 +1012,15 @@ int main(int, char**)
     SceneManager sceneManager;
 
     sceneManager.CreateScene("Scena 1");
+    sceneManager.CreateScene("menu");
 
     Scene* scena1 = sceneManager.GetActiveScene();
+    Scene* menu = sceneManager.GetScene("menu");
     ECS* ecs = &scena1->GetECS();
 
     scena1->addAllSystems(window);
+    menu->GetECS().AddSystem<TransformSystem>(menu->GetECS());
+    menu->GetECS().AddExistingSystem(scena1->GetECS().GetSystem<RenderSystem>());
 
     postacGracza = std::make_unique<Prefab>("res/models/postac_test.glb");
     groundModel = std::make_unique<Prefab>("res/models/podloze.glb");
@@ -1423,6 +1427,8 @@ int main(int, char**)
         auto inputStart = std::chrono::high_resolution_clock::now();
 
         if (ecs->GetSystem<HID>()->is_action_just_pressed("right_click")) {
+            //sceneManager.SetActiveScene("menu");
+            //renderSystem = menu->GetECS().GetSystem<RenderSystem>();
             focused = !focused;
             updateFocus();
         }

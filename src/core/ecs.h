@@ -16,7 +16,7 @@
 class ECS {
 private:
     std::vector<std::unique_ptr<GameObject>> gameobjects;
-    std::vector<std::unique_ptr<System>> systems;
+    std::vector<std::shared_ptr<System>> systems;
     std::vector<std::unique_ptr<QueryBase>> queries;
 
 
@@ -40,15 +40,6 @@ public:
         return sys;
     }
 
-    void AddSystems(std::vector<std::unique_ptr<System>> sysList)
-    {
-        for (auto& sys : sysList) {
-            for (auto& e : gameobjects)
-                sys->OnGameObjectUpdated(e.get());
-            systems.emplace_back(std::move(sys));
-        }
-    }
-
     template<typename T>
     T* GetSystem() {
         for (auto& sys : systems) {
@@ -57,6 +48,22 @@ public:
         }
         return nullptr;
     }
+
+    void AddExistingSystem(System* sys) {
+        if (!sys) return;
+        for (auto& e : gameobjects)
+            sys->OnGameObjectUpdated(e.get());
+        systems.push_back(std::shared_ptr<System>(sys, [](System*) {}));
+    }
+
+    //void AddSystems(std::vector<std::shared_ptr<System>> sysList)
+    //{
+    //    for (auto& sys : sysList) {
+    //        for (auto& e : gameobjects)
+    //            sys->OnGameObjectUpdated(e.get());
+    //        systems.emplace_back(std::move(sys));
+    //    }
+    //}
 
     void NotifyGameObjectChanged(GameObject* e);
 
