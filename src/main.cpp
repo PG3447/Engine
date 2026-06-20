@@ -1001,7 +1001,7 @@ void createNuclearRooom(Scene* scena);
 void createCrematorium(Scene* scena);
 void createRentgenRoom(Scene* scena);
 
-void ChangeScene(SceneManager* sceneManager, ECS* ecs)
+void ChangeScene(SceneManager* sceneManager, ECS*& ecs)
 {
 
     if (sceneIsMenu)
