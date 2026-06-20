@@ -1011,7 +1011,6 @@ void ChangeScene(SceneManager* sceneManager, ECS*& ecs)
         ecs = &active->GetECS();
         renderSystem = ecs->GetSystem<RenderSystem>();
         postProcessingSystem = ecs->GetSystem<PostProcessingSystem>();
-        postProcessingSystem->SetActive(false);
     }
     else
     {
@@ -1020,7 +1019,6 @@ void ChangeScene(SceneManager* sceneManager, ECS*& ecs)
         ecs = &active->GetECS();
         renderSystem = ecs->GetSystem<RenderSystem>();
         postProcessingSystem = ecs->GetSystem<PostProcessingSystem>();
-        //postProcessingSystem->SetActive(true);
     }
 
     prevSceneIsMenu = sceneIsMenu;
@@ -1052,7 +1050,7 @@ int main(int, char**)
     menu->GetECS().AddSystem<TransformSystem>(menu->GetECS());
     menu->GetECS().AddSystem<RenderSystem>(menu->GetECS(), window);
     menu->GetECS().AddSystem<PostProcessingSystem>(menu->GetECS(), window);
-
+    menu->GetECS().GetSystem<PostProcessingSystem>()->SetActive(false);
     groundModel = std::make_unique<Prefab>("res/models/podloze.glb");
 
     GameObject* cameraMenu = menu->CreateGameObject(nullptr);//groundModel->Instantiate(*scena1, nullptr, ourShader.get());
