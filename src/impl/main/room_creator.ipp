@@ -287,7 +287,6 @@ void createMainRooom(Scene* scena) {
         if (go->name == "Left_Door")  cabState.leftDoor  = go;
         if (go->name == "Right_Door") cabState.rightDoor = go;
         if (go->name == "Guzik")      cabState.button    = go;
-    });
 
         if (go->name == "start_button") {
             machineStartButton = go;
@@ -333,7 +332,7 @@ void createMainRooom(Scene* scena) {
             machineSlotsMap[go] = slot;
             spdlog::info("Skonfigurowano slot maszyny: {}", go->name);
         }
-        });
+    });
 
     GameObject * bossCapsule = bossCapsuleModel->Instantiate(*scena, nullptr, nullptr);
     bossCapsule->name = "BossCapsule";
