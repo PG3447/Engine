@@ -112,38 +112,45 @@ std::unique_ptr<Prefab> GreenModel;
 std::unique_ptr<Prefab> roofModel;
 std::unique_ptr<Prefab> groundModel;
 
+std::unique_ptr<Prefab> drawer1Model;
+std::unique_ptr<Prefab> drawer2Model;
+std::unique_ptr<Prefab> tableModel;
+
+std::unique_ptr<Prefab> koparkaModel;
+
+
 
 void connectAllModels() {
-    bed1Model = std::make_unique<Prefab>("res/models/bed.glb");
-    bed2Model = std::make_unique<Prefab>("res/models/bed2.glb");
-    bed3Model = std::make_unique<Prefab>("res/models/bed3.glb");
+    bed1Model        = std::make_unique<Prefab>("res/models/bed.glb");
+    bed2Model        = std::make_unique<Prefab>("res/models/bed2.glb");
+    bed3Model        = std::make_unique<Prefab>("res/models/bed3.glb");
     placeholderModel = std::make_unique<Prefab>("res/models/placeholder.glb");
-    sinkModel = std::make_unique<Prefab>("res/models/sink_2.glb");
-    toiletModel = std::make_unique<Prefab>("res/models/toilet_f.glb");
+    sinkModel        = std::make_unique<Prefab>("res/models/sink.glb");
+    toiletModel      = std::make_unique<Prefab>("res/models/toilet_f.glb");
     doorsToiletModel = std::make_unique<Prefab>("res/models/doors_toliet_tex6.glb");
     toiletPaperRedModel = std::make_unique<Prefab>("res/models/papier_czerwony.glb");
     toiletPaperGreenModel = std::make_unique<Prefab>("res/models/papier_zielony.glb");
     toiletPaperBlueModel = std::make_unique<Prefab>("res/models/papier_niebieski.glb");
-    mirrorModel1 = std::make_unique<Prefab>("res/models/glass1_v2.glb");
-    mirrorModel2 = std::make_unique<Prefab>("res/models/lustro_puste.glb");
-    mirrorModel3 = std::make_unique<Prefab>("res/models/glass2_v2.glb");
-    mirrorModel4 = std::make_unique<Prefab>("res/models/glass3_v2.glb");
-    washroomExit = std::make_unique<Prefab>("res/models/door_other_2.glb");
-    urinModel = std::make_unique<Prefab>("res/models/uniral_v2.glb");
-    NormalDoor = std::make_unique<Prefab>("res/models/doors_smaller.glb");
-    szafkaModel = std::make_unique<Prefab>("res/models/szafka_pop_main.glb");
-    szafka_labModel = std::make_unique<Prefab>("res/models/szafka_lab.glb");
-    ruraModel = std::make_unique<Prefab>("res/models/placeholder_rura_wysuwana.glb");
-    panelModel = std::make_unique<Prefab>("res/models/Panel.glb");
-    puzel1 = std::make_unique<Prefab>("res/models/Puzel1.glb");
-    puzel2 = std::make_unique<Prefab>("res/models/Puzel2.glb");
-    puzel3 = std::make_unique<Prefab>("res/models/Puzel3.glb");
-    puzel4 = std::make_unique<Prefab>("res/models/Puzel4.glb");
-    puzel5 = std::make_unique<Prefab>("res/models/Puzel5.glb");
-    puzel6 = std::make_unique<Prefab>("res/models/Puzel6.glb");
+    mirrorModel1     = std::make_unique<Prefab>("res/models/glass1_v2.glb");
+    mirrorModel2     = std::make_unique<Prefab>("res/models/lustro_puste.glb");
+    mirrorModel3     = std::make_unique<Prefab>("res/models/glass2_v2.glb");
+    mirrorModel4     = std::make_unique<Prefab>("res/models/glass3_v2.glb");
+    washroomExit     = std::make_unique<Prefab>("res/models/door_other_2.glb");
+    urinModel        = std::make_unique<Prefab>("res/models/uniral_v2.glb");
+    NormalDoor       = std::make_unique<Prefab>("res/models/doors_smaller.glb");
+    szafkaModel      = std::make_unique<Prefab>("res/models/szafka_pop_main.glb");
+    szafka_labModel      = std::make_unique<Prefab>("res/models/szafka_lab.glb");
+    ruraModel        = std::make_unique<Prefab>("res/models/placeholder_rura_wysuwana.glb");
+    panelModel       = std::make_unique<Prefab>("res/models/Panel.glb");
+    puzel1       = std::make_unique<Prefab>("res/models/Puzel1.glb");
+    puzel2       = std::make_unique<Prefab>("res/models/Puzel2.glb");
+    puzel3       = std::make_unique<Prefab>("res/models/Puzel3.glb");
+    puzel4       = std::make_unique<Prefab>("res/models/Puzel4.glb");
+    puzel5       = std::make_unique<Prefab>("res/models/Puzel5.glb");
+    puzel6       = std::make_unique<Prefab>("res/models/Puzel6.glb");
 
-    bossCapsuleModel = std::make_unique<Prefab>("res/models/boss_capsule.glb");
-    kredensModel = std::make_unique<Prefab>("res/models/kredens.glb");
+    bossCapsuleModel       = std::make_unique<Prefab>("res/models/boss_capsule.glb");
+    kredensModel       = std::make_unique<Prefab>("res/models/kredens.glb");
     eksp1Model = std::make_unique<Prefab>("res/models/eksp1.glb");
     eksp2Model = std::make_unique<Prefab>("res/models/eksp2.glb");
     fiolka1Model = std::make_unique<Prefab>("res/models/fiolka1.glb");
@@ -171,7 +178,7 @@ void connectAllModels() {
     czerwonaTablica = std::make_unique<Prefab>("res/models/CzerwonaTablica.glb");
     Rentgen = std::make_unique<Prefab>("res/models/Rentgen.glb");
 
-    cockroachModel = std::make_unique<Prefab>("res/models/cockroach.glb");
+    cockroachModel   = std::make_unique<Prefab>("res/models/cockroach.glb");
 
     bossModel = std::make_unique<Prefab>("res/models/demon_animations_with_textures.glb");
     bossCapsuleModel = std::make_unique<Prefab>("res/models/boss_capsule.glb");
@@ -191,5 +198,12 @@ void connectAllModels() {
     lampaOperacyjnaModel = std::make_unique<Prefab>("res/models/lampa_operac.glb");
     stolOperacyjnyModel = std::make_unique<Prefab>("res/models/stol_operacyjny.glb");
     zaslonaModel = std::make_unique<Prefab>("res/models/zaslona.glb");
+    deskModel = std::make_unique<Prefab>("res/models/desk.glb");
+    drawer1Model = std::make_unique<Prefab>("res/models/drawer1.glb");
+    drawer2Model = std::make_unique<Prefab>("res/models/drawer2.glb");
+    needleModel = std::make_unique<Prefab>("res/models/needle.glb");
+    tableModel = std::make_unique<Prefab>("res/models/stol.glb");
+
+
     gearModel = std::make_unique<Prefab>("res/models/gear.glb");
 }
