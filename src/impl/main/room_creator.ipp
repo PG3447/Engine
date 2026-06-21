@@ -213,8 +213,8 @@ void createMainRooom(Scene* scena) {
     Room mainRoom;
     mainRoom.id = 1;
     mainRoom.name = "MainRoom";
-    mainRoom.position = glm::vec3(0.0, 0.0, -80.0);
-    mainRoom.halfSize = glm::vec3(40.0, 30.0, 46.5);
+    mainRoom.position = glm::vec3(26.0, 0.0, -147.0);
+    mainRoom.halfSize = glm::vec3(38.0, 30.0, 46.5);
     roomsLights[mainRoom.id] = mainRoom;
     // Podloga i sufit
     CreateStaticObject(scena, floorModel.get(), nullptr, "PodlogaMainRoom", glm::vec3(23.300, 0, -146.390), glm::vec3(37.070, 1, 43.540));
