@@ -232,7 +232,6 @@ void imgui_render(SceneManager& sceneManager)
     ImGui::DragFloat("Ambient strength", &renderSystem->ambientStrength, 0.000001f, 0.0f, 1.0f, "%.6f");
     ImGui::Separator();
     ImGui::Text("Hierarchy");
-    ImGui::Text("Hierarchy");
     gameObjectFilter.Draw("Filtruj po nazwie", 200.0f);
     ShowGameObjectTree(sceneManager.GetActiveScene()->GetRoot(), gameObjectFilter);
 
