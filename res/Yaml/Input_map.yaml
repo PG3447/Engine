@@ -20,9 +20,17 @@ input:
     play_sound: [GLFW_KEY_H]
     interact_p1: [GLFW_KEY_E]
     alt_interact_p1: [GLFW_KEY_Q]
+
+    ui_up: [ GLFW_KEY_UP ]
+    ui_down: [ GLFW_KEY_DOWN ]
+    ui_left: [ GLFW_KEY_LEFT ]
+    ui_right: [ GLFW_KEY_RIGHT ]
+    ui_confirm: [ GLFW_KEY_ENTER, GLFW_KEY_SPACE ]
+    ui_back: [ GLFW_KEY_ESCAPE ]
   mouse:
     interact_p1: [GLFW_MOUSE_BUTTON_LEFT]
     right_click: [GLFW_MOUSE_BUTTON_RIGHT]
+    menu_click: [GLFW_MOUSE_BUTTON_LEFT]
   gamepad:
     interact_p1:
       - {button: GLFW_GAMEPAD_BUTTON_TRIANGLE, id: 0}
@@ -32,3 +40,21 @@ input:
       - {button: GLFW_GAMEPAD_BUTTON_SQUARE, id: 0}
     alt_interact_p2:
       - {button: GLFW_GAMEPAD_BUTTON_SQUARE, id: 1}
+    ui_up:
+      - { button: GLFW_GAMEPAD_BUTTON_DPAD_UP, id: 0 }
+      - { button: GLFW_GAMEPAD_BUTTON_DPAD_UP, id: 1 }
+    ui_down:
+      - { button: GLFW_GAMEPAD_BUTTON_DPAD_DOWN, id: 0 }
+      - { button: GLFW_GAMEPAD_BUTTON_DPAD_DOWN, id: 1 }
+    ui_left:
+      - { button: GLFW_GAMEPAD_BUTTON_DPAD_LEFT, id: 0 }
+      - { button: GLFW_GAMEPAD_BUTTON_DPAD_LEFT, id: 1 }
+    ui_right:
+      - { button: GLFW_GAMEPAD_BUTTON_DPAD_RIGHT, id: 0 }
+      - { button: GLFW_GAMEPAD_BUTTON_DPAD_RIGHT, id: 1 }
+    ui_confirm:
+      - { button: GLFW_GAMEPAD_BUTTON_A, id: 0 }
+      - { button: GLFW_GAMEPAD_BUTTON_A, id: 1 }
+    ui_back:
+      - { button: GLFW_GAMEPAD_BUTTON_B, id: 0 }
+      - { button: GLFW_GAMEPAD_BUTTON_B, id: 1 }

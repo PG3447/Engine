@@ -612,6 +612,61 @@ struct CockroachFollowerComponent : Component {
     bool hasActiveNavGoal = false;
 };
 
+enum class MenuAction {
+    None,
+    StartGame,
+    OpenSettings,
+    OpenAdditionalModes,
+    ExitGame,
+    BackToMainMenu,
+};
+
+enum MenuButtonVisualState {
+    MENU_BTN_NORMAL   = 0,
+    MENU_BTN_HOVER    = 1,
+    MENU_BTN_SELECTED = 2,
+};
+
+struct MenuButtonComponent : Component {
+    static constexpr uint64_t ComponentBit = 1ull << 14;
+
+    MenuAction action = MenuAction::None;
+
+    int navIndex = 0;
+
+    bool isEnabled = true;
+
+    bool isSelected = false;
+
+    std::string menuPanel = "main";
+
+    const char* GetTypeName() const override { return "MenuButton"; }
+};
+
+struct MenuSliderComponent : Component {
+    static constexpr uint64_t ComponentBit = 1ull << 15;
+
+    std::string label = "";
+
+    float minValue = 0.0f;
+    float maxValue = 1.0f;
+    float value    = 1.0f;
+    float step     = 0.05f;
+
+    GameObject* fillObject = nullptr;
+    float fillMaxWidth = 300.0f;
+    float fillBaseHeight = 24.0f;
+
+    bool isSelected = false;
+    bool isDragging = false;
+
+    int navIndex = 0;
+    std::string menuPanel = "settings";
+
+    std::function<void(float)> onValueChanged = nullptr;
+
+    const char* GetTypeName() const override { return "MenuSlider"; }
+};
 
 
 #endif

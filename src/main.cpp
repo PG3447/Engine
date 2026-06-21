@@ -59,6 +59,10 @@
 
 #include "gameplay/crematorium_puzzle.h"
 #include "systems/SurfaceDecorationSystem.h"
+#include "systems/MenuSystem.h"
+
+void CreateMenuScene(Scene* menu, AudioSystem* audioSys = nullptr);
+
 
 
 static void glfw_error_callback(int error, const char* description)
@@ -333,6 +337,22 @@ int main(int, char**)
     cameraMenu->name = "Kamera";
     cameraMenu->AddComponent<CameraComponent>();
     GameObject* menuPodloze = groundModel->Instantiate(*menu, nullptr, nullptr);
+
+    CreateMenuScene(menu);
+
+    MenuSystem* menuSys = menu->GetECS().GetSystem<MenuSystem>();
+    menuSys->onAction = [](MenuAction action) {
+        switch (action) {
+            case MenuAction::StartGame:
+                sceneIsMenu = false;
+                break;
+            case MenuAction::ExitGame:
+                glfwSetWindowShouldClose(window, true);
+                break;
+            default:
+                break;
+        }
+    };
 
     sceneManager.SetActiveScene("Scena 1", window);
     //menu->GetECS().AddExistingSystem(scena1->GetECS().GetSystem<RenderSystem>());
@@ -1314,3 +1334,4 @@ void LoadPlayerAnimations() {
 }
 
 #include "impl/main/room_creator.ipp"
+#include "impl/main/menu_creator.ipp"

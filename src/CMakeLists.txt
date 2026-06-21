@@ -39,6 +39,8 @@ add_executable(${PROJECT_NAME} ${HEADER_FILES} ${SOURCE_FILES} ${ASSETS_FILES} "
 		systems/NpcSystem.h
 		systems/SurfaceDecorationSystem.cpp
 		systems/SurfaceDecorationSystem.h
+		systems/MenuSystem.cpp
+		systems/MenuSystem.h
 )
 
 

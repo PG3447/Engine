@@ -7,6 +7,7 @@
 #include "systems/NpcSystem.h"
 #include "systems/raycastSystem.h"
 #include "systems/AudioSystem.h"
+#include "systems/MenuSystem.h"
 
 
 //Scene::Scene(ECS& ecsRef) : ecs(ecsRef) {}
@@ -64,6 +65,9 @@ void Scene::Update(float deltaTime) {
 
     if (auto* ss = ecs.GetSystem<SpriteSystem>())
         ss->Update(ecs, deltaTime);
+
+    if (auto* ms = ecs.GetSystem<MenuSystem>())
+        ms->Update(ecs, deltaTime);
 
 
     //if (auto* as = ecs.GetSystem<AudioSystem>())
