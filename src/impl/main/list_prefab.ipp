@@ -125,7 +125,7 @@ void connectAllModels() {
     bed2Model        = std::make_unique<Prefab>("res/models/bed2.glb");
     bed3Model        = std::make_unique<Prefab>("res/models/bed3.glb");
     placeholderModel = std::make_unique<Prefab>("res/models/placeholder.glb");
-    sinkModel        = std::make_unique<Prefab>("res/models/sink.glb");
+    sinkModel        = std::make_unique<Prefab>("res/models/sink_2.glb");
     toiletModel      = std::make_unique<Prefab>("res/models/toilet_f.glb");
     doorsToiletModel = std::make_unique<Prefab>("res/models/doors_toliet_tex6.glb");
     toiletPaperRedModel = std::make_unique<Prefab>("res/models/papier_czerwony.glb");
