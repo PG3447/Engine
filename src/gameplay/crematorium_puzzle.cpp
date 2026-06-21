@@ -550,11 +550,6 @@ void CrematoriumPuzzle::Update(float deltaTime)
         if (isLeftSolved && isRightSolved && !isPuzzleSolved) {
             spdlog::warn("ZAGADKA KREMATORIUM ZOSTALA ROZWIAZANA W PELNI WOOOOOOOOOOOW");
 
-            // DWIÊK: Rozwi¹zanie zagadki krematorium!
-            if (audioSystem && soundPuzzleSolved) {
-                audioSystem->playSoundEx(soundPuzzleSolved);
-            }
-
             isPuzzleSolved = true;
         }
     }

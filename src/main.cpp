@@ -226,7 +226,7 @@ std::unique_ptr<Prefab> wozekModel;
 std::unique_ptr<Prefab> szafka_inna1Model;
 std::unique_ptr<Prefab> szafka_inna2Model;
 std::unique_ptr<Prefab> fiolka_nastModel;
-
+std::unique_ptr<Prefab> gearModel;
 std::unique_ptr<Prefab> probowka7Model;
 std::unique_ptr<Prefab> probowka6Model;
 std::unique_ptr<Prefab> probowka5Model;
@@ -490,35 +490,64 @@ struct PuzzleSlot {
 
 GameObject* puzzleRewardObject = nullptr;
 
-
-void OnPuzzleSolved(Scene* scene) {
-    spdlog::info("Puzzle rozwiązany!");
-
-    // Zabezpieczenie przed wielokrotnym wywołaniem
-    if (puzzleRewardObject != nullptr) return;
-
-    if (placeholderModel == nullptr) {
-        spdlog::error("placeholderModel nie zaladowany!");
-        return;
-    }
-
-    puzzleRewardObject = placeholderModel->Instantiate(*scene, nullptr, nullptr);
-    puzzleRewardObject->name = "PuzzleReward";
-
-    TransformComponent* tr = puzzleRewardObject->GetComponent<TransformComponent>();
-    tr->position = glm::vec3(0.0f, 5.0f, -270.0f);
-    tr->scale    = glm::vec3(3.0f);
-    tr->isDirty  = true;
-
-    RigidbodyComponent* rb = puzzleRewardObject->AddComponent<RigidbodyComponent>();
-    rb->useGravity = false;
-    rb->isStatic   = true;
-
-    puzzleRewardObject->AddComponent<ColliderComponent>();
-}
+std::unordered_map<GameObject*, PuzzleSlot> machineSlotsMap;
+bool isMachineFixed = false;
 
 std::unordered_map<GameObject*, PuzzleSlot> puzzleSlotsMap; // klucz = slotObject
 std::unordered_map<GameObject*, glm::vec3>  objectOriginalRotations;
+std::unordered_map<GameObject*, glm::vec3>  objectOriginalColliderSizes;
+
+glm::vec3 gearHeldOffset = glm::vec3(1.25f, -1.2f, -5.55f);
+glm::vec3 gearHeldRotation = glm::vec3(0.0f, 234.0f, 100.0f);
+
+GameObject* machineStartButton = nullptr;
+std::unordered_map<std::string, GameObject*> machineLights;
+GameObject* fixedGear1 = nullptr;
+GameObject* fixedGear2 = nullptr;
+
+GameObject* SpawnGearReward(Scene* scene, const glm::vec3& position, const std::string& name) {
+    if (!gearModel) {
+        spdlog::error("gearModel nie jest zaladowany!");
+        return nullptr;
+    }
+
+    GameObject* gear = gearModel->Instantiate(*scene, nullptr, nullptr);
+    gear->name = name;
+
+    TransformComponent* tr = gear->GetComponent<TransformComponent>();
+    tr->position = position;
+    tr->scale = glm::vec3(2.0f);
+    tr->isDirty = true;
+
+    RigidbodyComponent* rb = gear->AddComponent<RigidbodyComponent>();
+    rb->useGravity = true;
+    rb->isStatic = false;
+    rb->mass = 2.0f;
+
+    rb->physicsPosition = position;
+    rb->previousPosition = position;
+
+    ColliderComponent* col = gear->AddComponent<ColliderComponent>();
+    col->halfSize = glm::vec3(1.0f, 0.2f, 1.0f);
+
+    pickupObjects.insert(gear);
+    objectOriginalRotations[gear] = glm::vec3(0.0f);
+
+    spdlog::info("Zespawnowano zębatkę: {} na pozycji: {}, {}, {}", name, position.x, position.y, position.z);
+    return gear;
+}
+
+void OnPuzzleSolved(Scene* scene, AudioSystem* audioSystem = nullptr, FMOD::Sound* sndGear = nullptr) {
+    spdlog::info("Puzzle rozwiazany!");
+
+    if (puzzleRewardObject != nullptr) return;
+
+    puzzleRewardObject = SpawnGearReward(scene, glm::vec3(-100.0f, 11.0f, -176.0f), "Gear_Rentgen");
+
+    if (audioSystem && sndGear) {
+        audioSystem->playSound(sndGear);
+    }
+}
 
 bool IsPuzzleSolved() {
     if (puzzleSlotsMap.empty()) return false;
@@ -554,61 +583,115 @@ void HandlePlayerInteraction(
     FMOD::Sound* soundPuzzleSolved = nullptr
 ) {
     if (!ecs.GetSystem<HID>()->is_action_just_pressed(inputAction)) return;
-    //upuszczanie
+    // upuszczanie / wkladanie
     if (myHeldObject != nullptr) {
-        TransformComponent* camTr   = playerCamera->GetComponent<TransformComponent>();
-        TransformComponent* heldTr  = myHeldObject->GetComponent<TransformComponent>();
-        CameraComponent*    camComp = playerCamera->GetComponent<CameraComponent>();
+        TransformComponent* camTr = playerCamera->GetComponent<TransformComponent>();
+        TransformComponent* heldTr = myHeldObject->GetComponent<TransformComponent>();
+        CameraComponent* camComp = playerCamera->GetComponent<CameraComponent>();
 
-        // Sprawdź czy raycast widzi slot
         PuzzleSlot* targetSlot = nullptr;
+        bool isMachineSlot = false;
+
         if (playerRaycast->anyHit()) {
             RaycastHit hit = playerRaycast->closestHit();
-            if (hit.hitObject && puzzleSlotsMap.count(hit.hitObject)) {
-                PuzzleSlot& slot = puzzleSlotsMap[hit.hitObject];
-                if (slot.occupant == nullptr)   // tylko wolny slot
-                    targetSlot = &slot;
+            if (hit.hitObject) {
+                if (puzzleSlotsMap.count(hit.hitObject)) {
+                    PuzzleSlot& slot = puzzleSlotsMap[hit.hitObject];
+                    if (slot.occupant == nullptr)
+                        targetSlot = &slot;
+                }
+                else if (machineSlotsMap.count(hit.hitObject)) {
+                    PuzzleSlot& slot = machineSlotsMap[hit.hitObject];
+                    if (slot.occupant == nullptr && myHeldObject->name.find("Gear") != std::string::npos) {
+                        targetSlot = &slot;
+                        isMachineSlot = true;
+                    }
+                }
             }
         }
 
         myHeldObject->SetParent(scene->GetRoot());
 
+        if (targetSlot != nullptr && isMachineSlot) {
+            myHeldObject->SetParent(targetSlot->slotObject);
+        }
+        else {
+            myHeldObject->SetParent(scene->GetRoot());
+        }
+
+        if (auto col = myHeldObject->GetComponent<ColliderComponent>()) {
+            if (objectOriginalColliderSizes.count(myHeldObject)) {
+                col->halfSize = objectOriginalColliderSizes[myHeldObject];
+            }
+        }
+
         if (targetSlot != nullptr) {
-            // ── Gracz patrzy na wolny slot ──
             TransformComponent* slotTr = targetSlot->slotObject->GetComponent<TransformComponent>();
-            heldTr->position = slotTr->position;
-            heldTr->rotation = targetSlot->targetRotation;
-            heldTr->isDirty  = true;
+
+            if (isMachineSlot) {
+                heldTr->position = glm::vec3(0.0f, 0.0f, 0.0f);
+
+                heldTr->rotation = glm::vec3(0.0f, 0.0f, 90.0f);
+
+                heldTr->scale = glm::vec3(0.4375f);
+            }
+            else {
+                heldTr->position = TransformHelper::getGlobalPosition(*slotTr);
+                heldTr->rotation = targetSlot->targetRotation;
+            }
+
+            heldTr->isDirty = true;
             targetSlot->occupant = myHeldObject;
 
             if (audioSystem && soundInsert) {
                 audioSystem->playSound(soundInsert);
             }
 
-            if (IsPuzzleSolved()) {
-                static bool rentgenPuzzleSolvedPlayed = false;
-                if (!rentgenPuzzleSolvedPlayed && audioSystem && soundPuzzleSolved) {
-                    audioSystem->playSound(soundPuzzleSolved);
-                    rentgenPuzzleSolvedPlayed = true;
-                }
+            if (isMachineSlot) {
+                std::string slotName = targetSlot->slotObject->name;
+                std::string lightName = "";
 
-                OnPuzzleSolved(scene);
+                if (slotName == "MachineSlot_1") lightName = "lights_1";
+                else if (slotName == "MachineSlot_2") lightName = "lights_3";
+                else if (slotName == "MachineSlot_3") lightName = "lights_4";
+
+                if (!lightName.empty() && machineLights.count(lightName)) {
+                    if (auto lc = machineLights[lightName]->GetComponent<LightComponent>()) {
+                        lc->isOn = true;
+                    }
+                }
+            }
+            else {
+                if (IsPuzzleSolved()) {
+                    static bool rentgenPuzzleSolvedPlayed = false;
+                    if (!rentgenPuzzleSolvedPlayed && audioSystem && soundPuzzleSolved) {
+                        audioSystem->playSound(soundPuzzleSolved);
+                        rentgenPuzzleSolvedPlayed = true;
+                    }
+
+                    OnPuzzleSolved(scene, audioSystem, soundPuzzleSolved);
+                }
             }
 
             if (auto rb = myHeldObject->GetComponent<RigidbodyComponent>()) {
                 rb->useGravity = false;
-                rb->isStatic   = true;
+                rb->isStatic = true;
                 rb->velocity = glm::vec3(0.0f);
                 rb->acceleration = glm::vec3(0.0f);
             }
         }
         else {
-            // ── Gracz patrzy gdzie indziej — normalne upuszczenie ──
+            // normalne upuszczenie
             heldTr->position = TransformHelper::getGlobalPosition(*camTr) + (camComp->state.Front * 5.0f);
             heldTr->rotation = objectOriginalRotations.count(myHeldObject)
-                                   ? objectOriginalRotations[myHeldObject]
-                                   : glm::vec3(0.0f);
-            heldTr->isDirty  = true;
+                ? objectOriginalRotations[myHeldObject]
+                : glm::vec3(0.0f);
+
+            if (myHeldObject->name.find("Gear") != std::string::npos) {
+                heldTr->scale = glm::vec3(2.0f);
+            }
+
+            heldTr->isDirty = true;
 
             if (auto rb = myHeldObject->GetComponent<RigidbodyComponent>()) {
                 rb->useGravity = true;
@@ -635,7 +718,40 @@ void HandlePlayerInteraction(
                     if (audioSystem && soundPaper) {
                         audioSystem->playSound(soundPaper);
                     }
+                }else if (hit.hitObject == machineStartButton) {
+                bool allInserted = true;
+                for (auto& [mSlotGO, mSlot] : machineSlotsMap) {
+                    if (mSlot.occupant == nullptr) {
+                        allInserted = false;
+                        break;
+                    }
                 }
+
+                if (allInserted && !isMachineFixed) {
+                    isMachineFixed = true; // Maszyna rusza!
+                    outShakeTimer = SHAKE_DURATION; // Mocne trzęsienie kamery z impaktem
+
+                    spdlog::info("Guzik START wcisniety! Maszyna ruszyla, otwieranie drzwi.");
+
+                    if (audioSystem && soundUnlock) audioSystem->playSound(soundUnlock);
+
+                    // Otwieramy drzwi
+                    for (GameObject* hinge : mainRoomDoors) {
+                        if (hinge && hinge->name == "Hinge_DrzwiDoRentgen") {
+                            DoorState& dState = toiletDoorsMap[hinge];
+                            dState.isOpen = true;
+                            dState.targetAngle = dState.openAngle;
+                            if (auto col = hinge->GetComponent<ColliderComponent>()) {
+                                col->halfSize = glm::vec3(0.0f);
+                            }
+                        }
+                    }
+                } else if (!isMachineFixed) {
+                    // Brak zębatek - błąd (odrzucenie)
+                    outShakeTimer = SHAKE_DURATION * 0.5f; // Małe trzęsienie
+                    if (audioSystem && soundDoorLocked) audioSystem->playSound(soundDoorLocked);
+                }
+            }
             }
             // PAIN
             if (majorDoors.count(hit.hitObject)) {
@@ -688,19 +804,35 @@ void HandlePlayerInteraction(
             else if (cabinetsMap.count(hit.hitObject)) {
                 if (!isCabinetButtonPushed) {
                     isCabinetButtonPushed = true;
-                    CabinetState& state   = cabinetsMap[hit.hitObject];
-                    state.isOpen          = true;
-                    state.targetAngle     = 120.0f;
+                    CabinetState& state = cabinetsMap[hit.hitObject];
+                    state.isOpen = true;
+                    state.targetAngle = 120.0f;
 
                     if (audioSystem) {
                         if (soundBtnClick) audioSystem->playSound(soundBtnClick);
                         if (soundUnlock)   audioSystem->playSound(soundUnlock);
                     }
 
+                    for (auto& [slotGO, mSlot] : machineSlotsMap) {
+                        if (auto col = slotGO->GetComponent<ColliderComponent>()) {
+                            col->halfSize = glm::vec3(1.5f, 1.5f, 1.5f);
+
+                            if (auto tr = slotGO->GetComponent<TransformComponent>()) {
+                                tr->isDirty = true;
+                            }
+                        }
+                    }
+                    if (machineStartButton) {
+                        if (auto col = machineStartButton->GetComponent<ColliderComponent>()) {
+                            col->halfSize = glm::vec3(1.0f, 1.0f, 1.0f);
+                            if (auto tr = machineStartButton->GetComponent<TransformComponent>()) { tr->isDirty = true; }
+                        }
+                    }
+
                     for (GameObject* hinge : mainRoomDoors) {
-                        if (hinge && toiletDoorsMap.count(hinge)) {
-                            DoorState& dState  = toiletDoorsMap[hinge];
-                            dState.isOpen      = true;
+                        if (hinge && hinge->name != "Hinge_DrzwiDoRentgen" && toiletDoorsMap.count(hinge)) {
+                            DoorState& dState = toiletDoorsMap[hinge];
+                            dState.isOpen = true;
                             dState.targetAngle = dState.openAngle;
 
                             if (auto col = hinge->GetComponent<ColliderComponent>()) {
@@ -721,16 +853,29 @@ void HandlePlayerInteraction(
 
                     TransformComponent* heldTr = myHeldObject->GetComponent<TransformComponent>();
                     heldTr->position = glm::vec3(1.0f, -1.0f, -3.0f);
-                    heldTr->rotation = glm::vec3(0.0f);
-                    heldTr->isDirty  = true;
+
+                    if (myHeldObject->name.find("Gear") != std::string::npos) {
+                        heldTr->position = gearHeldOffset;
+                        heldTr->rotation = gearHeldRotation;
+                        heldTr->scale = glm::vec3(2.0f);
+                    }
+                    else {
+                        heldTr->position = glm::vec3(1.0f, -1.0f, -3.0f);
+                        heldTr->rotation = glm::vec3(0.0f);
+                    }
+                    heldTr->isDirty = true;
+
+                    if (auto col = myHeldObject->GetComponent<ColliderComponent>()) {
+                        objectOriginalColliderSizes[myHeldObject] = col->halfSize;
+                        col->halfSize = glm::vec3(0.0f);
+                    }
 
                     if (auto rb = myHeldObject->GetComponent<RigidbodyComponent>()) {
                         rb->useGravity = false;
-                        rb->isStatic   = true;
+                        rb->isStatic = true;
                     }
 
                     if (audioSystem && soundPickup) audioSystem->playSound(soundPickup);
-
                     PlayerAnimationHelper::TriggerAction(playerAnimator, playerPrefab, PlayerAnimationHelper::PICKUP_ANIM_INDEX);
                 }
             }
@@ -749,17 +894,61 @@ void HandlePlayerInteraction(
 
                 TransformComponent* heldTr = myHeldObject->GetComponent<TransformComponent>();
                 heldTr->position = glm::vec3(1.0f, -1.0f, -3.0f);
-                heldTr->rotation = glm::vec3(0.0f);
-                heldTr->isDirty  = true;
+
+                if (myHeldObject->name.find("Gear") != std::string::npos) {
+                    heldTr->rotation = glm::vec3(45.0f, 30.0f, 0.0f);
+                }
+                else {
+                    heldTr->rotation = glm::vec3(0.0f);
+                }
+                heldTr->isDirty = true;
+
+                if (auto col = myHeldObject->GetComponent<ColliderComponent>()) {
+                    objectOriginalColliderSizes[myHeldObject] = col->halfSize;
+                    col->halfSize = glm::vec3(0.0f);
+                }
 
                 if (auto rb = myHeldObject->GetComponent<RigidbodyComponent>()) {
                     rb->useGravity = false;
-                    rb->isStatic   = true;
+                    rb->isStatic = true;
                 }
 
                 if (audioSystem && soundPickup) audioSystem->playSound(soundPickup);
-
                 PlayerAnimationHelper::TriggerAction(playerAnimator, playerPrefab, PlayerAnimationHelper::PICKUP_ANIM_INDEX);
+            }
+            // guzik szafki z zebatkami
+            else if (hit.hitObject == machineStartButton) {
+                bool allInserted = true;
+                for (auto& [mSlotGO, mSlot] : machineSlotsMap) {
+                    if (mSlot.occupant == nullptr) {
+                        allInserted = false;
+                        break;
+                    }
+                }
+
+                if (allInserted && !isMachineFixed) {
+                    isMachineFixed = true;
+                    outShakeTimer = SHAKE_DURATION;
+
+                    spdlog::info("Maszyna ruszyla - otwieranie drzwi.");
+
+                    if (audioSystem && soundUnlock) audioSystem->playSound(soundUnlock);
+
+                    for (GameObject* hinge : mainRoomDoors) {
+                        if (hinge && hinge->name == "Hinge_DrzwiDoRentgen") {
+                            DoorState& dState = toiletDoorsMap[hinge];
+                            dState.isOpen = true;
+                            dState.targetAngle = dState.openAngle;
+                            if (auto col = hinge->GetComponent<ColliderComponent>()) {
+                                col->halfSize = glm::vec3(0.0f);
+                            }
+                        }
+                    }
+                }
+                else if (!isMachineFixed) {
+                    outShakeTimer = SHAKE_DURATION * 0.5f;
+                    if (audioSystem && soundDoorLocked) audioSystem->playSound(soundDoorLocked);
+                }
             }
             // zagadka z trumnami
             else if (hit.hitObject->name.find("Coffin") != std::string::npos) {
@@ -1428,6 +1617,8 @@ int main(int, char**)
     const glm::vec2 CH1_CENTER(480.0f,  540.0f);
     const glm::vec2 CH2_CENTER(1440.0f, 540.0f);
 
+    bool isCrematoriumGearSpawned = false;
+
     // Main loop
     /*decorSystem.LoadInstancesFromYaml(
     "res/level1_decorations.yaml",
@@ -1523,6 +1714,28 @@ int main(int, char**)
                     else if (slot.occupant != nullptr)
                         hintText = "Pull out";
                 }
+                else if (machineSlotsMap.count(hit.hitObject)) {
+                    PuzzleSlot& slot = machineSlotsMap[hit.hitObject];
+                    if (slot.occupant != nullptr) {
+                        hintText = "Gear Inserted";
+                    }
+                    else if (p1HeldObject != nullptr && p1HeldObject->name.find("Gear") != std::string::npos) {
+                        hintText = "Insert Gear";
+                    }
+                    else {
+                        hintText = "Requires Gear";
+                    }
+                }
+                else if (hit.hitObject == machineStartButton) {
+                    bool allInserted = true;
+                    for (auto& [mSlotGO, mSlot] : machineSlotsMap) {
+                        if (mSlot.occupant == nullptr) { allInserted = false; break; }
+                    }
+
+                    if (isMachineFixed) hintText = "Machine Running";
+                    else if (allInserted) hintText = "Start Machine";
+                    else hintText = "Missing Gears";
+                }
                 else if (p1HeldObject != nullptr) {
                     hintText = "Drop";
                 }
@@ -1531,14 +1744,14 @@ int main(int, char**)
                 else if (toiletDoorsMap.count(hit.hitObject))
                     hintText = toiletDoorsMap[hit.hitObject].isOpen ? "Close" : "Open";
                 else if (cabinetsMap.count(hit.hitObject))
-                    hintText = isCabinetButtonPushed ? "..." : "Open Cabinet";
+                    hintText = isCabinetButtonPushed ? "" : "Open Cabinet";
                 else if (majorDoors.count(hit.hitObject))
                     hintText = can_open_door_1 ? "Open" : "Unlock";
                 else if (pickupObjects.count(hit.hitObject)) {
                     bool isInSlot = false;
                     for (auto& [slotGO, slot] : puzzleSlotsMap)
                         if (slot.occupant == hit.hitObject) { isInSlot = true; break; }
-                    hintText = isInSlot ? "Pull out" : (hit.hitObject == p2HeldObject ? "Held by Player 2" : "Pick up");
+                    hintText = isInSlot ? "Pull out" : (hit.hitObject == p2HeldObject ? "" : "Pick up");
                 }
                 else if (hit.hitObject->name.find("Coffin") != std::string::npos)
                     hintText = "Pull Coffin";
@@ -1559,6 +1772,28 @@ int main(int, char**)
                     else if (slot.occupant != nullptr)
                         hintText2 = "Pull out";
                 }
+                else if (machineSlotsMap.count(hit.hitObject)) {
+                    PuzzleSlot& slot = machineSlotsMap[hit.hitObject];
+                    if (slot.occupant != nullptr) {
+                        hintText2 = "Gear Inserted";
+                    }
+                    else if (p2HeldObject != nullptr && p2HeldObject->name.find("Gear") != std::string::npos) {
+                        hintText2 = "Insert Gear";
+                    }
+                    else {
+                        hintText2 = "Requires Gear";
+                    }
+                }
+                else if (hit.hitObject == machineStartButton) {
+                    bool allInserted = true;
+                    for (auto& [mSlotGO, mSlot] : machineSlotsMap) {
+                        if (mSlot.occupant == nullptr) { allInserted = false; break; }
+                    }
+
+                    if (isMachineFixed) hintText2 = "Machine Running";
+                    else if (allInserted) hintText2 = "Start Machine";
+                    else hintText2 = "Missing Gears";
+                }
                 else if (p2HeldObject != nullptr) {
                     hintText2 = "Drop";
                 }
@@ -1567,14 +1802,14 @@ int main(int, char**)
                 else if (toiletDoorsMap.count(hit.hitObject))
                     hintText2 = toiletDoorsMap[hit.hitObject].isOpen ? "Close" : "Open";
                 else if (cabinetsMap.count(hit.hitObject))
-                    hintText2 = isCabinetButtonPushed ? "..." : "Open Cabinet";
+                    hintText2 = isCabinetButtonPushed ? "" : "Open Cabinet";
                 else if (majorDoors.count(hit.hitObject))
                     hintText2 = can_open_door_1 ? "Open" : "Unlock";
                 else if (pickupObjects.count(hit.hitObject)) {
                     bool isInSlot = false;
                     for (auto& [slotGO, slot] : puzzleSlotsMap)
                         if (slot.occupant == hit.hitObject) { isInSlot = true; break; }
-                    hintText2 = isInSlot ? "Pull out" : (hit.hitObject == p1HeldObject ? "Held by Player 1" : "Pick up");
+                    hintText2 = isInSlot ? "Pull out" : (hit.hitObject == p1HeldObject ? "" : "Pick up");
                 }
                 else if (hit.hitObject->name.find("Coffin") != std::string::npos)
                     hintText2 = "Pull Coffin";
@@ -1612,11 +1847,25 @@ int main(int, char**)
             else ++it;
         }
 
-        HandlePlayerInteraction(*ecs, "interact_p1", player1Raycast, camera1, p1HeldObject, p2HeldObject, scena1, rotatingObjects, rotatingInProgress, p1ShakeTimer, p1Animator, postacGracza.get(), audioSys, sndPaperRoll, sndDoorOpen, sndDoorCloseStart, sndBtnClick, sound, sndPickup, sndInsert, sndDoorLocked, sndGear);
-        HandlePlayerInteraction(*ecs, "interact_p2", player2Raycast, camera2, p2HeldObject, p1HeldObject, scena1, rotatingObjects, rotatingInProgress, p2ShakeTimer, p2Animator, postacGracza.get(), audioSys, sndPaperRoll, sndDoorOpen, sndDoorCloseStart, sndBtnClick, sound, sndPickup, sndInsert, sndDoorLocked, sndGear);
+        if (focused) {
+            HandlePlayerInteraction(*ecs, "interact_p1", player1Raycast, camera1, p1HeldObject, p2HeldObject, scena1, rotatingObjects, rotatingInProgress, p1ShakeTimer, p1Animator, postacGracza.get(), audioSys, sndPaperRoll, sndDoorOpen, sndDoorCloseStart, sndBtnClick, sound, sndPickup, sndInsert, sndDoorLocked, sndGear);
+            HandlePlayerInteraction(*ecs, "interact_p2", player2Raycast, camera2, p2HeldObject, p1HeldObject, scena1, rotatingObjects, rotatingInProgress, p2ShakeTimer, p2Animator, postacGracza.get(), audioSys, sndPaperRoll, sndDoorOpen, sndDoorCloseStart, sndBtnClick, sound, sndPickup, sndInsert, sndDoorLocked, sndGear);
 
-        HandleAltRotate(*ecs, "alt_interact_p1", player1Raycast, rotatingObjects, rotatingInProgress, audioSys, sndPaperRoll);
-        HandleAltRotate(*ecs, "alt_interact_p2", player2Raycast, rotatingObjects, rotatingInProgress, audioSys, sndPaperRoll);
+            HandleAltRotate(*ecs, "alt_interact_p1", player1Raycast, rotatingObjects, rotatingInProgress, audioSys, sndPaperRoll);
+            HandleAltRotate(*ecs, "alt_interact_p2", player2Raycast, rotatingObjects, rotatingInProgress, audioSys, sndPaperRoll);
+        }
+
+        auto updateHeldGear = [&](GameObject* heldObj) {
+            if (heldObj && heldObj->name.find("Gear") != std::string::npos) {
+                if (auto tr = heldObj->GetComponent<TransformComponent>()) {
+                    tr->position = gearHeldOffset;
+                    tr->rotation = gearHeldRotation;
+                    tr->isDirty = true;
+                }
+            }
+            };
+        updateHeldGear(p1HeldObject);
+        updateHeldGear(p2HeldObject);
 
         // testy animacji
         if (ecs->GetSystem<HID>()->is_action_just_pressed("anim_play_dying")) {
@@ -1702,8 +1951,10 @@ int main(int, char**)
                  majorDoors.count(hit.hitObject)        ||
                  pickupObjects.count(hit.hitObject)     ||
                  hit.hitObject->name.find("Coffin") != std::string::npos ||
-                 (puzzleSlotsMap.count(hit.hitObject) && puzzleSlotsMap[hit.hitObject].occupant != nullptr)))
-                            p1Int = 1.0f;
+                    (puzzleSlotsMap.count(hit.hitObject) && puzzleSlotsMap[hit.hitObject].occupant != nullptr) ||
+                    machineSlotsMap.count(hit.hitObject) ||
+                    hit.hitObject == machineStartButton))
+                p1Int = 1.0f;
         }
         if (player2Raycast->anyHit()) {
             auto hit = player2Raycast->closestHit();
@@ -1712,9 +1963,12 @@ int main(int, char**)
                  toiletDoorsMap.count(hit.hitObject)   ||
                  cabinetsMap.count(hit.hitObject)       ||
                  majorDoors.count(hit.hitObject)        ||
-                 pickupObjects.count(hit.hitObject)     ||
-                 (puzzleSlotsMap.count(hit.hitObject) && puzzleSlotsMap[hit.hitObject].occupant != nullptr)))
-                            p2Int = 1.0f;
+                 pickupObjects.count(hit.hitObject) ||
+                 hit.hitObject->name.find("Coffin") != std::string::npos ||
+                    (puzzleSlotsMap.count(hit.hitObject) && puzzleSlotsMap[hit.hitObject].occupant != nullptr) ||
+                     machineSlotsMap.count(hit.hitObject) ||
+                     hit.hitObject == machineStartButton))
+                p1Int = 1.0f;
         }
 
         float chLerpSpeed = 10.0f;
@@ -1728,7 +1982,54 @@ int main(int, char**)
 
         auto logicStart = std::chrono::high_resolution_clock::now();
         crematoriumPuzzle.Update(deltaTime);
+
+        if (crematoriumPuzzle.isPuzzleSolved && !isCrematoriumGearSpawned) {
+            SpawnGearReward(scena1, glm::vec3(175.0f, 8.0f, -255.0f), "Gear_Crematorium");
+
+            if (audioSys && sndGear) {
+                audioSys->playSound(sndGear);
+            }
+
+            isCrematoriumGearSpawned = true;
+        }
+
+        if (isMachineFixed) {
+            float baseSpeed = 100.0f * deltaTime;
+
+            for (auto& [mSlotGO, mSlot] : machineSlotsMap) {
+                if (mSlot.occupant != nullptr) {
+                    if (auto tr = mSlot.occupant->GetComponent<TransformComponent>()) {
+
+                        float dir = 1.0f;
+                        if (mSlotGO->name == "MachineSlot_3") dir = -1.0f;
+
+                        tr->rotation.x += baseSpeed * dir;
+                        tr->isDirty = true;
+                    }
+                }
+            }
+
+            if (fixedGear1) {
+                if (auto tr = fixedGear1->GetComponent<TransformComponent>()) {
+                    tr->rotation.x += baseSpeed * -1.0f;
+                    tr->isDirty = true;
+                }
+            }
+
+            if (fixedGear2) {
+                if (auto tr = fixedGear2->GetComponent<TransformComponent>()) {
+                    tr->rotation.x += baseSpeed * 1.0f;
+                    tr->isDirty = true;
+                }
+            }
+        }
+
         sceneManager.Update(deltaTime);
+
+        if (audioSys) {
+            audioSys->Update(*ecs, deltaTime);
+        }
+
         update();
         auto logicEnd = std::chrono::high_resolution_clock::now();
 
@@ -2311,6 +2612,30 @@ void imgui_render(SceneManager& sceneManager)
             ImGui::TextColored(ImVec4(0,1,0,1), ">> PUZZLE ROZWIAZANY! <<");
     }
 
+    ImGui::Separator();
+    ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.0f, 1.0f), "Rozwiazanie Zagadek");
+
+    if (ImGui::Button("can_open_door_1 = true - Lazienka")) {
+        can_open_door_1 = true;
+    }
+
+    if (ImGui::Button("OnPuzzleSolved - Rentgen")) {
+        OnPuzzleSolved(sceneManager.GetActiveScene());
+    }
+
+    if (ImGui::Button("isPuzzleSolved = true - Krematorium")) {
+        crematoriumPuzzle.isPuzzleSolved = true;
+    }
+
+    if (ImGui::Button("Sprawn zebatka (main room)")) {
+        SpawnGearReward(sceneManager.GetActiveScene(), glm::vec3(28.0f, 3.0f, -183.0f), "Gear_CheatSpawn_" + std::to_string(glfwGetTime()));
+    }
+
+    ImGui::Separator();
+    ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.0f, 1.0f), "Tuning Trzymanej Zebatki");
+    ImGui::DragFloat3("Offset w reku", &gearHeldOffset.x, 0.05f);
+    ImGui::DragFloat3("Rotacja w reku", &gearHeldRotation.x, 1.0f);
+
     ImGui::End();
 }
 
@@ -2474,6 +2799,7 @@ void connectAllModels() {
     lampaOperacyjnaModel = std::make_unique<Prefab>("res/models/lampa_operac.glb");
     stolOperacyjnyModel = std::make_unique<Prefab>("res/models/stol_operacyjny.glb");
     zaslonaModel = std::make_unique<Prefab>("res/models/zaslona.glb");
+    gearModel = std::make_unique<Prefab>("res/models/gear.glb");
 }
 
 void createFirstRoom(Scene* scena1) {
@@ -2729,15 +3055,58 @@ void createMainRooom(Scene* scena) {
 
     ColliderComponent* szafkaCol = szafkaObj->AddComponent<ColliderComponent>();
     szafkaCol->affectsNavMesh = true;
-    szafkaCol->halfSize        = glm::vec3{ 10.0f, 8.0f, 3.0f };
-    szafkaCol->offset          = glm::vec3{ 2.0f, 6.0f, 0.0f };
+    szafkaCol->halfSize     = glm::vec3{ 10.0f, 1.0f, 3.0f };
+    szafkaCol->offset       = glm::vec3{ 2.0f, -5.0f, 0.0f };
 
     CabinetState cabState;
     szafkaObj->TraverseChildren([&](GameObject* go) {
-        if (go->name == "Left_Door")  cabState.leftDoor  = go;
+        if (go->name == "Left_Door")  cabState.leftDoor = go;
         if (go->name == "Right_Door") cabState.rightDoor = go;
-        if (go->name == "Guzik")      cabState.button    = go;
-    });
+        if (go->name == "Guzik")      cabState.button = go;
+        if (go->name == "Gear_Fixed_1") fixedGear1 = go;
+        if (go->name == "Gear_Fixed_2") fixedGear2 = go;
+
+        if (go->name == "start_button") {
+            machineStartButton = go;
+            ColliderComponent* col = go->AddComponent<ColliderComponent>();
+            col->halfSize = glm::vec3(0.0f);
+            col->isTrigger = true;
+        }
+
+        if (go->name.find("lights_") != std::string::npos) {
+            machineLights[go->name] = go;
+
+            LightComponent* lc = go->AddComponent<LightComponent>();
+            lc->type = Point;
+            lc->ambient = glm::vec3(0.1f, 0.05f, 0.0f);
+            lc->diffuse = glm::vec3(1.0f, 0.4f, 0.0f);
+            lc->specular = glm::vec3(1.0f, 0.4f, 0.0f);
+            lc->constant = 1.0f;
+            lc->linear = 0.22f;
+            lc->quadratic = 0.20f;
+
+            if (go->name == "lights_2" || go->name == "lights_5") {
+                lc->isOn = true;
+            }
+            else {
+                lc->isOn = false;
+            }
+        }
+
+        if (go->name == "MachineSlot_1" || go->name == "MachineSlot_2" || go->name == "MachineSlot_3") {
+            ColliderComponent* col = go->AddComponent<ColliderComponent>();
+            col->halfSize = glm::vec3(0.0f);
+            col->isTrigger = true;
+
+            PuzzleSlot slot;
+            slot.slotObject = go;
+            slot.expectedObject = nullptr;
+            slot.targetRotation = glm::vec3(90.0f, 0.0f, 0.0f);
+
+            machineSlotsMap[go] = slot;
+            spdlog::info("Skonfigurowano slot maszyny: {}", go->name);
+        }
+        });
 
     GameObject * bossCapsule = bossCapsuleModel->Instantiate(*scena, nullptr, nullptr);
     bossCapsule->name = "BossCapsule";
@@ -3142,6 +3511,8 @@ void createMainRooom(Scene* scena) {
     cup3->GetComponent<TransformComponent>()->scale    = glm::vec3{ 0.25 };
     cup3->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -55.500, 0.0f };
     cup3->GetComponent<TransformComponent>()->position = glm::vec3{ 0.460, 0.630, -0.210  };
+
+    SpawnGearReward(scena, glm::vec3(28.0f, 2.0f, -183.0f), "Gear_MainRoom");
 }
 
 void createNuclearRooom(Scene* scena) {
