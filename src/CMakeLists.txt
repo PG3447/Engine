@@ -9,7 +9,8 @@ file(GLOB_RECURSE SOURCE_FILES
 file(GLOB_RECURSE HEADER_FILES 
 	 *.h
 	 *.hpp
-	 *.tpp)
+	 *.tpp
+	 *.ipp)
 	 
 # Search for the assets files
 file(GLOB_RECURSE ASSETS_FILES 
