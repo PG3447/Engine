@@ -275,6 +275,7 @@ void createMainRooom(Scene* scena);
 void createNuclearRooom(Scene* scena);
 void createCrematorium(Scene* scena);
 void createRentgenRoom(Scene* scena);
+void createTrigger(Scene* scena);
 
 void ChangeScene(SceneManager* sceneManager, ECS*& ecs)
 {
@@ -539,6 +540,7 @@ int main(int, char**)
     createRentgenRoom(scena1);
     createRentgenCorridor(scena1);
     createCrematoriumCorridor(scena1);
+    createTrigger(scena1);
 
     ecs->GetSystem<NavMeshSystem>()->Bake(*scena1);
 

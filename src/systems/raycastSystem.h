@@ -22,6 +22,8 @@
 
 class RaycastSystem : public System {
 public:
+    GameObject* selectedObject = nullptr;
+
     RaycastSystem(ECS& ecs)
             : ecs_(ecs)
     {

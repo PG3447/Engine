@@ -229,7 +229,6 @@ struct SpriteComponent : Component {
 };
 
 
-
 struct ColliderComponent : Component {
     static constexpr uint64_t ComponentBit = 1ull << 5;
 
@@ -243,6 +242,9 @@ struct ColliderComponent : Component {
     bool affectsNavMesh = false;
     bool isWalkable = false;
     
+    std::function<void(GameObject* other)> onTriggerEnter;
+    std::function<void(GameObject* other)> onTriggerExit;
+
     const char* GetTypeName() const override { return "Collider"; }
 
     void OnEnable(GameObject* owner) override;
@@ -276,6 +278,18 @@ struct ColliderComponent : Component {
 
     void Recalculate(GameObject* owner);
 
+    void OnTriggerEnter(GameObject* other)
+    {
+        if (onTriggerEnter)
+            onTriggerEnter(other);
+    }
+
+    void OnTriggerExit(GameObject* other)
+    {
+        if (onTriggerExit)
+            onTriggerExit(other);
+    }
+    
 };
 
 enum LightType {

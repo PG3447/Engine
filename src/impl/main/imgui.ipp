@@ -25,7 +25,7 @@ bool GameObjectMatchesFilter(GameObject* obj, const ImGuiTextFilter& filter)
     return false;
 }
 
-void ShowGameObjectTree(GameObject* obj, ImGuiTextFilter& filter)
+void ShowGameObjectTree(Scene* activeScene, GameObject* obj, ImGuiTextFilter& filter)
 {
     if (!obj) return;
 
@@ -49,11 +49,14 @@ void ShowGameObjectTree(GameObject* obj, ImGuiTextFilter& filter)
     bool opened = ImGui::TreeNodeEx((void*)obj, flags, "%s", displayName);
 
     if (ImGui::IsItemClicked())
+    {
         selectedGameObject = obj;
+        activeScene->GetECS().GetSystem<RaycastSystem>()->selectedObject = selectedGameObject;
+    }
 
     if (opened) {
         for (GameObject* child : obj->GetChildren())
-            ShowGameObjectTree(child, filter);
+            ShowGameObjectTree(activeScene, child, filter);
         ImGui::TreePop();
     }
 }
@@ -233,11 +236,12 @@ void imgui_render(SceneManager& sceneManager)
     ImGui::Separator();
     ImGui::Text("Hierarchy");
     gameObjectFilter.Draw("Filtruj po nazwie", 200.0f);
-    ShowGameObjectTree(sceneManager.GetActiveScene()->GetRoot(), gameObjectFilter);
+    ShowGameObjectTree(activeScene, sceneManager.GetActiveScene()->GetRoot(), gameObjectFilter);
 
     if (selectedGameObject) {
         ImGui::Separator();
         ImGui::Text("Selected Entity: %s", selectedGameObject->name.c_str());
+
 
         if (ImGui::BeginMenu("Add Component"))
         {

@@ -1,9 +1,30 @@
+struct Room
+{
+    uint16_t id;
+    std::string name;
+    glm::vec3 position = glm::vec3(0.0);
+    glm::vec3 halfSize = glm::vec3(1.0);
+    std::vector<LightComponent*> lights;
+    std::vector<bool> savedStates;
+    std::set<GameObject*> occupants;
+};
+
+std::vector<Room> roomsLights;
+
 void createFirstRoom(Scene* scena1) {
     floorModel = std::make_unique<Prefab>("res/models/number_floor.glb");
     wallModel = std::make_unique<Prefab>("res/models/wall.glb");
     wallModel2 = std::make_unique<Prefab>("res/models/wall2.glb");
     wallModel3 = std::make_unique<Prefab>("res/models/wall3.glb");
 
+    roomsLights.resize(2);
+
+    Room lazienka;
+    lazienka.id = 0;
+    lazienka.name = "Lazienka";
+    lazienka.position = glm::vec3(0.0, 0.0, -54.0);
+    lazienka.halfSize = glm::vec3(40.0, 30.0, 46.5);
+    roomsLights[lazienka.id] = lazienka;
     // Podloga i sufit
     GameObject* floor = CreateStaticObject(scena1, floorModel.get(), nullptr,
         "PodlogawLazience", glm::vec3(25, 0, -60), glm::vec3(50, 1, 50));
@@ -188,6 +209,13 @@ void createFirstRoom(Scene* scena1) {
 }
 
 void createMainRooom(Scene* scena) {
+
+    Room mainRoom;
+    mainRoom.id = 1;
+    mainRoom.name = "MainRoom";
+    mainRoom.position = glm::vec3(0.0, 0.0, -80.0);
+    mainRoom.halfSize = glm::vec3(40.0, 30.0, 46.5);
+    roomsLights[mainRoom.id] = mainRoom;
     // Podloga i sufit
     CreateStaticObject(scena, floorModel.get(), nullptr, "PodlogaMainRoom", glm::vec3(23.300, 0, -146.390), glm::vec3(37.070, 1, 43.540));
     CreateStaticObject(scena, floorModel.get(), nullptr, "SufitMainRoom", glm::vec3(23.300, 22, -144.490), glm::vec3(37.070, 1, 43.820));
@@ -280,12 +308,16 @@ void createMainRooom(Scene* scena) {
             lc->constant = 1.0f;
             lc->linear = 0.22f;
             lc->quadratic = 0.20f;
+            roomsLights[mainRoom.id].lights.push_back(lc);
+           
 
             if (go->name == "lights_2" || go->name == "lights_5") {
                 lc->isOn = true;
+                roomsLights[mainRoom.id].savedStates.push_back(true);
             }
             else {
                 lc->isOn = false;
+                roomsLights[mainRoom.id].savedStates.push_back(false);
             }
         }
 
@@ -988,3 +1020,99 @@ void createCrematoriumCorridor(Scene* scena) {
     );
     unlockedDoors.insert(hingeDrzwiDoRentgen);
 }
+
+void RoomPlayerEntered(int roomIndex, GameObject* player)
+{
+    auto& room = roomsLights[roomIndex];
+    bool wasEmpty = room.occupants.empty();
+
+    room.occupants.insert(player);
+
+    if (wasEmpty)
+    {
+        if (room.savedStates.size() == room.lights.size())
+        {
+            for (size_t j = 0; j < room.lights.size(); j++)
+                room.lights[j]->isOn = room.savedStates[j];
+        }
+    }
+}
+
+void RoomPlayerExited(int roomIndex, GameObject* player)
+{
+    auto& room = roomsLights[roomIndex];
+    room.occupants.erase(player);
+
+    if (room.occupants.empty())
+    {
+        room.savedStates.resize(room.lights.size());
+        for (size_t j = 0; j < room.lights.size(); j++)
+        {
+            room.savedStates[j] = room.lights[j]->isOn;
+            room.lights[j]->isOn = false;
+        }
+    }
+}
+
+void createTriggerRoom(Scene* scena, int roomId, std::string name, glm::vec3 position, glm::vec3 halfSize)
+{
+    GameObject* triggerRoom = scena->CreateGameObject(nullptr);
+    triggerRoom->name = name + "trigger";
+
+    TransformComponent* transform = triggerRoom->GetComponent<TransformComponent>();
+    transform->position = position;
+
+    ColliderComponent* colliderComnponent = triggerRoom->AddComponent<ColliderComponent>();
+    colliderComnponent->halfSize = halfSize;
+    colliderComnponent->isTrigger = true;
+    colliderComnponent->onTriggerEnter = [roomId](GameObject* other)
+        {
+            if (other->name == "Gracz1" || other->name == "Gracz2")
+            {
+                spdlog::info("{} wszed³ do pomieszczenia {}", other->name, roomId);
+                RoomPlayerEntered(roomId, other);
+            }
+
+        };
+
+    colliderComnponent->onTriggerExit = [roomId](GameObject* other)
+        {
+            if (other->name == "Gracz1" || other->name == "Gracz2")
+            {
+                spdlog::info("{} wyszed³ z pomieszczenia {}", other->name, roomId);
+                RoomPlayerExited(roomId, other);
+            }
+
+        };
+}
+
+
+void InitializeRoomLights(int startingRoomId)
+{
+    for (size_t i = 0; i < roomsLights.size(); i++)
+    {
+        auto& room = roomsLights[i];
+
+        if ((int)i == startingRoomId)
+            continue;
+
+        room.savedStates.resize(room.lights.size());
+        for (size_t j = 0; j < room.lights.size(); j++)
+        {
+            room.savedStates[j] = room.lights[j]->isOn;
+            room.lights[j]->isOn = false;
+        }
+    }
+}
+
+void createTrigger(Scene* scena)
+{
+
+    for (auto& room : roomsLights)
+    {
+        createTriggerRoom(scena, room.id, room.name, room.position, room.halfSize);
+    }
+
+    InitializeRoomLights(0);
+}
+

@@ -245,6 +245,8 @@ void PhysicsSystem::FixedUpdate(float fixedDeltaTime)
     auto& coTransforms = std::get<0>(colliderOnlyQuery->componentsVectors);
     auto& coColliders = std::get<1>(colliderOnlyQuery->componentsVectors);
 
+    std::set<std::pair<GameObject*, GameObject*>> currentFrameTriggers;
+
     for (size_t i = 0; i < query->gameobjects.size(); i++) {
         auto* rb = rigidbodies[i];
         auto* cA = colliders[i];
@@ -263,6 +265,19 @@ void PhysicsSystem::FixedUpdate(float fixedDeltaTime)
 
             if (!AABB(posA, cA->halfSize, posB, cB->halfSize))
                 continue;
+
+            if (cB->isTrigger)
+            {
+                auto pairKey = std::make_pair(query->gameobjects[i], colliderOnlyQuery->gameobjects[j]);
+                currentFrameTriggers.insert(pairKey);
+
+                if (activeTriggers.find(pairKey) == activeTriggers.end())
+                {
+                    cB->OnTriggerEnter(query->gameobjects[i]);
+                    activeTriggers.insert(pairKey);
+                }
+                continue;
+            }
 
             glm::vec3 delta = posA - posB;
 
@@ -288,6 +303,22 @@ void PhysicsSystem::FixedUpdate(float fixedDeltaTime)
                 rb->previousPosition.z = rb->physicsPosition.z;
                 rb->velocity.z = -rb->velocity.z * rb->bounce;
             }
+        }
+    }
+
+    for (auto it = activeTriggers.begin(); it != activeTriggers.end(); )
+    {
+        if (currentFrameTriggers.find(*it) == currentFrameTriggers.end())
+        {
+            auto* triggerCollider = it->second->GetComponent<ColliderComponent>();
+            if (triggerCollider)
+                triggerCollider->OnTriggerExit(it->first);
+
+            it = activeTriggers.erase(it);
+        }
+        else
+        {
+            ++it;
         }
     }
 }
