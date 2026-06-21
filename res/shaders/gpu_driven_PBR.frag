@@ -243,7 +243,7 @@ vec3 CalcPointLightPBR(in GPULight light, vec3 normal, vec3 viewDir, vec3 F0, ve
     float distance = length(light.position.xyz - FragPos);
     
     float attenuation = 1.0;
-    float range = light.params2.w;
+    //float range = light.params2.w;
     attenuation = 1.0 / (distance * distance);
 //    if (range == 0.0f)
 //    {
@@ -287,7 +287,7 @@ vec3 CalcSpotLightPBR(in GPULight light, vec3 normal, vec3 viewDir, vec3 F0, vec
     
     //float attenuation = 1.0 / (lights[i].params1.x + lights[i].params1.y * distance + lights[i].params1.z * distance * distance);
     float attenuation = 1.0;
-    float range = light.params2.w;
+    //float range = light.params2.w;
     attenuation = 1.0 / (distance * distance);
 //    if (range == 0.0f)
 //    {

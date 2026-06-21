@@ -84,6 +84,7 @@ bool processCameraInput(ECS& ecs, CameraComponent& cam, TransformComponent& play
     const std::string& right);
 
 bool processCameraGamepad(ECS& ecs, CameraComponent& cam, TransformComponent& transformCamera, TransformComponent& playerTransform, int gamepad_id);
+void connectAllModels();
 
 void imgui_begin();
 void imgui_render(SceneManager& sceneManager);
@@ -140,7 +141,6 @@ SurfaceDecorationSystem decorSystem;
 GLuint VBO;
 GLuint VAO;
 GLuint texture;
-std::unique_ptr<Prefab> sunModel;
 std::unique_ptr<Shader> skyboxShader;
 //std::unique_ptr<Shader> reflectShader;
 //std::unique_ptr<Shader> refractShader;
@@ -262,6 +262,7 @@ std::unique_ptr<Prefab> groundModel;
 
 std::unique_ptr<Prefab> koparkaModel;
 
+#include "impl/main/list_prefab.ipp";
 
 unsigned int triangleVAO = 0;
 unsigned int triangleVBO = 0;
@@ -378,636 +379,13 @@ GameObject* CreateRaycastTestObject(
     return go;
 }
 
+#include "impl/main/process_input.ipp"
 
-bool processCameraInput(ECS& ecs, CameraComponent& cam, TransformComponent& playerTransform,
-    const std::string& up,
-    const std::string& down,
-    const std::string& left,
-    const std::string& right)
-{
-    const auto& hid = ecs.GetSystem<HID>();
-    glm::vec3 dir(0.0f);
-
-    glm::vec3 camFront = cam.state.Front;
-    camFront.y = 0.0f;
-    camFront = glm::normalize(camFront);
-
-    glm::vec3 camRight = cam.state.Right;
-    camRight.y = 0.0f;
-    camRight = glm::normalize(camRight);
-
-    if (hid->is_action_pressed(up))    dir += camFront;
-    if (hid->is_action_pressed(down))  dir -= camFront;
-    if (hid->is_action_pressed(left))  dir -= camRight;
-    if (hid->is_action_pressed(right)) dir += camRight;
-
-    if (glm::length(dir) > 0.0f) {
-        dir = glm::normalize(dir);
-        playerTransform.position += dir * MovementSpeed * 0.04f; //deltaTime; aktualnie fixedDeltaTime
-        playerTransform.isDirty = true;
-        cam.dirty = true;
-        return true;
-    }
-    return false;
-}
-
-
-const float sensitivityCamera = 1200.0f;
-
-void processCameraMouse(ECS& ecs, CameraComponent& cam, TransformComponent& transformCamera, TransformComponent& playerTransform)
-{
-    const auto& hid = ecs.GetSystem<HID>();
-    float dx = hid->get_mouse_dx();
-    float dy = hid->get_mouse_dy();
-    const float epsilon = 0.01f;
-
-    if (glm::abs(dx) < epsilon && glm::abs(dy) < epsilon)
-        return;
-
-    playerTransform.rotation.y -= dx * sensitivityCamera / 600.0f * 0.04f;// deltaTime; aktualnie fixedDeltaTime
-    playerTransform.isDirty = true;
-
-    CameraHelper::ProcessMouseMovement(cam, transformCamera, 0.0f, dy);
-}
-
-float lookDeadzone = 0.0f;
-
-bool processCameraGamepad(ECS& ecs, CameraComponent& cam, TransformComponent& transformCamera, TransformComponent& playerTransform, int gamepad_id)
-{
-    const auto& hid = ecs.GetSystem<HID>();
-
-    float lx = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_LEFT_X, gamepad_id);
-    float ly = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_LEFT_Y, gamepad_id);
-
-    glm::vec3 dir(0.0f);
-
-    glm::vec3 camFront = cam.state.Front;
-    camFront.y = 0.0f;
-    camFront = glm::normalize(camFront);
-
-    glm::vec3 camRight = cam.state.Right;
-    camRight.y = 0.0f;
-    camRight = glm::normalize(camRight);
-
-    dir += camFront * (-ly);
-    dir += camRight * lx;
-
-    bool isMoving = false;
-    if (glm::length(dir) > 0.0f) {
-        dir = glm::normalize(dir);
-        playerTransform.position += dir * MovementSpeed * 0.04f;// deltaTime; aktualnie fixedDeltaTime
-        playerTransform.isDirty = true;
-        cam.dirty = true;
-        isMoving = true;
-    }
-
-    float rx = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_RIGHT_X, gamepad_id);
-    float ry = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_RIGHT_Y, gamepad_id);
-
-
-    if (lookDeadzone <= 0.01f)
-        lookDeadzone += 0.0005f;
-    else if (glm::abs(rx) < lookDeadzone && glm::abs(ry) < lookDeadzone)
-        return isMoving;
-
-    playerTransform.rotation.y -= rx * sensitivityCamera / 10.0f * deltaTime;// deltaTime; aktualnie fixedDeltaTime
-    playerTransform.isDirty = true;
-
-    CameraHelper::ProcessMouseMovement(cam, transformCamera, 0.0f, ry * sensitivityCamera * deltaTime);
-    return isMoving;
-}
-
-
-void connectAllModels();
 void LoadPlayerAnimations();
 void createRentgenCorridor(Scene * scena);
 void createCrematoriumCorridor(Scene * scena);
 
-struct PuzzleSlot {
-    glm::vec3 targetRotation;
-    GameObject* occupant       = nullptr;
-    GameObject* slotObject     = nullptr;
-    GameObject* expectedObject = nullptr;
-    GameObject* lightObject    = nullptr;
-};
-
-GameObject* puzzleRewardObject = nullptr;
-
-
-void OnPuzzleSolved(Scene* scene) {
-    spdlog::info("Puzzle rozwiązany!");
-
-    // Zabezpieczenie przed wielokrotnym wywołaniem
-    if (puzzleRewardObject != nullptr) return;
-
-    if (placeholderModel == nullptr) {
-        spdlog::error("placeholderModel nie zaladowany!");
-        return;
-    }
-
-    puzzleRewardObject = placeholderModel->Instantiate(*scene, nullptr, nullptr);
-    puzzleRewardObject->name = "PuzzleReward";
-
-    TransformComponent* tr = puzzleRewardObject->GetComponent<TransformComponent>();
-    tr->position = glm::vec3(0.0f, 5.0f, -270.0f);
-    tr->scale    = glm::vec3(3.0f);
-    tr->isDirty  = true;
-
-    RigidbodyComponent* rb = puzzleRewardObject->AddComponent<RigidbodyComponent>();
-    rb->useGravity = false;
-    rb->isStatic   = true;
-
-    puzzleRewardObject->AddComponent<ColliderComponent>();
-}
-
-std::unordered_map<GameObject*, PuzzleSlot> puzzleSlotsMap; // klucz = slotObject
-std::unordered_map<GameObject*, glm::vec3>  objectOriginalRotations;
-
-bool IsPuzzleSolved() {
-    if (puzzleSlotsMap.empty()) return false;
-    for (auto& [slotGO, slot] : puzzleSlotsMap) {
-        if (slot.occupant == nullptr) return false;             // slot pusty
-        if (slot.occupant != slot.expectedObject) return false; // zła kostka
-    }
-    return true;
-}
-
-void HandlePlayerInteraction(
-    ECS& ecs,
-    const std::string& inputAction,
-    RaycastComponent* playerRaycast,
-    GameObject* playerCamera,
-    GameObject*& myHeldObject,
-    GameObject* otherPlayerHeldObject,
-    Scene* scene,
-    std::unordered_map<GameObject*, float>& rotatingObjects,
-    std::unordered_set<GameObject*>& rotatingInProgress,
-    float& outShakeTimer,
-    AnimatorComponent* playerAnimator,
-    Prefab* playerPrefab,
-    AudioSystem* audioSystem = nullptr,
-    FMOD::Sound* soundPaper = nullptr,
-    FMOD::Sound* soundDoorOpen = nullptr,
-    FMOD::Sound* soundDoorCloseStart = nullptr,
-    FMOD::Sound* soundBtnClick = nullptr,
-    FMOD::Sound* soundUnlock = nullptr,
-    FMOD::Sound* soundPickup = nullptr,
-    FMOD::Sound* soundInsert = nullptr,
-    FMOD::Sound* soundDoorLocked = nullptr,
-    FMOD::Sound* soundPuzzleSolved = nullptr
-) {
-    if (!ecs.GetSystem<HID>()->is_action_just_pressed(inputAction)) return;
-    //upuszczanie
-    if (myHeldObject != nullptr) {
-        TransformComponent* camTr   = playerCamera->GetComponent<TransformComponent>();
-        TransformComponent* heldTr  = myHeldObject->GetComponent<TransformComponent>();
-        CameraComponent*    camComp = playerCamera->GetComponent<CameraComponent>();
-
-        // Sprawdź czy raycast widzi slot
-        PuzzleSlot* targetSlot = nullptr;
-        if (playerRaycast->anyHit()) {
-            RaycastHit hit = playerRaycast->closestHit();
-            if (hit.hitObject && puzzleSlotsMap.count(hit.hitObject)) {
-                PuzzleSlot& slot = puzzleSlotsMap[hit.hitObject];
-                if (slot.occupant == nullptr)   // tylko wolny slot
-                    targetSlot = &slot;
-            }
-        }
-
-        myHeldObject->SetParent(scene->GetRoot());
-
-        if (targetSlot != nullptr) {
-            // ── Gracz patrzy na wolny slot ──
-            TransformComponent* slotTr = targetSlot->slotObject->GetComponent<TransformComponent>();
-            heldTr->position = slotTr->position;
-            heldTr->rotation = targetSlot->targetRotation;
-            heldTr->isDirty  = true;
-            targetSlot->occupant = myHeldObject;
-
-            if (audioSystem && soundInsert) {
-                audioSystem->playSound(soundInsert);
-            }
-
-            if (IsPuzzleSolved()) {
-                static bool rentgenPuzzleSolvedPlayed = false;
-                if (!rentgenPuzzleSolvedPlayed && audioSystem && soundPuzzleSolved) {
-                    audioSystem->playSound(soundPuzzleSolved);
-                    rentgenPuzzleSolvedPlayed = true;
-                }
-
-                OnPuzzleSolved(scene);
-            }
-
-            if (auto rb = myHeldObject->GetComponent<RigidbodyComponent>()) {
-                rb->useGravity = false;
-                rb->isStatic   = true;
-                rb->velocity = glm::vec3(0.0f);
-                rb->acceleration = glm::vec3(0.0f);
-            }
-        }
-        else {
-            // ── Gracz patrzy gdzie indziej — normalne upuszczenie ──
-            heldTr->position = TransformHelper::getGlobalPosition(*camTr) + (camComp->state.Front * 5.0f);
-            heldTr->rotation = objectOriginalRotations.count(myHeldObject)
-                                   ? objectOriginalRotations[myHeldObject]
-                                   : glm::vec3(0.0f);
-            heldTr->isDirty  = true;
-
-            if (auto rb = myHeldObject->GetComponent<RigidbodyComponent>()) {
-                rb->useGravity = true;
-                rb->isStatic   = false;
-                rb->previousPosition = heldTr->position;
-                rb->physicsPosition = heldTr->position;
-                rb->velocity   = glm::vec3(0.0f);
-                rb->acceleration   = glm::vec3(0.0f);
-            }
-        }
-
-        myHeldObject = nullptr;
-    }
-    else if (playerRaycast->anyHit()) {
-        RaycastHit hit = playerRaycast->closestHit();
-        if (hit.hitObject != nullptr) {
-            // Obracanie
-            if (rotatableObjects.count(hit.hitObject)) {
-                if (!rotatingInProgress.count(hit.hitObject)) {
-                    rotatingObjects[hit.hitObject] = 60.0f;
-                    rotatingInProgress.insert(hit.hitObject);
-                    PlayerAnimationHelper::TriggerAction(playerAnimator, playerPrefab, PlayerAnimationHelper::INTERACT_ANIM_INDEX);
-
-                    if (audioSystem && soundPaper) {
-                        audioSystem->playSound(soundPaper);
-                    }
-                }
-            }
-            // PAIN
-            if (majorDoors.count(hit.hitObject)) {
-                if (can_open_door_1) {
-                    for (GameObject* door : majorDoors) {
-                        TransformComponent* t = door->GetComponent<TransformComponent>();
-                        if (t) {
-                            t->position = glm::vec3(-1000.0f, -1000.0f, -1000.0f);
-                            t->isDirty = true;
-                        }
-                    }
-                }
-                else {
-                    outShakeTimer = SHAKE_DURATION;
-                    if (audioSystem && soundDoorLocked) {
-                        audioSystem->playSound(soundDoorLocked);
-                    }
-                }
-                PlayerAnimationHelper::TriggerAction(playerAnimator, playerPrefab, PlayerAnimationHelper::INTERACT_ANIM_INDEX);
-            }
-            // Otwieranie drzwi
-            else if (toiletDoorsMap.count(hit.hitObject)) {
-                DoorState& state = toiletDoorsMap[hit.hitObject];
-                if (state.requiresUnlock && !can_open_door_1) {
-                    outShakeTimer = SHAKE_DURATION;
-                    if (audioSystem && soundDoorLocked) audioSystem->playSound(soundDoorLocked);
-                }
-                else if (state.canBeClicked) {
-                    state.isOpen = !state.isOpen;
-                    state.targetAngle = state.isOpen ? state.openAngle : state.closedAngle;
-                    if (auto col = hit.hitObject->GetComponent<ColliderComponent>()) {
-                        col->halfSize = state.isOpen ? state.openHalfSize : state.closedHalfSize;
-                        col->offset   = state.isOpen ? state.openOffset   : state.originalOffset;
-                    }
-                    PlayerAnimationHelper::TriggerAction(playerAnimator, playerPrefab, PlayerAnimationHelper::INTERACT_ANIM_INDEX);
-
-                    if (state.isOpen) {
-                        if (audioSystem && soundDoorOpen) {
-                            audioSystem->playSound(soundDoorOpen);
-                        }
-                    }
-                    else {
-                        if (audioSystem && soundDoorCloseStart) {
-                            audioSystem->playSound(soundDoorCloseStart);
-                        }
-                    }
-                }
-            }
-            // Otwieranie szafki
-            else if (cabinetsMap.count(hit.hitObject)) {
-                if (!isCabinetButtonPushed) {
-                    isCabinetButtonPushed = true;
-                    CabinetState& state   = cabinetsMap[hit.hitObject];
-                    state.isOpen          = true;
-                    state.targetAngle     = 120.0f;
-
-                    if (audioSystem) {
-                        if (soundBtnClick) audioSystem->playSound(soundBtnClick);
-                        if (soundUnlock)   audioSystem->playSound(soundUnlock);
-                    }
-
-                    for (GameObject* hinge : mainRoomDoors) {
-                        if (hinge && toiletDoorsMap.count(hinge)) {
-                            DoorState& dState  = toiletDoorsMap[hinge];
-                            dState.isOpen      = true;
-                            dState.targetAngle = dState.openAngle;
-
-                            if (auto col = hinge->GetComponent<ColliderComponent>()) {
-                                col->halfSize = glm::vec3(0.0f);
-                            }
-                        }
-                    }
-                    PlayerAnimationHelper::TriggerAction(playerAnimator, playerPrefab, PlayerAnimationHelper::INTERACT_ANIM_INDEX);
-                }
-            }
-            if (puzzleSlotsMap.count(hit.hitObject)) {
-                PuzzleSlot& slot = puzzleSlotsMap[hit.hitObject];
-                if (slot.occupant != nullptr && slot.occupant != otherPlayerHeldObject) {
-                    myHeldObject = slot.occupant;
-                    slot.occupant = nullptr;
-
-                    myHeldObject->SetParent(playerCamera);
-
-                    TransformComponent* heldTr = myHeldObject->GetComponent<TransformComponent>();
-                    heldTr->position = glm::vec3(1.0f, -1.0f, -3.0f);
-                    heldTr->rotation = glm::vec3(0.0f);
-                    heldTr->isDirty  = true;
-
-                    if (auto rb = myHeldObject->GetComponent<RigidbodyComponent>()) {
-                        rb->useGravity = false;
-                        rb->isStatic   = true;
-                    }
-
-                    if (audioSystem && soundPickup) audioSystem->playSound(soundPickup);
-
-                    PlayerAnimationHelper::TriggerAction(playerAnimator, playerPrefab, PlayerAnimationHelper::PICKUP_ANIM_INDEX);
-                }
-            }
-            // Podnoszenie (zabezpieczone przed wyrwaniem obiektu drugiemu graczowi)
-            else if (pickupObjects.count(hit.hitObject) && hit.hitObject != otherPlayerHeldObject) {
-                myHeldObject = hit.hitObject;
-
-                for (auto& [slotGO, slot] : puzzleSlotsMap) {
-                    if (slot.occupant == myHeldObject) {
-                        puzzleSlotsMap[slotGO].occupant = nullptr;
-                        break;
-                    }
-                }
-
-                myHeldObject->SetParent(playerCamera);
-
-                TransformComponent* heldTr = myHeldObject->GetComponent<TransformComponent>();
-                heldTr->position = glm::vec3(1.0f, -1.0f, -3.0f);
-                heldTr->rotation = glm::vec3(0.0f);
-                heldTr->isDirty  = true;
-
-                if (auto rb = myHeldObject->GetComponent<RigidbodyComponent>()) {
-                    rb->useGravity = false;
-                    rb->isStatic   = true;
-                }
-
-                if (audioSystem && soundPickup) audioSystem->playSound(soundPickup);
-
-                PlayerAnimationHelper::TriggerAction(playerAnimator, playerPrefab, PlayerAnimationHelper::PICKUP_ANIM_INDEX);
-            }
-            // zagadka z trumnami
-            else if (hit.hitObject->name.find("Coffin") != std::string::npos) {
-                crematoriumPuzzle.ToggleCoffin(hit.hitObject);
-                PlayerAnimationHelper::TriggerAction(playerAnimator, playerPrefab, PlayerAnimationHelper::INTERACT_ANIM_INDEX);
-            }
-        }
-    }
-}
-
-void HandleAltRotate(
-    ECS& ecs,
-    const std::string& inputAction,
-    RaycastComponent* playerRaycast,
-    std::unordered_map<GameObject*, float>& rotatingObjects,
-    std::unordered_set<GameObject*>& rotatingInProgress,
-    AudioSystem* audioSystem = nullptr,
-    FMOD::Sound* soundPaper = nullptr
-) {
-    if (!ecs.GetSystem<HID>()->is_action_just_pressed(inputAction)) return;
-    if (!playerRaycast->anyHit()) return;
-
-    RaycastHit hit = playerRaycast->closestHit();
-    if (hit.hitObject && rotatableObjects.count(hit.hitObject)) {
-        if (!rotatingInProgress.count(hit.hitObject)) {
-            rotatingObjects[hit.hitObject] = -60.0f;
-            rotatingInProgress.insert(hit.hitObject);
-
-            if (audioSystem && soundPaper) {
-                audioSystem->playSound(soundPaper);
-            }
-        }
-    }
-}
-
-void UpdateDoors(float deltaTime, AudioSystem* audioSystem = nullptr, FMOD::Sound* soundClosed = nullptr) {
-    float doorAnimSpeed = 180.0f;
-    for (auto& [doorObj, state] : toiletDoorsMap) {
-        if (std::abs(state.currentAngle - state.targetAngle) > 0.1f) {
-            float direction = (state.targetAngle > state.currentAngle) ? 1.0f : -1.0f;
-            state.currentAngle += direction * doorAnimSpeed * deltaTime;
-
-            bool justFinished = false;
-            if ((direction > 0.0f && state.currentAngle > state.targetAngle) ||
-                (direction < 0.0f && state.currentAngle < state.targetAngle)) {
-                state.currentAngle = state.targetAngle;
-                justFinished = true;
-            }
-
-            TransformComponent* hingeTr = state.hinge->GetComponent<TransformComponent>();
-            if (hingeTr) {
-                hingeTr->rotation.y = state.currentAngle;
-                hingeTr->isDirty = true;
-            }
-
-            if (justFinished && !state.isOpen) {
-                if (audioSystem && soundClosed) {
-                    audioSystem->playSound(soundClosed);
-                }
-            }
-        }
-    }
-}
-
-void UpdateCabinets(float deltaTime) {
-    float animSpeed   = 180.0f;
-    float buttonSpeed = 5.0f;
-
-    for (auto& [buttonObj, state] : cabinetsMap) {
-        if (std::abs(state.currentAngle - state.targetAngle) > 0.1f) {
-            float direction = (state.targetAngle > state.currentAngle) ? 1.0f : -1.0f;
-            state.currentAngle += direction * animSpeed * deltaTime;
-
-            if ((direction > 0.0f && state.currentAngle > state.targetAngle) ||
-                (direction < 0.0f && state.currentAngle < state.targetAngle)) {
-                state.currentAngle = state.targetAngle;
-            }
-
-            if (state.leftDoor) {
-                TransformComponent* t = state.leftDoor->GetComponent<TransformComponent>();
-                if (t) { t->rotation.y = -state.currentAngle; t->isDirty = true; }
-            }
-            if (state.rightDoor) {
-                TransformComponent* t = state.rightDoor->GetComponent<TransformComponent>();
-                if (t) { t->rotation.y = state.currentAngle; t->isDirty = true; }
-            }
-        }
-
-        if (isCabinetButtonPushed && state.button) {
-            TransformComponent* btnTr = state.button->GetComponent<TransformComponent>();
-            btnTr->position = glm::mix(btnTr->position, state.buttonTargetPos, deltaTime * buttonSpeed);
-            if (glm::distance(btnTr->position, state.buttonTargetPos) > 0.01f) {
-                btnTr->isDirty = true;
-            }
-        }
-    }
-}
-GameObject* CreateInteractableDoor(Scene* scene, Prefab* prefab, Shader* shader,
-    const std::string& name,
-    const glm::vec3& position,
-    const glm::vec3& scale,
-    const glm::vec3& pivotOffset,
-    const glm::vec3& colliderHalfSize,
-    float openAngle,
-    float baseRotationY = 90.0f,
-    std::optional<glm::vec3> openColliderHalfSize = std::nullopt,
-    std::optional<glm::vec3> openColliderOffset   = std::nullopt,
-    std::optional<glm::vec3> closedOffsetAdjust   = std::nullopt) // NOWE
-{
-    GameObject* hinge  = scene->CreateGameObject(nullptr);
-    hinge->name        = "Hinge_" + name;
-    TransformComponent* hingeTr = hinge->AddComponent<TransformComponent>();
-    hingeTr->position  = position + pivotOffset;
-
-    GameObject* door   = prefab->Instantiate(*scene, hinge, shader);
-    door->name         = name;
-    TransformComponent* doorTr = door->GetComponent<TransformComponent>();
-    doorTr->scale      = scale;
-    doorTr->rotation   = glm::vec3(0.0f, baseRotationY, 0.0f);
-    doorTr->position   = -pivotOffset;
-
-    glm::vec3 closedOffset = -pivotOffset + closedOffsetAdjust.value_or(glm::vec3(0.0f)); // NOWE
-
-    ColliderComponent* col = hinge->AddComponent<ColliderComponent>();
-    col->halfSize       = colliderHalfSize;
-    col->offset         = closedOffset;
-    col->isWalkable     = false;
-    col->affectsNavMesh = true;
-
-    DoorState state;
-    state.hinge          = hinge;
-    state.openAngle      = openAngle;
-    state.closedAngle    = 0.0f;
-    state.currentAngle   = 0.0f;
-    state.targetAngle    = 0.0f;
-    state.originalOffset = closedOffset;
-    state.closedHalfSize = colliderHalfSize;
-    state.openHalfSize   = openColliderHalfSize.value_or(glm::vec3(1.0f, 10.0f, 1.0f));
-    state.openOffset     = openColliderOffset.value_or(glm::vec3(0.0f));
-    toiletDoorsMap[hinge] = state;
-    return hinge;
-}
-
-GameObject* CreateStaticObject(
-    Scene* scene,
-    Prefab* prefab,
-    Shader* shader,
-    const std::string& name,
-    const glm::vec3& position,
-    const glm::vec3& scale,
-    std::optional<glm::vec3> rotation         = std::nullopt,
-    std::optional<glm::vec3> colliderHalfSize = std::nullopt,
-    bool affectsNavMesh = false
-) {
-    GameObject* go = prefab->Instantiate(*scene, nullptr, shader);
-    go->name       = name;
-
-    TransformComponent* tr = go->GetComponent<TransformComponent>();
-    if (tr) {
-        tr->position = position;
-        tr->scale    = scale;
-        if (rotation.has_value())
-            tr->rotation = rotation.value();
-        tr->isDirty  = true;
-    }
-
-    ColliderComponent* col = go->AddComponent<ColliderComponent>();
-    if (colliderHalfSize.has_value())
-        col->halfSize = colliderHalfSize.value();
-    col->affectsNavMesh = affectsNavMesh;
-
-    return go;
-}
-
-GameObject* CreateCockroachLeader(
-    Scene& scene,
-    Prefab& prefab,
-    Shader* shader,
-    const glm::vec3& homePos,
-    float moveSpeed = 4.0f)
-{
-    GameObject* go = prefab.Instantiate(scene, nullptr, shader);
-    go->name       = "CockroachLeader";
-
-    auto* tr      = go->GetComponent<TransformComponent>();
-    tr->position  = homePos;
-    tr->scale     = glm::vec3(0.3f);
-    tr->isDirty   = true;
-
-    auto* col      = go->AddComponent<ColliderComponent>();
-    col->halfSize  = glm::vec3(0.3f, 0.2f, 0.3f);
-
-    auto* nav         = go->AddComponent<NavPathComponent>();
-    nav->state        = NavAgentState::ExternalControl;
-    nav->moveSpeed    = moveSpeed;
-    nav->idleTimeMax  = 0.0f;
-
-    auto* leader                = go->AddComponent<CockroachLeaderComponent>();
-    leader->homePosition        = homePos;
-    leader->homeRadius          = 15.0f;
-    leader->homeTimeRequired    = 8.0f;
-    leader->exploreRadius       = 50.0f;
-    leader->exploreDuration     = 20.0f;
-    leader->detectionRadius     = 25.0f;
-    leader->escapeRadius        = 35.0f;
-    leader->idleWanderRadius    = 8.0f;
-    leader->state               = LeaderState::Idle;
-
-    return go;
-}
-
-GameObject* CreateCockroachFollower(
-    Scene& scene,
-    Prefab& prefab,
-    Shader* shader,
-    GameObject* leaderGO,
-    const glm::vec3& spawnPos,
-    float moveSpeed = 4.5f)
-{
-    GameObject* go = prefab.Instantiate(scene, nullptr, shader);
-    go->name       = "CockroachFollower";
-
-    auto* tr      = go->GetComponent<TransformComponent>();
-    tr->position  = spawnPos;
-    tr->scale     = glm::vec3(0.25f);
-    tr->isDirty   = true;
-
-
-    auto* col      = go->AddComponent<ColliderComponent>();
-    col->halfSize  = glm::vec3(0.25f, 0.15f, 0.25f);
-
-    auto* nav        = go->AddComponent<NavPathComponent>();
-    nav->state       = NavAgentState::ExternalControl;
-    nav->moveSpeed   = moveSpeed;
-    nav->idleTimeMax = 0.0f;
-
-    auto* follower                  = go->AddComponent<CockroachFollowerComponent>();
-    follower->leaderGameObject      = leaderGO;
-    follower->followDistance        = 6.0f;
-    follower->followStopDistance    = 2.0f;
-    follower->idleWanderRadius      = 6.0f;
-    follower->state                 = FollowerState::Follow;
-
-    return go;
-}
+#include "impl/main/logic_update.ipp"
 
 void createFirstRoom(Scene* scena1);
 void createMainRooom(Scene* scena);
@@ -1431,6 +809,8 @@ int main(int, char**)
     const glm::vec2 CH1_CENTER(480.0f,  540.0f);
     const glm::vec2 CH2_CENTER(1440.0f, 540.0f);
 
+    bool isCrematoriumGearSpawned = false;
+
     // Main loop
     /*decorSystem.LoadInstancesFromYaml(
     "res/level1_decorations.yaml",
@@ -1454,9 +834,9 @@ int main(int, char**)
         }
 
         bool allFilled = !puzzleSlotsMap.empty() && std::all_of(
-    puzzleSlotsMap.begin(), puzzleSlotsMap.end(),
-    [](const auto& pair) { return pair.second.occupant != nullptr; }
-);
+            puzzleSlotsMap.begin(), puzzleSlotsMap.end(),
+            [](const auto& pair) { return pair.second.occupant != nullptr; }
+        );
 
         for (auto& [slotGO, slot] : puzzleSlotsMap) {
             if (slot.lightObject == nullptr) continue;
@@ -1464,19 +844,21 @@ int main(int, char**)
             if (light == nullptr) continue;
 
             if (!allFilled) {
-                light->isOn    = false;
+                light->isOn = false;
                 light->diffuse = glm::vec3(0.0f);
                 light->ambient = glm::vec3(0.0f);
                 light->specular = glm::vec3(0.0f);
-            } else if (slot.occupant == slot.expectedObject) {
-                light->isOn     = true;
-                light->diffuse  = glm::vec3(0.0f, 1.0f, 0.0f);
-                light->ambient  = glm::vec3(0.0f, 0.1f, 0.0f);
+            }
+            else if (slot.occupant == slot.expectedObject) {
+                light->isOn = true;
+                light->diffuse = glm::vec3(0.0f, 1.0f, 0.0f);
+                light->ambient = glm::vec3(0.0f, 0.1f, 0.0f);
                 light->specular = glm::vec3(0.0f, 0.5f, 0.0f);
-            } else {
-                light->isOn     = true;
-                light->diffuse  = glm::vec3(1.0f, 0.0f, 0.0f);
-                light->ambient  = glm::vec3(0.1f, 0.0f, 0.0f);
+            }
+            else {
+                light->isOn = true;
+                light->diffuse = glm::vec3(1.0f, 0.0f, 0.0f);
+                light->ambient = glm::vec3(0.1f, 0.0f, 0.0f);
                 light->specular = glm::vec3(0.5f, 0.0f, 0.0f);
             }
         }
@@ -1526,6 +908,28 @@ int main(int, char**)
                     else if (slot.occupant != nullptr)
                         hintText = "Pull out";
                 }
+                else if (machineSlotsMap.count(hit.hitObject)) {
+                    PuzzleSlot& slot = machineSlotsMap[hit.hitObject];
+                    if (slot.occupant != nullptr) {
+                        hintText = "Gear Inserted";
+                    }
+                    else if (p1HeldObject != nullptr && p1HeldObject->name.find("Gear") != std::string::npos) {
+                        hintText = "Insert Gear";
+                    }
+                    else {
+                        hintText = "Requires Gear";
+                    }
+                }
+                else if (hit.hitObject == machineStartButton) {
+                    bool allInserted = true;
+                    for (auto& [mSlotGO, mSlot] : machineSlotsMap) {
+                        if (mSlot.occupant == nullptr) { allInserted = false; break; }
+                    }
+
+                    if (isMachineFixed) hintText = "Machine Running";
+                    else if (allInserted) hintText = "Start Machine";
+                    else hintText = "Missing Gears";
+                }
                 else if (p1HeldObject != nullptr) {
                     hintText = "Drop";
                 }
@@ -1534,19 +938,20 @@ int main(int, char**)
                 else if (toiletDoorsMap.count(hit.hitObject))
                     hintText = toiletDoorsMap[hit.hitObject].isOpen ? "Close" : "Open";
                 else if (cabinetsMap.count(hit.hitObject))
-                    hintText = isCabinetButtonPushed ? "..." : "Open Cabinet";
+                    hintText = isCabinetButtonPushed ? "" : "Open Cabinet";
                 else if (majorDoors.count(hit.hitObject))
                     hintText = can_open_door_1 ? "Open" : "Unlock";
                 else if (pickupObjects.count(hit.hitObject)) {
                     bool isInSlot = false;
                     for (auto& [slotGO, slot] : puzzleSlotsMap)
                         if (slot.occupant == hit.hitObject) { isInSlot = true; break; }
-                    hintText = isInSlot ? "Pull out" : (hit.hitObject == p2HeldObject ? "Held by Player 2" : "Pick up");
+                    hintText = isInSlot ? "Pull out" : (hit.hitObject == p2HeldObject ? "" : "Pick up");
                 }
                 else if (hit.hitObject->name.find("Coffin") != std::string::npos)
                     hintText = "Pull Coffin";
             }
-        } else if (p1HeldObject != nullptr) {
+        }
+        else if (p1HeldObject != nullptr) {
             hintText = "Drop";
         }
         player1InteractionInfo->text = hintText;
@@ -1562,6 +967,28 @@ int main(int, char**)
                     else if (slot.occupant != nullptr)
                         hintText2 = "Pull out";
                 }
+                else if (machineSlotsMap.count(hit.hitObject)) {
+                    PuzzleSlot& slot = machineSlotsMap[hit.hitObject];
+                    if (slot.occupant != nullptr) {
+                        hintText2 = "Gear Inserted";
+                    }
+                    else if (p2HeldObject != nullptr && p2HeldObject->name.find("Gear") != std::string::npos) {
+                        hintText2 = "Insert Gear";
+                    }
+                    else {
+                        hintText2 = "Requires Gear";
+                    }
+                }
+                else if (hit.hitObject == machineStartButton) {
+                    bool allInserted = true;
+                    for (auto& [mSlotGO, mSlot] : machineSlotsMap) {
+                        if (mSlot.occupant == nullptr) { allInserted = false; break; }
+                    }
+
+                    if (isMachineFixed) hintText2 = "Machine Running";
+                    else if (allInserted) hintText2 = "Start Machine";
+                    else hintText2 = "Missing Gears";
+                }
                 else if (p2HeldObject != nullptr) {
                     hintText2 = "Drop";
                 }
@@ -1570,19 +997,20 @@ int main(int, char**)
                 else if (toiletDoorsMap.count(hit.hitObject))
                     hintText2 = toiletDoorsMap[hit.hitObject].isOpen ? "Close" : "Open";
                 else if (cabinetsMap.count(hit.hitObject))
-                    hintText2 = isCabinetButtonPushed ? "..." : "Open Cabinet";
+                    hintText2 = isCabinetButtonPushed ? "" : "Open Cabinet";
                 else if (majorDoors.count(hit.hitObject))
                     hintText2 = can_open_door_1 ? "Open" : "Unlock";
                 else if (pickupObjects.count(hit.hitObject)) {
                     bool isInSlot = false;
                     for (auto& [slotGO, slot] : puzzleSlotsMap)
                         if (slot.occupant == hit.hitObject) { isInSlot = true; break; }
-                    hintText2 = isInSlot ? "Pull out" : (hit.hitObject == p1HeldObject ? "Held by Player 1" : "Pick up");
+                    hintText2 = isInSlot ? "Pull out" : (hit.hitObject == p1HeldObject ? "" : "Pick up");
                 }
                 else if (hit.hitObject->name.find("Coffin") != std::string::npos)
                     hintText2 = "Pull Coffin";
             }
-        } else if (p2HeldObject != nullptr) {
+        }
+        else if (p2HeldObject != nullptr) {
             hintText2 = "Drop";
         }
         player2InteractionInfo->text = hintText2;
@@ -1615,11 +1043,25 @@ int main(int, char**)
             else ++it;
         }
 
-        HandlePlayerInteraction(*ecs, "interact_p1", player1Raycast, camera1, p1HeldObject, p2HeldObject, scena1, rotatingObjects, rotatingInProgress, p1ShakeTimer, p1Animator, postacGracza.get(), audioSys, sndPaperRoll, sndDoorOpen, sndDoorCloseStart, sndBtnClick, sound, sndPickup, sndInsert, sndDoorLocked, sndGear);
-        HandlePlayerInteraction(*ecs, "interact_p2", player2Raycast, camera2, p2HeldObject, p1HeldObject, scena1, rotatingObjects, rotatingInProgress, p2ShakeTimer, p2Animator, postacGracza.get(), audioSys, sndPaperRoll, sndDoorOpen, sndDoorCloseStart, sndBtnClick, sound, sndPickup, sndInsert, sndDoorLocked, sndGear);
+        if (focused) {
+            HandlePlayerInteraction(*ecs, "interact_p1", player1Raycast, camera1, p1HeldObject, p2HeldObject, scena1, rotatingObjects, rotatingInProgress, p1ShakeTimer, p1Animator, postacGracza.get(), audioSys, sndPaperRoll, sndDoorOpen, sndDoorCloseStart, sndBtnClick, sound, sndPickup, sndInsert, sndDoorLocked, sndGear);
+            HandlePlayerInteraction(*ecs, "interact_p2", player2Raycast, camera2, p2HeldObject, p1HeldObject, scena1, rotatingObjects, rotatingInProgress, p2ShakeTimer, p2Animator, postacGracza.get(), audioSys, sndPaperRoll, sndDoorOpen, sndDoorCloseStart, sndBtnClick, sound, sndPickup, sndInsert, sndDoorLocked, sndGear);
 
-        HandleAltRotate(*ecs, "alt_interact_p1", player1Raycast, rotatingObjects, rotatingInProgress, audioSys, sndPaperRoll);
-        HandleAltRotate(*ecs, "alt_interact_p2", player2Raycast, rotatingObjects, rotatingInProgress, audioSys, sndPaperRoll);
+            HandleAltRotate(*ecs, "alt_interact_p1", player1Raycast, rotatingObjects, rotatingInProgress, audioSys, sndPaperRoll);
+            HandleAltRotate(*ecs, "alt_interact_p2", player2Raycast, rotatingObjects, rotatingInProgress, audioSys, sndPaperRoll);
+        }
+
+        auto updateHeldGear = [&](GameObject* heldObj) {
+            if (heldObj && heldObj->name.find("Gear") != std::string::npos) {
+                if (auto tr = heldObj->GetComponent<TransformComponent>()) {
+                    tr->position = gearHeldOffset;
+                    tr->rotation = gearHeldRotation;
+                    tr->isDirty = true;
+                }
+            }
+            };
+        updateHeldGear(p1HeldObject);
+        updateHeldGear(p2HeldObject);
 
         // testy animacji
         if (ecs->GetSystem<HID>()->is_action_just_pressed("anim_play_dying")) {
@@ -1660,7 +1102,7 @@ int main(int, char**)
             processCameraMouse(*ecs, *camCompLeft, *camTransform1, *t0);
 
             p1IsMoving |= processCameraGamepad(*ecs, *camCompLeft, *camTransform1, *t0, 0);
-            p2IsMoving |= processCameraGamepad(*ecs, *camCompRight,*camTransform2, *t1, 1);
+            p2IsMoving |= processCameraGamepad(*ecs, *camCompRight, *camTransform2, *t1, 1);
         }
 
         bool p1IsHolding = (p1HeldObject != nullptr);
@@ -1676,10 +1118,11 @@ int main(int, char**)
             float t = currentFrame * 40.0f;
             float strength = 6.0f;
             player1InteractionInfo->screenPosition = p1BasePos + glm::vec2(
-                sin(t)        * strength,
+                sin(t) * strength,
                 sin(t * 1.3f) * strength * 0.5f
             );
-        } else {
+        }
+        else {
             player1InteractionInfo->screenPosition = p1BasePos;
         }
 
@@ -1690,7 +1133,8 @@ int main(int, char**)
                 sin(t + 1.0f) * strength,
                 sin(t * 1.3f + 1.0f) * strength * 0.5f
             );
-        } else {
+        }
+        else {
             player2InteractionInfo->screenPosition = p2BasePos;
         }
 
@@ -1700,24 +1144,29 @@ int main(int, char**)
             auto hit = player1Raycast->closestHit();
             if (hit.hitObject &&
                 (rotatableObjects.count(hit.hitObject) ||
-                 toiletDoorsMap.count(hit.hitObject)   ||
-                 cabinetsMap.count(hit.hitObject)       ||
-                 majorDoors.count(hit.hitObject)        ||
-                 pickupObjects.count(hit.hitObject)     ||
-                 hit.hitObject->name.find("Coffin") != std::string::npos ||
-                 (puzzleSlotsMap.count(hit.hitObject) && puzzleSlotsMap[hit.hitObject].occupant != nullptr)))
-                            p1Int = 1.0f;
+                    toiletDoorsMap.count(hit.hitObject) ||
+                    cabinetsMap.count(hit.hitObject) ||
+                    majorDoors.count(hit.hitObject) ||
+                    pickupObjects.count(hit.hitObject) ||
+                    hit.hitObject->name.find("Coffin") != std::string::npos ||
+                    (puzzleSlotsMap.count(hit.hitObject) && puzzleSlotsMap[hit.hitObject].occupant != nullptr) ||
+                    machineSlotsMap.count(hit.hitObject) ||
+                    hit.hitObject == machineStartButton))
+                p1Int = 1.0f;
         }
         if (player2Raycast->anyHit()) {
             auto hit = player2Raycast->closestHit();
             if (hit.hitObject &&
-                 (rotatableObjects.count(hit.hitObject) ||
-                 toiletDoorsMap.count(hit.hitObject)   ||
-                 cabinetsMap.count(hit.hitObject)       ||
-                 majorDoors.count(hit.hitObject)        ||
-                 pickupObjects.count(hit.hitObject)     ||
-                 (puzzleSlotsMap.count(hit.hitObject) && puzzleSlotsMap[hit.hitObject].occupant != nullptr)))
-                            p2Int = 1.0f;
+                (rotatableObjects.count(hit.hitObject) ||
+                    toiletDoorsMap.count(hit.hitObject) ||
+                    cabinetsMap.count(hit.hitObject) ||
+                    majorDoors.count(hit.hitObject) ||
+                    pickupObjects.count(hit.hitObject) ||
+                    hit.hitObject->name.find("Coffin") != std::string::npos ||
+                    (puzzleSlotsMap.count(hit.hitObject) && puzzleSlotsMap[hit.hitObject].occupant != nullptr) ||
+                    machineSlotsMap.count(hit.hitObject) ||
+                    hit.hitObject == machineStartButton))
+                p1Int = 1.0f;
         }
 
         float chLerpSpeed = 10.0f;
@@ -1731,7 +1180,54 @@ int main(int, char**)
 
         auto logicStart = std::chrono::high_resolution_clock::now();
         crematoriumPuzzle.Update(deltaTime);
+
+        if (crematoriumPuzzle.isPuzzleSolved && !isCrematoriumGearSpawned) {
+            SpawnGearReward(scena1, glm::vec3(175.0f, 8.0f, -255.0f), "Gear_Crematorium");
+
+            if (audioSys && sndGear) {
+                audioSys->playSound(sndGear);
+            }
+
+            isCrematoriumGearSpawned = true;
+        }
+
+        if (isMachineFixed) {
+            float baseSpeed = 100.0f * deltaTime;
+
+            for (auto& [mSlotGO, mSlot] : machineSlotsMap) {
+                if (mSlot.occupant != nullptr) {
+                    if (auto tr = mSlot.occupant->GetComponent<TransformComponent>()) {
+
+                        float dir = 1.0f;
+                        if (mSlotGO->name == "MachineSlot_3") dir = -1.0f;
+
+                        tr->rotation.x += baseSpeed * dir;
+                        tr->isDirty = true;
+                    }
+                }
+            }
+
+            if (fixedGear1) {
+                if (auto tr = fixedGear1->GetComponent<TransformComponent>()) {
+                    tr->rotation.x += baseSpeed * -1.0f;
+                    tr->isDirty = true;
+                }
+            }
+
+            if (fixedGear2) {
+                if (auto tr = fixedGear2->GetComponent<TransformComponent>()) {
+                    tr->rotation.x += baseSpeed * 1.0f;
+                    tr->isDirty = true;
+                }
+            }
+        }
+
         sceneManager.Update(deltaTime);
+
+        if (audioSys) {
+            audioSys->Update(*ecs, deltaTime);
+        }
+
         update();
         auto logicEnd = std::chrono::high_resolution_clock::now();
 
@@ -1743,12 +1239,12 @@ int main(int, char**)
         cpuTimer.stop();
 
         float cpuFrameTime = cpuTimer.getMilliseconds();
-        float logicTime    = std::chrono::duration<float, std::milli>(logicEnd    - logicStart).count();
-        float inputTime    = std::chrono::duration<float, std::milli>(inputEnd    - inputStart).count();
+        float logicTime = std::chrono::duration<float, std::milli>(logicEnd - logicStart).count();
+        float inputTime = std::chrono::duration<float, std::milli>(inputEnd - inputStart).count();
 
         perf.cpuFrameTime = cpuFrameTime;
-        perf.logicTime    = logicTime;
-        perf.inputTime    = inputTime;
+        perf.logicTime = logicTime;
+        perf.inputTime = inputTime;
 
         end_frame();
     }
@@ -1860,472 +1356,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
 }
 
-void imgui_begin()
-{
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
-}
-
-GameObject* selectedGameObject = nullptr;
-static ImGuiTextFilter gameObjectFilter;
-
-bool GameObjectMatchesFilter(GameObject* obj, const ImGuiTextFilter& filter)
-{
-    if (!obj) return false;
-
-    const char* name = obj->name.empty() ? "GameObject" : obj->name.c_str();
-    if (filter.PassFilter(name))
-        return true;
-
-    for (GameObject* child : obj->GetChildren())
-    {
-        if (GameObjectMatchesFilter(child, filter))
-            return true;
-    }
-
-    return false;
-}
-
-void ShowGameObjectTree(GameObject* obj, ImGuiTextFilter& filter)
-{
-    if (!obj) return;
-
-    bool filterActive = filter.IsActive();
-    if (filterActive && !GameObjectMatchesFilter(obj, filter))
-        return;
-
-    const char* displayName = obj->name.empty() ? "GameObject" : obj->name.c_str();
-
-    ImGuiTreeNodeFlags flags =
-        ImGuiTreeNodeFlags_OpenOnArrow |
-        ImGuiTreeNodeFlags_OpenOnDoubleClick |
-        ((obj == selectedGameObject) ? ImGuiTreeNodeFlags_Selected : 0);
-
-    if (!obj->HasChildren())
-        flags |= ImGuiTreeNodeFlags_Leaf;
-
-    if (filterActive)
-        flags |= ImGuiTreeNodeFlags_DefaultOpen;
-
-    bool opened = ImGui::TreeNodeEx((void*)obj, flags, "%s", displayName);
-
-    if (ImGui::IsItemClicked())
-        selectedGameObject = obj;
-
-    if (opened) {
-        for (GameObject* child : obj->GetChildren())
-            ShowGameObjectTree(child, filter);
-        ImGui::TreePop();
-    }
-}
-
-void ShowTransformEditor(GameObject* owner, TransformComponent& transform)
-{
-    glm::vec3 pos   = TransformHelper::getLocalPosition(transform);
-    glm::vec3 rot   = TransformHelper::getLocalRotation(transform);
-    glm::vec3 scale = TransformHelper::getLocalScale(transform);
-
-    if (ImGui::DragFloat3("Position", &pos.x, 0.01f))
-    {
-        TransformHelper::setLocalPosition(transform, pos);
-        if (auto* collider = owner->GetComponent<ColliderComponent>())
-        {
-            collider->Recalculate(owner);
-        }
-    }
-
-    if (ImGui::DragFloat3("Rotation", &rot.x, 0.1f))
-    {
-        TransformHelper::setLocalRotation(transform, rot);
-        if (auto* collider = owner->GetComponent<ColliderComponent>())
-        {
-            collider->Recalculate(owner);
-        }
-    }
-
-    if (ImGui::DragFloat3("Scale", &scale.x, 0.01f, 0.01f))
-    {
-        TransformHelper::setLocalScale(transform, scale);
-        if (auto* collider = owner->GetComponent<ColliderComponent>())
-        {
-            collider->Recalculate(owner);
-        }
-    }
-}
-
-void ShowRigidbodyEditor(RigidbodyComponent& rb)
-{
-    ImGui::Text("Rigidbody");
-
-    ImGui::DragFloat("Mass", &rb.mass, 0.01f, 0.0f, 1000.0f);
-    ImGui::DragFloat("Bounce", &rb.bounce, 0.01f, 0.0f, 1.0f);
-    ImGui::DragFloat("Angular Damping", &rb.angularDamping, 0.01f, 0.0f, 1.0f);
-
-    ImGui::Separator();
-    ImGui::Checkbox("Use Gravity", &rb.useGravity);
-    ImGui::Checkbox("Is Static", &rb.isStatic);
-
-    ImGui::Separator();
-    ImGui::DragFloat3("Velocity", &rb.velocity.x, 0.01f);
-    ImGui::DragFloat3("Acceleration", &rb.acceleration.x, 0.01f);
-    ImGui::DragFloat3("Angular Velocity", &rb.angularVelocity.x, 0.01f);
-    ImGui::DragFloat3("Torque", &rb.torque.x, 0.01f);
-
-    ImGui::Separator();
-    ImGui::BeginDisabled();
-    ImGui::DragFloat3("Physics Position", &rb.physicsPosition.x, 0.01f);
-    ImGui::DragFloat3("Previous Position", &rb.previousPosition.x, 0.01f);
-    ImGui::EndDisabled();
-
-    if (ImGui::Button("Reset Velocity")) {
-        rb.velocity = glm::vec3(0.0f);
-        rb.angularVelocity = glm::vec3(0.0f);
-        rb.torque = glm::vec3(0.0f);
-        rb.acceleration = glm::vec3(0.0f);
-    }
-}
-
-void ShowColliderEditor(ColliderComponent& col)
-{
-    ImGui::Text("Collider");
-    ImGui::DragFloat3("Offset", &col.offset.x, 0.01f);
-    ImGui::DragFloat3("HalfSize", &col.halfSize.x, 0.01f, 0.0f);
-    ImGui::Checkbox("Is Trigger", &col.isTrigger);
-    ImGui::Checkbox("Affects NavMesh", &col.affectsNavMesh);
-    ImGui::Checkbox("Is Walkable", &col.isWalkable);
-}
-
-void ShowLightEditor(LightComponent& light)
-{
-    ImGui::Text("Light");
-    ImGui::Checkbox("Enabled", &light.isOn);
-
-    const char* lightTypes[] = { "Directional", "Point", "Spot" };
-    int currentType = static_cast<int>(light.type);
-    if (ImGui::Combo("Type", &currentType, lightTypes, IM_ARRAYSIZE(lightTypes)))
-        light.type = static_cast<LightType>(currentType);
-
-    ImGui::Separator();
-    ImGui::ColorEdit3("Ambient",  &light.ambient.x);
-    ImGui::ColorEdit3("Diffuse",  &light.diffuse.x);
-    ImGui::ColorEdit3("Specular", &light.specular.x);
-    ImGui::DragFloat("Intensity", &light.intensity, 0.001f, 0.0f, 1000.0f);
-    ImGui::Separator();
-
-    if (light.type == Point || light.type == Spot) {
-        ImGui::Text("Attenuation");
-        ImGui::DragFloat("Constant",  &light.constant,  0.001f, 0.0f, 10.0f);
-        ImGui::DragFloat("Linear",    &light.linear,    0.001f, 0.0f, 10.0f);
-        ImGui::DragFloat("Quadratic", &light.quadratic, 0.001f, 0.0f, 10.0f);
-        ImGui::DragFloat("Range", &light.range, 0.001f, 0.0f, 1000.0f);
-    }
-
-    if (light.type == Spot) {
-        ImGui::Separator();
-        ImGui::Text("Spotlight");
-
-        float innerAngle = glm::degrees(glm::acos(light.cutOff));
-        float outerAngle = glm::degrees(glm::acos(light.outerCutOff));
-
-        if (ImGui::DragFloat("Inner Cutoff", &innerAngle, 0.1f, 0.0f, 90.0f))
-            light.cutOff = glm::cos(glm::radians(innerAngle));
-
-        if (ImGui::DragFloat("Outer Cutoff", &outerAngle, 0.1f, 0.0f, 90.0f))
-            light.outerCutOff = glm::cos(glm::radians(outerAngle));
-    }
-}
-
-std::string OpenFileDialog()
-{
-    char filename[MAX_PATH] = "";
-
-    OPENFILENAMEA ofn   = {};
-    ofn.lStructSize     = sizeof(OPENFILENAMEA);
-    ofn.lpstrFile       = filename;
-    ofn.nMaxFile        = MAX_PATH;
-    ofn.lpstrInitialDir = "res";
-    ofn.lpstrFilter     =
-        "Model Files\0*.obj;*.fbx;*.glb;*.gltf\0"
-        "All Files\0*.*\0";
-    ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
-
-    if (GetOpenFileNameA(&ofn)) {
-        std::filesystem::path fullPath    = filename;
-        std::filesystem::path projectRoot = std::filesystem::absolute("../../");
-        std::filesystem::path relative    = std::filesystem::relative(fullPath, projectRoot);
-        std::string result                = relative.string();
-        std::replace(result.begin(), result.end(), '\\', '/');
-        return result;
-    }
-    return "";
-}
-
-static std::unordered_map<std::string, Prefab> prefabs;
-
-void imgui_render(SceneManager& sceneManager)
-{
-    std::vector<std::pair<std::string, Prefab*>> availablePrefabs;
-    for (auto& [name, weakModel] : ResourceManager::Models)
-    {
-        if (!prefabs.contains(name))
-            prefabs.emplace(name, Prefab(weakModel));
-        availablePrefabs.push_back({ name, &prefabs.at(name) });
-    }
-
-    std::vector<GameObject*> sceneObjects;
-    Scene* activeScene = sceneManager.GetActiveScene();
-    activeScene->GetRoot()->TraverseChildren([&](GameObject* go) {
-        sceneObjects.push_back(go);
-    });
-    decorSystem.DrawImGui(availablePrefabs, sceneObjects, *activeScene, nullptr);
-
-    if (show_demo_window) { }
-
-    ImGui::Begin("Hello, world!");
-
-    if (ImGui::Button(wireframeMode ? "Switch to Fill Mode" : "Switch to Wireframe")) {
-        wireframeMode = !wireframeMode;
-        glPolygonMode(GL_FRONT_AND_BACK, wireframeMode ? GL_LINE : GL_FILL);
-    }
-
-    ImGui::Separator();
-    ImGui::Text("Ambient");
-    ImGui::DragFloat("Ambient strength", &renderSystem->ambientStrength, 0.000001f, 0.0f, 1.0f, "%.6f");
-    ImGui::Separator();
-    ImGui::Text("Hierarchy");
-    ImGui::Text("Hierarchy");
-    gameObjectFilter.Draw("Filtruj po nazwie", 200.0f);
-    ShowGameObjectTree(sceneManager.GetActiveScene()->GetRoot(), gameObjectFilter);
-
-    if (selectedGameObject) {
-        ImGui::Separator();
-        ImGui::Text("Selected Entity: %s", selectedGameObject->name.c_str());
-
-        if (ImGui::BeginMenu("Add Component"))
-        {
-            if (ImGui::MenuItem("Rigidbody"))
-            {
-                if (!selectedGameObject->GetComponent<RigidbodyComponent>())
-                    selectedGameObject->AddComponent<RigidbodyComponent>();
-            }
-
-            if (ImGui::MenuItem("Collider"))
-            {
-                if (!selectedGameObject->GetComponent<ColliderComponent>())
-                    selectedGameObject->AddComponent<ColliderComponent>();
-            }
-
-            if (ImGui::MenuItem("Light"))
-            {
-                if (!selectedGameObject->GetComponent<LightComponent>())
-                    selectedGameObject->AddComponent<LightComponent>();
-            }
-
-            ImGui::EndMenu();
-        }
-
-        ShowTransformEditor(selectedGameObject, *selectedGameObject->GetComponent<TransformComponent>());
-
-        RigidbodyComponent* rb = selectedGameObject->GetComponent<RigidbodyComponent>();
-        if (rb != nullptr)
-            ShowRigidbodyEditor(*rb);
-
-        ColliderComponent* col = selectedGameObject->GetComponent<ColliderComponent>();
-        if (col != nullptr)
-            ShowColliderEditor(*col);
-
-        LightComponent* light = selectedGameObject->GetComponent<LightComponent>();
-        if (light != nullptr)
-            ShowLightEditor(*light);
-    }
-
-    if (ImGui::Button("Zapisz"))
-        sceneManager.Save();
-
-    if (ImGui::Button("Wczytaj"))
-        sceneManager.Load();
-
-    ImGui::Separator();
-
-    Scene& scene = *sceneManager.GetActiveScene();
-
-    for (auto& [name, weakModel] : ResourceManager::Models) {
-        ImGui::PushID(name.c_str());
-        std::shared_ptr<Model> model = weakModel;
-        ImGui::Text("%s", name.c_str());
-        ImGui::SameLine();
-
-        if (!model) {
-            ImGui::TextDisabled("[loading]");
-        }
-        else {
-            if (!prefabs.contains(name))
-                prefabs.emplace(name, Prefab(model));
-
-            if (ImGui::Button("Instantiate")) {
-                Prefab& prefab = prefabs.at(name);
-                GameObject* obj = prefab.Instantiate(scene, nullptr, nullptr);
-                if (obj) obj->name = name;
-            }
-        }
-        ImGui::PopID();
-    }
-
-    ImGui::End();
-
-
-
-    ImGui::Begin("Loaded Models");
-
-    if (ImGui::Button("Load Model")) {
-        std::string path = OpenFileDialog();
-        if (!path.empty())
-            ResourceManager::LoadModel(path);
-    }
-
-    if (ImGui::Button("Load asset")) {
-        std::string path = "assets.yaml";
-        ResourceManager::LoadAssets(path);
-    }
-
-    if (ImGui::Button("Zapisz asset"))
-        ResourceManager::SaveAsset();
-
-    ImGui::Separator();
-
-    for (const auto& [name, weakModel] : ResourceManager::Models)
-        ImGui::Text("%s", name.c_str());
-
-    ImGui::End();
-
-
-    if (ImGui::Begin("Debug hizTexture")) {
-        auto system = sceneManager.GetActiveScene()->GetECS().GetSystem<RenderSystem>();
-        static int debugMip = 0;
-        ImGui::SliderInt("Mip", &debugMip, 0, 10);
-        int i = 0;
-        for (auto& [cam, hiz] : system->cameraHiZ) {
-            ImGui::Text("Kamera %d", i++);
-            if (hiz.hizTexture != 0)
-                system->ShowR32FTextureImGui(hiz.hizTexture, debugMip);
-            //system->drivenManager.DebugShadowMapImGui();
-        }
-    }
-    ImGui::End();
-
-    // Osobno — cały ImGui
-    //static int debugMip = 0;
-    //ImGui::Begin("HiZ Debug Controls");
-    //auto* renderer = system->drivenManager.GetRenderer(0);
-    //ImGui::SliderInt("Mip", &debugMip, 0, renderer->hizMipLevels - 1);
-    //ImGui::End();
-
-    //// Pobierz renderer żeby wywołać debug
-    //if (renderer) renderer->DebugShowHiZ(debugMip);
-
-    ImGui::Begin("Performance");
-
-    ImGui::Text("FPS: %.1f",        ImGui::GetIO().Framerate);
-    ImGui::Text("Frame time: %.3f ms", 1000.0f / ImGui::GetIO().Framerate);
-
-    static bool vsyncEnabled = true;
-    if (ImGui::Checkbox("VSync", &vsyncEnabled))
-    {
-        glfwSwapInterval(vsyncEnabled ? 1 : 0);
-    }
-
-    if (ImGui::CollapsingHeader("CPU")) {
-        ImGui::Text("Total CPU: %.3f ms", perf.cpuFrameTime);
-        ImGui::Text("Input:     %.3f ms", perf.inputTime);
-        ImGui::Text("Logic:     %.3f ms", perf.logicTime);
-        ImGui::Text("Culling:   %.3f ms", renderSystem->stats.cullingTimeMs);
-        ImGui::Text("Draw prep: %.3f ms", renderSystem->stats.drawSubmitTimeMs);
-    }
-    if (ImGui::CollapsingHeader("GPU")) {
-        ImGui::Text("GPU Frame: %.3f ms", renderSystem->gpuQuery.getLastResult());
-    }
-    if (ImGui::CollapsingHeader("Render Stats")) {
-        ImGui::Text("Draw calls:    %d", renderSystem->stats.drawCalls);
-        ImGui::Text("Objects:       %d", renderSystem->stats.renderedObjects);
-        ImGui::Text("Triangles:     %d", renderSystem->stats.triangles);
-        ImGui::Text("State changes: %d", renderSystem->stats.stateChanges);
-    }
-    if (ImGui::CollapsingHeader("Culling")) {
-        ImGui::Checkbox("Frustum culling",   &renderSystem->frustumCullingEnabled);
-        ImGui::Checkbox("Occlusion culling", &renderSystem->occlusionCullingEnabled);
-        ImGui::Text("Frustum culled:   %d", renderSystem->stats.frustumCulledSet.size());
-        ImGui::Text("Occlusion culled: %d", renderSystem->stats.occlusionCulledSet.size());
-    }
-    ImGui::PlotLines("Frame time", frameTimes, MAX_SAMPLES, index,
-        nullptr, 0.0f, 1.0f, ImVec2(0, 60));
-
-    ImGui::End();
-
-    ImGui::Begin("Puzzle Debug");
-
-    if (puzzleSlotsMap.empty()) {
-        ImGui::TextColored(ImVec4(1,1,0,1), "Brak slotów puzzle");
-    } else {
-        int i = 0;
-        for (auto& [slotGO, slot] : puzzleSlotsMap) {
-            ImGui::PushID(i++);
-
-            std::string slotName = slotGO ? slotGO->name : "???";
-            std::string expectedName = slot.expectedObject ? slot.expectedObject->name : "???";
-            std::string occupantName = slot.occupant       ? slot.occupant->name       : "(pusty)";
-
-            bool isEmpty   = (slot.occupant == nullptr);
-            bool isCorrect = (!isEmpty && slot.occupant == slot.expectedObject);
-
-            // Kolor: zielony = dobry, czerwony = zły, szary = pusty
-            ImVec4 color = isEmpty
-                ? ImVec4(0.5f, 0.5f, 0.5f, 1.0f)   // szary
-                : isCorrect
-                    ? ImVec4(0.0f, 1.0f, 0.0f, 1.0f) // zielony
-                    : ImVec4(1.0f, 0.3f, 0.3f, 1.0f); // czerwony
-
-            const char* status = isEmpty ? "[PUSTY]" : isCorrect ? "[OK]" : "[ZLE]";
-
-            ImGui::TextColored(color, "%s  Slot: %-20s  Oczekiwany: %-10s  Aktualny: %-10s",
-                status,
-                slotName.c_str(),
-                expectedName.c_str(),
-                occupantName.c_str()
-            );
-
-            ImGui::PopID();
-        }
-
-        ImGui::Separator();
-
-        // Podsumowanie
-        int correct = 0, filled = 0;
-        for (auto& [slotGO, slot] : puzzleSlotsMap) {
-            if (slot.occupant != nullptr) filled++;
-            if (slot.occupant != nullptr && slot.occupant == slot.expectedObject) correct++;
-        }
-        int total = (int)puzzleSlotsMap.size();
-
-        ImGui::Text("Wypełnione: %d / %d", filled, total);
-        ImGui::Text("Poprawne:   %d / %d", correct, total);
-
-        if (correct == total)
-            ImGui::TextColored(ImVec4(0,1,0,1), ">> PUZZLE ROZWIAZANY! <<");
-    }
-
-    ImGui::End();
-}
-
-void imgui_end()
-{
-    ImGui::Render();
-    int display_w, display_h;
-    glfwMakeContextCurrent(window);
-    glfwGetFramebufferSize(window, &display_w, &display_h);
-    glViewport(0, 0, display_w, display_h);
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-}
+#include "impl/main/imgui.ipp"
 
 void end_frame()
 {
@@ -3486,3 +2517,4 @@ void createCrematoriumCorridor(Scene * scena){
     );
     unlockedDoors.insert(hingeDrzwiDoRentgen);
 }
+#include "impl/main/room_creator.ipp"
