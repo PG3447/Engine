@@ -1094,14 +1094,14 @@ int main(int, char**)
 
             if (fixedGear1) {
                 if (auto tr = fixedGear1->GetComponent<TransformComponent>()) {
-                    tr->rotation.x += baseSpeed * -1.0f;
+                    tr->rotation.x += baseSpeed * 1.0f;
                     tr->isDirty = true;
                 }
             }
 
             if (fixedGear2) {
                 if (auto tr = fixedGear2->GetComponent<TransformComponent>()) {
-                    tr->rotation.x += baseSpeed * 1.0f;
+                    tr->rotation.x += baseSpeed * -1.0f;
                     tr->isDirty = true;
                 }
             }

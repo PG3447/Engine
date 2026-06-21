@@ -277,16 +277,19 @@ void createMainRooom(Scene* scena) {
     szafkaTr->scale    = glm::vec3{ 8.0f, 8.0f, 8.0f };
     szafkaTr->rotation = glm::vec3{ 0.0f, -90.0f, 0.0f };
 
+    // nie dotykac tego collidera kurna
     ColliderComponent* szafkaCol = szafkaObj->AddComponent<ColliderComponent>();
     szafkaCol->affectsNavMesh = true;
-    szafkaCol->halfSize        = glm::vec3{ 10.0f, 8.0f, 3.0f };
-    szafkaCol->offset          = glm::vec3{ 2.0f, 6.0f, 0.0f };
+    szafkaCol->halfSize     = glm::vec3{ 10.0f, 1.0f, 3.0f };
+    szafkaCol->offset       = glm::vec3{ 2.0f, 0.0f, 0.0f };
 
     CabinetState cabState;
     szafkaObj->TraverseChildren([&](GameObject* go) {
         if (go->name == "Left_Door")  cabState.leftDoor  = go;
         if (go->name == "Right_Door") cabState.rightDoor = go;
         if (go->name == "Guzik")      cabState.button    = go;
+        if (go->name == "Gear_Fixed_1") fixedGear1 = go;
+        if (go->name == "Gear_Fixed_2") fixedGear2 = go;
 
         if (go->name == "start_button") {
             machineStartButton = go;
