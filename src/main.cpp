@@ -768,8 +768,8 @@ int main(int, char**)
         }
 
         if (ecs->GetSystem<HID>()->is_action_just_pressed("gamma_up")) {
-            postProcessingSystem->set_gamma(postProcessingSystem->get_gamma() + 0.1f);
-            sceneIsMenu = !sceneIsMenu;
+            //postProcessingSystem->set_gamma(postProcessingSystem->get_gamma() + 0.1f);
+            //sceneIsMenu = !sceneIsMenu;
         }
         if (ecs->GetSystem<HID>()->is_action_just_pressed("gamma_down")) {
             postProcessingSystem->set_gamma(postProcessingSystem->get_gamma() - 0.1f);

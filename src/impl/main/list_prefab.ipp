@@ -185,7 +185,7 @@ void connectAllModels() {
     pokrywkaRolkiModel = std::make_unique<Prefab>("res/models/do_rolki.glb");
 
     krzesloModel = std::make_unique<Prefab>("res/models/krzeslo.glb");
-    wozekModel = std::make_unique<Prefab>("res/models/wozek.glb");
+    wozekModel = std::make_unique<Prefab>("res/models/wozek_t.glb");
     eksp3Model = std::make_unique<Prefab>("res/models/eksperyment3.glb");
     eksp4Model = std::make_unique<Prefab>("res/models/eksperyment4.glb");
     szafka_inna1Model = std::make_unique<Prefab>("res/models/szafka_inna1.glb");
