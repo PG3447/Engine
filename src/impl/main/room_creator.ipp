@@ -1195,7 +1195,7 @@ void createCrematoriumCorridor(Scene * scena){
     CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaPrawaKorytarzKrematorium2",         glm::vec3(90.570, 0, -121.660),  glm::vec3(30.460, 50, 1));
     CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaKoncowaKorytarzKrematorium",         glm::vec3(141.810, 0, -113.790),  glm::vec3(1, 90, 7.870));
     //CreateStaticObject(scena, floorModel.get(), nullptr, "PodlogaKorytarzKrematorium",    glm::vec3(102.610, 0, -115.010),  glm::vec3(43.520, 1, 8.070));
-    CreateStaticObject(scena, floorModelB.get(), nullptr, "PodlogaKorytarzKrematorium",    glm::vec3(101.180, 1.170, -114.550),  glm::vec3(4.060, 1, 0.750));
+    CreateStaticObject(scena, floorModelB.get(), nullptr, "PodlogaKorytarzKrematorium",    glm::vec3(101.060, 1.170, -113.820),  glm::vec3(4.060, 1, 0.750));
     //CreateStaticObject(scena, floorModel.get(), nullptr, "SufitKorytarzKrematorium",    glm::vec3(102.610, 20, -115.010),  glm::vec3(43.520, 1, 8.070));
     CreateStaticObject(scena, ceilingModelB.get(), nullptr, "SufitKorytarzKrematorium",    glm::vec3(101.180, 20, -114.550),  glm::vec3(4.060, 1, 0.750));
     GameObject* hingeDrzwiDoRentgen = CreateInteractableDoor(
