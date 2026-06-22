@@ -112,6 +112,7 @@ std::unique_ptr<Prefab> tableModel;
 std::unique_ptr<Prefab> wallRentgenModel;
 std::unique_ptr<Prefab> wallMainRoomModel;
 std::unique_ptr<Prefab> wallBathroomModel;
+std::unique_ptr<Prefab> wallCrematoriumModel;
 
 std::unique_ptr<Prefab> koparkaModel;
 
@@ -217,4 +218,5 @@ void connectAllModels() {
     wallRentgenModel = std::make_unique<Prefab>("res/models/wall1_rentgen.glb");
     wallMainRoomModel = std::make_unique<Prefab>("res/models/wall1_main_room.glb");
     wallBathroomModel = std::make_unique<Prefab>("res/models/wall1_toilet.glb");
+    wallCrematoriumModel = std::make_unique<Prefab>("res/models/wall1_toilet.glb");
 }

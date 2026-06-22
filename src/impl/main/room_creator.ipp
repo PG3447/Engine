@@ -775,14 +775,16 @@ void createNuclearRooom(Scene* scena) {
 void createCrematorium(Scene* scena) {
 
 
-    CreateStaticObject(scena, floorModel.get(), nullptr, "PodlogaKrematorium",   glm::vec3(125, 0, -150.000),  glm::vec3(35.000, 1, 30.000));
     CreateStaticObject(scena, floorModelB.get(), nullptr, "PodlogaKrematorium",   glm::vec3(125, 1.170, -150.000),  glm::vec3(3.490, 1, 2.870));
-    //CreateStaticObject(scena, floorModel.get(), nullptr, "SufitCrematorium",     glm::vec3(125, 25, -150.000), glm::vec3(35.000, 1, 30.000));
     CreateStaticObject(scena, ceilingModelB.get(), nullptr, "SufitCrematorium",     glm::vec3(125.000, 19.160, -150.000), glm::vec3(3.490, 1, 2.870));
-    CreateStaticObject(scena, wallModel2.get(), nullptr, "ScianaKoncowaKrematorium", glm::vec3(160.280, 0, -149.030), glm::vec3(32.000, 50, 1), std::nullopt, glm::vec3(1, 50, 32.000));
-    CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaKremPrawa",       glm::vec3(124.600, 0, -178.010), glm::vec3(35.000, 50, 1), std::nullopt, glm::vec3(35.000, 100, 1));
-    CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaKremLewa",       glm::vec3(91.190, 0, -153.760), glm::vec3(1, 50, 32.000), std::nullopt, glm::vec3(1, 100, 32.000));
-    CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaKremLewa2",       glm::vec3(149.900, 0, -121.640), glm::vec3(10.040, 50, 1), std::nullopt, glm::vec3(10.040, 100,1 ));
+    //CreateStaticObject(scena, wallModel2.get(), nullptr, "ScianaKoncowaKrematorium", glm::vec3(160.280, 0, -149.030), glm::vec3(32.000, 50, 1), std::nullopt, glm::vec3(1, 50, 32.000));
+    CreateStaticObject(scena, wallCrematoriumModel.get(), nullptr, "ScianaKoncowaKrematorium", glm::vec3(160.280, 0, -149.030), glm::vec3(32.000, 50, 1), std::nullopt, glm::vec3(1, 50, 32.000));
+    //CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaKremPrawa",       glm::vec3(124.600, 0, -178.010), glm::vec3(35.000, 50, 1), std::nullopt, glm::vec3(35.000, 100, 1));
+    CreateStaticObject(scena, wallCrematoriumModel.get(),  nullptr, "ScianaKremPrawa",       glm::vec3(124.600, 0, -178.010), glm::vec3(35.000, 50, 1), std::nullopt, glm::vec3(35.000, 100, 1));
+    //CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaKremLewa",       glm::vec3(91.190, 0, -153.760), glm::vec3(1, 50, 32.000), std::nullopt, glm::vec3(1, 100, 32.000));
+    CreateStaticObject(scena, wallCrematoriumModel.get(),  nullptr, "ScianaKremLewa",       glm::vec3(91.190, 0, -153.760), glm::vec3(1, 50, 32.000), std::nullopt, glm::vec3(1, 100, 32.000));
+    //CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaKremLewa2",       glm::vec3(149.900, 0, -121.640), glm::vec3(10.040, 50, 1), std::nullopt, glm::vec3(10.040, 100,1 ));
+    CreateStaticObject(scena, wallCrematoriumModel.get(),  nullptr, "ScianaKremLewa2",       glm::vec3(149.900, 0, -121.640), glm::vec3(10.040, 50, 1), std::nullopt, glm::vec3(10.040, 100,1 ));
 
 
     crematoriumPuzzle.spacingHorizontal = 10.0f;
