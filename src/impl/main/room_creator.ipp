@@ -889,7 +889,7 @@ void createRentgenRoom(Scene* scena) {
             lc->constant = 1.0f;
             lc->linear = 0.22f;
             lc->quadratic = 0.20f;
-            lc->intensity = 50.0f;
+            lc->intensity = 25.0f;
             lc->isOn = true;
         }
 
