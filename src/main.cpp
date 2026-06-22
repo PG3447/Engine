@@ -400,8 +400,8 @@ int main(int, char**)
     GameObject* latarka1 = scena1->CreateGameObject(nullptr);
     latarka1->name = "Latarka";
     camera1->AddChild(latarka1);
-    latarka1->GetComponent<TransformComponent>()->position = glm::vec3(1.5f, -1.0f, 0.5f);
-    latarka1->GetComponent<TransformComponent>()->rotation = glm::vec3(3.0f, 4.5f, 0.0f);
+    latarka1->GetComponent<TransformComponent>()->position = glm::vec3(1.10f, -0.11f, 0.50f);
+    latarka1->GetComponent<TransformComponent>()->rotation = glm::vec3(-0.40f, 4.50f, 0.00f);
     LightComponent* light2 = latarka1->AddComponent<LightComponent>();
 
     light2->type      = Spot;
@@ -418,7 +418,7 @@ int main(int, char**)
 
     GameObject* modelPostac1 = postacGracza->Instantiate(*scena1, nullptr, nullptr);
     gracz1->AddChild(modelPostac1);
-    modelPostac1->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 0.9f, 0.0f);
+    modelPostac1->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, -0.2f, 0.0f);
     modelPostac1->GetComponent<TransformComponent>()->rotation = glm::vec3(0.0f, -180.0f, 0.0f);
     AnimatorComponent* p1Animator = modelPostac1->GetComponent<AnimatorComponent>();
     if (p1Animator == nullptr) {
@@ -450,8 +450,8 @@ int main(int, char**)
     GameObject* latarka2 = scena1->CreateGameObject(nullptr);
     latarka2->name = "Latarka";
     camera2->AddChild(latarka2);
-    latarka2->GetComponent<TransformComponent>()->position = glm::vec3(1.5f, -1.0f, 0.5f);
-    latarka2->GetComponent<TransformComponent>()->rotation = glm::vec3(3.0f, 4.5f, 0.0f);
+    latarka2->GetComponent<TransformComponent>()->position = glm::vec3(1.10f, -0.11f, 0.50f);
+    latarka2->GetComponent<TransformComponent>()->rotation = glm::vec3(-0.40f, 4.50f, 0.00f);
     LightComponent* light3 = latarka2->AddComponent<LightComponent>();
 
     light3->type = Spot;
@@ -468,7 +468,7 @@ int main(int, char**)
 
     GameObject* modelPostac2 = postacGracza->Instantiate(*scena1, nullptr, nullptr);
     gracz2->AddChild(modelPostac2);
-    modelPostac2->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 0.9f, 0.0f);
+    modelPostac2->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, -0.2f, 0.0f);
     modelPostac2->GetComponent<TransformComponent>()->rotation = glm::vec3(0.0f, -180.0f, 0.0f);
     AnimatorComponent* p2Animator = modelPostac2->GetComponent<AnimatorComponent>();
     if (p2Animator == nullptr) {
@@ -594,27 +594,27 @@ int main(int, char**)
 
     ecs->GetSystem<NavMeshSystem>()->Bake(*scena1);
 
-    dyingModelPrefab   = std::make_unique<Prefab>("res/models/Dying.fbx");
-    jumpSkeletonPrefab = std::make_unique<Prefab>("res/models/Jump.fbx");
+    //dyingModelPrefab   = std::make_unique<Prefab>("res/models/Dying.fbx");
+    //jumpSkeletonPrefab = std::make_unique<Prefab>("res/models/Jump.fbx");
 
-    GameObject* dyingObj = dyingModelPrefab->Instantiate(*scena1, nullptr, nullptr);
-    dyingObj->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, -50.0f, -50.0f);
-    dyingObj->GetComponent<TransformComponent>()->scale    = glm::vec3(0.1f);
+    //GameObject* dyingObj = dyingModelPrefab->Instantiate(*scena1, nullptr, nullptr);
+    //dyingObj->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, -50.0f, -50.0f);
+    //dyingObj->GetComponent<TransformComponent>()->scale    = glm::vec3(0.1f);
 
-    AnimatorComponent* animator = dyingObj->AddComponent<AnimatorComponent>();
+    //AnimatorComponent* animator = dyingObj->AddComponent<AnimatorComponent>();
 
     // PostProcessTest
-    RedModel   = std::make_unique<Prefab>("res/models/test/red_test.glb");
-    GreenModel = std::make_unique<Prefab>("res/models/test/green_test.glb");
-    BlueModel  = std::make_unique<Prefab>("res/models/test/blue_test.glb");
+    //RedModel   = std::make_unique<Prefab>("res/models/test/red_test.glb");
+    //GreenModel = std::make_unique<Prefab>("res/models/test/green_test.glb");
+    //BlueModel  = std::make_unique<Prefab>("res/models/test/blue_test.glb");
 
-    GameObject* redObject   = RedModel->Instantiate(*scena1,   nullptr, nullptr);
-    GameObject* blueObject  = BlueModel->Instantiate(*scena1,  nullptr, nullptr);
-    GameObject* greenObject = GreenModel->Instantiate(*scena1, nullptr, nullptr);
+    //GameObject* redObject   = RedModel->Instantiate(*scena1,   nullptr, nullptr);
+    //GameObject* blueObject  = BlueModel->Instantiate(*scena1,  nullptr, nullptr);
+    //GameObject* greenObject = GreenModel->Instantiate(*scena1, nullptr, nullptr);
 
-    redObject->GetComponent<TransformComponent>()->position   = glm::vec3(0.0f, 30.0f,  50.0f);
-    blueObject->GetComponent<TransformComponent>()->position  = glm::vec3(0.0f, 30.0f,   0.0f);
-    greenObject->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 30.0f, -50.0f);
+    //redObject->GetComponent<TransformComponent>()->position   = glm::vec3(0.0f, 30.0f,  50.0f);
+    //blueObject->GetComponent<TransformComponent>()->position  = glm::vec3(0.0f, 30.0f,   0.0f);
+    //greenObject->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 30.0f, -50.0f);
 
     rigidBodyCamera1->useGravity = true;
     rigidBodyCamera2->useGravity = true;
@@ -1081,32 +1081,32 @@ int main(int, char**)
         updateHeldGear(p1HeldObject);
         updateHeldGear(p2HeldObject);
 
-        // testy animacji
-        if (ecs->GetSystem<HID>()->is_action_just_pressed("anim_play_dying")) {
-            auto* clip = AnimationHelper::FindAnimation(dyingModelPrefab->rootModel->animations, "mixamo.com");
-            if (clip) {
-                AnimationHelper::Play(animator, clip, true, 1.0f);
-                spdlog::info("Odtworzono animacje umierania");
-            }
-        }
+        //// testy animacji
+        //if (ecs->GetSystem<HID>()->is_action_just_pressed("anim_play_dying")) {
+        //    auto* clip = AnimationHelper::FindAnimation(dyingModelPrefab->rootModel->animations, "mixamo.com");
+        //    if (clip) {
+        //        AnimationHelper::Play(animator, clip, true, 1.0f);
+        //        spdlog::info("Odtworzono animacje umierania");
+        //    }
+        //}
 
-        if (ecs->GetSystem<HID>()->is_action_just_pressed("anim_play_jump")) {
-            auto* clip = &jumpSkeletonPrefab->rootModel->animations[0];
-            if (clip) {
-                AnimationHelper::Play(animator, clip, true, 1.0f);
-                spdlog::info("Odtworzono animacje skoku");
-            }
-        }
+        //if (ecs->GetSystem<HID>()->is_action_just_pressed("anim_play_jump")) {
+        //    auto* clip = &jumpSkeletonPrefab->rootModel->animations[0];
+        //    if (clip) {
+        //        AnimationHelper::Play(animator, clip, true, 1.0f);
+        //        spdlog::info("Odtworzono animacje skoku");
+        //    }
+        //}
 
-        if (ecs->GetSystem<HID>()->is_action_pressed("anim_slow_mo")) {
-            animator->playbackSpeed = 0.5f;
-        }
-        else if (ecs->GetSystem<HID>()->is_action_pressed("anim_fast_forward")) {
-            animator->playbackSpeed = 2.0f;
-        }
-        else {
-            animator->playbackSpeed = 1.0f;
-        }
+        //if (ecs->GetSystem<HID>()->is_action_pressed("anim_slow_mo")) {
+        //    animator->playbackSpeed = 0.5f;
+        //}
+        //else if (ecs->GetSystem<HID>()->is_action_pressed("anim_fast_forward")) {
+        //    animator->playbackSpeed = 2.0f;
+        //}
+        //else {
+        //    animator->playbackSpeed = 1.0f;
+        //}
 
         input();
 
