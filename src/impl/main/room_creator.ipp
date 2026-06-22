@@ -395,11 +395,13 @@ void createMainRooom(Scene* scena) {
     fiolka2b->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -45.0f, 0.0f };
     fiolka2b->GetComponent<TransformComponent>()->position = glm::vec3{ 57.630 ,9.000, -171.140f  + 15 };
 
-    GameObject * ksiazka = ksiazkaModel->Instantiate(*scena, nullptr, nullptr);
-    ksiazka->name = "ksiazka";
-    ksiazka->GetComponent<TransformComponent>()->scale    = glm::vec3{ 10, 10, 10 };
-    ksiazka->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -45.0f, 0.0f };
-    ksiazka->GetComponent<TransformComponent>()->position = glm::vec3{ 56.920 ,8.560, -150.740  + 15 };
+    //GameObject * ksiazka = ksiazkaModel->Instantiate(*scena, nullptr, nullptr);
+    //ksiazka->name = "ksiazka";
+    //ksiazka->GetComponent<TransformComponent>()->scale    = glm::vec3{ 10, 10, 10 };
+    //ksiazka->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -45.0f, 0.0f };
+    //ksiazka->GetComponent<TransformComponent>()->position = glm::vec3{ 56.920 ,8.560, -150.740  + 15 };
+
+    SpawnLoreNote(scena, ksiazkaModel.get(), glm::vec3{ 56.920 ,8.560, -150.740 + 15 }, "res/lore/Kalfu_ch4.txt", glm::vec3{ 0.0f, -45.0f, 0.0f }, glm::vec3(10), nullptr);
 
     GameObject* probowki = scena->CreateGameObject(nullptr);
     probowki->name = "probowki";
@@ -477,17 +479,21 @@ void createMainRooom(Scene* scena) {
     probowka2->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -176.200, 0.0f };
     probowka2->GetComponent<TransformComponent>()->position = glm::vec3{ 24.200+7 ,9.400, -145.450 + 15  };
 
-    GameObject * folder = folderModel->Instantiate(*scena, nullptr, nullptr);
-    folder->name = "folder";
-    folder->GetComponent<TransformComponent>()->scale    = glm::vec3{ 3, 3, 3 };
-    folder->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -93.300, 0.0f };
-    folder->GetComponent<TransformComponent>()->position = glm::vec3{ 26.550+7 ,8.390, -150.040  + 15 };
+    //GameObject * folder = folderModel->Instantiate(*scena, nullptr, nullptr);
+    //folder->name = "folder";
+    //folder->GetComponent<TransformComponent>()->scale    = glm::vec3{ 3, 3, 3 };
+    //folder->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -93.300, 0.0f };
+    //folder->GetComponent<TransformComponent>()->position = glm::vec3{ 26.550+7 ,8.390, -150.040  + 15 };
 
-    GameObject * papers = papersModel->Instantiate(*scena, nullptr, nullptr);
-    papers->name = "papers";
-    papers->GetComponent<TransformComponent>()->scale    = glm::vec3{ 3, 3, 3 };
-    papers->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -45.0f, 0.0f };
-    papers->GetComponent<TransformComponent>()->position = glm::vec3{ 22.080+7 ,8.270, -149.310 + 15  };
+    SpawnLoreNote(scena, ksiazkaModel.get(), glm::vec3{ 26.550 + 7 , 8.730, -150.040 + 15 }, "res/lore/Kalfu_ch6.txt", glm::vec3{ 0.0f, -93.300, 0.0f }, glm::vec3(10), nullptr);
+
+    //GameObject * papers = papersModel->Instantiate(*scena, nullptr, nullptr);
+    //papers->name = "papers";
+    //papers->GetComponent<TransformComponent>()->scale    = glm::vec3{ 3, 3, 3 };
+    //papers->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -45.0f, 0.0f };
+    //papers->GetComponent<TransformComponent>()->position = glm::vec3{ 22.080+7 ,8.270, -149.310 + 15  };
+
+    SpawnLoreNote(scena, ksiazkaModel.get(), glm::vec3{ 22.080 + 7 ,8.670, -149.310 + 15 }, "res/lore/Kalfu_ch7.txt", glm::vec3{ 0.0f, -45.0f, 0.0f }, glm::vec3(10), nullptr);
 
     GameObject * cup = cupModel->Instantiate(*scena, nullptr, nullptr);
     cup->name = "cup";
@@ -1006,6 +1012,7 @@ void createRentgenRoom(Scene* scena) {
     wozek2->GetComponent<TransformComponent>()->rotation = glm::vec3(0, 0, 0);
     wozek2->GetComponent<TransformComponent>()->scale = glm::vec3(7);
     wozek2->AddComponent<ColliderComponent>();
+	wozek2->GetComponent<ColliderComponent>()->offset = glm::vec3(0, -0.5, 0);
 
     GameObject * desk = deskModel->Instantiate(*scena, nullptr, nullptr);
     desk->name = "desk";
@@ -1124,12 +1131,21 @@ void createRentgenRoom(Scene* scena) {
     probowka_4b->GetComponent<TransformComponent>()->rotation = glm::vec3(0, -101.300, 0);
     probowka_4b->GetComponent<TransformComponent>()->scale = glm::vec3(0.025);
 
-    GameObject * ksiazka = ksiazkaModel->Instantiate(*scena, wozek2, nullptr);
-    ksiazka->name = "ksiazka";
-    ksiazka->GetComponent<TransformComponent>()->position =glm::vec3(-0.160, 0.350, -0.030);
-    ksiazka->GetComponent<TransformComponent>()->rotation = glm::vec3(0, -101.300, 0);
-    ksiazka->GetComponent<TransformComponent>()->scale = glm::vec3(1);
+    //GameObject * ksiazka = ksiazkaModel->Instantiate(*scena, wozek2, nullptr);
+    //ksiazka->name = "ksiazka";
+    //ksiazka->GetComponent<TransformComponent>()->position =glm::vec3(-0.160, 0.350, -0.030);
+    //ksiazka->GetComponent<TransformComponent>()->rotation = glm::vec3(0, -101.300, 0);
+    //ksiazka->GetComponent<TransformComponent>()->scale = glm::vec3(1);
 
+    SpawnLoreNote(scena, ksiazkaModel.get(), glm::vec3(-0.160, 0.350, -0.030), "res/lore/Expedition.txt", glm::vec3(0, -101.300, 0), glm::vec3(1), wozek2);
+
+    //glm::vec3 basePos = glm::vec3(-73.025f, 1.0f, -190.417f);
+
+    //SpawnLoreNote(scena, ksiazkaModel.get(), basePos + glm::vec3(1.5f, 0.0f, 0.0f), "res/lore/Kalfu_ch4.txt", glm::vec3(1.0), glm::vec3(10.0));
+
+    //SpawnLoreNote(scena, ksiazkaModel.get(), basePos + glm::vec3(3.0f, 0.0f, 0.0f), "res/lore/Kalfu_ch6.txt", glm::vec3(1.0), glm::vec3(10.0));
+
+    //SpawnLoreNote(scena, ksiazkaModel.get(), basePos + glm::vec3(4.5f, 0.0f, 0.0f), "res/lore/Kalfu_ch7.txt", glm::vec3(1.0), glm::vec3(10.0));
 }
 void createRentgenCorridor(Scene * scena){
     CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaLewaKorytarzRentgen",         glm::vec3(-50.470, 0, -137.540),  glm::vec3(41.440, 50, 1));

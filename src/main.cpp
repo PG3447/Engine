@@ -28,6 +28,8 @@
 #include <prefab.h>
 #include <filesystem>
 #include <optional>
+#include <fstream>
+#include <sstream>
 
 #include <fmod.h>
 #include <fmod.hpp>
@@ -205,6 +207,17 @@ std::unordered_map<GameObject*, DoorState>    toiletDoorsMap;
 std::unordered_set<GameObject*>               pickupObjects;
 GameObject* p1HeldObject = nullptr;
 GameObject* p2HeldObject = nullptr;
+
+bool p1IsReading = false;
+bool p2IsReading = false;
+
+GameObject* p1NoteUI_obj = nullptr;
+SpriteComponent* p1NoteUI = nullptr;
+
+GameObject* p2NoteUI_obj = nullptr;
+SpriteComponent* p2NoteUI = nullptr;
+
+std::unordered_map<GameObject*, std::string> noteContents;
 
 std::vector<GameObject*> mainRoomDoors;
 
@@ -502,6 +515,43 @@ int main(int, char**)
     player2InteractionInfo->textCentered       = true;
     player2InteractionInfo->layer              = 1;
 
+    // UI notatki gracz 1
+    p1NoteUI_obj = scena1->CreateGameObject(nullptr);
+    p1NoteUI = p1NoteUI_obj->AddComponent<SpriteComponent>();
+    p1NoteUI->sprites = { ResourceManager::LoadTexture("note_bg.png", "res/sprites/").id };
+    p1NoteUI->size = glm::vec2(500.0f, 700.0f);
+    p1NoteUI->screenPosition = glm::vec2(480.0f - 250.0f, 540.0f - 350.0f);
+    p1NoteUI->layer = 3;
+    p1NoteUI->isVisible = false;
+
+    p1NoteUI->textEnabled = true;
+    p1NoteUI->textCentered = false;
+    p1NoteUI->textColor = glm::vec3(0.1f, 0.1f, 0.1f);
+    p1NoteUI->textOutlineEnabled = false;
+    p1NoteUI->fontSize = 14.0f;
+    p1NoteUI->textOffset = glm::vec2(30.0f, 30.0f);
+    p1NoteUI->text = "";
+    p1NoteUI->fontPath = "res/fonts/NothingYouCouldDo-Regular.ttf";
+
+
+    /// UI notatki gracz 2
+    p2NoteUI_obj = scena1->CreateGameObject(nullptr);
+    p2NoteUI = p2NoteUI_obj->AddComponent<SpriteComponent>();
+    p2NoteUI->sprites = { ResourceManager::LoadTexture("note_bg.png", "res/sprites/").id };
+    p2NoteUI->size = glm::vec2(500.0f, 700.0f);
+    p2NoteUI->screenPosition = glm::vec2(1440.0f - 250.0f, 540.0f - 350.0f);
+    p2NoteUI->layer = 3;
+    p2NoteUI->isVisible = false;
+
+    p2NoteUI->textEnabled = true;
+    p2NoteUI->textCentered = false;
+    p2NoteUI->textColor = glm::vec3(0.1f, 0.1f, 0.1f);
+    p2NoteUI->textOutlineEnabled = false;
+    p2NoteUI->fontSize = 14.0f;
+    p2NoteUI->textOffset = glm::vec2(30.0f, 30.0f);
+    p2NoteUI->text = "";
+    p1NoteUI->fontPath = "res/fonts/NothingYouCouldDo-Regular.ttf";
+
     connectAllModels();
     LoadPlayerAnimations();
 
@@ -590,11 +640,13 @@ int main(int, char**)
     FMOD::Sound* sndInsert = nullptr;
     FMOD::Sound* sndDoorLocked = nullptr;
     FMOD::Sound* sndGear = nullptr;
+    FMOD::Sound* sndLorePaper = nullptr;
     audioSys->createSound("res/sound/button_click.wav", sndBtnClick, false);
     audioSys->createSound("res/sound/pick_up.wav", sndPickup, false);
     audioSys->createSound("res/sound/insert_puzzle.wav", sndInsert, false);
     audioSys->createSound("res/sound/door_locked.wav", sndDoorLocked, false);
     audioSys->createSound("res/sound/falling_gear.wav", sndGear, false);
+    audioSys->createSound("res/sound/page.wav", sndLorePaper, false);
 
     FMOD::Sound* sndPaperRoll = nullptr;
     FMOD::Sound* sndDoorOpen = nullptr;
@@ -708,6 +760,43 @@ int main(int, char**)
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
         updateFPS(deltaTime);
+
+        int display_w, display_h;
+        glfwGetFramebufferSize(window, &display_w, &display_h);
+
+        // ostroznie przy zmianie rozdzielczosci recznie ciagnac myszka.
+        // zmiana rozdzielczosci powinna tylko byc mozliwa poprzez ustawienia gry jak juz beda istniec
+        if (display_h > 0) {
+            float scaleY = (float)display_h / 1080.0f;
+
+            if (p1NoteUI) {
+                p1NoteUI->size = glm::vec2(500.0f * scaleY, 700.0f * scaleY);
+                p1NoteUI->textOffset = glm::vec2(30.0f * scaleY, 30.0f * scaleY);
+
+                p1NoteUI->fontPath = "res/fonts/Roboto-Regular.ttf";
+                p1NoteUI->fontSize = 15.0f * scaleY;
+
+                p1NoteUI->fontPath2 = "res/fonts/NothingYouCouldDo-Regular.ttf";
+                p1NoteUI->fontSize2 = 18.0f * scaleY;
+
+                p1NoteUI->screenPosition = glm::vec2((display_w * 0.25f) - (p1NoteUI->size.x * 0.5f),
+                    (display_h * 0.5f) - (p1NoteUI->size.y * 0.5f));
+            }
+
+            if (p2NoteUI) {
+                p2NoteUI->size = glm::vec2(500.0f * scaleY, 700.0f * scaleY);
+                p2NoteUI->textOffset = glm::vec2(30.0f * scaleY, 30.0f * scaleY);
+
+				p2NoteUI->fontPath = "res/fonts/Roboto-Regular.ttf";
+				p2NoteUI->fontSize = 15.0f * scaleY;
+
+				p2NoteUI->fontPath2 = "res/fonts/NothingYouCouldDo-Regular.ttf";
+                p2NoteUI->fontSize2 = 18.0f * scaleY;
+
+                p2NoteUI->screenPosition = glm::vec2((display_w * 0.75f) - (p2NoteUI->size.x * 0.5f),
+                    (display_h * 0.5f) - (p2NoteUI->size.y * 0.5f));
+            }
+        }
 
         CpuTimer cpuTimer;
         cpuTimer.start();
@@ -834,6 +923,9 @@ int main(int, char**)
                 }
                 else if (hit.hitObject->name.find("Coffin") != std::string::npos)
                     hintText = "Pull Coffin";
+                else if (noteContents.count(hit.hitObject)) {
+                    hintText = "Read Note";
+                }
             }
         }
         else if (p1HeldObject != nullptr) {
@@ -893,6 +985,9 @@ int main(int, char**)
                 }
                 else if (hit.hitObject->name.find("Coffin") != std::string::npos)
                     hintText2 = "Pull Coffin";
+                else if (noteContents.count(hit.hitObject)) {
+                    hintText2 = "Read Note";
+                }
             }
         }
         else if (p2HeldObject != nullptr) {
@@ -929,11 +1024,49 @@ int main(int, char**)
         }
 
         if (focused) {
-            HandlePlayerInteraction(*ecs, "interact_p1", player1Raycast, camera1, p1HeldObject, p2HeldObject, scena1, rotatingObjects, rotatingInProgress, p1ShakeTimer, p1Animator, postacGracza.get(), audioSys, sndPaperRoll, sndDoorOpen, sndDoorCloseStart, sndBtnClick, sound, sndPickup, sndInsert, sndDoorLocked, sndGear);
-            HandlePlayerInteraction(*ecs, "interact_p2", player2Raycast, camera2, p2HeldObject, p1HeldObject, scena1, rotatingObjects, rotatingInProgress, p2ShakeTimer, p2Animator, postacGracza.get(), audioSys, sndPaperRoll, sndDoorOpen, sndDoorCloseStart, sndBtnClick, sound, sndPickup, sndInsert, sndDoorLocked, sndGear);
+            if (ecs->GetSystem<HID>()->is_action_just_pressed("interact_p1")) {
+                if (p1IsReading) {
+                    p1IsReading = false;
+                    p1NoteUI->isVisible = false;
+                    if (audioSys && sndLorePaper) audioSys->playSound(sndLorePaper);
+                }
+                else if (player1Raycast->anyHit()) {
+                    auto hit = player1Raycast->closestHit();
+                    if (hit.hitObject && noteContents.count(hit.hitObject)) {
+                        p1IsReading = true;
+                        p1NoteUI->text = noteContents[hit.hitObject];
+                        p1NoteUI->isVisible = true;
+                        if (audioSys && sndLorePaper) audioSys->playSound(sndLorePaper);
+                    }
+                }
+            }
 
-            HandleAltRotate(*ecs, "alt_interact_p1", player1Raycast, rotatingObjects, rotatingInProgress, audioSys, sndPaperRoll);
-            HandleAltRotate(*ecs, "alt_interact_p2", player2Raycast, rotatingObjects, rotatingInProgress, audioSys, sndPaperRoll);
+            if (!p1IsReading) {
+                HandlePlayerInteraction(*ecs, "interact_p1", player1Raycast, camera1, p1HeldObject, p2HeldObject, scena1, rotatingObjects, rotatingInProgress, p1ShakeTimer, p1Animator, postacGracza.get(), audioSys, sndPaperRoll, sndDoorOpen, sndDoorCloseStart, sndBtnClick, sound, sndPickup, sndInsert, sndDoorLocked, sndGear);
+                HandleAltRotate(*ecs, "alt_interact_p1", player1Raycast, rotatingObjects, rotatingInProgress, audioSys, sndPaperRoll);
+            }
+
+            if (ecs->GetSystem<HID>()->is_action_just_pressed("interact_p2")) {
+                if (p2IsReading) {
+                    p2IsReading = false;
+                    p2NoteUI->isVisible = false;
+                    if (audioSys && sndLorePaper) audioSys->playSound(sndLorePaper);
+                }
+                else if (player2Raycast->anyHit()) {
+                    auto hit = player2Raycast->closestHit();
+                    if (hit.hitObject && noteContents.count(hit.hitObject)) {
+                        p2IsReading = true;
+                        p2NoteUI->text = noteContents[hit.hitObject];
+                        p2NoteUI->isVisible = true;
+                        if (audioSys && sndLorePaper) audioSys->playSound(sndLorePaper);
+                    }
+                }
+            }
+
+            if (!p2IsReading) {
+                HandlePlayerInteraction(*ecs, "interact_p2", player2Raycast, camera2, p2HeldObject, p1HeldObject, scena1, rotatingObjects, rotatingInProgress, p2ShakeTimer, p2Animator, postacGracza.get(), audioSys, sndPaperRoll, sndDoorOpen, sndDoorCloseStart, sndBtnClick, sound, sndPickup, sndInsert, sndDoorLocked, sndGear);
+                HandleAltRotate(*ecs, "alt_interact_p2", player2Raycast, rotatingObjects, rotatingInProgress, audioSys, sndPaperRoll);
+            }
         }
 
         auto updateHeldGear = [&](GameObject* heldObj) {
@@ -981,13 +1114,16 @@ int main(int, char**)
         bool p2IsMoving = false;
 
         if (focused) {
-            p1IsMoving |= processCameraInput(*ecs, *camCompLeft, *t0, "move_up", "move_down", "move_left", "move_right");
-            p2IsMoving |= processCameraInput(*ecs, *camCompRight, *t1, "move_up_2", "move_down_2", "move_left_2", "move_right_2");
+            if (!p1IsReading) {
+                p1IsMoving |= processCameraInput(*ecs, *camCompLeft, *t0, "move_up", "move_down", "move_left", "move_right");
+                processCameraMouse(*ecs, *camCompLeft, *camTransform1, *t0);
+                p1IsMoving |= processCameraGamepad(*ecs, *camCompLeft, *camTransform1, *t0, 0);
+            }
 
-            processCameraMouse(*ecs, *camCompLeft, *camTransform1, *t0);
-
-            p1IsMoving |= processCameraGamepad(*ecs, *camCompLeft, *camTransform1, *t0, 0);
-            p2IsMoving |= processCameraGamepad(*ecs, *camCompRight, *camTransform2, *t1, 1);
+            if (!p2IsReading) {
+                p2IsMoving |= processCameraInput(*ecs, *camCompRight, *t1, "move_up_2", "move_down_2", "move_left_2", "move_right_2");
+                p2IsMoving |= processCameraGamepad(*ecs, *camCompRight, *camTransform2, *t1, 1);
+            }
         }
 
         bool p1IsHolding = (p1HeldObject != nullptr);

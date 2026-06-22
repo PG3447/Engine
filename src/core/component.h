@@ -212,6 +212,8 @@ struct SpriteComponent : Component {
     std::string text = "";
     std::string fontPath = "res/textures/fonts/arial.ttf";
     float fontSize = 32.0f;
+    std::string fontPath2 = "";
+    float fontSize2 = 22.0f;
     glm::vec3 textColor = { 255.0f, 255.0f, 255.0f };
     glm::vec2 textOffset = { 0.0f, 0.0f };
     bool textOutlineEnabled = false;
