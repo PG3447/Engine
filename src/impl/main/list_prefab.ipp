@@ -109,6 +109,9 @@ std::unique_ptr<Prefab> groundModel;
 std::unique_ptr<Prefab> drawer1Model;
 std::unique_ptr<Prefab> drawer2Model;
 std::unique_ptr<Prefab> tableModel;
+std::unique_ptr<Prefab> wallRentgenModel;
+std::unique_ptr<Prefab> wallMainRoomModel;
+std::unique_ptr<Prefab> wallBathroomModel;
 
 std::unique_ptr<Prefab> koparkaModel;
 
@@ -211,4 +214,7 @@ void connectAllModels() {
     gearModel = std::make_unique<Prefab>("res/models/gear.glb");
     floorModelB = std::make_unique<Prefab>("res/models/floor.glb");
     ceilingModelB = std::make_unique<Prefab>("res/models/ceiling.glb");
+    wallRentgenModel = std::make_unique<Prefab>("res/models/wall1_rentgen.glb");
+    wallMainRoomModel = std::make_unique<Prefab>("res/models/wall1_main_room.glb");
+    wallBathroomModel = std::make_unique<Prefab>("res/models/wall1_toilet.glb");
 }
