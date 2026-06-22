@@ -110,7 +110,7 @@ void createFirstRoom(Scene* scena1) {
             GameObject* hinge = CreateInteractableDoor(
                 scena1, doorsToiletModel.get(), nullptr,
                 "ToiletDoor_" + std::to_string(i),
-                doorPos, doorScale, pivotOffset, colliderSize, -180.0f
+                doorPos, doorScale, pivotOffset, colliderSize, 90.0f
             );
             unlockedDoors.insert(hinge);
         }
@@ -207,7 +207,7 @@ void createFirstRoom(Scene* scena1) {
     glm::vec3{ 10, 11, 10 },
     glm::vec3(5.0f, 0.0f, 0.0f),
     glm::vec3{ 5, 22, 1 },
-    90.0f,
+    -90.0f,
     180.0f,
     glm::vec3{ 1, 22, 5 },
     glm::vec3(0.0f, 0.0f, 4.0f)
