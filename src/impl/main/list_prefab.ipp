@@ -101,14 +101,6 @@ std::unique_ptr<Prefab> laboratoryStuff2Model;
 std::unique_ptr<Prefab> laboratoryStuff3Model;
 std::unique_ptr<Prefab> pokrywkaRolkiModel;
 
-//std::unique_ptr<Prefab> dyingModelPrefab;
-//std::unique_ptr<Prefab> jumpSkeletonPrefab;
-
-// testowe obiekty do postprocessingu
-//std::unique_ptr<Prefab> RedModel;
-//std::unique_ptr<Prefab> BlueModel;
-//std::unique_ptr<Prefab> GreenModel;
-
 std::unique_ptr<Prefab> roofModel;
 std::unique_ptr<Prefab> groundModel;
 
@@ -117,6 +109,15 @@ std::unique_ptr<Prefab> drawer2Model;
 std::unique_ptr<Prefab> tableModel;
 
 std::unique_ptr<Prefab> koparkaModel;
+
+
+//std::unique_ptr<Prefab> dyingModelPrefab;
+//std::unique_ptr<Prefab> jumpSkeletonPrefab;
+
+// testowe obiekty do postprocessingu
+//std::unique_ptr<Prefab> RedModel;
+//std::unique_ptr<Prefab> BlueModel;
+//std::unique_ptr<Prefab> GreenModel;
 
 
 
