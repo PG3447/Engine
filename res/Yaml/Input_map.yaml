@@ -21,9 +21,12 @@ input:
     interact_p1: [GLFW_KEY_E]
     alt_interact_p1: [GLFW_KEY_Q]
   mouse:
+    ui_click: [GLFW_MOUSE_BUTTON_LEFT]
     interact_p1: [GLFW_MOUSE_BUTTON_LEFT]
     right_click: [GLFW_MOUSE_BUTTON_RIGHT]
   gamepad:
+    ui_click:
+      - {button: GLFW_GAMEPAD_BUTTON_TRIANGLE, id: 0}
     interact_p1:
       - {button: GLFW_GAMEPAD_BUTTON_TRIANGLE, id: 0}
     interact_p2:

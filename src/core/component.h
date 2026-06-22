@@ -628,6 +628,42 @@ struct CockroachFollowerComponent : Component {
     bool hasActiveNavGoal = false;
 };
 
+struct UIButtonComponent : Component
+{
+    static constexpr uint64_t ComponentBit = 1ull << 14;
 
+    bool isHovered = false;
+    bool isPressed = false;
+    bool isEnabled = true;
+
+    std::function<void(GameObject*)> onClick;
+    std::function<void(GameObject*)> onHoverEnter;
+    std::function<void(GameObject*)> onHoverExit;
+
+    glm::vec4 normalColor = { 1,1,1,1 };
+    glm::vec4 hoverColor = { 0.8f,0.8f,0.8f,1 };
+    glm::vec4 pressColor = { 0.6f,0.6f,0.6f,1 };
+
+    const char* GetTypeName() const override { return "UIButton"; }
+};
+
+struct UISliderComponent : Component
+{
+    static constexpr uint64_t ComponentBit = 1ull << 15;
+
+    float value = 0.5f; // 0 - 1
+
+    bool isDragging = false;
+
+    std::function<void(float)> onValueChanged;
+
+    glm::vec4 barColor = { 0.3f,0.3f,0.3f,1 };
+    glm::vec4 fillColor = { 0.8f,0.8f,0.2f,1 };
+
+    float minValue = 0.0f;
+    float maxValue = 1.0f;
+
+    const char* GetTypeName() const override { return "UISlider"; }
+};
 
 #endif
