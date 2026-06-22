@@ -17,6 +17,7 @@ void createFirstRoom(Scene* scena1) {
     wallModel2 = std::make_unique<Prefab>("res/models/wall2.glb");
     wallModel3 = std::make_unique<Prefab>("res/models/wall3.glb");
 
+
     roomsLights.resize(2);
 
     Room lazienka;
@@ -26,10 +27,11 @@ void createFirstRoom(Scene* scena1) {
     lazienka.halfSize = glm::vec3(40.0, 30.0, 46.5);
     roomsLights[lazienka.id] = lazienka;
     // Podloga i sufit
-    GameObject* floor = CreateStaticObject(scena1, floorModel.get(), nullptr,
-    "PodlogawLazience", glm::vec3(25, 0, -60), glm::vec3(50, 1, 50));
+   // GameObject* floor = CreateStaticObject(scena1, floorModel.get(), nullptr,"PodlogawLazience", glm::vec3(25, 0, -60), glm::vec3(50, 1, 50));
+    GameObject* floor = CreateStaticObject(scena1, floorModelB.get(), nullptr,"PodlogawLazience", glm::vec3(12.440, 1.170, -53.770), glm::vec3(2.270, 1, 4.430));
     floor->GetComponent<ColliderComponent>()->isWalkable = true;
-    CreateStaticObject(scena1, floorModel.get(), nullptr, "SufitWKiblu",       glm::vec3(0, 20, 0),  glm::vec3(100, 1, 100), glm::vec3(0)); //glm::vec3(100, 1, 100)
+    //CreateStaticObject(scena1, floorModel.get(), nullptr, "SufitWKiblu",       glm::vec3(0, 20, 0),  glm::vec3(100, 1, 100), glm::vec3(0)); //glm::vec3(100, 1, 100)
+    CreateStaticObject(scena1, ceilingModelB.get(), nullptr, "SufitWKiblu",       glm::vec3(11.200, 22.800, -55.330),  glm::vec3(2.110, 1, 4.540)); //glm::vec3(100, 1, 100)
 
     // Sciany
     CreateStaticObject(scena1, wallModel.get(),  nullptr, "ScianaTylnaKibel",           glm::vec3(0, 0, -10),    glm::vec3(50, 50, 1),  glm::vec3(0)); // glm::vec3(50, 50, 1)
@@ -217,8 +219,10 @@ void createMainRooom(Scene* scena) {
     mainRoom.halfSize = glm::vec3(38.0, 30.0, 46.5);
     roomsLights[mainRoom.id] = mainRoom;
     // Podloga i sufit
-    CreateStaticObject(scena, floorModel.get(), nullptr, "PodlogaMainRoom", glm::vec3(23.300, 0, -146.390),  glm::vec3(37.070, 1, 43.540));
-    CreateStaticObject(scena, floorModel.get(), nullptr, "SufitMainRoom",   glm::vec3(23.300, 22, -144.490), glm::vec3(37.070, 1, 43.820));
+    //CreateStaticObject(scena, floorModel.get(), nullptr, "PodlogaMainRoom", glm::vec3(23.300, 0, -146.390),  glm::vec3(37.070, 1, 43.540));
+    CreateStaticObject(scena, floorModelB.get(), nullptr, "PodlogaMainRoom", glm::vec3(24.870, 1.170, -143.820),  glm::vec3(3.560, 1, 4.570));
+    //CreateStaticObject(scena, floorModel.get(), nullptr, "SufitMainRoom",   glm::vec3(23.300, 22, -144.490), glm::vec3(37.070, 1, 43.820));
+    CreateStaticObject(scena, ceilingModelB.get(), nullptr, "SufitMainRoom",   glm::vec3(24.980, 20.100, -144.870), glm::vec3(3.450, 1, 4.460));
 
     // Sciany
     CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaDoRentgenaPrawa",        glm::vec3(35, 0, -203+14),   glm::vec3(25, 50, 1));
@@ -757,7 +761,9 @@ void createCrematorium(Scene* scena) {
 
 
     CreateStaticObject(scena, floorModel.get(), nullptr, "PodlogaKrematorium",   glm::vec3(125, 0, -150.000),  glm::vec3(35.000, 1, 30.000));
-    CreateStaticObject(scena, floorModel.get(), nullptr, "SufitCrematorium",     glm::vec3(125, 25, -150.000), glm::vec3(35.000, 1, 30.000));
+    CreateStaticObject(scena, floorModelB.get(), nullptr, "PodlogaKrematorium",   glm::vec3(125, 1.170, -150.000),  glm::vec3(3.490, 1, 2.870));
+    //CreateStaticObject(scena, floorModel.get(), nullptr, "SufitCrematorium",     glm::vec3(125, 25, -150.000), glm::vec3(35.000, 1, 30.000));
+    CreateStaticObject(scena, ceilingModelB.get(), nullptr, "SufitCrematorium",     glm::vec3(125.000, 19.160, -150.000), glm::vec3(3.490, 1, 2.870));
     CreateStaticObject(scena, wallModel2.get(), nullptr, "ScianaKoncowaKrematorium", glm::vec3(160.280, 0, -149.030), glm::vec3(32.000, 50, 1), std::nullopt, glm::vec3(1, 50, 32.000));
     CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaKremPrawa",       glm::vec3(124.600, 0, -178.010), glm::vec3(35.000, 50, 1), std::nullopt, glm::vec3(35.000, 100, 1));
     CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaKremLewa",       glm::vec3(91.190, 0, -153.760), glm::vec3(1, 50, 32.000), std::nullopt, glm::vec3(1, 100, 32.000));
@@ -790,8 +796,10 @@ void createCrematorium(Scene* scena) {
 }
 
 void createRentgenRoom(Scene* scena) {
-    GameObject * podlogaRentgenRoom =CreateStaticObject(scena, floorModel.get(), nullptr, "PodlogaRentgenRoom",    glm::vec3(-84.700+10, 0, -183.720),  glm::vec3(30.000, 1, 30.000));
-    GameObject * sufitRentgen = CreateStaticObject(scena, floorModel.get(), nullptr, "SufitRentgen",          glm::vec3(-84.700+10, 17, -183.720), glm::vec3(30, 1, 30));
+    //GameObject * podlogaRentgenRoom =CreateStaticObject(scena, floorModel.get(), nullptr, "PodlogaRentgenRoom",    glm::vec3(-84.700+10, 0, -183.720),  glm::vec3(30.000, 1, 30.000));
+    GameObject * podlogaRentgenRoom =CreateStaticObject(scena, floorModelB.get(), nullptr, "PodlogaRentgenRoom",    glm::vec3(-70.610, 1.170, -178.790),  glm::vec3(2.520, 1, 2.530));
+    //GameObject * sufitRentgen = CreateStaticObject(scena, floorModel.get(), nullptr, "SufitRentgen",          glm::vec3(-84.700+10, 17, -183.720), glm::vec3(30, 1, 30));
+    GameObject * sufitRentgen = CreateStaticObject(scena, ceilingModelB.get(), nullptr, "SufitRentgen",          glm::vec3(-70.610, 17.000, -178.790), glm::vec3(2.520, 1, 2.530));
     GameObject * KoncowaScianaRentgen = CreateStaticObject(scena, wallModel.get(),  nullptr, "KoncowaScianaRentgen",  glm::vec3(-84.570+10, 0, -214.550+10),          glm::vec3(32, 50, 1));
     GameObject* ScianaRentgen2 = CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaRentgen2",         glm::vec3(-102.430, 0, -153.020),  glm::vec3(12.600, 50, 1));
     GameObject * LewaScianaRentgen = CreateStaticObject(scena, wallModel.get(),  nullptr, "LewaScianaRentgen",    glm::vec3(-105.590+10, 0.000, -183.580),  glm::vec3(32.000, 50.000, 1), glm::vec3(180, 90, 180), glm::vec3(1,50.000,32.000), true);
@@ -1149,8 +1157,10 @@ void createRentgenCorridor(Scene * scena){
     CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaPrawaKorytarzRentgen1",         glm::vec3(-86.440, 0, -153.020),  glm::vec3(4.630, 50, 1));
     CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaPrawaKorytarzRentgen2",         glm::vec3(-41.200, 0, -153.020),  glm::vec3(30.460, 50, 1));
     CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaKoncowaKorytarzRentgen",         glm::vec3(-91.890, 0, -144.780),  glm::vec3(1, 90, 7.870));
-    CreateStaticObject(scena, floorModel.get(), nullptr, "PodlogaKorytarzRentgen",    glm::vec3(-52.440, 0, -145.900),  glm::vec3(43.520, 1, 8.070));
-    CreateStaticObject(scena, floorModel.get(), nullptr, "SufitKorytarzRentgen",    glm::vec3(-52.440, 20, -145.900),  glm::vec3(43.520, 1, 8.070));
+    //CreateStaticObject(scena, floorModel.get(), nullptr, "PodlogaKorytarzRentgen",    glm::vec3(-52.440, 0, -145.900),  glm::vec3(43.520, 1, 8.070));
+    CreateStaticObject(scena, floorModelB.get(), nullptr, "PodlogaKorytarzRentgen",    glm::vec3(-52.750, 1.170, -145.280),  glm::vec3(4.210, 1, 0.820));
+    //CreateStaticObject(scena, floorModel.get(), nullptr, "SufitKorytarzRentgen",    glm::vec3(-52.440, 20, -145.900),  glm::vec3(43.520, 1, 8.070));
+    CreateStaticObject(scena, ceilingModelB.get(), nullptr, "SufitKorytarzRentgen",    glm::vec3(-52.750, 20, -145.150),  glm::vec3(4.210, 1, 0.790));
     GameObject* hingeDrzwiDoRentgen = CreateInteractableDoor(
         scena, NormalDoor.get(), nullptr, "DrzwiDoRentgenZKorytarza",
         glm::vec3(-79, 7.300f, -152.310), glm::vec3(3.600, 3.400, 1),
@@ -1165,8 +1175,10 @@ void createCrematoriumCorridor(Scene * scena){
     CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaPrawaKorytarzKrematorium1",         glm::vec3(135.720, 0, -121.660),  glm::vec3(4.630, 50, 1));
     CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaPrawaKorytarzKrematorium2",         glm::vec3(90.570, 0, -121.660),  glm::vec3(30.460, 50, 1));
     CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaKoncowaKorytarzKrematorium",         glm::vec3(141.810, 0, -113.790),  glm::vec3(1, 90, 7.870));
-    CreateStaticObject(scena, floorModel.get(), nullptr, "PodlogaKorytarzKrematorium",    glm::vec3(102.610, 0, -115.010),  glm::vec3(43.520, 1, 8.070));
-    CreateStaticObject(scena, floorModel.get(), nullptr, "SufitKorytarzKrematorium",    glm::vec3(102.610, 20, -115.010),  glm::vec3(43.520, 1, 8.070));
+    //CreateStaticObject(scena, floorModel.get(), nullptr, "PodlogaKorytarzKrematorium",    glm::vec3(102.610, 0, -115.010),  glm::vec3(43.520, 1, 8.070));
+    CreateStaticObject(scena, floorModelB.get(), nullptr, "PodlogaKorytarzKrematorium",    glm::vec3(101.180, 1.170, -114.550),  glm::vec3(4.060, 1, 0.750));
+    //CreateStaticObject(scena, floorModel.get(), nullptr, "SufitKorytarzKrematorium",    glm::vec3(102.610, 20, -115.010),  glm::vec3(43.520, 1, 8.070));
+    CreateStaticObject(scena, ceilingModelB.get(), nullptr, "SufitKorytarzKrematorium",    glm::vec3(101.180, 20, -114.550),  glm::vec3(4.060, 1, 0.750));
     GameObject* hingeDrzwiDoRentgen = CreateInteractableDoor(
         scena, NormalDoor.get(), nullptr, "DrzwiDoKrematorium",
         glm::vec3(131.390-5-2-0.3, 7.300f, -121.670), glm::vec3(3.600, 3.400, 1),
