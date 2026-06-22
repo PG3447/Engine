@@ -186,82 +186,110 @@ private:
     }
 
     void RenderText(SpriteComponent& sprite, const glm::mat4& proj)
-    {
-        auto& chars = GetOrLoadFont(sprite.fontPath, (int)sprite.fontSize);
-        std::map<char, Character>* chars2 = nullptr;
+{
+    auto& chars = GetOrLoadFont(sprite.fontPath, (int)sprite.fontSize);
+    std::map<char, Character>* chars2 = nullptr;
 
-        if (!sprite.fontPath2.empty()) {
-            chars2 = &GetOrLoadFont(sprite.fontPath2, (int)sprite.fontSize2);
+    if (!sprite.fontPath2.empty()) {
+        chars2 = &GetOrLoadFont(sprite.fontPath2, (int)sprite.fontSize2);
+    }
+
+    textShader->use();
+    textShader->setMat4("projection", proj);
+    textShader->setInt("text", 0);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindVertexArray(textVAO);
+
+    float baseX = sprite.screenPosition.x + sprite.textOffset.x;
+    float baseY = sprite.screenPosition.y + sprite.textOffset.y;
+
+        if (sprite.textCentered)
+        {
+            float textWidth = 0.0f;
+            for (char c : sprite.text) {
+                if (c == '^' || c == '\n' || c == '\r') continue;
+                auto it = chars.find(c);
+                if (it != chars.end())
+                    textWidth += (it->second.advance >> 6);
+            }
+            baseX -= textWidth / 2.0f;
+            if (sprite.textOutlineEnabled)
+                baseY += sprite.textOutlineSize;
         }
 
-        textShader->use();
-        textShader->setMat4("projection", proj);
-        textShader->setInt("text", 0);
+    auto renderString = [&](float offsetX, float offsetY, glm::vec3 color)
+    {
+        textShader->setVec3("textColor", color);
+        float startX = baseX + offsetX;
+        float x = startX;
+        float y = baseY + offsetY;
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindVertexArray(textVAO);
+        bool useSecondFont = false;
 
-        float baseX = sprite.screenPosition.x + sprite.textOffset.x;
-        float baseY = sprite.screenPosition.y + sprite.textOffset.y;
+        for (char c : sprite.text)
+        {
+            if (c == '\r') continue;
 
-        auto renderString = [&](float offsetX, float offsetY, glm::vec3 color)
-            {
-                textShader->setVec3("textColor", color);
-                float startX = baseX + offsetX;
-                float x = startX;
-                float y = baseY + offsetY;
+            if (c == '^') {
+                useSecondFont = !useSecondFont;
+                continue;
+            }
 
-                bool useSecondFont = false;
+            float currentFontSize = (useSecondFont && chars2) ? sprite.fontSize2 : sprite.fontSize;
 
-                for (char c : sprite.text)
-                {
-                    if (c == '\r') continue;
+            if (c == '\n') {
+                y += currentFontSize * 1.2f;
+                x = startX;
+                continue;
+            }
 
-                    if (c == '^') {
-                        useSecondFont = !useSecondFont;
-                        continue;
-                    }
+            auto& activeChars = (useSecondFont && chars2) ? *chars2 : chars;
+            auto it = activeChars.find(c);
+            if (it == activeChars.end()) continue;
 
-                    float currentFontSize = (useSecondFont && chars2) ? sprite.fontSize2 : sprite.fontSize;
+            const Character& ch = it->second;
+            float xpos = x + ch.bearing.x;
+            float ypos = y - ch.bearing.y + (int)currentFontSize;
+            float w = (float)ch.size.x;
+            float h = (float)ch.size.y;
 
-                    if (c == '\n') {
-                        y += currentFontSize * 1.2f;
-                        x = startX;
-                        continue;
-                    }
-
-                    auto& activeChars = (useSecondFont && chars2) ? *chars2 : chars;
-                    auto it = activeChars.find(c);
-                    if (it == activeChars.end()) continue;
-
-                    const Character& ch = it->second;
-                    float xpos = x + ch.bearing.x;
-                    float ypos = y + ((int)currentFontSize - ch.bearing.y);
-                    float w = (float)ch.size.x;
-                    float h = (float)ch.size.y;
-
-                    float verts[6][4] = {
-                        { xpos,     ypos + h, 0.0f, 1.0f },
-                        { xpos + w, ypos,     1.0f, 0.0f },
-                        { xpos,     ypos,     0.0f, 0.0f },
-                        { xpos,     ypos + h, 0.0f, 1.0f },
-                        { xpos + w, ypos + h, 1.0f, 1.0f },
-                        { xpos + w, ypos,     1.0f, 0.0f },
-                    };
-
-                    glBindTexture(GL_TEXTURE_2D, ch.textureID);
-                    glBindBuffer(GL_ARRAY_BUFFER, textVBO);
-                    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(verts), verts);
-                    glDrawArrays(GL_TRIANGLES, 0, 6);
-
-                    x += (ch.advance >> 6);
-                }
+            float verts[6][4] = {
+                { xpos,     ypos + h, 0.0f, 1.0f },
+                { xpos + w, ypos,     1.0f, 0.0f },
+                { xpos,     ypos,     0.0f, 0.0f },
+                { xpos,     ypos + h, 0.0f, 1.0f },
+                { xpos + w, ypos + h, 1.0f, 1.0f },
+                { xpos + w, ypos,     1.0f, 0.0f },
             };
 
-        renderString(0.0f, 0.0f, sprite.textColor);
-        glBindVertexArray(0);
-        glBindTexture(GL_TEXTURE_2D, 0);
-    }
+            glBindTexture(GL_TEXTURE_2D, ch.textureID);
+            glBindBuffer(GL_ARRAY_BUFFER, textVBO);
+            glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(verts), verts);
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+
+            x += (ch.advance >> 6);
+        }
+    };
+
+        if (sprite.textOutlineEnabled)
+        {
+            float o = sprite.textOutlineSize;
+            const int steps = 8;
+            for (int i = 0; i < steps; i++)
+            {
+                float angle = (2.0f * 3.14159265f * i) / steps;
+                float dx = cos(angle) * o;
+                float dy = sin(angle) * o;
+                renderString(dx, dy, sprite.textOutlineColor);
+            }
+        }
+
+    renderString(0.0f, 0.0f, sprite.textColor);
+
+    glBindVertexArray(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
 
     std::map<char, Character>& GetOrLoadFont(const std::string& path, int size)
     {
