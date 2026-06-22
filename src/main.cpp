@@ -860,9 +860,12 @@ int main(int, char**)
                 renderSystem->frustumCullingEnabled ? "ON" : "OFF");
         }
 
-        if (ecs->GetSystem<HID>()->is_action_just_pressed("gamma_up")) {
-            //postProcessingSystem->set_gamma(postProcessingSystem->get_gamma() + 0.1f);
+        if (ecs->GetSystem<HID>()->is_action_just_pressed("ui_menu")) {
             sceneIsMenu = !sceneIsMenu;
+        }
+
+        if (ecs->GetSystem<HID>()->is_action_just_pressed("gamma_up")) {
+            postProcessingSystem->set_gamma(postProcessingSystem->get_gamma() + 0.1f);
         }
         if (ecs->GetSystem<HID>()->is_action_just_pressed("gamma_down")) {
             postProcessingSystem->set_gamma(postProcessingSystem->get_gamma() - 0.1f);

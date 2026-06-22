@@ -20,6 +20,7 @@ input:
     play_sound: [GLFW_KEY_H]
     interact_p1: [GLFW_KEY_E]
     alt_interact_p1: [GLFW_KEY_Q]
+    ui_menu: [GLFW_KEY_F1]
   mouse:
     ui_click: [GLFW_MOUSE_BUTTON_LEFT]
     interact_p1: [GLFW_MOUSE_BUTTON_LEFT]
@@ -27,6 +28,7 @@ input:
   gamepad:
     ui_click:
       - {button: GLFW_GAMEPAD_BUTTON_TRIANGLE, id: 0}
+      - {button: GLFW_GAMEPAD_BUTTON_TRIANGLE, id: 1}
     interact_p1:
       - {button: GLFW_GAMEPAD_BUTTON_TRIANGLE, id: 0}
     interact_p2:
@@ -35,3 +37,6 @@ input:
       - {button: GLFW_GAMEPAD_BUTTON_SQUARE, id: 0}
     alt_interact_p2:
       - {button: GLFW_GAMEPAD_BUTTON_SQUARE, id: 1}
+    ui_menu:
+      - {button: GLFW_GAMEPAD_BUTTON_START, id: 0}
+      - {button: GLFW_GAMEPAD_BUTTON_START, id: 1}
