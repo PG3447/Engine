@@ -177,7 +177,7 @@ void connectAllModels() {
 
     //zielonaTablica = std::make_unique<Prefab>("res/models/ZielonaTablica.glb");
     //czerwonaTablica = std::make_unique<Prefab>("res/models/CzerwonaTablica.glb");
-    Rentgen = std::make_unique<Prefab>("res/models/salaOperacyjna/Rentgen.glb");
+    Rentgen = std::make_unique<Prefab>("res/models/salaOperacyjna/RentgenLepszy.glb");
 
     cockroachModel   = std::make_unique<Prefab>("res/models/cockroach.glb");
 

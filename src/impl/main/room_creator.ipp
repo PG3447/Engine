@@ -877,6 +877,25 @@ void createRentgenRoom(Scene* scena) {
     rentgen->GetComponent<RigidbodyComponent>()->useGravity = false;
     rentgen->GetComponent<RigidbodyComponent>()->isStatic = true;
 
+    rentgen->TraverseChildren([&](GameObject* go) {
+        if (go->name.find("lights_") != std::string::npos) {
+            machineLights[go->name] = go;
+
+            LightComponent* lc = go->AddComponent<LightComponent>();
+            lc->type = Point;
+            lc->ambient = glm::vec3(0.1f, 0.05f, 0.0f);
+            lc->diffuse = glm::vec3(0.0f, 0.0f, 1.0f);
+            lc->specular = glm::vec3(1.0f, 0.4f, 0.0f);
+            lc->constant = 1.0f;
+            lc->linear = 0.22f;
+            lc->quadratic = 0.20f;
+            lc->intensity = 50.0f;
+            lc->isOn = true;
+        }
+
+
+    });
+
 
     int puzzleLightIndex = 4;
     auto createPuzzleSlot = [&](const glm::vec3& pos, const glm::vec3& targetRot, GameObject* expected) {
