@@ -288,9 +288,6 @@ void imgui_render(SceneManager& sceneManager)
         sceneManager.Load();
 
     ImGui::Separator();
-
-    Scene& scene = *sceneManager.GetActiveScene();
-
     for (auto& [name, weakModel] : ResourceManager::Models) {
         ImGui::PushID(name.c_str());
         std::shared_ptr<Model> model = weakModel;
@@ -306,7 +303,7 @@ void imgui_render(SceneManager& sceneManager)
 
             if (ImGui::Button("Instantiate")) {
                 Prefab& prefab = prefabs.at(name);
-                GameObject* obj = prefab.Instantiate(scene, nullptr, nullptr);
+                GameObject* obj = prefab.Instantiate(*activeScene, nullptr, nullptr);
                 if (obj) obj->name = name;
             }
         }

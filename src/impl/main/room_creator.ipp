@@ -292,7 +292,6 @@ void createMainRooom(Scene* scena) {
             machineStartButton = go;
             ColliderComponent* col = go->AddComponent<ColliderComponent>();
             col->halfSize = glm::vec3(0.0f);
-            col->isTrigger = true;
         }
 
         if (go->name.find("lights_") != std::string::npos) {
@@ -322,7 +321,6 @@ void createMainRooom(Scene* scena) {
         if (go->name == "MachineSlot_1" || go->name == "MachineSlot_2" || go->name == "MachineSlot_3") {
             ColliderComponent* col = go->AddComponent<ColliderComponent>();
             col->halfSize = glm::vec3(0.0f);
-            col->isTrigger = true;
 
             PuzzleSlot slot;
             slot.slotObject = go;
@@ -881,7 +879,6 @@ void createRentgenRoom(Scene* scena) {
 
         ColliderComponent* col = slotGO->AddComponent<ColliderComponent>();
         col->halfSize  = glm::vec3(0.840, 1.390, 0.330);
-        col->isTrigger = true;
 
         RigidbodyComponent* rb = slotGO->AddComponent<RigidbodyComponent>();
         rb->useGravity = false;
@@ -1204,24 +1201,24 @@ void createTriggerRoom(Scene* scena, int roomId, std::string name, glm::vec3 pos
     colliderComnponent->halfSize = halfSize;
     colliderComnponent->isTrigger = true;
     colliderComnponent->onTriggerEnter = [roomId](GameObject* other)
+    {
+        if (other->name == "Gracz1" || other->name == "Gracz2")
         {
-            if (other->name == "Gracz1" || other->name == "Gracz2")
-            {
-                spdlog::info("{} wszed� do pomieszczenia {}", other->name, roomId);
-                RoomPlayerEntered(roomId, other);
-            }
+            spdlog::info("{} wszed� do pomieszczenia {}", other->name, roomId);
+            RoomPlayerEntered(roomId, other);
+        }
 
-        };
+    };
 
     colliderComnponent->onTriggerExit = [roomId](GameObject* other)
+    {
+        if (other->name == "Gracz1" || other->name == "Gracz2")
         {
-            if (other->name == "Gracz1" || other->name == "Gracz2")
-            {
-                spdlog::info("{} wyszed� z pomieszczenia {}", other->name, roomId);
-                RoomPlayerExited(roomId, other);
-            }
+            spdlog::info("{} wyszed� z pomieszczenia {}", other->name, roomId);
+            RoomPlayerExited(roomId, other);
+        }
 
-        };
+    };
 }
 
 
