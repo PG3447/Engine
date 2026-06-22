@@ -11,6 +11,18 @@
 #define GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT 0x84FF
 #endif
 
+#ifndef GL_COMPRESSED_RGB_S3TC_DXT1_EXT
+#define GL_COMPRESSED_RGB_S3TC_DXT1_EXT  0x83F0
+#endif
+
+#ifndef GL_COMPRESSED_RGBA_S3TC_DXT3_EXT
+#define GL_COMPRESSED_RGBA_S3TC_DXT3_EXT 0x83F2
+#endif
+
+#ifndef GL_COMPRESSED_RGBA_S3TC_DXT5_EXT
+#define GL_COMPRESSED_RGBA_S3TC_DXT5_EXT 0x83F3
+#endif
+
 std::unordered_map<std::string, TextureData> ResourceManager::Textures;
 std::unordered_map<std::string, std::shared_ptr<Model>> ResourceManager::Models;
 
@@ -138,21 +150,21 @@ TextureData ResourceManager::loadTextureFromFile(const std::string& path, const 
         glGenTextures(1, &textureID);
 
         GLenum format = GL_RED;
-        GLenum internalFormat = GL_RED; //GL_COMPRESSED_RED
+        GLenum internalFormat = GL_COMPRESSED_RED_RGTC1; //GL_COMPRESSED_RED
         if (nrComponents == 1)
         {
             format = GL_RED;
-            internalFormat = GL_RED;
+            internalFormat = GL_COMPRESSED_RED_RGTC1;
         }
         else if (nrComponents == 3)
         {
             format = GL_RGB;
-            internalFormat = GL_RGB;
+            internalFormat = GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
         }
         else if (nrComponents == 4) {
             hasAlpha = true;
             format = GL_RGBA;
-            internalFormat = GL_RGBA;
+            internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
         }
 
         glBindTexture(GL_TEXTURE_2D, textureID);
