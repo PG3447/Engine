@@ -51,7 +51,8 @@ void ShowGameObjectTree(Scene* activeScene, GameObject* obj, ImGuiTextFilter& fi
     if (ImGui::IsItemClicked())
     {
         selectedGameObject = obj;
-        activeScene->GetECS().GetSystem<RaycastSystem>()->selectedObject = selectedGameObject;
+        if (activeScene->GetECS().GetSystem<RaycastSystem>())
+            activeScene->GetECS().GetSystem<RaycastSystem>()->selectedObject = selectedGameObject;
     }
 
     if (opened) {
@@ -233,6 +234,11 @@ void imgui_render(SceneManager& sceneManager)
     ImGui::Separator();
     ImGui::Text("Ambient");
     ImGui::DragFloat("Ambient strength", &renderSystem->ambientStrength, 0.000001f, 0.0f, 1.0f, "%.6f");
+    if (activeScene->GetECS().GetSystem<RaycastSystem>())
+    {
+        ImGui::Text("Debug");
+        ImGui::Checkbox("Collider", &activeScene->GetECS().GetSystem<RaycastSystem>()->colliderDebug);
+    }
     ImGui::Separator();
     ImGui::Text("Hierarchy");
     gameObjectFilter.Draw("Filtruj po nazwie", 200.0f);
