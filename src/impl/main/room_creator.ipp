@@ -1217,11 +1217,16 @@ void createRentgenCorridor(Scene * scena){
 }
 
 void createCrematoriumCorridor(Scene * scena){
-    CreateStaticObject(scena, wallModel.get(), nullptr, "GoraPrzejscieDoKrematoriumZKorytarza",              glm::vec3(132.090-5, 66, -121.670),   glm::vec3(10.000, 50, 0.580));
-    CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaLewaKorytarzKrematorium",         glm::vec3(102.160, 0, -107.230),  glm::vec3(41.440, 50, 1));
-    CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaPrawaKorytarzKrematorium1",         glm::vec3(135.720, 0, -121.660),  glm::vec3(4.630, 50, 1));
-    CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaPrawaKorytarzKrematorium2",         glm::vec3(90.570, 0, -121.660),  glm::vec3(30.460, 50, 1));
-    CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaKoncowaKorytarzKrematorium",         glm::vec3(141.810, 0, -113.790),  glm::vec3(1, 90, 7.870));
+    //CreateStaticObject(scena, wallModel.get(), nullptr, "GoraPrzejscieDoKrematoriumZKorytarza",              glm::vec3(132.090-5, 66, -121.670),   glm::vec3(10.000, 50, 0.580));
+    CreateStaticObject(scena, wallMainRoomModel.get(), nullptr, "GoraPrzejscieDoKrematoriumZKorytarza",              glm::vec3(132.090-5, 66, -121.670),   glm::vec3(1.000, 1, 1));
+    //CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaLewaKorytarzKrematorium",         glm::vec3(102.160, 0, -107.230),  glm::vec3(41.440, 50, 1));
+    CreateStaticObject(scena, wallMainRoomModel.get(),  nullptr, "ScianaLewaKorytarzKrematorium",         glm::vec3(100.920, 10.780, -107.230),  glm::vec3(4.080, 1.930, 3.000));
+    //CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaPrawaKorytarzKrematorium1",         glm::vec3(135.720, 0, -121.660),  glm::vec3(4.630, 50, 1));
+    CreateStaticObject(scena, wallMainRoomModel.get(),  nullptr, "ScianaPrawaKorytarzKrematorium1",         glm::vec3(137.490, 10.780, -121.430),  glm::vec3(0.520, 1.930, 2.000));
+    //CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaPrawaKorytarzKrematorium2",         glm::vec3(90.570, 0, -121.660),  glm::vec3(30.460, 50, 1));
+    CreateStaticObject(scena, wallMainRoomModel.get(),  nullptr, "ScianaPrawaKorytarzKrematorium2",         glm::vec3(90.490, 10.780, -121.660),  glm::vec3(3.050, 1.930, 3));
+    //CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaKoncowaKorytarzKrematorium",         glm::vec3(141.810, 0, -113.790),  glm::vec3(1, 90, 7.870));
+    CreateStaticObject(scena, wallMainRoomModel.get(),  nullptr, "ScianaKoncowaKorytarzKrematorium",         glm::vec3(141.810, 10.780, -113.790),  glm::vec3(0.760, 1.930, 3), glm::vec3(0,90,0));
     //CreateStaticObject(scena, floorModel.get(), nullptr, "PodlogaKorytarzKrematorium",    glm::vec3(102.610, 0, -115.010),  glm::vec3(43.520, 1, 8.070));
     CreateStaticObject(scena, floorModelB.get(), nullptr, "PodlogaKorytarzKrematorium",    glm::vec3(101.060, 1.170, -113.820),  glm::vec3(4.060, 1, 0.750));
     //CreateStaticObject(scena, floorModel.get(), nullptr, "SufitKorytarzKrematorium",    glm::vec3(102.610, 20, -115.010),  glm::vec3(43.520, 1, 8.070));
