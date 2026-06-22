@@ -204,18 +204,19 @@ private:
     float baseX = sprite.screenPosition.x + sprite.textOffset.x;
     float baseY = sprite.screenPosition.y + sprite.textOffset.y;
 
-    if (sprite.textCentered)
-    {
-        float textWidth = 0.0f;
-        for (char c : sprite.text) {
-            if (c == '^' || c == '\n' || c == '\r') continue;
-            auto it = chars.find(c);
-            if (it != chars.end())
-                textWidth += (it->second.advance >> 6);
+        if (sprite.textCentered)
+        {
+            float textWidth = 0.0f;
+            for (char c : sprite.text) {
+                if (c == '^' || c == '\n' || c == '\r') continue;
+                auto it = chars.find(c);
+                if (it != chars.end())
+                    textWidth += (it->second.advance >> 6);
+            }
+            baseX -= textWidth / 2.0f;
+            if (sprite.textOutlineEnabled)
+                baseY += sprite.textOutlineSize;
         }
-        float outlinePadding = sprite.textOutlineEnabled ? sprite.textOutlineSize : 0.0f;
-        baseX -= (textWidth / 2.0f) - outlinePadding;
-    }
 
     auto renderString = [&](float offsetX, float offsetY, glm::vec3 color)
     {
@@ -249,7 +250,7 @@ private:
 
             const Character& ch = it->second;
             float xpos = x + ch.bearing.x;
-            float ypos = y + ((int)currentFontSize - ch.bearing.y);
+            float ypos = y - ch.bearing.y + (int)currentFontSize;
             float w = (float)ch.size.x;
             float h = (float)ch.size.y;
 
@@ -271,14 +272,18 @@ private:
         }
     };
 
-    if (sprite.textOutlineEnabled)
-    {
-        float o = sprite.textOutlineSize;
-        for (float dx = -o; dx <= o; dx += o)
-            for (float dy = -o; dy <= o; dy += o)
-                if (dx != 0.0f || dy != 0.0f)
-                    renderString(dx, dy, sprite.textOutlineColor);
-    }
+        if (sprite.textOutlineEnabled)
+        {
+            float o = sprite.textOutlineSize;
+            const int steps = 8;
+            for (int i = 0; i < steps; i++)
+            {
+                float angle = (2.0f * 3.14159265f * i) / steps;
+                float dx = cos(angle) * o;
+                float dy = sin(angle) * o;
+                renderString(dx, dy, sprite.textOutlineColor);
+            }
+        }
 
     renderString(0.0f, 0.0f, sprite.textColor);
 
