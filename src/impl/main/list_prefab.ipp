@@ -60,8 +60,8 @@ std::unique_ptr<Prefab> puzel4;
 std::unique_ptr<Prefab> puzel5;
 std::unique_ptr<Prefab> puzel6;
 
-std::unique_ptr<Prefab> czerwonaTablica;
-std::unique_ptr<Prefab> zielonaTablica;
+//std::unique_ptr<Prefab> czerwonaTablica;
+//std::unique_ptr<Prefab> zielonaTablica;
 std::unique_ptr<Prefab> Rentgen;
 std::unique_ptr<Prefab> SzafkaRentgen2Model;
 std::unique_ptr<Prefab> SzafkaRentgen1Model;
@@ -152,10 +152,10 @@ void connectAllModels() {
 
     bossCapsuleModel       = std::make_unique<Prefab>("res/models/boss_capsule.glb");
     kredensModel       = std::make_unique<Prefab>("res/models/kredens.glb");
-    eksp1Model = std::make_unique<Prefab>("res/models/eksp1.glb");
-    eksp2Model = std::make_unique<Prefab>("res/models/eksp2.glb");
-    fiolka1Model = std::make_unique<Prefab>("res/models/fiolka1.glb");
-    fiolka2Model = std::make_unique<Prefab>("res/models/fiolka2.glb");
+    eksp1Model = std::make_unique<Prefab>("res/models/salaOperacyjna/eksp1.glb");
+    eksp2Model = std::make_unique<Prefab>("res/models/salaOperacyjna/eksp2.glb");
+    fiolka1Model = std::make_unique<Prefab>("res/models/salaOperacyjna/fiolka1.glb");
+    fiolka2Model = std::make_unique<Prefab>("res/models/salaOperacyjna/fiolka2.glb");
     ksiazkaModel = std::make_unique<Prefab>("res/models/ksiazka.glb");
     probowka7Model = std::make_unique<Prefab>("res/models/probowka7.glb");
     probowka6Model = std::make_unique<Prefab>("res/models/probowka6.glb");
@@ -175,9 +175,9 @@ void connectAllModels() {
     laboratoryStuff2Model = std::make_unique<Prefab>("res/models/laboratory_stuff_2.glb");
     laboratoryStuff3Model = std::make_unique<Prefab>("res/models/laboratory_stuff_3.glb");
 
-    zielonaTablica = std::make_unique<Prefab>("res/models/ZielonaTablica.glb");
-    czerwonaTablica = std::make_unique<Prefab>("res/models/CzerwonaTablica.glb");
-    Rentgen = std::make_unique<Prefab>("res/models/Rentgen.glb");
+    //zielonaTablica = std::make_unique<Prefab>("res/models/ZielonaTablica.glb");
+    //czerwonaTablica = std::make_unique<Prefab>("res/models/CzerwonaTablica.glb");
+    Rentgen = std::make_unique<Prefab>("res/models/salaOperacyjna/Rentgen.glb");
 
     cockroachModel   = std::make_unique<Prefab>("res/models/cockroach.glb");
 
