@@ -176,7 +176,7 @@ struct CameraComponent : Component {
     float pitch = 0.0f;*/
 
     float fov = 45.0f;
-    float nearPlane = 1.1f;
+    float nearPlane = 1.4f;
     float farPlane = 10000.0f;
     bool dirty = true;
 

@@ -386,7 +386,7 @@ int main(int, char**)
     gracz1->GetComponent<RigidbodyComponent>()->mass = 10.0f;
     gracz1->GetComponent<RigidbodyComponent>()->bounce = 0.1f;
     gracz1->GetComponent<RigidbodyComponent>()->useGravity = true;
-    gracz1->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1.0f, 5.25f, 1.0f };
+    gracz1->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1.2f, 5.25f, 1.2f };
 
     
     GameObject* camera1 = scena1->CreateGameObject(nullptr);//groundModel->Instantiate(*scena1, nullptr, ourShader.get());
@@ -400,7 +400,7 @@ int main(int, char**)
     GameObject* latarka1 = scena1->CreateGameObject(nullptr);
     latarka1->name = "Latarka";
     camera1->AddChild(latarka1);
-    latarka1->GetComponent<TransformComponent>()->position = glm::vec3(1.10f, -0.11f, 0.50f);
+    latarka1->GetComponent<TransformComponent>()->position = glm::vec3(1.10f, -0.11f, -0.25f);
     latarka1->GetComponent<TransformComponent>()->rotation = glm::vec3(-0.40f, 4.50f, 0.00f);
     LightComponent* light2 = latarka1->AddComponent<LightComponent>();
 
@@ -437,7 +437,7 @@ int main(int, char**)
     gracz2->GetComponent<RigidbodyComponent>()->mass = 10.0f;
     gracz2->GetComponent<RigidbodyComponent>()->bounce = 0.1f;
     gracz2->GetComponent<RigidbodyComponent>()->useGravity = true;
-    gracz2->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1.0f, 5.25f, 1.0f };
+    gracz2->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1.2f, 5.25f, 1.2f };
 
     GameObject* camera2 = scena1->CreateGameObject(nullptr);
     camera2->name = "Kamera";
@@ -450,7 +450,7 @@ int main(int, char**)
     GameObject* latarka2 = scena1->CreateGameObject(nullptr);
     latarka2->name = "Latarka";
     camera2->AddChild(latarka2);
-    latarka2->GetComponent<TransformComponent>()->position = glm::vec3(1.10f, -0.11f, 0.50f);
+    latarka2->GetComponent<TransformComponent>()->position = glm::vec3(1.10f, -0.11f, -0.25f);
     latarka2->GetComponent<TransformComponent>()->rotation = glm::vec3(-0.40f, 4.50f, 0.00f);
     LightComponent* light3 = latarka2->AddComponent<LightComponent>();
 
