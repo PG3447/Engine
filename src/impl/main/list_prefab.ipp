@@ -45,7 +45,6 @@ std::unique_ptr<Prefab> urinModel;
 std::unique_ptr<Prefab> szafkaModel;
 std::unique_ptr<Prefab> ruraModel;
 std::unique_ptr<Prefab> panelModel;
-std::unique_ptr<Prefab> floorModel;
 std::unique_ptr<Prefab> wallModel;
 std::unique_ptr<Prefab> wallModel2;
 std::unique_ptr<Prefab> wallModel3;
@@ -100,6 +99,9 @@ std::unique_ptr<Prefab> laboratoryStuff1Model;
 std::unique_ptr<Prefab> laboratoryStuff2Model;
 std::unique_ptr<Prefab> laboratoryStuff3Model;
 std::unique_ptr<Prefab> pokrywkaRolkiModel;
+std::unique_ptr<Prefab> ceilingModelB;
+std::unique_ptr<Prefab> floorModelB;
+std::unique_ptr<Prefab> floorModel;
 
 std::unique_ptr<Prefab> roofModel;
 std::unique_ptr<Prefab> groundModel;
@@ -207,4 +209,6 @@ void connectAllModels() {
 
 
     gearModel = std::make_unique<Prefab>("res/models/gear.glb");
+    floorModelB = std::make_unique<Prefab>("res/models/floor.glb");
+    ceilingModelB = std::make_unique<Prefab>("res/models/ceiling.glb");
 }
