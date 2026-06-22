@@ -51,8 +51,97 @@ GameObject* SpawnGearReward(Scene* scene, const glm::vec3& position, const std::
     pickupObjects.insert(gear);
     objectOriginalRotations[gear] = glm::vec3(0.0f);
 
-    spdlog::info("Zespawnowano zêbatkê: {} na pozycji: {}, {}, {}", name, position.x, position.y, position.z);
     return gear;
+}
+
+void ReplaceAll(std::string& str, const std::string& from, const std::string& to) {
+    if (from.empty()) return;
+    size_t start_pos = 0;
+    while ((start_pos = str.find(from, start_pos)) != std::string::npos) {
+        str.replace(start_pos, from.length(), to);
+        start_pos += to.length();
+    }
+}
+
+std::string LoadLoreFromFile(const std::string& filepath) {
+    std::ifstream file(filepath);
+    if (!file.is_open()) {
+        spdlog::error("Nie mozna otworzyc pliku z notatka: {}", filepath);
+        return "Brak pliku " + filepath;
+    }
+
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    std::string content = buffer.str();
+
+    ReplaceAll(content, "\xE2\x96\x8C", std::string(1, (char)127));
+
+    std::istringstream contentStream(content);
+    std::string line;
+    std::string result = "";
+
+    bool isHandwriting = false;
+
+    while (std::getline(contentStream, line)) {
+        if (line.empty() || line.find_first_not_of("\r") == std::string::npos) {
+            result += "\n";
+            continue;
+        }
+
+        std::istringstream words(line);
+        std::string word;
+        size_t currentLineLength = 0;
+        bool firstWord = true;
+
+        while (words >> word) {
+            if (word.find('^') != std::string::npos) {
+                isHandwriting = !isHandwriting;
+            }
+
+            size_t currentMaxChars = isHandwriting ? 45 : 65;
+
+            size_t wordLen = word.length();
+            if (word.find('^') != std::string::npos) wordLen--;
+
+            if (!firstWord && currentLineLength + wordLen + 1 > currentMaxChars) {
+                result += "\n";
+                currentLineLength = 0;
+                firstWord = true;
+            }
+            if (!firstWord) {
+                result += " ";
+                currentLineLength++;
+            }
+            result += word;
+            currentLineLength += wordLen;
+            firstWord = false;
+        }
+        result += "\n";
+    }
+    return result;
+}
+
+GameObject* SpawnLoreNote(Scene* scene, Prefab* paperPrefab, const glm::vec3& position, const std::string& filepath, const glm::vec3& rotation = glm::vec3(0.0f), const glm::vec3& scale = glm::vec3(1.0f), GameObject* parent = nullptr) {
+    if (!paperPrefab) {
+        spdlog::error("Prefab kartki nie zostal zaladowany!");
+        return nullptr;
+    }
+
+    GameObject* note = paperPrefab->Instantiate(*scene, parent, nullptr);
+    note->name = "LoreNote";
+
+    TransformComponent* tr = note->GetComponent<TransformComponent>();
+    tr->position = position;
+    tr->rotation = rotation;
+	tr->scale = scale;
+    tr->isDirty = true;
+
+    ColliderComponent* col = note->AddComponent<ColliderComponent>();
+    col->halfSize = glm::vec3(1.0f, 0.5f, 1.0f);
+
+    noteContents[note] = LoadLoreFromFile(filepath);
+
+    return note;
 }
 
 void OnPuzzleSolved(Scene* scene, AudioSystem* audioSystem = nullptr, FMOD::Sound* sndGear = nullptr) {
