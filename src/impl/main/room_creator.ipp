@@ -785,28 +785,28 @@ void createCrematorium(Scene* scena) {
     CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaKremLewa2",       glm::vec3(149.900, 0, -121.640), glm::vec3(10.040, 50, 1), std::nullopt, glm::vec3(10.040, 100,1 ));
 
 
-    crematoriumPuzzle.spacingHorizontal = 10.0f;
-    crematoriumPuzzle.spacingVertical   = 6.0f;
+    crematoriumPuzzle.spacingHorizontal = 7.0f;
+    crematoriumPuzzle.spacingVertical   = 4.0f;
 
-    crematoriumPuzzle.minExtensionDistance = 15.0f;
-    crematoriumPuzzle.maxExtensionDistance = 45.0f;
+    crematoriumPuzzle.minExtensionDistance = 10.0f;
+    crematoriumPuzzle.maxExtensionDistance = 30.0f;
 
-    crematoriumPuzzle.coffinDimensions = glm::vec3(1.25f, 1.0f, 31.0f);
+    crematoriumPuzzle.coffinDimensions = glm::vec3(3.0f, 2.0f, 50.0f);
 
-    crematoriumPuzzle.wallOffset = 17.0f;
+    crematoriumPuzzle.wallOffset = 0.0f;
 
     crematoriumPuzzle.w1_buildDirX  = -1.0f;
     crematoriumPuzzle.w1_extendDirZ =  1.0f;
     crematoriumPuzzle.w2_buildDirZ  =  1.0f;
     crematoriumPuzzle.w2_extendDirX = -1.0f;
 
-    glm::vec3 cornerPosition(175.0f, 4.0f, -255.0f);
+    glm::vec3 cornerPosition(159.0f, 4.1f, -176.65f);
 
-    if (ruraModel != nullptr && panelModel != nullptr && ruraModel->rootModel != nullptr) {
-        crematoriumPuzzle.Init(scena, ruraModel->rootModel, panelModel.get(), nullptr, cornerPosition);
+    if (coffinRedEmptyModel && panelModel) {
+        crematoriumPuzzle.Init(scena, coffinRedEmptyModel.get(), coffinRedCorpseModel.get(), coffinGreenEmptyModel.get(), coffinGreenCorpseModel.get(), panelModel.get(), nullptr, cornerPosition);
     }
     else {
-        spdlog::error("Model rury albo panelu nie zostal poprawnie zaladowany!");
+        spdlog::error("Modele kostnicy lub panelu niepoprawnie zaladowane");
     }
 }
 

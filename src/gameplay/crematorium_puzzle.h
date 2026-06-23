@@ -52,6 +52,20 @@ public:
         {3, 1, 3, 4}
     };
 
+    std::vector<std::vector<int>> corpsesLeftWall = {
+        {0, 1, 0, 0},
+        {1, 0, 0, 1},
+        {0, 1, 1, 0},
+        {0, 0, 0, 1}
+    };
+
+    std::vector<std::vector<int>> corpsesRightWall = {
+        {1, 0, 1, 0},
+        {0, 0, 1, 0},
+        {1, 1, 0, 0},
+        {0, 0, 0, 1}
+    };
+
     //int rows = 5;
     //int cols = 5;
 
@@ -121,7 +135,7 @@ public:
     std::vector<CoffinData> coffins;
     uint64_t activationCounter = 1;
 
-    void Init(Scene* scene, std::shared_ptr<Model> coffinModel, Prefab* panelPrefab, Shader* shader, glm::vec3 cornerPosition);
+    void Init(Scene* scene, Prefab* redEmpty, Prefab* redCorpse, Prefab* greenEmpty, Prefab* greenCorpse, Prefab* panelPrefab, Shader* shader, glm::vec3 cornerPosition);
     void SetupAudio(AudioSystem* audioSys, FMOD::Sound* slideOut, FMOD::Sound* slideIn, FMOD::Sound* collide, FMOD::Sound* close, FMOD::Sound* puzzleSolved = nullptr);
     void Update(float deltaTime);
     void ToggleCoffin(GameObject* clickedObject);
