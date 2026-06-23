@@ -71,7 +71,6 @@ void NavPathSystem::Update(ECS& ecs, float dt)
         }
 
         case NavAgentState::Moving:
-            // Stuck detection
             comp->stuckCheckTimer -= dt;
             if (comp->stuckCheckTimer <= 0.0f) {
                 comp->stuckCheckTimer = comp->stuckCheckInterval;
@@ -82,7 +81,6 @@ void NavPathSystem::Update(ECS& ecs, float dt)
                 );
 
                 if (moved < comp->stuckThreshold) {
-                    //spdlog::warn("[NavPath] Agent stuck");
                     comp->path.clear();
                     comp->state = NavAgentState::Arrived;
                 }
@@ -133,12 +131,10 @@ bool NavPathSystem::RequestPath(NavPathComponent& comp,
     comp.path.clear();
     comp.currentWaypoint = 0;
 
-    // Znajdz trojkaty startowy i docelowy
     int startTri = cachedNavMesh_->FindTriangle(start);
     int goalTri  = cachedNavMesh_->FindTriangle(goal);
 
     if (startTri < 0 || goalTri < 0) {
-        // Jeden z punktow poza navmeshem - sprobuj najblizszy trojkat
         if (startTri < 0) {
             float bestDist = std::numeric_limits<float>::max();
             for (int i = 0; i < (int)navData.triangles.size(); i++) {
@@ -156,27 +152,22 @@ bool NavPathSystem::RequestPath(NavPathComponent& comp,
         if (startTri < 0 || goalTri < 0) return false;
     }
 
-    // Jestesmy w tym samym trojkacie - sciezka prosta
     if (startTri == goalTri) {
         comp.path.push_back(start);
         comp.path.push_back(goal);
         return true;
     }
 
-    // A* po trojkatach
     std::vector<int> triPath = AStar(startTri, goalTri, navData);
     if (triPath.empty()) return false;
 
-    // Funnel - wygladzenie sciezki
     comp.path = FunnelPath(triPath, start, goal, navData);
 
     return !comp.path.empty();
 }
 
-//  A* - graf trojkatow
 
 float NavPathSystem::Heuristic(int triA, int triB, const NavMeshData& navData) const {
-    // Odleglosc euklidesowa miedzy centroidami w XZ
     glm::vec3 a = navData.triangles[triA].centroid;
     glm::vec3 b = navData.triangles[triB].centroid;
     float dx = a.x - b.x;
@@ -193,7 +184,6 @@ std::vector<int> NavPathSystem::AStar(int startTri, int goalTri,
     std::vector<int>   parent(n, -1);
     std::vector<bool>  closed(n, false);
 
-    // Priority queue: min-heap po f
     std::priority_queue<AStarNode,
                         std::vector<AStarNode>,
                         std::greater<AStarNode>> open;
@@ -219,7 +209,6 @@ std::vector<int> NavPathSystem::AStar(int startTri, int goalTri,
             const NavTriangle& neighbor = navData.triangles[neighborIdx];
             if (!neighbor.walkable) continue;
 
-            // Koszt = odleglosc miedzy centroidami
             float edgeCost = glm::length(tri.centroid - neighbor.centroid);
             float newG = g[cur.triIndex] + edgeCost;
 
@@ -274,11 +263,9 @@ bool NavPathSystem::GetPortal(int fromTri, int toTri,
             glm::vec3 pA = navData.vertices[iA].position;
             glm::vec3 pB = navData.vertices[iB].position;
 
-            // Ustal lewa/prawa strone portalu wzgledem kierunku ruchu
             glm::vec3 dir = navData.triangles[toTri].centroid -
                             navData.triangles[fromTri].centroid;
 
-            // Cross2D(dir, pA-from.centroid) > 0 => pA jest po lewej
             float c = (dir.x) * (pA.z - from.centroid.z) -
                       (dir.z) * (pA.x - from.centroid.x);
 
@@ -309,7 +296,6 @@ std::vector<glm::vec3> NavPathSystem::FunnelPath(
         return result;
     }
 
-    // Zbuduj liste portali
     std::vector<Portal> portals;
     portals.push_back({ startPos, startPos }); // Portal startowy (punkt)
 
@@ -335,43 +321,34 @@ std::vector<glm::vec3> NavPathSystem::FunnelPath(
         glm::vec3 newLeft  = portals[i].left;
         glm::vec3 newRight = portals[i].right;
 
-        // --- Sprawdz prawa strone ---
         if (Cross2D(apex, right, newRight) <= 0.0f) {
             if (apex == right || Cross2D(apex, left, newRight) > 0.0f) {
-                // Zwez lejek z prawej
                 right      = newRight;
                 rightIndex = i;
             } else {
-                // newRight przekroczyl lewa strone - dodaj left jako punkt sciezki
                 result.push_back(left);
                 apex      = left;
                 apexIndex = leftIndex;
 
-                // Zresetuj lejek od nowego apex
                 left       = apex;
                 right      = apex;
                 leftIndex  = apexIndex;
                 rightIndex = apexIndex;
 
-                // Cofnij sie do apex i przetworz ponownie
                 i = apexIndex;
                 continue;
             }
         }
 
-        // --- Sprawdz lewa strone ---
         if (Cross2D(apex, left, newLeft) >= 0.0f) {
             if (apex == left || Cross2D(apex, right, newLeft) < 0.0f) {
-                // Zwez lejek z lewej
                 left      = newLeft;
                 leftIndex = i;
             } else {
-                // newLeft przekroczyl prawa strone - dodaj right jako punkt sciezki
                 result.push_back(right);
                 apex      = right;
                 apexIndex = rightIndex;
 
-                // Zresetuj lejek
                 left       = apex;
                 right      = apex;
                 leftIndex  = apexIndex;
@@ -383,7 +360,6 @@ std::vector<glm::vec3> NavPathSystem::FunnelPath(
         }
     }
 
-    // Dodaj cel
     result.push_back(goalPos);
 
     return result;
@@ -423,12 +399,10 @@ void NavPathSystem::MoveAgent(GameObject* go, NavPathComponent& comp, float dt)
     glm::vec3 dir = toTarget / dist;
 
     if (rb) {
-        // Zachowaj Y velocity (grawitacja), zmień tylko XZ
         float yVel = rb->velocity.y;
         rb->velocity = dir * comp.moveSpeed;
         rb->velocity.y = yVel;
     } else {
-        // Fallback bez rigidbody
         tr->position += dir * comp.moveSpeed * dt;
         tr->isDirty = true;
     }
@@ -447,7 +421,6 @@ glm::vec3 NavPathSystem::RandomPointOnNavMesh(const NavMeshData& navData) {
 
     static std::mt19937 rng(std::random_device{}());
 
-    // Wybierz losowy trojkat (walkable)
     std::vector<int> walkable;
     walkable.reserve(navData.triangles.size());
     for (int i = 0; i < (int)navData.triangles.size(); i++) {
@@ -459,12 +432,10 @@ glm::vec3 NavPathSystem::RandomPointOnNavMesh(const NavMeshData& navData) {
     int triIdx = walkable[triDist(rng)];
     const NavTriangle& tri = navData.triangles[triIdx];
 
-    // Losowy punkt wewnatrz trojkata (metoda barycentryczna)
     std::uniform_real_distribution<float> ud(0.0f, 1.0f);
     float r1 = ud(rng);
     float r2 = ud(rng);
 
-    // Zapewnienie ze punkt jest wewnatrz trojkata
     if (r1 + r2 > 1.0f) {
         r1 = 1.0f - r1;
         r2 = 1.0f - r2;

@@ -18,7 +18,7 @@ public:
         Spot = 2
     };
 
-    // wspólne
+    // wspolne
     int index = 0;
     bool isOn = true;
     LightType type;
@@ -42,7 +42,7 @@ public:
 
     Light(LightType type) : type(type) {}
 
-    // wysy³anie do shadera
+    // wysylanie do shadera
     void Apply(Shader& shader) {
 
         if (type == Directional)

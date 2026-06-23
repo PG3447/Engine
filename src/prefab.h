@@ -26,12 +26,6 @@ public:
     {
     }
 
-    //Entity* getEntitiesCreate(Shader* shader, Light* light = nullptr)
-    //{
-    //    if (!rootModel) return nullptr;
-    //    return createEntityRecursive(rootModel.get(), nullptr, shader, light);
-    //}
-
     GameObject* Instantiate(Scene& scene, GameObject* parent = nullptr, Shader* shader = nullptr)
     {
         if (!rootModel || !rootModel->rootNode) return nullptr;
