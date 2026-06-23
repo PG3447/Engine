@@ -323,7 +323,7 @@ int main(int, char**)
     scenaMenu->GetECS().GetSystem<PostProcessingSystem>()->SetActive(false);
 
     sceneManager.ChangeScene("Scena 1");
-    Menu menu(&sceneManager, scenaMenu);
+    Menu menu(&sceneManager, scenaMenu, window);
     menu.Init();
 
     //menu->GetECS().AddExistingSystem(scena1->GetECS().GetSystem<RenderSystem>());
@@ -731,6 +731,7 @@ int main(int, char**)
     availablePrefabs,
     *scena1,
     nullptr);*/
+    sceneManager.ChangeScene("menu");
     while (!glfwWindowShouldClose(window))
     {
         float currentFrame = static_cast<float>(glfwGetTime());
