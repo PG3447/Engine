@@ -7,52 +7,52 @@ private:
 	SceneManager* sceneManager;
 	Scene* scenaMenu;
 	std::unique_ptr<Prefab> modelTest;
+	GLFWwindow* window;
 
 public:
 
-	Menu(SceneManager* manager, Scene* menu) : sceneManager(manager), scenaMenu(menu)
+	Menu(SceneManager* manager, Scene* menu, GLFWwindow* windoww) : sceneManager(manager), scenaMenu(menu), window(windoww)
 	{
-		
+
 	}
 
-	void Init()
-	{
-	/*	GameObject* menuobjekt = scenaMenu->CreateGameObject(nullptr);
-		SpriteComponent* jakisprite = menuobjekt->AddComponent<SpriteComponent>();
-		jakisprite->sprites = { ResourceManager::LoadTexture("diffuse_brick.png", "res/textures/").id };
-		jakisprite->screenPosition = glm::vec2(480.0f - 16.0f, 540.0f - 16.0f); // centrum - half size
-		jakisprite->size = glm::vec2(160.0f, 160.0f);
-		jakisprite->layer = 2; // nad napisami
-		jakisprite->isVisible = true;
+	void Init() {
+		/*	GameObject* menuobjekt = scenaMenu->CreateGameObject(nullptr);
+			SpriteComponent* jakisprite = menuobjekt->AddComponent<SpriteComponent>();
+			jakisprite->sprites = { ResourceManager::LoadTexture("diffuse_brick.png", "res/textures/").id };
+			jakisprite->screenPosition = glm::vec2(480.0f - 16.0f, 540.0f - 16.0f); // centrum - half size
+			jakisprite->size = glm::vec2(160.0f, 160.0f);
+			jakisprite->layer = 2; // nad napisami
+			jakisprite->isVisible = true;
 
-		UIButtonComponent* button = menuobjekt->AddComponent<UIButtonComponent>();
+			UIButtonComponent* button = menuobjekt->AddComponent<UIButtonComponent>();
 
 
-		button->onHoverEnter = [&](GameObject* go)
-		{
-			auto* sprite = go->GetComponent<SpriteComponent>();
-			if (!sprite) return;
+			button->onHoverEnter = [&](GameObject* go)
+			{
+				auto* sprite = go->GetComponent<SpriteComponent>();
+				if (!sprite) return;
 
-			sprite->size = glm::vec2(280.0f, 280.0f);
+				sprite->size = glm::vec2(280.0f, 280.0f);
 
-			spdlog::info("Hover enter");
-		};
+				spdlog::info("Hover enter");
+			};
 
-		button->onHoverExit = [&](GameObject* go)
-		{
-			auto* sprite = go->GetComponent<SpriteComponent>();
-			if (!sprite) return;
+			button->onHoverExit = [&](GameObject* go)
+			{
+				auto* sprite = go->GetComponent<SpriteComponent>();
+				if (!sprite) return;
 
-			sprite->size = glm::vec2(160.0f, 160.0f);
+				sprite->size = glm::vec2(160.0f, 160.0f);
 
-			spdlog::info("Hover exit");
-		};
+				spdlog::info("Hover exit");
+			};
 
-		button->onClick = [&](GameObject* go)
-		{
-			sceneManager->ChangeScene("Scena 1");
-			spdlog::info("Przycisk klikniety!");
-		};*/
+			button->onClick = [&](GameObject* go)
+			{
+				sceneManager->ChangeScene("Scena 1");
+				spdlog::info("Przycisk klikniety!");
+			};*/
 
 		GameObject* cameraMenu = scenaMenu->CreateGameObject(nullptr);//groundModel->Instantiate(*scena1, nullptr, ourShader.get());
 		cameraMenu->name = "Kamera";
@@ -218,6 +218,33 @@ public:
 			sprite->currentSprite=0;
 		};
 
+		//AMON GUS
+
+
+		button3->onClick = [&](GameObject* go)
+		{
+			sceneManager->ChangeScene("Scena 1"); //change
+		};
+
+		button4->onClick = [&](GameObject* go)
+		{
+			sceneManager->ChangeScene("Scena 1"); //change
+		};
+
+		button5->onClick = [&](GameObject* go)
+		{
+			sceneManager->ChangeScene("Scena 1"); //change
+		};
+
+		button6->onClick = [&](GameObject* go)
+		{
+			sceneManager->ChangeScene("Scena 1"); //change
+		};
+
+		button7->onClick = [&](GameObject* go)
+		{
+			glfwSetWindowShouldClose(window, true);
+		};
 
 	}
 
