@@ -221,7 +221,7 @@ void imgui_render(SceneManager& sceneManager)
         sceneObjects.push_back(go);
         });
     decorSystem.DrawImGui(availablePrefabs, sceneObjects, *activeScene, nullptr);
-
+    PlacementEditor::DrawImGui(*activeScene, availablePrefabs, selectedGameObject);
     if (show_demo_window) {}
 
     ImGui::Begin("Hello, world!");
@@ -358,14 +358,14 @@ void imgui_render(SceneManager& sceneManager)
     }
     ImGui::End();
 
-    // Osobno — ca³y ImGui
+    // Osobno ï¿½ caï¿½y ImGui
     //static int debugMip = 0;
     //ImGui::Begin("HiZ Debug Controls");
     //auto* renderer = system->drivenManager.GetRenderer(0);
     //ImGui::SliderInt("Mip", &debugMip, 0, renderer->hizMipLevels - 1);
     //ImGui::End();
 
-    //// Pobierz renderer ¿eby wywo³aæ debug
+    //// Pobierz renderer ï¿½eby wywoï¿½aï¿½ debug
     //if (renderer) renderer->DebugShowHiZ(debugMip);
 
     ImGui::Begin("Performance");
@@ -409,7 +409,7 @@ void imgui_render(SceneManager& sceneManager)
     ImGui::Begin("Puzzle Debug");
 
     if (puzzleSlotsMap.empty()) {
-        ImGui::TextColored(ImVec4(1, 1, 0, 1), "Brak slotów puzzle");
+        ImGui::TextColored(ImVec4(1, 1, 0, 1), "Brak slotï¿½w puzzle");
     }
     else {
         int i = 0;
@@ -423,7 +423,7 @@ void imgui_render(SceneManager& sceneManager)
             bool isEmpty = (slot.occupant == nullptr);
             bool isCorrect = (!isEmpty && slot.occupant == slot.expectedObject);
 
-            // Kolor: zielony = dobry, czerwony = z³y, szary = pusty
+            // Kolor: zielony = dobry, czerwony = zï¿½y, szary = pusty
             ImVec4 color = isEmpty
                 ? ImVec4(0.5f, 0.5f, 0.5f, 1.0f)   // szary
                 : isCorrect
@@ -452,7 +452,7 @@ void imgui_render(SceneManager& sceneManager)
         }
         int total = (int)puzzleSlotsMap.size();
 
-        ImGui::Text("Wype³nione: %d / %d", filled, total);
+        ImGui::Text("Wypeï¿½nione: %d / %d", filled, total);
         ImGui::Text("Poprawne:   %d / %d", correct, total);
 
         if (correct == total)

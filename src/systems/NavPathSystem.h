@@ -19,13 +19,11 @@ public:
     void OnGameObjectUpdated(GameObject* e) override;
     void Update(ECS& ecs, float dt) override;
 
-    // Oblicz sciezke A* od start do goal, zapisz w comp
     bool RequestPath(NavPathComponent& comp,
                      const glm::vec3& start,
                      const glm::vec3& goal,
                      const NavMeshData& navData);
 
-    // Wylosuj losowy punkt na navmeshu
     glm::vec3 RandomPointOnNavMesh(const NavMeshData& navData);
 
 private:
@@ -37,7 +35,7 @@ private:
         bool operator>(const AStarNode& o) const { return f > o.f; }
     };
 
-    // Zwraca liste indeksow trojkatow (od start do goal)
+    // Zwraca liste indeksow trojkatow
     std::vector<int> AStar(
         int startTri,
         int goalTri,
@@ -57,7 +55,6 @@ private:
         const glm::vec3& goalPos,
         const NavMeshData& navData);
 
-    // Wyciagnij portal (wspolna krawedz) miedzy dwoma sasiadami
     bool GetPortal(
         int fromTri,
         int toTri,
@@ -65,7 +62,6 @@ private:
         glm::vec3& outLeft,
         glm::vec3& outRight) const;
 
-    // Pomocnicze: cross product 2D (XZ)
     float Cross2D(const glm::vec3& o,
                   const glm::vec3& a,
                   const glm::vec3& b) const;
@@ -78,7 +74,6 @@ private:
     //  Query
     Query<TransformComponent, NavPathComponent>* agentQuery_ = nullptr;
 
-    // Cache do NavMesh - pobieramy raz w Update
     NavMeshComponent* cachedNavMesh_ = nullptr;
 };
 

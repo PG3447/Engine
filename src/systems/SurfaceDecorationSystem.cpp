@@ -20,42 +20,30 @@
 #include <random>
 #include <numeric>
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  Helpers
-// ─────────────────────────────────────────────────────────────────────────────
-
 float SurfaceDecorationSystem::RandRange(float lo, float hi)
 {
     if (lo >= hi) return lo;
-    // Używamy thread_local żeby uniknąć globalnego stanu
     thread_local std::mt19937 rng{ std::random_device{}() };
     std::uniform_real_distribution<float> dist(lo, hi);
     return dist(rng);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  Voronoi density
-// ─────────────────────────────────────────────────────────────────────────────
 
 std::vector<glm::vec2> SurfaceDecorationSystem::GenerateVoronoiCentroids(
     float originX, float originZ,
     float width,   float depth,
     int   count) const
 {
-    // Deterministyczne centroidy oparte na siatce z niewielkim jitterem
-    // — brak zewnętrznego seeda, używamy pozycji obszaru jako "seeda"
     std::vector<glm::vec2> centroids;
     centroids.reserve(count);
 
     if (count <= 0) return centroids;
 
-    // Układamy centroidy w siatce sqrt(count) x sqrt(count)
     int gridSide = std::max(1, (int)std::ceil(std::sqrt((float)count)));
 
     float cellW = width  / (float)gridSide;
     float cellD = depth  / (float)gridSide;
 
-    // Seed z pozycji obszaru — deterministyczny ale unikalny per-obszar
     uint32_t areaSeed =
         ((uint32_t)(std::abs(originX) * 100.0f) * 73856093u) ^
         ((uint32_t)(std::abs(originZ) * 100.0f) * 19349663u) ^
@@ -100,24 +88,15 @@ float SurfaceDecorationSystem::VoronoiDensityWeight(
         if (dist < minDist) minDist = dist;
     }
 
-    // Normalizuj odległość do [0,1]
-    // Szacujemy "typową" odległość między centroidami
     float typicalDist = std::sqrt((width * depth) / (float)centroids.size()) * 0.5f;
     float t = std::min(minDist / (typicalDist * 1.5f), 1.0f);
 
-    // t=0 -> blisko centroidu (centrum Voronoi)
-    // t=1 -> daleko od centroidu (granica komórki)
-
-    // weight jako funkcja odległości:
-    // denseCenter=true  -> blisko centroidu = duży weight (gęściej w środku komórki)
-    // denseCenter=false -> daleko od centroidu = duży weight (gęściej na brzegach)
     float w;
     if (denseCenter)
         w = std::pow(1.0f - t, falloff * 2.0f + 0.5f);   // maleje od centrum
     else
         w = std::pow(t,         falloff * 2.0f + 0.5f);   // rośnie od centrum
 
-    // Upewniamy się że weight > 0 zawsze (nawet na granicy komórki coś może się pojawić)
     return std::max(w, 0.05f);
 }
 
@@ -139,13 +118,11 @@ std::optional<glm::vec2> SurfaceDecorationSystem::SamplePoint(
 
     if (minX >= maxX || minZ >= maxZ) return std::nullopt;
 
-    // Rejection sampling z Voronoi density jako funkcją akceptacji
     for (int attempt = 0; attempt < maxAttempts; ++attempt)
     {
         float rx = RandRange(minX, maxX);
         float rz = RandRange(minZ, maxZ);
 
-        // Oblicz wagę Voronoi dla tego punktu
         float w = VoronoiDensityWeight(
             rx, rz,
             originX, originZ,
@@ -154,11 +131,9 @@ std::optional<glm::vec2> SurfaceDecorationSystem::SamplePoint(
             falloff,
             denseCenter);
 
-        // Rejection: akceptuj punkt z prawdopodobieństwem proporcjonalnym do wagi
         float accept = RandRange(0.0f, 1.0f);
         if (accept > w) continue;
 
-        // Sprawdź minimalną odległość od już umieszczonych
         bool tooClose = false;
         for (const auto& p : placed)
         {
@@ -177,10 +152,6 @@ std::optional<glm::vec2> SurfaceDecorationSystem::SamplePoint(
 
     return std::nullopt;
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-//  Weighted pick
-// ─────────────────────────────────────────────────────────────────────────────
 
 const SurfaceDecorationCandidate* SurfaceDecorationSystem::PickWeighted(
     const std::vector<SurfaceDecorationCandidate>& candidates) const
@@ -202,10 +173,6 @@ const SurfaceDecorationCandidate* SurfaceDecorationSystem::PickWeighted(
     }
     return &candidates.back();
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-//  Config management
-// ─────────────────────────────────────────────────────────────────────────────
 
 SurfaceDecorationConfig& SurfaceDecorationSystem::AddConfig(const SurfaceDecorationConfig& cfg)
 {
@@ -230,10 +197,6 @@ void SurfaceDecorationSystem::ClearConfigs()
     m_configs.clear();
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  Spawn
-// ─────────────────────────────────────────────────────────────────────────────
-
 int SurfaceDecorationSystem::SpawnConfig(
     const SurfaceDecorationConfig& cfg,
     Scene& scene, Shader* shader)
@@ -246,7 +209,6 @@ int SurfaceDecorationSystem::SpawnConfig(
         return 0;
     }
 
-    // ── Pobierz górną powierzchnię kolidera ──────────────────────────────
     auto* tr  = cfg.targetObject->GetComponent<TransformComponent>();
     auto* col = cfg.targetObject->GetComponent<ColliderComponent>();
 
@@ -256,7 +218,6 @@ int SurfaceDecorationSystem::SpawnConfig(
         return 0;
     }
 
-    // Pozycja globalna + offset kolidera
     glm::vec3 worldCenter = tr->position + col->offset;
     float surfaceY        = worldCenter.y + col->halfSize.y;
 
@@ -271,11 +232,9 @@ int SurfaceDecorationSystem::SpawnConfig(
         return 0;
     }
 
-    // ── Generuj centroidy Voronoi ────────────────────────────────────────
     auto centroids = GenerateVoronoiCentroids(
         originX, originZ, width, depth, cfg.voronoiPoints);
 
-    // ── Rejection sampling ───────────────────────────────────────────────
     std::vector<glm::vec2> placed;
     placed.reserve(cfg.totalCount);
 
@@ -301,7 +260,6 @@ int SurfaceDecorationSystem::SpawnConfig(
 
         placed.push_back(*point);
 
-        // ── Wybierz kandydata i utwórz obiekt ───────────────────────────
         const SurfaceDecorationCandidate* chosen = PickWeighted(cfg.candidates);
         if (!chosen || !chosen->prefab) continue;
 
@@ -371,10 +329,6 @@ void SurfaceDecorationSystem::DespawnAll(Scene& scene)
     spdlog::info("[SurfaceDecoration] DespawnAll(): ukryto {} dekoracji.", count);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  ImGui
-// ─────────────────────────────────────────────────────────────────────────────
-
 bool SurfaceDecorationSystem::DrawConfigEditor(
     SurfaceDecorationConfig&                            cfg,
     const std::vector<std::pair<std::string, Prefab*>>& availablePrefabs,
@@ -384,16 +338,13 @@ bool SurfaceDecorationSystem::DrawConfigEditor(
     bool changed = false;
     ImGui::PushID(cfgIndex);
 
-    // ── Nazwa i aktywność ────────────────────────────────────────────────
     changed |= ImGui::InputText("Nazwa##cfgname", cfg.name, sizeof(cfg.name));
     changed |= ImGui::Checkbox("Aktywna", &cfg.enabled);
 
     ImGui::Separator();
 
-    // ── Wybór obiektu-powierzchni ────────────────────────────────────────
     ImGui::Text("Obiekt źródłowy (kolider)");
 
-    // Aktualny indeks w liście sceneObjects
     int curObjIdx = -1;
     for (int i = 0; i < (int)sceneObjects.size(); ++i)
         if (sceneObjects[i] == cfg.targetObject) { curObjIdx = i; break; }
@@ -414,7 +365,6 @@ bool SurfaceDecorationSystem::DrawConfigEditor(
             changed = true;
         }
 
-        // Podgląd informacji o koliderze
         if (cfg.targetObject)
         {
             auto* col = cfg.targetObject->GetComponent<ColliderComponent>();
@@ -439,7 +389,6 @@ bool SurfaceDecorationSystem::DrawConfigEditor(
 
     ImGui::Separator();
 
-    // ── Parametry generowania ────────────────────────────────────────────
     ImGui::Text("Generowanie");
     changed |= ImGui::DragInt  ("Liczba obiektów",   &cfg.totalCount,  1, 0, 2000);
     changed |= ImGui::DragFloat("Min. dystans",      &cfg.minDistance, 0.01f, 0.0f, 50.0f);
@@ -447,7 +396,6 @@ bool SurfaceDecorationSystem::DrawConfigEditor(
 
     ImGui::Separator();
 
-    // ── Voronoi density ──────────────────────────────────────────────────
     ImGui::Text("Voronoi density");
     ImGui::SameLine();
     ImGui::TextDisabled("(?)");
@@ -462,12 +410,10 @@ bool SurfaceDecorationSystem::DrawConfigEditor(
     changed |= ImGui::SliderFloat("Falloff gęstości", &cfg.densityFalloff, 0.0f, 1.0f);
     changed |= ImGui::Checkbox("Gęsto w centrum komórki", &cfg.denseCenter);
 
-    // Wizualizacja rozkładu gęstości (mini pasek)
     {
         ImGui::Text("Podgląd gęstości (1D cross-section):");
         const int BARS = 40;
         float barVals[BARS];
-        // Symulujemy jeden centroid pośrodku
         std::vector<glm::vec2> mockCentroids = {{ 0.5f, 0.5f }};
         for (int b = 0; b < BARS; ++b)
         {
@@ -486,14 +432,12 @@ bool SurfaceDecorationSystem::DrawConfigEditor(
 
     ImGui::Separator();
 
-    // ── Bazowa skala ─────────────────────────────────────────────────────
     ImGui::Text("Bazowa skala");
     changed |= ImGui::DragFloat3("Skala##bs",
         reinterpret_cast<float*>(&cfg.baseScale), 0.01f, 0.001f, 100.0f);
 
     ImGui::Separator();
 
-    // ── Kandydaci ────────────────────────────────────────────────────────
     ImGui::Text("Kandydaci (%d)", (int)cfg.candidates.size());
 
     int toRemove = -1;
@@ -593,7 +537,6 @@ bool SurfaceDecorationSystem::DrawImGui(
 
     ImGui::Begin("Surface Decoration System");
 
-    // ── Akcje globalne ───────────────────────────────────────────────────
     if (ImGui::Button("Generuj wszystkie"))
     {
         DespawnAll(scene);
@@ -608,7 +551,7 @@ bool SurfaceDecorationSystem::DrawImGui(
 
     ImGui::Separator();
 
-    // ── YAML ─────────────────────────────────────────────────────────────
+
     ImGui::InputText("Plik YAML##yaml", m_yamlPath, sizeof(m_yamlPath));
     if (ImGui::Button("Zapisz##save"))
     {
@@ -642,7 +585,6 @@ bool SurfaceDecorationSystem::DrawImGui(
 
     ImGui::Separator();
 
-    // ── Lista konfiguracji (lewy panel) ─────────────────────────────────
     ImGui::Text("Konfiguracje (%d)", (int)m_configs.size());
 
     ImGui::BeginChild("##cfglist", ImVec2(200, 300), true);
@@ -667,7 +609,6 @@ bool SurfaceDecorationSystem::DrawImGui(
 
     ImGui::SameLine();
 
-    // ── Edytor wybranej konfiguracji (prawy panel) ───────────────────────
     ImGui::BeginGroup();
 
     if (m_selectedConfig >= 0 && m_selectedConfig < (int)m_configs.size())
@@ -682,7 +623,6 @@ bool SurfaceDecorationSystem::DrawImGui(
 
         if (ImGui::Button("Generuj tę konfigurację"))
         {
-            // Usuń tylko obiekty tej konfiguracji
             std::string cfgName = m_configs[m_selectedConfig].name;
             for (auto it = m_spawned.begin(); it != m_spawned.end(); )
             {
@@ -726,10 +666,6 @@ bool SurfaceDecorationSystem::DrawImGui(
     ImGui::End();
     return changed;
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-//  YAML Serialization
-// ─────────────────────────────────────────────────────────────────────────────
 
 bool SurfaceDecorationSystem::SaveToYaml(const std::string& path) const
 {
@@ -840,7 +776,6 @@ bool SurfaceDecorationSystem::LoadFromYaml(
         cfg.baseScale.y    = getF(cNode, "baseScaleY",     1.0f);
         cfg.baseScale.z    = getF(cNode, "baseScaleZ",     1.0f);
 
-        // Dopasuj targetObject po nazwie
         for (auto* go : sceneObjects)
         {
             if (go && go->name == cfg.targetName)
@@ -891,10 +826,6 @@ bool SurfaceDecorationSystem::LoadFromYaml(
 
     return true;
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-//  Instance YAML — zapis/wczyt dokładnych transformacji (runtime)
-// ─────────────────────────────────────────────────────────────────────────────
 
 bool SurfaceDecorationSystem::SaveInstancesToYaml(const std::string& path) const
 {

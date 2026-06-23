@@ -4,7 +4,6 @@
 #include <glm/glm.hpp>
 #include <memory>
 #include <string>
-#include "../unused/camera.h"
 #include "yaml_config.h"
 #include "mesh_data.h"
 

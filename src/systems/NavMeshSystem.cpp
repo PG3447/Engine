@@ -1,6 +1,5 @@
 #include "NavMeshSystem.h"
 #include "core/scene.h"
-//#include "systems/DebugDrawSystem.h" // DebugDrawSystem::AddLine / AddAABB
 #include <spdlog/spdlog.h>
 #include <algorithm>
 #include <cmath>
@@ -8,7 +7,6 @@
 #include <unordered_set>
 #include <random>
 
-//  NavMeshComponent - metody
 
 int NavMeshComponent::FindTriangle(const glm::vec3& worldPos) const {
     if (!data.isBaked) return -1;
@@ -62,7 +60,6 @@ void NavMeshSystem::Update(ECS& /*ecs*/, float /*dt*/) {
         const glm::vec3& b = verts[tri.v[1]].position;
         const glm::vec3& c = verts[tri.v[2]].position;
 
-        // Lekko uniesc linie debug aby nie z-fightowaly z podloga
         const float yOff = 0.05f;
         glm::vec3 ao = a + glm::vec3(0, yOff, 0);
         glm::vec3 bo = b + glm::vec3(0, yOff, 0);
@@ -121,9 +118,6 @@ void NavMeshSystem::Bake(Scene& scene) {
 
     ComputeNeighbors(nm->data);
 
-    // --- Krok 6: Oznacz trojkaty nachodzace na przeszkody ---
-    // Usuniecie punktow probkowania nie wystarcza - Delaunay laczy wierzcholki
-    // wokol przeszkody, wiec trojkaty moga nadal przechodzic przez kolidery.
     MarkBlockedTriangles(nm->data, obstacles, nm->agentRadius, nm->agentHeight);
 
     nm->data.isBaked = true;
@@ -147,11 +141,9 @@ NavMeshSystem::CollectWalkableSurfaces(Scene& scene) {
 
         if (!col->isWalkable) continue;
 
-        // Pozycja ze swiata (uzywamy modelMatrix jesli dostepna, inaczej position)
         glm::vec3 worldPos = tr->position;
         glm::vec3 scale    = tr->scale;
 
-        // Rzeczywisty polrozmar w przestrzeni swiata
         glm::vec3 half   = col->halfSize;
         glm::vec3 center = worldPos + col->offset;
 
@@ -172,7 +164,7 @@ std::vector<glm::vec3> NavMeshSystem::GenerateSamplePoints(
     const std::vector<WalkableSurface>& surfaces,
     float voxelSize)
 {
-    static std::mt19937 rng(42); // stały seed = deterministyczny bake
+    static std::mt19937 rng(42);
     std::uniform_real_distribution<float> jitter(
         -voxelSize * 0.3f,
          voxelSize * 0.3f
@@ -190,7 +182,6 @@ std::vector<glm::vec3> NavMeshSystem::GenerateSamplePoints(
                 float px = std::min(x, xMax) + jitter(rng);
                 float pz = std::min(z, zMax) + jitter(rng);
 
-                // Upewnij się że punkt nie wyszedł poza surface
                 px = std::clamp(px, xMin, xMax);
                 pz = std::clamp(pz, zMin, zMax);
 
@@ -231,7 +222,6 @@ NavMeshSystem::CollectObstacles(Scene& scene) {
 
         if (col->isWalkable || col->isTrigger) continue;
 
-        // Jawna flaga albo dowolny statyczny kolider (sciany, meble itp.)
         bool blocksNavMesh = col->affectsNavMesh;
         if (!blocksNavMesh) {
             auto* rb = gos[i]->GetComponent<RigidbodyComponent>();
@@ -337,7 +327,6 @@ NavMeshSystem::ComputeCircumcircle(
 
     Circumcircle cc;
     if (std::abs(D) < 1e-10f) {
-        // Zdegenerowany trojkat - zwroc bardzo duzy okrag
         cc.cx = p0.x;
         cc.cz = p0.z;
         cc.r2 = std::numeric_limits<float>::max();
@@ -364,7 +353,6 @@ void NavMeshSystem::CreateSuperTriangle(
     const std::vector<Point2D>& pts,
     Point2D& sA, Point2D& sB, Point2D& sC) const
 {
-    // Znajdz bounding box
     float minX = pts[0].x, maxX = pts[0].x;
     float minZ = pts[0].z, maxZ = pts[0].z;
 
@@ -382,7 +370,6 @@ void NavMeshSystem::CreateSuperTriangle(
     float midX = (minX + maxX) * 0.5f;
     float midZ = (minZ + maxZ) * 0.5f;
 
-    // Trojkat otaczajacy - duzy trojkat rownoramienny
     sA = { midX - 2.0f * delta,  midZ - delta,       -1 };
     sB = { midX,                  midZ + 2.0f * delta, -1 };
     sC = { midX + 2.0f * delta,  midZ - delta,        -1 };
@@ -397,14 +384,12 @@ NavMeshData NavMeshSystem::BowyerWatson(const std::vector<glm::vec3>& points3D) 
 
     if (points3D.size() < 3) return result;
 
-    // Konwertuj do 2D (XZ)
     std::vector<Point2D> pts;
     pts.reserve(points3D.size());
     for (int i = 0; i < (int)points3D.size(); i++) {
         pts.push_back({ points3D[i].x, points3D[i].z, i });
     }
 
-    // Stworz super-trojkat
     Point2D sA, sB, sC;
     CreateSuperTriangle(pts, sA, sB, sC);
 
@@ -413,7 +398,6 @@ NavMeshData NavMeshSystem::BowyerWatson(const std::vector<glm::vec3>& points3D) 
     pts.push_back(sB);
     pts.push_back(sC);
 
-    // Inicjalizacja triangulacji z super-trojkatem
     std::vector<Triangle2D> triangulation;
     triangulation.reserve(pts.size() * 2);
 
@@ -421,32 +405,27 @@ NavMeshData NavMeshSystem::BowyerWatson(const std::vector<glm::vec3>& points3D) 
     superTri.circle = ComputeCircumcircle(pts[superOffset], pts[superOffset + 1], pts[superOffset + 2]);
     triangulation.push_back(superTri);
 
-    // Wstaw kolejno kazdy punkt
     for (int pIdx = 0; pIdx < (int)points3D.size(); pIdx++) {
         const Point2D& point = pts[pIdx];
 
-        // Znajdz wszystkie trojkaty ktorych okrag opisany zawiera punkt
         std::vector<Edge2D> polygon;
 
         for (auto& tri : triangulation) {
             if (InCircumcircle(tri.circle, point)) {
                 tri.bad = true;
 
-                // Dodaj krawedzie tego trojkata do wielokata
                 polygon.emplace_back(tri.a, tri.b);
                 polygon.emplace_back(tri.b, tri.c);
                 polygon.emplace_back(tri.c, tri.a);
             }
         }
 
-        // Usun 'zle' trojkaty
         triangulation.erase(
             std::remove_if(triangulation.begin(), triangulation.end(),
                            [](const Triangle2D& t){ return t.bad; }),
             triangulation.end()
         );
 
-        // Oznacz zduplikowane krawedzie (wspolne krawedzie usuwanych trojkatow)
         for (int i = 0; i < (int)polygon.size(); i++) {
             for (int j = i + 1; j < (int)polygon.size(); j++) {
                 if (polygon[i] == polygon[j]) {
@@ -456,7 +435,6 @@ NavMeshData NavMeshSystem::BowyerWatson(const std::vector<glm::vec3>& points3D) 
             }
         }
 
-        // Dla kazdej niezawierajacej krawedzi stwórz nowy trojkat
         for (const auto& edge : polygon) {
             if (edge.bad) continue;
 
@@ -466,7 +444,6 @@ NavMeshData NavMeshSystem::BowyerWatson(const std::vector<glm::vec3>& points3D) 
         }
     }
 
-    // Usun trojkaty dotykajace super-trojkata
     triangulation.erase(
         std::remove_if(triangulation.begin(), triangulation.end(),
             [&](const Triangle2D& t){
@@ -475,8 +452,6 @@ NavMeshData NavMeshSystem::BowyerWatson(const std::vector<glm::vec3>& points3D) 
         triangulation.end()
     );
 
-    // Konwertuj wynik do NavMeshData
-    // Wierzcholki to oryginalne punkty 3D
     result.vertices.resize(points3D.size());
     for (int i = 0; i < (int)points3D.size(); i++) {
         result.vertices[i].position = points3D[i];
@@ -484,7 +459,6 @@ NavMeshData NavMeshSystem::BowyerWatson(const std::vector<glm::vec3>& points3D) 
 
     result.triangles.reserve(triangulation.size());
     for (const auto& tri : triangulation) {
-        // Sprawdz czy indeksy sa w zakresie (super-trojkat juz usunieto ale ostroznos)
         if (tri.a >= superOffset || tri.b >= superOffset || tri.c >= superOffset) continue;
 
         NavTriangle navTri(
@@ -508,23 +482,17 @@ NavMeshData NavMeshSystem::BowyerWatson(const std::vector<glm::vec3>& points3D) 
     return result;
 }
 
-//  Krok 5: Sasiedztwo trojkatow
 
 void NavMeshSystem::ComputeNeighbors(NavMeshData& data) {
-    // Dla kazdej krawedzi trojkata, znajdz trojkat ktory ja wspoldziela
-    // Krawedz trojkata i:
-    //   edge 0: v[1] - v[2]  (naprzeciwko v[0])  -> neighbors[0]
-    //   edge 1: v[0] - v[2]  (naprzeciwko v[1])  -> neighbors[1]
-    //   edge 2: v[0] - v[1]  (naprzeciwko v[2])  -> neighbors[2]
 
-    const int kEdgeA[3] = { 1, 0, 0 }; // Poczatek krawedzi i-tej
-    const int kEdgeB[3] = { 2, 2, 1 }; // Koniec krawedzi i-tej
+    const int kEdgeA[3] = { 1, 0, 0 };
+    const int kEdgeB[3] = { 2, 2, 1 };
 
     int n = (int)data.triangles.size();
 
     for (int i = 0; i < n; i++) {
         for (int ei = 0; ei < 3; ei++) {
-            if (data.triangles[i].neighbors[ei] != -1) continue; // Juz znaleziony
+            if (data.triangles[i].neighbors[ei] != -1) continue;
 
             int vA = data.triangles[i].v[kEdgeA[ei]];
             int vB = data.triangles[i].v[kEdgeB[ei]];
@@ -534,12 +502,11 @@ void NavMeshSystem::ComputeNeighbors(NavMeshData& data) {
                     int wA = data.triangles[j].v[kEdgeA[ej]];
                     int wB = data.triangles[j].v[kEdgeB[ej]];
 
-                    // Krawedzie sa takie same jesli wspoldziela te same dwa wierzcholki
                     bool shared = (vA == wA && vB == wB) || (vA == wB && vB == wA);
                     if (shared) {
                         data.triangles[i].neighbors[ei] = j;
                         data.triangles[j].neighbors[ej] = i;
-                        goto nextEdge; // Znalazlismy sasiadujacy trojkat dla tej krawedzi
+                        goto nextEdge;
                     }
                 }
             }
@@ -548,7 +515,6 @@ void NavMeshSystem::ComputeNeighbors(NavMeshData& data) {
     }
 }
 
-//  Pomocniczy test punkt w trojkacie 2D
 
 bool NavMeshSystem::PointInTriangle2D(
     float px, float pz,
