@@ -327,18 +327,15 @@ int main(int, char**)
     scenaMenu->GetECS().AddSystem<RenderSystem>(scenaMenu->GetECS(), window);
     scenaMenu->GetECS().AddSystem<SpriteSystem>(scenaMenu->GetECS(), window);
     scenaMenu->GetECS().AddSystem<PostProcessingSystem>(scenaMenu->GetECS(), window);
+    scenaMenu->GetECS().GetSystem<PostProcessingSystem>()->SetActive(false);
     scena1->addAllSystems(window);
     
-    scenaMenu->GetECS().GetSystem<PostProcessingSystem>()->SetActive(false);
-
-    Menu menu(&sceneManager, scenaMenu, window);
-    menu.Init();
 
     GameObject* loadingObject = scenaLoading->CreateGameObject(nullptr);
     SpriteComponent* Exit_sprite = loadingObject->AddComponent<SpriteComponent>();
-    Exit_sprite->sprites = { ResourceManager::LoadTexture("logo.png", "res/sprites/menu/").id };
-    Exit_sprite->screenPosition = glm::vec2(126.7f, 907.7f);
-    Exit_sprite->size = glm::vec2(473.0f, 108.0f);
+    Exit_sprite->sprites = { ResourceManager::LoadTexture("LOADING.png", "res/sprites/").id };
+    Exit_sprite->screenPosition = glm::vec2(0.0f, 0.0f);
+    Exit_sprite->size = glm::vec2(1920.0f, 1080.0f);
     Exit_sprite->layer = 1;
     Exit_sprite->isVisible = true;
 
@@ -348,6 +345,9 @@ int main(int, char**)
     sceneManager.Update(0.16f);
     end_frame();
 
+
+    Menu menu(&sceneManager, scenaMenu, window);
+    menu.Init();
 
     sceneManager.ChangeScene("Scena 1");
     sceneManager.UpdateChangeScene();
