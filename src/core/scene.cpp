@@ -7,6 +7,7 @@
 #include "systems/NpcSystem.h"
 #include "systems/raycastSystem.h"
 #include "systems/AudioSystem.h"
+#include "systems/UI_system.h"
 
 
 //Scene::Scene(ECS& ecsRef) : ecs(ecsRef) {}
@@ -32,7 +33,11 @@ GameObject* Scene::CreateGameObject(GameObject* parent) {
 }
 
 void Scene::Update(float deltaTime) {
-    if (auto* hid = ecs.GetSystem<HID>()) hid->Update(ecs, deltaTime);
+    if (auto* hid = ecs.GetSystem<HID>())
+        hid->Update(ecs, deltaTime);
+
+    if (auto* ui = ecs.GetSystem<UISystem>())
+        ui->Update(ecs, deltaTime);
 
     if (auto* ps = ecs.GetSystem<PhysicsSystem>())
         ps->Update(ecs, deltaTime);    
@@ -64,6 +69,7 @@ void Scene::Update(float deltaTime) {
 
     if (auto* ss = ecs.GetSystem<SpriteSystem>())
         ss->Update(ecs, deltaTime);
+
 
 
     //if (auto* as = ecs.GetSystem<AudioSystem>())

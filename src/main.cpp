@@ -55,11 +55,13 @@
 #include "systems/PostProcessingSystem.h"
 #include "systems/NavPathSystem.h"
 #include "systems/NpcSystem.h"
+#include "systems/UI_system.h"
 #include "utils/render_helper.h"
 #include "utils/animation_helper.h"
 #include "utils/player_animation_helper.h"
 
 #include "gameplay/crematorium_puzzle.h"
+#include "gameplay/menu.h"
 #include "systems/SurfaceDecorationSystem.h"
 
 
@@ -331,25 +333,25 @@ int main(int, char**)
     sceneManager.CreateScene("menu");
 
     Scene* scena1 = sceneManager.GetActiveScene();
-    Scene* menu = sceneManager.GetScene("menu");
+    Scene* scenaMenu = sceneManager.GetScene("menu");
     ECS* ecs = &scena1->GetECS();
 
     scena1->addAllSystems(window);
-    menu->GetECS().AddSystem<HID>(menu->GetECS(), window);
-    menu->GetECS().AddSystem<TransformSystem>(menu->GetECS());
-    menu->GetECS().AddSystem<RenderSystem>(menu->GetECS(), window);
-    menu->GetECS().AddSystem<SpriteSystem>(menu->GetECS(), window);
-    menu->GetECS().AddSystem<PostProcessingSystem>(menu->GetECS(), window);
-    menu->GetECS().GetSystem<PostProcessingSystem>()->SetActive(false);
+    scenaMenu->GetECS().AddSystem<HID>(scenaMenu->GetECS(), window);
+    scenaMenu->GetECS().AddSystem<UISystem>(scenaMenu->GetECS(), *scenaMenu->GetECS().GetSystem<HID>());
+    scenaMenu->GetECS().AddSystem<TransformSystem>(scenaMenu->GetECS());
+    scenaMenu->GetECS().AddSystem<RenderSystem>(scenaMenu->GetECS(), window);
+    scenaMenu->GetECS().AddSystem<SpriteSystem>(scenaMenu->GetECS(), window);
+    scenaMenu->GetECS().AddSystem<PostProcessingSystem>(scenaMenu->GetECS(), window);
+    scenaMenu->GetECS().GetSystem<PostProcessingSystem>()->SetActive(false);
     groundModel = std::make_unique<Prefab>("res/models/podloze.glb");
 
-    GameObject* cameraMenu = menu->CreateGameObject(nullptr);//groundModel->Instantiate(*scena1, nullptr, ourShader.get());
-    cameraMenu->name = "Kamera";
-    cameraMenu->AddComponent<CameraComponent>();
-    GameObject* menuPodloze = groundModel->Instantiate(*menu, nullptr, nullptr);
 
     sceneManager.SetActiveScene("Scena 1", window);
     //menu->GetECS().AddExistingSystem(scena1->GetECS().GetSystem<RenderSystem>());
+    Menu menu(scenaMenu);
+    menu.Init();
+
 
     postacGracza = std::make_unique<Prefab>("res/models/postac_test.glb");
     groundModel = std::make_unique<Prefab>("res/models/podloze.glb");
@@ -858,9 +860,12 @@ int main(int, char**)
                 renderSystem->frustumCullingEnabled ? "ON" : "OFF");
         }
 
+        if (ecs->GetSystem<HID>()->is_action_just_pressed("ui_menu")) {
+            sceneIsMenu = !sceneIsMenu;
+        }
+
         if (ecs->GetSystem<HID>()->is_action_just_pressed("gamma_up")) {
-            //postProcessingSystem->set_gamma(postProcessingSystem->get_gamma() + 0.1f);
-            //sceneIsMenu = !sceneIsMenu;
+            postProcessingSystem->set_gamma(postProcessingSystem->get_gamma() + 0.1f);
         }
         if (ecs->GetSystem<HID>()->is_action_just_pressed("gamma_down")) {
             postProcessingSystem->set_gamma(postProcessingSystem->get_gamma() - 0.1f);
