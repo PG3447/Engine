@@ -10,6 +10,7 @@ private:
 	GLFWwindow* window;
 
 public:
+	int currentMenu = 0;
 
 	Menu(SceneManager* manager, Scene* menu, GLFWwindow* windoww) : sceneManager(manager), scenaMenu(menu), window(windoww)
 	{

@@ -731,6 +731,7 @@ int main(int, char**)
     availablePrefabs,
     *scena1,
     nullptr);*/
+    sceneManager.Update(deltaTime);
     sceneManager.ChangeScene("menu");
     while (!glfwWindowShouldClose(window))
     {
