@@ -532,6 +532,8 @@ int main(int, char**)
     p1NoteUI->fontPath = "res/fonts/NothingYouCouldDo-Regular.ttf";
 
     connectAllModels();
+    std::string pathAssets = "res/Yaml/assets.yaml";
+    ResourceManager::LoadAssets(pathAssets);
     PlacementEditor::LoadPlacements(*scena1, PlacementEditor::DefaultPrefabLookup);
     LoadPlayerAnimations();
 
