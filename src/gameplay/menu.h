@@ -324,7 +324,7 @@ public:
 		grp_credits.push_back(credits_back);
 
 		//load
-		
+
 
 
 
@@ -333,7 +333,7 @@ public:
 		SpriteComponent* settings_back_sprite = settings_back->AddComponent<SpriteComponent>();
 		settings_back_sprite->sprites = {ResourceManager::LoadTexture("settings.png", "res/sprites/menu/settings").id};
 		settings_back_sprite->screenPosition = glm::vec2(1375.7f, 871.8f);
-		settings_back_sprite->size = glm::vec2(473.0f, 108.0f);
+		settings_back_sprite->size = glm::vec2( 1920.0f, 1080.0f);
 		settings_back_sprite->layer = 1;
 		settings_back_sprite->isVisible = true;
 		UIButtonComponent* settings_button = credits_back->AddComponent<UIButtonComponent>();
