@@ -776,14 +776,16 @@ void createCrematorium(Scene* scena) {
 
     CreateStaticObject(scena, floorModelB.get(), nullptr, "PodlogaKrematorium",   glm::vec3(125, 1.170, -150.000),  glm::vec3(3.490, 1, 2.870));
     CreateStaticObject(scena, ceilingModelB.get(), nullptr, "SufitCrematorium",     glm::vec3(125.000, 19.160, -150.000), glm::vec3(3.490, 1, 2.870));
-    CreateStaticObject(scena, wallModel2.get(), nullptr, "ScianaKoncowaKrematorium", glm::vec3(160.280, 0, -149.030), glm::vec3(32.000, 50, 1), std::nullopt, glm::vec3(1, 50, 32.000));
-    //CreateStaticObject(scena, wallCrematoriumModel.get(), nullptr, "ScianaKoncowaKrematorium", glm::vec3(160.280, 0, -149.030), glm::vec3(1, 1, 1));
-    CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaKremPrawa",       glm::vec3(124.600, 0, -178.010), glm::vec3(35.000, 50, 1), std::nullopt, glm::vec3(35.000, 100, 1));
-    //CreateStaticObject(scena, wallCrematoriumModel.get(),  nullptr, "ScianaKremPrawa",       glm::vec3(124.600, 0, -178.010), glm::vec3(1, 1, 1));
-    CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaKremLewa",       glm::vec3(91.190, 0, -153.760), glm::vec3(1, 50, 32.000), std::nullopt, glm::vec3(1, 100, 32.000));
-    //CreateStaticObject(scena, wallCrematoriumModel.get(),  nullptr, "ScianaKremLewa",       glm::vec3(91.190, 0, -153.760), glm::vec3(1, 1, 1));
-    CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaKremLewa2",       glm::vec3(149.900, 0, -121.640), glm::vec3(10.040, 50, 1), std::nullopt, glm::vec3(10.040, 100,1 ));
-    //CreateStaticObject(scena, wallCrematoriumModel.get(),  nullptr, "ScianaKremLewa2",       glm::vec3(149.900, 0, -121.640), glm::vec3(1, 1, 1));
+    //CreateStaticObject(scena, wallModel2.get(), nullptr, "ScianaKoncowaKrematorium", glm::vec3(160.280, 0, -149.030), glm::vec3(32.000, 50, 1), std::nullopt, glm::vec3(1, 50, 32.000));
+    CreateStaticObject(scena, wallCrematoriumModel.get(), nullptr, "ScianaKoncowaKrematorium", glm::vec3(160.280, 11.000, -149.030), glm::vec3(2.880, 2, 3), glm::vec3(0,-90,0));
+    //CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaKremPrawa",       glm::vec3(124.600, 0, -178.010), glm::vec3(35.000, 50, 1), std::nullopt, glm::vec3(35.000, 100, 1));
+    CreateStaticObject(scena, wallCrematoriumModel.get(),  nullptr, "ScianaKremPrawa",       glm::vec3(124.600, 11.000, -178.010), glm::vec3(3.540, 2.000, 3.000));
+    //CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaKremLewa",       glm::vec3(91.190, 0, -153.760), glm::vec3(1, 50, 32.000), std::nullopt, glm::vec3(1, 100, 32.000));
+    CreateStaticObject(scena, wallCrematoriumModel.get(),  nullptr, "ScianaKremLewa",       glm::vec3(91.190, 11.000, -150.390), glm::vec3(2.870, 2.000, 3.000), glm::vec3(0,90,0));
+    //CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaKremLewa2",       glm::vec3(149.900, 0, -121.640), glm::vec3(10.040, 50, 1), std::nullopt, glm::vec3(10.040, 100,1 ));
+    CreateStaticObject(scena, wallCrematoriumModel.get(),  nullptr, "ScianaKremLewa2",       glm::vec3(106.000, 10.890, -121.890), glm::vec3(1.500, 2, 2));
+    CreateStaticObject(scena, wallCrematoriumModel.get(),  nullptr, "ScianaKremLewa3",       glm::vec3(147.180, 10.890, -121.890), glm::vec3(1.500, 2, 2));
+    CreateStaticObject(scena, wallCrematoriumModel.get(),  nullptr, "ScianaKremLewaGora",       glm::vec3(127.290, 26.210, -122.070), glm::vec3(0.650, 2, 1));
 
 
     crematoriumPuzzle.spacingHorizontal = 7.0f;
@@ -832,6 +834,7 @@ void createRentgenRoom(Scene* scena) {
     objPuzel1->AddComponent<ColliderComponent>();
     objPuzel1->GetComponent<ColliderComponent>()->halfSize = glm::vec3(0.528,0.100,0.834);
     objectOriginalRotations[objPuzel1] = objPuzel1->GetComponent<TransformComponent>()->rotation;
+    objectOriginalPositions[objPuzel1] = objPuzel1->GetComponent<TransformComponent>()->position;
     pickupObjects.insert(objPuzel1);
 
     GameObject * objPuzel2 = puzel2->Instantiate(*scena, nullptr, nullptr);
@@ -844,6 +847,7 @@ void createRentgenRoom(Scene* scena) {
     objPuzel2->AddComponent<ColliderComponent>();
     objPuzel2->GetComponent<ColliderComponent>()->halfSize = glm::vec3(0.528,0.100,0.834);
     objectOriginalRotations[objPuzel2] = objPuzel2->GetComponent<TransformComponent>()->rotation;
+    objectOriginalPositions[objPuzel2] = objPuzel2->GetComponent<TransformComponent>()->position;
     pickupObjects.insert(objPuzel2);
 
     GameObject * objPuzel3 = puzel3->Instantiate(*scena, nullptr, nullptr);
@@ -856,6 +860,7 @@ void createRentgenRoom(Scene* scena) {
     objPuzel3->AddComponent<ColliderComponent>();
     objPuzel3->GetComponent<ColliderComponent>()->halfSize = glm::vec3(0.528,0.100,0.834);
     objectOriginalRotations[objPuzel3] = objPuzel3->GetComponent<TransformComponent>()->rotation;
+    objectOriginalPositions[objPuzel3] = objPuzel3->GetComponent<TransformComponent>()->position;
     pickupObjects.insert(objPuzel3);
 
     GameObject * objPuzel4 = puzel4->Instantiate(*scena, nullptr, nullptr);
@@ -868,6 +873,7 @@ void createRentgenRoom(Scene* scena) {
     objPuzel4->AddComponent<ColliderComponent>();
     objPuzel4->GetComponent<ColliderComponent>()->halfSize = glm::vec3(0.528,0.100,0.834);
     objectOriginalRotations[objPuzel4] = objPuzel4->GetComponent<TransformComponent>()->rotation;
+    objectOriginalPositions[objPuzel4] = objPuzel4->GetComponent<TransformComponent>()->position;
     pickupObjects.insert(objPuzel4);
 
     GameObject * objPuzel5 = puzel5->Instantiate(*scena, nullptr, nullptr);
@@ -880,6 +886,7 @@ void createRentgenRoom(Scene* scena) {
     objPuzel5->AddComponent<ColliderComponent>();
     objPuzel5->GetComponent<ColliderComponent>()->halfSize = glm::vec3(0.528,0.100,0.834);
     objectOriginalRotations[objPuzel5] = objPuzel5->GetComponent<TransformComponent>()->rotation;
+    objectOriginalPositions[objPuzel5] = objPuzel5->GetComponent<TransformComponent>()->position;
     pickupObjects.insert(objPuzel5);
 
     GameObject * objPuzel6 = puzel6->Instantiate(*scena, nullptr, nullptr);
@@ -892,6 +899,7 @@ void createRentgenRoom(Scene* scena) {
     objPuzel6->AddComponent<ColliderComponent>();
     objPuzel6->GetComponent<ColliderComponent>()->halfSize = glm::vec3(0.528,0.100,0.834);
     objectOriginalRotations[objPuzel6] = objPuzel6->GetComponent<TransformComponent>()->rotation;
+    objectOriginalPositions[objPuzel6] = objPuzel6->GetComponent<TransformComponent>()->position;
     pickupObjects.insert(objPuzel6);
 
     GameObject * rentgen = Rentgen->Instantiate(*scena, nullptr, nullptr);
