@@ -332,12 +332,12 @@ int main(int, char**)
     
 
     GameObject* loadingObject = scenaLoading->CreateGameObject(nullptr);
-    SpriteComponent* Exit_sprite = loadingObject->AddComponent<SpriteComponent>();
-    Exit_sprite->sprites = { ResourceManager::LoadTexture("LOADING.png", "res/sprites/").id };
-    Exit_sprite->screenPosition = glm::vec2(0.0f, 0.0f);
-    Exit_sprite->size = glm::vec2(1920.0f, 1080.0f);
-    Exit_sprite->layer = 1;
-    Exit_sprite->isVisible = true;
+    SpriteComponent* loadingSprite = loadingObject->AddComponent<SpriteComponent>();
+    loadingSprite->sprites = { ResourceManager::LoadTexture("LOADING.png", "res/sprites/").id };
+    loadingSprite->screenPosition = glm::vec2(0.0f, 0.0f);
+    loadingSprite->size = glm::vec2(1920.0f, 1080.0f);
+    loadingSprite->layer = 1;
+    loadingSprite->isVisible = true;
 
 
     sceneManager.ChangeScene("loading");
