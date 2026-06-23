@@ -3,14 +3,27 @@
 
 #include "scene.h"
 
+class ECS;
+class RenderSystem;
+class PostProcessingSystem;
+class GLFWwindow;
 
 class SceneManager {
 private:
+    ECS*& ecsMain;
+    RenderSystem*& renderSystemMain;
+    PostProcessingSystem*& postProcessingSystemMain;
+    GLFWwindow*& windowMain;
+
     std::unordered_map<std::string, std::unique_ptr<Scene>> scenes;
     Scene* activeScene = nullptr;
+    Scene* nextScene = nullptr;
 public:
     
-    SceneManager() = default;
+    SceneManager(ECS*& ecs, RenderSystem*& render, PostProcessingSystem*& post, GLFWwindow*& window) : ecsMain(ecs), renderSystemMain(render), postProcessingSystemMain(post), windowMain(window)
+    {
+        
+    }
 
     Scene* CreateScene(const std::string& name)
     {
@@ -32,7 +45,34 @@ public:
 
     }
 
+    void ChangeScene(std::string nameScene)
+    {
+        nextScene = GetScene(nameScene);
+    }
+
+    void UpdateChangeScene()
+    {
+        if (activeScene != nextScene)
+        {
+            activeScene = nextScene;
+            ecsMain = &activeScene->GetECS();
+            renderSystemMain = ecsMain->GetSystem<RenderSystem>();
+            postProcessingSystemMain = ecsMain->GetSystem<PostProcessingSystem>();
+        }
+    }
+
+
     Scene* GetActiveScene() { return activeScene; }
+
+    std::string GetActiveSceneName()
+    {
+        for (const auto& [name, scenePtr] : scenes)
+        {
+            if (scenePtr.get() == activeScene)
+                return name;
+        }
+        return "";
+    }
 
     Scene* GetScene(const std::string& name)
     {

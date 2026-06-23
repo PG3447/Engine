@@ -4,12 +4,13 @@
 class Menu
 {
 private:
+	SceneManager* sceneManager;
 	Scene* scenaMenu;
 	std::unique_ptr<Prefab> modelTest;
 
 public:
 
-	Menu(Scene* menu) : scenaMenu(menu)
+	Menu(SceneManager* manager, Scene* menu) : sceneManager(manager), scenaMenu(menu)
 	{
 		
 	}
@@ -24,33 +25,34 @@ public:
 		jakisprite->layer = 2; // nad napisami
 		jakisprite->isVisible = true;
 
-		UIButtonComponent* jakisbutton = menuobjekt->AddComponent<UIButtonComponent>();
+		UIButtonComponent* button = menuobjekt->AddComponent<UIButtonComponent>();
 
 
-		jakisbutton->onHoverEnter = [](GameObject* go)
-			{
-				auto* sprite = go->GetComponent<SpriteComponent>();
-				if (!sprite) return;
+		button->onHoverEnter = [&](GameObject* go)
+		{
+			auto* sprite = go->GetComponent<SpriteComponent>();
+			if (!sprite) return;
 
-				sprite->size = glm::vec2(280.0f, 280.0f);
+			sprite->size = glm::vec2(280.0f, 280.0f);
 
-				spdlog::info("Hover enter");
-			};
+			spdlog::info("Hover enter");
+		};
 
-		jakisbutton->onHoverExit = [](GameObject* go)
-			{
-				auto* sprite = go->GetComponent<SpriteComponent>();
-				if (!sprite) return;
+		button->onHoverExit = [&](GameObject* go)
+		{
+			auto* sprite = go->GetComponent<SpriteComponent>();
+			if (!sprite) return;
 
-				sprite->size = glm::vec2(160.0f, 160.0f);
+			sprite->size = glm::vec2(160.0f, 160.0f);
 
-				spdlog::info("Hover exit");
-			};
+			spdlog::info("Hover exit");
+		};
 
-		jakisbutton->onClick = [](GameObject* go)
-			{
-				spdlog::info("Przycisk klikniety!");
-			};
+		button->onClick = [&](GameObject* go)
+		{
+			sceneManager->ChangeScene("Scena 1");
+			spdlog::info("Przycisk klikniety!");
+		};
 
 		GameObject* cameraMenu = scenaMenu->CreateGameObject(nullptr);//groundModel->Instantiate(*scena1, nullptr, ourShader.get());
 		cameraMenu->name = "Kamera";

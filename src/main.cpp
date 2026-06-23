@@ -132,9 +132,6 @@ float  rotationY      = 0.0f;
 ImVec4 clear_color   = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 bool   autoRotation  = false;
 
-bool sceneIsMenu = false;
-bool prevSceneIsMenu = false;
-
 
 unsigned int cubemapTexture;
 unsigned int skyboxVAO;
@@ -292,28 +289,6 @@ void createCrematorium(Scene* scena);
 void createRentgenRoom(Scene* scena);
 void createTrigger(Scene* scena);
 
-void ChangeScene(SceneManager* sceneManager, ECS*& ecs)
-{
-
-    if (sceneIsMenu)
-    {
-        sceneManager->SetActiveScene("menu", window);
-        Scene* active = sceneManager->GetActiveScene();
-        ecs = &active->GetECS();
-        renderSystem = ecs->GetSystem<RenderSystem>();
-        postProcessingSystem = ecs->GetSystem<PostProcessingSystem>();
-    }
-    else
-    {
-        sceneManager->SetActiveScene("Scena 1", window);
-        Scene* active = sceneManager->GetActiveScene();
-        ecs = &active->GetECS();
-        renderSystem = ecs->GetSystem<RenderSystem>();
-        postProcessingSystem = ecs->GetSystem<PostProcessingSystem>();
-    }
-
-    prevSceneIsMenu = sceneIsMenu;
-}
 
 int main(int, char**)
 {
@@ -327,31 +302,31 @@ int main(int, char**)
     init_imgui();
     spdlog::info("Initialized ImGui.");
 
-    SceneManager sceneManager;
+    ECS* ecs;
+    SceneManager sceneManager(ecs, renderSystem, postProcessingSystem, window);
 
     sceneManager.CreateScene("Scena 1");
     sceneManager.CreateScene("menu");
 
     Scene* scena1 = sceneManager.GetActiveScene();
     Scene* scenaMenu = sceneManager.GetScene("menu");
-    ECS* ecs = &scena1->GetECS();
+    ecs = &scena1->GetECS();
 
-    scena1->addAllSystems(window);
     scenaMenu->GetECS().AddSystem<HID>(scenaMenu->GetECS(), window);
     scenaMenu->GetECS().AddSystem<UISystem>(scenaMenu->GetECS(), *scenaMenu->GetECS().GetSystem<HID>());
     scenaMenu->GetECS().AddSystem<TransformSystem>(scenaMenu->GetECS());
     scenaMenu->GetECS().AddSystem<RenderSystem>(scenaMenu->GetECS(), window);
     scenaMenu->GetECS().AddSystem<SpriteSystem>(scenaMenu->GetECS(), window);
     scenaMenu->GetECS().AddSystem<PostProcessingSystem>(scenaMenu->GetECS(), window);
+    scena1->addAllSystems(window);
+    
     scenaMenu->GetECS().GetSystem<PostProcessingSystem>()->SetActive(false);
-    groundModel = std::make_unique<Prefab>("res/models/podloze.glb");
 
-
-    sceneManager.SetActiveScene("Scena 1", window);
-    //menu->GetECS().AddExistingSystem(scena1->GetECS().GetSystem<RenderSystem>());
-    Menu menu(scenaMenu);
+    sceneManager.ChangeScene("Scena 1");
+    Menu menu(&sceneManager, scenaMenu);
     menu.Init();
 
+    //menu->GetECS().AddExistingSystem(scena1->GetECS().GetSystem<RenderSystem>());
 
     postacGracza = std::make_unique<Prefab>("res/models/postac_test.glb");
     groundModel = std::make_unique<Prefab>("res/models/podloze.glb");
@@ -763,6 +738,8 @@ int main(int, char**)
         lastFrame = currentFrame;
         updateFPS(deltaTime);
 
+        sceneManager.UpdateChangeScene();
+
         int display_w, display_h;
         glfwGetFramebufferSize(window, &display_w, &display_h);
 
@@ -803,11 +780,6 @@ int main(int, char**)
         CpuTimer cpuTimer;
         cpuTimer.start();
 
-
-        if (prevSceneIsMenu != sceneIsMenu)
-        {
-            ChangeScene(&sceneManager, ecs);
-        }
 
         bool allFilled = !puzzleSlotsMap.empty() && std::all_of(
             puzzleSlotsMap.begin(), puzzleSlotsMap.end(),
@@ -861,7 +833,15 @@ int main(int, char**)
         }
 
         if (ecs->GetSystem<HID>()->is_action_just_pressed("ui_menu")) {
-            sceneIsMenu = !sceneIsMenu;
+            if (sceneManager.GetActiveSceneName() == "Scena 1")
+            {
+                sceneManager.ChangeScene("menu");
+            }
+
+            if (sceneManager.GetActiveSceneName() == "menu")
+            {
+                sceneManager.ChangeScene("Scena 1");
+            }
         }
 
         if (ecs->GetSystem<HID>()->is_action_just_pressed("gamma_up")) {
