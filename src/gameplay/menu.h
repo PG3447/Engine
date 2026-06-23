@@ -82,6 +82,61 @@ public:
 		BG_SPRITE->frameDuration = 1.0f / 24.0f;
 		UIButtonComponent* button = BG_Object->AddComponent<UIButtonComponent>();
 
+		GameObject* Logo_Object = scenaMenu->CreateGameObject(nullptr);
+		SpriteComponent* Logo_SPRITE = Logo_Object->AddComponent<SpriteComponent>();
+		Logo_SPRITE->sprites = {ResourceManager::LoadTexture("logo.png", "res/sprites/menu/").id };
+		Logo_SPRITE->screenPosition = glm::vec2(0.0f, 0.0f);
+		Logo_SPRITE->size = glm::vec2(458.0f, 316.0f);
+		Logo_SPRITE->layer = 0;
+		Logo_SPRITE->isVisible = true;
+		UIButtonComponent* button2 = Logo_Object->AddComponent<UIButtonComponent>();
+
+
+		GameObject* Button_Object_1 = scenaMenu->CreateGameObject(nullptr);
+		SpriteComponent* Start_sprite = Button_Object_1->AddComponent<SpriteComponent>();
+		Start_sprite->sprites = {ResourceManager::LoadTexture("new_game_z_sprite.png", "res/sprites/menu/").id };
+		Start_sprite->screenPosition = glm::vec2(0.0f, 0.0f);
+		Start_sprite->size = glm::vec2(473.0f, 108.0f);
+		Start_sprite->layer = 1;
+		Start_sprite->isVisible = true;
+		UIButtonComponent* button3 = Button_Object_1->AddComponent<UIButtonComponent>();
+
+		GameObject* Button_Object_2 = scenaMenu->CreateGameObject(nullptr);
+		SpriteComponent* Load_sprite = Button_Object_2->AddComponent<SpriteComponent>();
+		Load_sprite->sprites = {ResourceManager::LoadTexture("logo.png", "res/sprites/menu/").id };
+		Load_sprite->screenPosition = glm::vec2(0.0f, 0.0f);
+		Load_sprite->size = glm::vec2(473.0f, 108.0f);
+		Load_sprite->layer = 1;
+		Load_sprite->isVisible = true;
+		UIButtonComponent* button4 = Button_Object_2->AddComponent<UIButtonComponent>();
+
+		GameObject* Button_Object_3 = scenaMenu->CreateGameObject(nullptr);
+		SpriteComponent* Settings_sprite = Button_Object_3->AddComponent<SpriteComponent>();
+		Settings_sprite->sprites = {ResourceManager::LoadTexture("logo.png", "res/sprites/menu/").id };
+		Settings_sprite->screenPosition = glm::vec2(0.0f, 0.0f);
+		Settings_sprite->size = glm::vec2(473.0f, 108.0f);
+		Settings_sprite->layer = 1;
+		Settings_sprite->isVisible = true;
+		UIButtonComponent* button5 = Button_Object_3->AddComponent<UIButtonComponent>();
+
+		GameObject* Button_Object_4 = scenaMenu->CreateGameObject(nullptr);
+		SpriteComponent* Credits_sprite = Button_Object_4->AddComponent<SpriteComponent>();
+		Credits_sprite->sprites = {ResourceManager::LoadTexture("logo.png", "res/sprites/menu/").id };
+		Credits_sprite->screenPosition = glm::vec2(0.0f, 0.0f);
+		Credits_sprite->size = glm::vec2(473.0f, 108.0f);
+		Credits_sprite->layer = 1;
+		Credits_sprite->isVisible = true;
+		UIButtonComponent* button6 = Button_Object_4->AddComponent<UIButtonComponent>();
+
+		GameObject* Button_Object_5 = scenaMenu->CreateGameObject(nullptr);
+		SpriteComponent* Exit_sprite = Button_Object_5->AddComponent<SpriteComponent>();
+		Exit_sprite->sprites = {ResourceManager::LoadTexture("logo.png", "res/sprites/menu/").id };
+		Exit_sprite->screenPosition = glm::vec2(0.0f, 0.0f);
+		Exit_sprite->size = glm::vec2(473.0f, 108.0f);
+		Exit_sprite->layer = 1;
+		Exit_sprite->isVisible = true;
+		UIButtonComponent* button7 = Button_Object_5->AddComponent<UIButtonComponent>();
+
 
 	}
 
