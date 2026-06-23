@@ -13,6 +13,7 @@ bool isMachineFixed = false;
 
 std::unordered_map<GameObject*, PuzzleSlot> puzzleSlotsMap; // klucz = slotObject
 std::unordered_map<GameObject*, glm::vec3>  objectOriginalRotations;
+std::unordered_map<GameObject*, glm::vec3> objectOriginalPositions;
 std::unordered_map<GameObject*, glm::vec3>  objectOriginalColliderSizes;
 
 glm::vec3 gearHeldOffset = glm::vec3(1.25f, -1.2f, -5.55f);
@@ -160,7 +161,7 @@ bool IsPuzzleSolved() {
     if (puzzleSlotsMap.empty()) return false;
     for (auto& [slotGO, slot] : puzzleSlotsMap) {
         if (slot.occupant == nullptr) return false;             // slot pusty
-        if (slot.occupant != slot.expectedObject) return false; // z³a kostka
+        if (slot.occupant != slot.expectedObject) return false; // zï¿½a kostka
     }
     return true;
 }
@@ -337,7 +338,7 @@ void HandlePlayerInteraction(
 
                     if (allInserted && !isMachineFixed) {
                         isMachineFixed = true; // Maszyna rusza!
-                        outShakeTimer = SHAKE_DURATION; // Mocne trzêsienie kamery z impaktem
+                        outShakeTimer = SHAKE_DURATION; // Mocne trzï¿½sienie kamery z impaktem
 
                         spdlog::info("Guzik START wcisniety! Maszyna ruszyla, otwieranie drzwi.");
 
@@ -356,8 +357,8 @@ void HandlePlayerInteraction(
                         }
                     }
                     else if (!isMachineFixed) {
-                        // Brak zêbatek - b³¹d (odrzucenie)
-                        outShakeTimer = SHAKE_DURATION * 0.5f; // Ma³e trzêsienie
+                        // Brak zï¿½batek - bï¿½ï¿½d (odrzucenie)
+                        outShakeTimer = SHAKE_DURATION * 0.5f; // Maï¿½e trzï¿½sienie
                         if (audioSystem && soundDoorLocked) audioSystem->playSound(soundDoorLocked);
                     }
                 }
@@ -802,4 +803,41 @@ GameObject* CreateCockroachFollower(
     follower->state = FollowerState::Follow;
 
     return go;
+}
+void CheckFallenPickupObjects()
+{
+    for (auto* obj : pickupObjects)
+    {
+        if (obj == p1HeldObject || obj == p2HeldObject) continue;
+
+        TransformComponent* tr = obj->GetComponent<TransformComponent>();
+        if (tr == nullptr) continue;
+
+        if (tr->position.y < -1.0f)
+        {
+            auto posIt = objectOriginalPositions.find(obj);
+            if (posIt == objectOriginalPositions.end()) continue;
+
+            tr->position = posIt->second;
+            tr->isDirty  = true;
+
+            auto rotIt = objectOriginalRotations.find(obj);
+            if (rotIt != objectOriginalRotations.end())
+                tr->rotation = rotIt->second;
+
+            for (auto& [slotGO, slot] : puzzleSlotsMap)
+            {
+                if (slot.occupant == obj)
+                {
+                    slot.occupant = nullptr;
+                    break;
+                }
+            }
+
+            if (RigidbodyComponent* rb = obj->GetComponent<RigidbodyComponent>())
+                rb->velocity = glm::vec3(0.0f);
+
+            spdlog::info("Obiekt '{}' spadl poza mape - reset na pozycje startowa", obj->name);
+        }
+    }
 }

@@ -288,6 +288,7 @@ void createNuclearRooom(Scene* scena);
 void createCrematorium(Scene* scena);
 void createRentgenRoom(Scene* scena);
 void createTrigger(Scene* scena);
+void CheckFallenPickupObjects();
 
 
 int main(int, char**)
@@ -813,6 +814,7 @@ int main(int, char**)
 
         UpdateDoors(deltaTime, audioSys, sndDoorClosed);
         UpdateCabinets(deltaTime);
+        CheckFallenPickupObjects();
 
 
         auto inputStart = std::chrono::high_resolution_clock::now();
