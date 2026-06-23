@@ -11,10 +11,6 @@
 #include <random>
 #include <map>
 
-// ============================================================
-//  Public API
-// ============================================================
-
 NavMeshStats NavMeshBenchmarkSystem::BakeWithMethod(Scene& scene, NavMeshMethod method) {
     auto t0 = std::chrono::high_resolution_clock::now();
 
@@ -32,15 +28,11 @@ NavMeshStats NavMeshBenchmarkSystem::BakeWithMethod(Scene& scene, NavMeshMethod 
 }
 
 void NavMeshBenchmarkSystem::ClearNavMesh(Scene& /*scene*/) {
-    // Scene nie ma DestroyGameObject - czyścimy tylko dane NavMeshComponent.
-    // navMeshGO_ pozostaje w scenie jako pusty kontener; przy kolejnym
-    // BakeWithMethod zostanie nadpisany nowym NavMeshComponent.
     NavMeshComponent* nm = GetNavMesh();
     if (nm) {
         nm->data.Clear();
         nm->data.isBaked = false;
     }
-    // Wyzeruj wskaźnik - kolejny Bake stworzy nowy GameObject i przypisze go
     navMeshGO_ = nullptr;
     spdlog::info("[NavMeshBenchmark] Wyczyszczono dane NavMesh.");
 }
@@ -77,23 +69,9 @@ void NavMeshBenchmarkSystem::RunFullBenchmark(Scene& scene, const std::string& o
     spdlog::info("[NavMeshBenchmark] Wyniki zapisano do: {}", outputPath);
 }
 
-// ============================================================
-//  Metoda 1: Delaunay (deleguje do istniejącego NavMeshSystem::Bake)
-// ============================================================
-
 void NavMeshBenchmarkSystem::BakeDelaunay(Scene& scene) {
-    Bake(scene); // Używa istniejącej implementacji Bowyer-Watson
+    Bake(scene);
 }
-
-// ============================================================
-//  Metoda 2: Recast-inspired
-//
-//  Uproszczony pipeline:
-//    1. Rasteryzuj walkable surfaces do siatki vokseli
-//    2. Oznacz voksele blokowane przez przeszkody
-//    3. Flood-fill → przypisz ID regionów
-//    4. Każdy voksel z regionem → quad → 2 trójkąty
-// ============================================================
 
 void NavMeshBenchmarkSystem::BakeRecast(Scene& scene) {
     navMeshGO_ = scene.CreateGameObject(nullptr);
@@ -128,7 +106,6 @@ NavMeshBenchmarkSystem::RecastGrid NavMeshBenchmarkSystem::BuildVoxelGrid(
     const std::vector<NavMeshSystem::Obstacle>& obstacles,
     float voxelSize, float agentRadius, float agentHeight)
 {
-    // Znajdź bounding box wszystkich surfaces
     float minX =  FLT_MAX, minZ =  FLT_MAX;
     float maxX = -FLT_MAX, maxZ = -FLT_MAX;
 
@@ -147,7 +124,6 @@ NavMeshBenchmarkSystem::RecastGrid NavMeshBenchmarkSystem::BuildVoxelGrid(
     grid.rows = (int)std::ceil((maxZ - minZ) / voxelSize) + 1;
     grid.cells.resize(grid.cols * grid.rows);
 
-    // Rasteryzuj surfaces → walkable
     for (const auto& surf : surfaces) {
         int cMin = (int)((surf.min.x - minX) / voxelSize);
         int cMax = (int)((surf.max.x - minX) / voxelSize);
@@ -164,7 +140,6 @@ NavMeshBenchmarkSystem::RecastGrid NavMeshBenchmarkSystem::BuildVoxelGrid(
         }
     }
 
-    // Rasteryzuj obstacles → blokowane
     for (const auto& obs : obstacles) {
         glm::vec3 expMin = obs.min - glm::vec3(agentRadius, 0.0f, agentRadius);
         glm::vec3 expMax = obs.max + glm::vec3(agentRadius, 0.0f, agentRadius);
@@ -177,7 +152,6 @@ NavMeshBenchmarkSystem::RecastGrid NavMeshBenchmarkSystem::BuildVoxelGrid(
         for (int r = rMin; r <= rMax; r++) {
             for (int c = cMin; c <= cMax; c++) {
                 auto& cell = grid.At(c, r);
-                // Sprawdź nakładanie w Y
                 float cellY = cell.y;
                 if (obs.max.y > cellY && obs.min.y < (cellY + agentHeight)) {
                     cell.hasObstacle = true;
@@ -201,7 +175,6 @@ void NavMeshBenchmarkSystem::FloodFillRegions(RecastGrid& grid) {
             auto& cell = grid.At(c, r);
             if (!cell.walkable || cell.regionId != -1) continue;
 
-            // BFS flood fill
             std::queue<std::pair<int,int>> q;
             q.push({c, r});
             cell.regionId = regionId;
@@ -216,7 +189,6 @@ void NavMeshBenchmarkSystem::FloodFillRegions(RecastGrid& grid) {
                     if (!grid.Valid(nc, nr)) continue;
                     auto& neighbor = grid.At(nc, nr);
                     if (!neighbor.walkable || neighbor.regionId != -1) continue;
-                    // Sprawdź czy to ten sam poziom (w granicach tolerancji)
                     if (std::abs(neighbor.y - cell.y) > 0.5f) continue;
                     neighbor.regionId = regionId;
                     q.push({nc, nr});
@@ -231,11 +203,6 @@ void NavMeshBenchmarkSystem::FloodFillRegions(RecastGrid& grid) {
 
 NavMeshData NavMeshBenchmarkSystem::TriangulateRecastGrid(const RecastGrid& grid) {
     NavMeshData result;
-
-    // Dla każdego walkable voksela stwórz quad (2 trójkąty)
-    // Wierzchołki w rogach voksela
-    // Używamy mapy (c,r) → vertex index dla współdzielenia wierzchołków
-
     std::map<std::pair<int,int>, int> vertexMap;
 
     auto getVertex = [&](int c, int r) -> int {
@@ -246,7 +213,6 @@ NavMeshData NavMeshBenchmarkSystem::TriangulateRecastGrid(const RecastGrid& grid
         float x = grid.originX + c * grid.voxelSize;
         float z = grid.originZ + r * grid.voxelSize;
 
-        // Interpoluj Y z sąsiednich vokseli
         float y = 0.0f;
         int count = 0;
         for (int dc = -1; dc <= 0; dc++) {
@@ -273,13 +239,11 @@ NavMeshData NavMeshBenchmarkSystem::TriangulateRecastGrid(const RecastGrid& grid
             const auto& cell = grid.At(c, r);
             if (!cell.walkable) continue;
 
-            // 4 rogi voksela (c,r), (c+1,r), (c,r+1), (c+1,r+1)
             int v00 = getVertex(c,   r);
             int v10 = getVertex(c+1, r);
             int v01 = getVertex(c,   r+1);
             int v11 = getVertex(c+1, r+1);
 
-            // Trójkąt 1: v00, v10, v11
             {
                 NavTriangle tri(v00, v10, v11);
                 const glm::vec3& va = result.vertices[v00].position;
@@ -290,7 +254,6 @@ NavMeshData NavMeshBenchmarkSystem::TriangulateRecastGrid(const RecastGrid& grid
                 result.triangles.push_back(tri);
             }
 
-            // Trójkąt 2: v00, v11, v01
             {
                 NavTriangle tri(v00, v11, v01);
                 const glm::vec3& va = result.vertices[v00].position;
@@ -309,19 +272,6 @@ NavMeshData NavMeshBenchmarkSystem::TriangulateRecastGrid(const RecastGrid& grid
     return result;
 }
 
-// ============================================================
-//  Metoda 3: Voronoi Diagram
-//
-//  Pipeline:
-//    1. Wygeneruj punkty próbkowania (identycznie jak Delaunay)
-//    2. Przefiltruj przez przeszkody
-//    3. Zbuduj przybliżony Voronoi używając Fortune's sweep
-//       (uproszczona wersja: dla każdej pary sąsiednich punktów
-//        oblicz prostopadłą dwusieczną → stwórz trójkąty)
-//    4. W praktyce: użyj Delaunay dual jako Voronoi, ale
-//       trianguluj przez centroidy Voronoi → bardziej "okrągłe" trójkąty
-// ============================================================
-
 void NavMeshBenchmarkSystem::BakeVoronoi(Scene& scene) {
     navMeshGO_ = scene.CreateGameObject(nullptr);
     navMeshGO_->name = "__NavMesh_Voronoi__";
@@ -336,7 +286,6 @@ void NavMeshBenchmarkSystem::BakeVoronoi(Scene& scene) {
         return;
     }
 
-    // Użyj gęstszej siatki punktów wejściowych dla lepszego Voronoi
     float voronoiVoxelSize = nm->voxelSize * 1.5f;
     auto rawPoints = GenerateSamplePoints(surfaces, voronoiVoxelSize);
     auto filteredPoints = FilterBlockedPoints(rawPoints, obstacles, nm->agentRadius, nm->agentHeight);
@@ -360,25 +309,16 @@ NavMeshData NavMeshBenchmarkSystem::BuildVoronoiNavMesh(
     const std::vector<NavMeshSystem::Obstacle>& obstacles,
     float agentRadius, float agentHeight)
 {
-    // Voronoi jako dual Delaunay:
-    // 1. Triangulujemy wejściowe punkty przez Bowyer-Watson (dziedziczone)
-    // 2. Dla każdego trójkąta Delaunay → centrum okręgu opisanego to wierzchołek Voronoi
-    // 3. Triangulujemy te centra Voronoi → nowe trójkąty
-
-    // Krok 1: Delaunay bazowy
     NavMeshData delaunayBase = BowyerWatson(points);
 
     if (delaunayBase.triangles.empty()) return delaunayBase;
 
     NavMeshData result;
 
-    // Krok 2: Centra okręgów opisanych = wierzchołki Voronoi
-    // Odbuduj Point2D z punktów
     std::vector<glm::vec3> voronoiVertices;
     voronoiVertices.reserve(delaunayBase.triangles.size());
 
     for (const auto& tri : delaunayBase.triangles) {
-        // Oblicz circumcenter
         const glm::vec3& a = delaunayBase.vertices[tri.v[0]].position;
         const glm::vec3& b = delaunayBase.vertices[tri.v[1]].position;
         const glm::vec3& c = delaunayBase.vertices[tri.v[2]].position;
@@ -389,7 +329,7 @@ NavMeshData NavMeshBenchmarkSystem::BuildVoronoiNavMesh(
 
         glm::vec3 center;
         if (std::abs(D) < 1e-8f) {
-            center = tri.centroid; // Zdegenerowany → użyj centroidu
+            center = tri.centroid;
         } else {
             float ux = (bz * (ax*ax + az*az) - az * (bx*bx + bz*bz)) / D;
             float uz = (ax * (bx*bx + bz*bz) - bx * (ax*ax + az*az)) / D;
@@ -399,11 +339,6 @@ NavMeshData NavMeshBenchmarkSystem::BuildVoronoiNavMesh(
         voronoiVertices.push_back(center);
     }
 
-    // Krok 3: Dodaj oryginalne punkty jako wierzchołki (krawędzie Voronoi)
-    // Połącz: oryginalny wierzchołek Delaunay z centrami okolicznych trójkątów
-    // Budujemy "fan" trójkątów wokół każdego oryginalnego punktu
-
-    // Zbuduj mapę: vertex_idx → lista trójkątów Delaunay zawierających ten wierzchołek
     std::vector<std::vector<int>> vertexToTriangles(delaunayBase.vertices.size());
     for (int ti = 0; ti < (int)delaunayBase.triangles.size(); ti++) {
         const auto& tri = delaunayBase.triangles[ti];
@@ -413,7 +348,6 @@ NavMeshData NavMeshBenchmarkSystem::BuildVoronoiNavMesh(
         }
     }
 
-    // Dla każdego oryginalnego wierzchołka Delaunay → fan trójkątów Voronoi
     result.vertices.resize(delaunayBase.vertices.size() + voronoiVertices.size());
     for (int i = 0; i < (int)delaunayBase.vertices.size(); i++)
         result.vertices[i] = delaunayBase.vertices[i];
@@ -426,7 +360,6 @@ NavMeshData NavMeshBenchmarkSystem::BuildVoronoiNavMesh(
         const auto& tris = vertexToTriangles[vi];
         if (tris.size() < 2) continue;
 
-        // Posortuj trójkąty angularnie wokół vi
         const glm::vec3& center = delaunayBase.vertices[vi].position;
         std::vector<int> sortedTris = tris;
         std::sort(sortedTris.begin(), sortedTris.end(), [&](int a, int b) {
@@ -437,7 +370,6 @@ NavMeshData NavMeshBenchmarkSystem::BuildVoronoiNavMesh(
             return angA < angB;
         });
 
-        // Stwórz fan: vi + sortedTris[i] + sortedTris[i+1]
         for (int i = 0; i < (int)sortedTris.size(); i++) {
             int t0 = sortedTris[i];
             int t1 = sortedTris[(i + 1) % sortedTris.size()];
@@ -460,16 +392,6 @@ NavMeshData NavMeshBenchmarkSystem::BuildVoronoiNavMesh(
 
     return result;
 }
-
-// ============================================================
-//  Metoda 4: Grid-Based
-//
-//  Najprostsza metoda:
-//    1. Wygeneruj jednolitą siatkę kwadratów nad walkable surfaces
-//    2. Odfiltruj kwadraty blokowane przez przeszkody
-//    3. Każdy kwadrat → 2 trójkąty
-//    4. Brak Delaunay, brak Voronoi — czysta siatka
-// ============================================================
 
 void NavMeshBenchmarkSystem::BakeGrid(Scene& scene) {
     navMeshGO_ = scene.CreateGameObject(nullptr);
@@ -502,7 +424,6 @@ NavMeshData NavMeshBenchmarkSystem::BuildGridNavMesh(
     NavMeshData result;
     std::map<std::pair<int,int>, int> vertexMap;
 
-    // Dla każdej surface niezależnie generuj siatkę
     for (const auto& surf : surfaces) {
         int cols = (int)std::ceil((surf.max.x - surf.min.x) / cellSize);
         int rows = (int)std::ceil((surf.max.z - surf.min.z) / cellSize);
@@ -510,9 +431,7 @@ NavMeshData NavMeshBenchmarkSystem::BuildGridNavMesh(
 
         float y = surf.yTop;
 
-        // Pomocnik: world position → vertex index (z deduplikacją)
         auto makeKey = [&](int c, int r) -> std::pair<int,int> {
-            // Klucz globalny uwzględniający pozycję surface
             int globalC = (int)std::round((surf.min.x + c * cellSize) / (cellSize * 0.01f));
             int globalR = (int)std::round((surf.min.z + r * cellSize) / (cellSize * 0.01f));
             return {globalC, globalR};
@@ -538,12 +457,10 @@ NavMeshData NavMeshBenchmarkSystem::BuildGridNavMesh(
 
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
-                // Centrum kwadratu
                 float cx = surf.min.x + (c + 0.5f) * cellSize;
                 float cz = surf.min.z + (r + 0.5f) * cellSize;
                 glm::vec3 cellCenter(cx, y, cz);
 
-                // Sprawdź czy kwadrat jest blokowany
                 bool blocked = false;
                 for (const auto& obs : obstacles) {
                     glm::vec3 expMin = obs.min - glm::vec3(agentRadius, 0.f, agentRadius);
@@ -559,7 +476,6 @@ NavMeshData NavMeshBenchmarkSystem::BuildGridNavMesh(
                 int v01 = getVertex(c,   r+1);
                 int v11 = getVertex(c+1, r+1);
 
-                // Trójkąt 1
                 {
                     NavTriangle tri(v00, v10, v11);
                     const glm::vec3& va = result.vertices[v00].position;
@@ -569,7 +485,6 @@ NavMeshData NavMeshBenchmarkSystem::BuildGridNavMesh(
                     tri.walkable = !blocked;
                     result.triangles.push_back(tri);
                 }
-                // Trójkąt 2
                 {
                     NavTriangle tri(v00, v11, v01);
                     const glm::vec3& va = result.vertices[v00].position;
@@ -588,10 +503,6 @@ NavMeshData NavMeshBenchmarkSystem::BuildGridNavMesh(
 
     return result;
 }
-
-// ============================================================
-//  Stats & helpers
-// ============================================================
 
 static float TriangleArea2D(const glm::vec3& a, const glm::vec3& b, const glm::vec3& c) {
     float abx = b.x - a.x, abz = b.z - a.z;
@@ -613,12 +524,10 @@ NavMeshStats NavMeshBenchmarkSystem::ComputeStats(NavMeshMethod method, double b
     stats.totalVertices   = (int)data.vertices.size();
     stats.totalTriangles  = (int)data.triangles.size();
 
-    // Szacowanie pamięci
     size_t vertMem = data.vertices.size()  * sizeof(NavVertex);
     size_t triMem  = data.triangles.size() * sizeof(NavTriangle);
     stats.memoryEstimateKB = (vertMem + triMem) / 1024;
 
-    // Zlicz walkable / unwalkable
     float totalArea = 0.0f;
     float minArea   = FLT_MAX;
     float maxArea   = -FLT_MAX;
@@ -680,7 +589,6 @@ void NavMeshBenchmarkSystem::SaveStatsToFile(
     f << "  Data: " << std::ctime(&t);
     f << "=========================================================\n\n";
 
-    // Tabela porównawcza
     f << std::left
       << std::setw(30) << "Metoda"
       << std::setw(14) << "Czas [ms]"
@@ -730,7 +638,6 @@ void NavMeshBenchmarkSystem::SaveStatsToFile(
         f << "\n";
     }
 
-    // Ranking wg czasu
     f << "=========================================================\n";
     f << "  RANKING (wg czasu generowania)\n";
     f << "=========================================================\n\n";

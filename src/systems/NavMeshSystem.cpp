@@ -19,7 +19,6 @@ int NavMeshComponent::FindTriangle(const glm::vec3& worldPos) const {
         const glm::vec3& vB = data.vertices[tri.v[1]].position;
         const glm::vec3& vC = data.vertices[tri.v[2]].position;
 
-        // Test w plasczyznie XZ
         float d1 = (worldPos.x - vB.x) * (vA.z - vB.z) - (vA.x - vB.x) * (worldPos.z - vB.z);
         float d2 = (worldPos.x - vC.x) * (vB.z - vC.z) - (vB.x - vC.x) * (worldPos.z - vC.z);
         float d3 = (worldPos.x - vA.x) * (vC.z - vA.z) - (vC.x - vA.x) * (worldPos.z - vA.z);
@@ -36,7 +35,6 @@ bool NavMeshComponent::IsPointWalkable(const glm::vec3& worldPos) const {
     return FindTriangle(worldPos) >= 0;
 }
 
-//  NavMeshSystem
 
 NavMeshSystem::NavMeshSystem(ECS& ecs) {
     colliderQuery_ = ecs.CreateQuery<TransformComponent, ColliderComponent>();
@@ -77,8 +75,6 @@ NavMeshComponent* NavMeshSystem::GetNavMesh() const {
     if (!navMeshGO_) return nullptr;
     return navMeshGO_->GetComponent<NavMeshComponent>();
 }
-
-//  Bake - glowna sciezka
 
 void NavMeshSystem::Bake(Scene& scene) {
     spdlog::info("[NavMesh] Bake start...");
@@ -150,7 +146,7 @@ NavMeshSystem::CollectWalkableSurfaces(Scene& scene) {
         WalkableSurface surf;
         surf.min  = center - half;
         surf.max  = center + half;
-        surf.yTop = center.y + half.y; // Gorna powierzchnia
+        surf.yTop = center.y + half.y;
 
         surf.slopeY = 1.0f;
 
@@ -310,8 +306,6 @@ void NavMeshSystem::MarkBlockedTriangles(
     spdlog::info("[NavMesh] Oznaczono {} trojkatow jako niechodzalne", blockedCount);
 }
 
-//  Krok 4: Triangulacja Bowyer-Watson
-
 NavMeshSystem::Circumcircle
 NavMeshSystem::ComputeCircumcircle(
     const Point2D& p0,
@@ -365,7 +359,7 @@ void NavMeshSystem::CreateSuperTriangle(
 
     float dx = maxX - minX;
     float dz = maxZ - minZ;
-    float delta = std::max(dx, dz) * 10.0f; // 10x zapas
+    float delta = std::max(dx, dz) * 10.0f;
 
     float midX = (minX + maxX) * 0.5f;
     float midZ = (minZ + maxZ) * 0.5f;
@@ -467,7 +461,6 @@ NavMeshData NavMeshSystem::BowyerWatson(const std::vector<glm::vec3>& points3D) 
             pts[tri.c].idx3D
         );
 
-        // Centroid
         const glm::vec3& va = result.vertices[navTri.v[0]].position;
         const glm::vec3& vb = result.vertices[navTri.v[1]].position;
         const glm::vec3& vc = result.vertices[navTri.v[2]].position;

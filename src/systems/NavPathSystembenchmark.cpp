@@ -1,10 +1,3 @@
-// ============================================================
-//  NavPathSystem - metody benchmarkowe
-//
-//  Dołącz ten plik do projektu obok istniejącego NavPathSystem.cpp
-//  LUB wklej jego zawartość na końcu NavPathSystem.cpp
-// ============================================================
-
 #include "NavPathSystem.h"
 #include "NavMeshSystem.h"
 #include <spdlog/spdlog.h>
@@ -15,10 +8,6 @@
 #include <algorithm>
 #include <random>
 #include <cmath>
-
-// ============================================================
-//  Helpers prywatne
-// ============================================================
 
 float NavPathSystem::PathLength(const std::vector<glm::vec3>& path) {
     float total = 0.0f;
@@ -37,7 +26,6 @@ float NavPathSystem::PathTurningAngle(const std::vector<glm::vec3>& path) {
         glm::vec3 prev = path[i]   - path[i-1];
         glm::vec3 next = path[i+1] - path[i];
 
-        // Normalizuj w XZ
         float lenPrev = std::sqrt(prev.x*prev.x + prev.z*prev.z);
         float lenNext = std::sqrt(next.x*next.x + next.z*next.z);
         if (lenPrev < 1e-6f || lenNext < 1e-6f) continue;
@@ -45,7 +33,6 @@ float NavPathSystem::PathTurningAngle(const std::vector<glm::vec3>& path) {
         prev /= lenPrev;
         next /= lenNext;
 
-        // dot product → kąt między kierunkami
         float dot = std::clamp(prev.x*next.x + prev.z*next.z, -1.0f, 1.0f);
         float angle = std::acos(dot) * (180.0f / 3.14159265f); // radiany → stopnie
         totalAngle += angle;
@@ -65,11 +52,8 @@ std::vector<glm::vec3> NavPathSystem::TimedPathQuery(
     const NavMeshData& navData,
     float& outTimeMs)
 {
-    // Tymczasowy NavPathComponent tylko do przechowania ścieżki
     NavPathComponent tempComp;
 
-    // Ustaw cachedNavMesh_ tymczasowo jeśli nie jest ustawiony
-    // (benchmark może być wywołany poza Update loop)
     auto t0 = std::chrono::high_resolution_clock::now();
 
     bool ok = RequestPath(tempComp, start, goal, navData);
@@ -92,7 +76,6 @@ float NavPathSystem::MeasureCoverage(
         return 0.0f;
     }
 
-    // Wyznacz bounding box NavMesh
     glm::vec3 bbMin( FLT_MAX,  FLT_MAX,  FLT_MAX);
     glm::vec3 bbMax(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 
@@ -108,8 +91,6 @@ float NavPathSystem::MeasureCoverage(
     outTested   = numSamples;
     outWalkable = 0;
 
-    // Użyj NavMeshComponent::FindTriangle przez navData bezpośrednio
-    // (replikujemy logikę FindTriangle żeby nie potrzebować NavMeshComponent*)
     for (int s = 0; s < numSamples; s++) {
         glm::vec3 testPt(rx(rng), bbMin.y, rz(rng));
 
@@ -139,11 +120,6 @@ float NavPathSystem::MeasureCoverage(
         ? (float)outWalkable / (float)outTested * 100.0f
         : 0.0f;
 }
-
-// ============================================================
-//  RunNavigationBenchmark - główna metoda benchmarkowa
-// ============================================================
-
 NavAgentBenchmarkStats NavPathSystem::RunNavigationBenchmark(
     const NavMeshData& navData,
     const std::string& methodName,
@@ -162,15 +138,11 @@ NavAgentBenchmarkStats NavPathSystem::RunNavigationBenchmark(
         return stats;
     }
 
-    // Ustaw cachedNavMesh_ na czas benchmarku
-    // RequestPath go używa wewnętrznie przez FindTriangle
-    // Tworzymy tymczasowy NavMeshComponent na stosie
     NavMeshComponent tempNM;
-    tempNM.data = navData; // kopia - benchmark nie modyfikuje danych
+    tempNM.data = navData;
     NavMeshComponent* prevCached = cachedNavMesh_;
     cachedNavMesh_ = &tempNM;
 
-    // --- Zbierz walkable trójkąty do losowania punktów ---
     std::vector<int> walkableTris;
     for (int i = 0; i < (int)navData.triangles.size(); i++) {
         if (navData.triangles[i].walkable) walkableTris.push_back(i);
@@ -196,14 +168,12 @@ NavAgentBenchmarkStats NavPathSystem::RunNavigationBenchmark(
     int successful = 0;
 
     for (int q = 0; q < numQueries; q++) {
-        // Wylosuj dwa różne walkable trójkąty
         std::uniform_int_distribution<int> triDist(0, (int)walkableTris.size() - 1);
         int idxA = triDist(rng);
         int idxB = triDist(rng);
         while (idxB == idxA && walkableTris.size() > 1)
             idxB = triDist(rng);
 
-        // Losowe punkty wewnątrz tych trójkątów (współrzędne barycentryczne)
         auto randomPointInTri = [&](int triIdx) -> glm::vec3 {
             const NavTriangle& tri = navData.triangles[walkableTris[triIdx]];
             const glm::vec3& a = navData.vertices[tri.v[0]].position;
@@ -221,14 +191,14 @@ NavAgentBenchmarkStats NavPathSystem::RunNavigationBenchmark(
         glm::vec3 goalPt  = randomPointInTri(idxB);
 
         float euclidean = EuclideanDistXZ(startPt, goalPt);
-        if (euclidean < 0.01f) continue; // start == cel, pomiń
+        if (euclidean < 0.01f) continue;
 
         float timeMs = 0.0f;
         std::vector<glm::vec3> path = TimedPathQuery(startPt, goalPt, navData, timeMs);
 
         astarTimes.push_back(timeMs);
 
-        if (path.empty()) continue; // A* nie znalazł ścieżki
+        if (path.empty()) continue;
 
         successful++;
 
@@ -242,7 +212,6 @@ NavAgentBenchmarkStats NavPathSystem::RunNavigationBenchmark(
         turningAngles.push_back(turning);
     }
 
-    // --- Agregacja wyników ---
     stats.successfulQueries = successful;
     stats.successRate = (numQueries > 0)
         ? (float)successful / (float)numQueries
@@ -271,7 +240,6 @@ NavAgentBenchmarkStats NavPathSystem::RunNavigationBenchmark(
     stats.maxAStarTimeMs   = maxVec(astarTimes);
     stats.avgTurningAngleDeg = avgVec(turningAngles);
 
-    // --- Coverage ---
     stats.coveragePercent = MeasureCoverage(
         navData, coverageSamples,
         stats.coveragePointsTested,
@@ -288,11 +256,6 @@ NavAgentBenchmarkStats NavPathSystem::RunNavigationBenchmark(
 
     return stats;
 }
-
-// ============================================================
-//  Zapis do pliku
-// ============================================================
-
 void NavPathSystem::AppendBenchmarkToFile(
     const NavAgentBenchmarkStats& stats,
     const std::string& path)
@@ -341,7 +304,6 @@ void NavPathSystem::AppendAllNavigationStatsToFile(
     f << "  ZESTAWIENIE NAWIGACYJNE — WSZYSTKIE METODY\n";
     f << "=========================================================\n\n";
 
-    // Nagłówek tabeli
     f << std::left
       << std::setw(28) << "Metoda"
       << std::setw(12) << "Success%"
@@ -365,7 +327,6 @@ void NavPathSystem::AppendAllNavigationStatsToFile(
 
     f << "\n";
 
-    // Rankingi
     auto rank = [&](const std::string& label,
                     std::function<float(const NavAgentBenchmarkStats&)> fn,
                     bool ascending)
