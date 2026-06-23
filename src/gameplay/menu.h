@@ -281,7 +281,6 @@ public:
 		//CREDITS
 		GameObject* BG_Object_2 = scenaMenu->CreateGameObject(nullptr);
 		SpriteComponent* BG_sprite_credits = BG_Object_2->AddComponent<SpriteComponent>();
-		for (int i = 86400; i <= 86518; i++)
 		BG_sprite_credits->sprites = {ResourceManager::LoadTexture("credits.png", "res/sprites/menu/credits").id };
 		BG_sprite_credits->screenPosition = glm::vec2(0.0f, 0.0f);
 		BG_sprite_credits->size = glm::vec2(1920.0f, 1080.0f);
