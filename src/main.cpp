@@ -58,6 +58,7 @@
 #include "utils/render_helper.h"
 #include "utils/animation_helper.h"
 #include "utils/player_animation_helper.h"
+#include "systems/NavMeshBenchmark.h"
 
 #include "gameplay/crematorium_puzzle.h"
 #include "gameplay/menu.h"
@@ -354,6 +355,19 @@ int main(int, char**)
 
     //RenderHelper::SetMaterial(obb3, brickMat);
 
+    GameObject * lightComponent = scena1->CreateGameObject(nullptr);
+    lightComponent->name = "light";
+    lightComponent->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 20.0f, 0.0f);
+    lightComponent->GetComponent<TransformComponent>()->rotation = glm::vec3(-19.800, -7.300, 0.0f);
+    lightComponent->AddComponent<LightComponent>();
+    LightComponent * lc = lightComponent->GetComponent<LightComponent>();
+    lc->type = LightType::Directional;
+    lc->index     = 20;
+    lc->constant  = 1.0f;
+    lc->linear    = 0.10f;
+    lc->quadratic = 0.00001f;
+    lc->intensity = 2.000;
+
     //Tworzenie gracza nr.1
     GameObject* gracz1 = scena1->CreateGameObject(nullptr);
     gracz1->name = "Gracz1";
@@ -367,7 +381,7 @@ int main(int, char**)
     gracz1->GetComponent<RigidbodyComponent>()->useGravity = true;
     gracz1->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1.2f, 5.25f, 1.2f };
 
-    
+
     GameObject* camera1 = scena1->CreateGameObject(nullptr);//groundModel->Instantiate(*scena1, nullptr, ourShader.get());
     camera1->name = "Kamera";
     gracz1->AddChild(camera1);
@@ -572,7 +586,57 @@ int main(int, char**)
     createCrematoriumCorridor(scena1);
     createTrigger(scena1);
 
-    ecs->GetSystem<NavMeshSystem>()->Bake(*scena1);
+    NavMeshBenchmarkSystem* benchSys =
+            ecs.GetSystem<NavMeshBenchmarkSystem>();
+
+    {
+        auto* benchSys    = ecs.GetSystem<NavMeshBenchmarkSystem>();
+        auto* navPathSys  = ecs.GetSystem<NavPathSystem>();
+
+        const std::string outputFile = "navmesh_benchmark.txt";
+
+        const std::vector<NavMeshMethod> methods = {
+            NavMeshMethod::Delaunay,
+            NavMeshMethod::Recast,
+            NavMeshMethod::Voronoi,
+            NavMeshMethod::Grid,
+        };
+
+        std::vector<NavAgentBenchmarkStats> allNavStats;
+
+        for (NavMeshMethod method : methods) {
+            // 1. Bake siatki i zmierz geometrię
+            NavMeshStats geomStats = benchSys->BakeWithMethod(*scena1, method);
+
+            // 2. Pobierz NavMeshData do benchmarku nawigacyjnego
+            NavMeshComponent* nm = benchSys->GetNavMesh();
+            if (nm && nm->data.isBaked && navPathSys) {
+
+                // 3. Benchmark nawigacyjny na tej samej siatce
+                NavAgentBenchmarkStats navStats = navPathSys->RunNavigationBenchmark(
+                    nm->data,
+                    geomStats.methodName,
+                    200,   // liczba zapytań A*
+                    500    // liczba punktów do testu coverage
+                );
+                allNavStats.push_back(navStats);
+
+                // 4. Dopisz do pliku statystyki nawigacyjne tej metody
+                NavPathSystem::AppendBenchmarkToFile(navStats, outputFile);
+            }
+
+            // 5. Wyczyść siatkę przed następną metodą
+            benchSys->ClearNavMesh(*scena1);
+        }
+
+        // 6. Zestawienie porównawcze wszystkich metod na końcu pliku
+        NavPathSystem::AppendAllNavigationStatsToFile(allNavStats, outputFile);
+
+        // 7. Zostaw aktywną siatkę do gry
+        benchSys->BakeWithMethod(*scena1, NavMeshMethod::Voronoi);
+
+        spdlog::info("[Main] Benchmark zakończony. Wyniki: {}", outputFile);
+    }
 
     //dyingModelPrefab   = std::make_unique<Prefab>("res/models/Dying.fbx");
     //jumpSkeletonPrefab = std::make_unique<Prefab>("res/models/Jump.fbx");
@@ -686,7 +750,7 @@ int main(int, char**)
     };
 
     // Karaluch center
-    glm::vec3 nestPos = glm::vec3(0.0f, 0.5f, -80.0f);
+    glm::vec3 nestPos = glm::vec3(0.0f, 1.0f, -80.0f);
 
     //I LOVE THE TASTE OF IRON
     GameObject* Kurorushi = CreateCockroachLeader(*scena1, *cockroachModel, nullptr, nestPos, 4.0f);
@@ -704,13 +768,13 @@ int main(int, char**)
 
     //interfejs sprite'y
     // Crosshair P1
-    GameObject* crosshair1_obj = scena1->CreateGameObject(nullptr);
+    /*GameObject* crosshair1_obj = scena1->CreateGameObject(nullptr);
     SpriteComponent* crosshair1 = crosshair1_obj->AddComponent<SpriteComponent>();
     crosshair1->sprites         = { ResourceManager::LoadTexture("crosshair.png", "res/sprites/").id };
     crosshair1->screenPosition  = glm::vec2(480.0f - 16.0f, 540.0f - 16.0f); // centrum - half size
     crosshair1->size            = glm::vec2(16.0f, 16.0f);
     crosshair1->layer           = 2; // nad napisami
-    crosshair1->isVisible       = true;
+    crosshair1->isVisible       = true;*/
 
     // Crosshair P2
     GameObject* crosshair2_obj = scena1->CreateGameObject(nullptr);
@@ -1180,10 +1244,10 @@ int main(int, char**)
         }
 
         float chLerpSpeed = 10.0f;
-        crosshair1->size = glm::mix(crosshair1->size, p1Int > 0.5f ? CH_SIZE_BIG : CH_SIZE_NORMAL, deltaTime * chLerpSpeed);
+        /*crosshair1->size = glm::mix(crosshair1->size, p1Int > 0.5f ? CH_SIZE_BIG : CH_SIZE_NORMAL, deltaTime * chLerpSpeed);
         crosshair2->size = glm::mix(crosshair2->size, p2Int > 0.5f ? CH_SIZE_BIG : CH_SIZE_NORMAL, deltaTime * chLerpSpeed);
 
-        crosshair1->screenPosition = CH1_CENTER - crosshair1->size * 0.5f;
+        crosshair1->screenPosition = CH1_CENTER - crosshair1->size * 0.5f;*/
         crosshair2->screenPosition = CH2_CENTER - crosshair2->size * 0.5f;
 
         auto inputEnd = std::chrono::high_resolution_clock::now();

@@ -25,9 +25,6 @@ public:
     bool IsBaked() const { return navMeshGO_ != nullptr && GetNavMesh() != nullptr && GetNavMesh()->data.isBaked; }
 
     NavMeshComponent* GetNavMesh() const;
-
-private:
-
     struct WalkableSurface {
         glm::vec3 min;
         glm::vec3 max;

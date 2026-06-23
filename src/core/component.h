@@ -521,9 +521,9 @@ struct NavMeshComponent : Component {
     float maxSlopeAngle = 45.0f;  // Max kat nachylenia (w stopniach) - powyzej = niechodzalne
 
     // Debug
-    bool debugDraw = false;
+    bool debugDraw = true;
     glm::vec4 colorWalkable    = glm::vec4(0.0f, 0.8f, 0.2f, 0.4f); // zielony
-    glm::vec4 colorUnwalkable  = glm::vec4(0.8f, 0.1f, 0.1f, 0.4f); // czerwony
+    glm::vec4 colorUnwalkable  = glm::vec4(0.0f, 0.0f, 0.0f, 0.4f); // czerwony
     glm::vec4 colorEdge        = glm::vec4(0.0f, 1.0f, 0.5f, 1.0f); // jasny zielony
 
     // Znajdz trojkat zawierajacy punkt (XZ), zwraca indeks lub -1
@@ -563,7 +563,7 @@ struct NavPathComponent : Component {
     float stuckThreshold     = 1.0f;
     glm::vec3 lastCheckedPos { 0.0f };
 
-    bool debugDraw = false;
+    bool debugDraw = true;
     glm::vec4 colorPath     = glm::vec4(1.0f, 1.0f, 0.0f, 1.0f);
     glm::vec4 colorGoal     = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
     glm::vec4 colorWaypoint = glm::vec4(0.0f, 0.5f, 1.0f, 1.0f);
