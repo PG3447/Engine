@@ -251,17 +251,17 @@ public:
 
 		button4->onClick = [&](GameObject* go)
 		{
-			ShowOnly(&grp_load);
+			ShowOnly(&grp_load); //change
 		};
 
 		button5->onClick = [&](GameObject* go)
 		{
-			ShowOnly(&grp_settings);
+			ShowOnly(&grp_settings); //change
 		};
 
 		button6->onClick = [&](GameObject* go)
 		{
-			ShowOnly(&grp_credits);
+			ShowOnly(&grp_credits); //change
 		};
 
 		button7->onClick = [&](GameObject* go)
@@ -281,6 +281,7 @@ public:
 		//CREDITS
 		GameObject* BG_Object_2 = scenaMenu->CreateGameObject(nullptr);
 		SpriteComponent* BG_sprite_credits = BG_Object_2->AddComponent<SpriteComponent>();
+		for (int i = 86400; i <= 86518; i++)
 		BG_sprite_credits->sprites = {ResourceManager::LoadTexture("credits.png", "res/sprites/menu/credits").id };
 		BG_sprite_credits->screenPosition = glm::vec2(0.0f, 0.0f);
 		BG_sprite_credits->size = glm::vec2(1920.0f, 1080.0f);
@@ -323,58 +324,18 @@ public:
 		grp_credits.push_back(credits_back);
 
 		//load
-		GameObject* BG_Object_3 = scenaMenu->CreateGameObject(nullptr);
-		SpriteComponent* BG_sprite_load = BG_Object_3->AddComponent<SpriteComponent>();
-		BG_sprite_load->sprites = {ResourceManager::LoadTexture("tlo.png", "res/sprites/menu/load").id };
-		BG_sprite_load->screenPosition = glm::vec2(0.0f, 0.0f);
-		BG_sprite_load->size = glm::vec2(1920.0f, 1080.0f);
-		BG_sprite_load->layer = 0;
-		BG_sprite_load->isVisible = true;
-		UIButtonComponent* bg_button_3 = BG_Object_3->AddComponent<UIButtonComponent>();
-
-		GameObject* load_back = scenaMenu->CreateGameObject(nullptr);
-		SpriteComponent* load_back_sprite = load_back->AddComponent<SpriteComponent>();
-		load_back_sprite->sprites = {ResourceManager::LoadTexture("back_sprite.png", "res/sprites/menu/credits").id, ResourceManager::LoadTexture("back_sprite_hover.png", "res/sprites/menu/credits").id};
-		load_back_sprite->screenPosition = glm::vec2(1375.7f, 871.8f);
-		load_back_sprite->size = glm::vec2(473.0f, 108.0f);
-		load_back_sprite->layer = 1;
-		load_back_sprite->isVisible = true;
-		UIButtonComponent* back_button_load = load_back->AddComponent<UIButtonComponent>();
 
 
-		back_button_load->onHoverEnter = [&](GameObject* go)
-		{
-			auto* sprite = go->GetComponent<SpriteComponent>();
-			if (!sprite) return;
-
-			sprite->currentSprite=1;
-		};
-
-		back_button_load->onHoverExit = [&](GameObject* go)
-		{
-			auto* sprite = go->GetComponent<SpriteComponent>();
-			if (!sprite) return;
-
-			sprite->currentSprite=0;
-		};
-
-		back_button_load->onClick = [&](GameObject* go)
-		{
-			ShowOnly(&grp_main);
-		};
-
-		grp_load.push_back(BG_Object_3);
-		grp_load.push_back(load_back);
 
 		//settings
 		GameObject* settings_back = scenaMenu->CreateGameObject(nullptr);
 		SpriteComponent* settings_back_sprite = settings_back->AddComponent<SpriteComponent>();
 		settings_back_sprite->sprites = {ResourceManager::LoadTexture("settings.png", "res/sprites/menu/settings").id};
-		settings_back_sprite->screenPosition = glm::vec2(0.0f, 0.0f);
-		settings_back_sprite->size = glm::vec2(1920.0f, 1080.0f);
+		settings_back_sprite->screenPosition = glm::vec2(1375.7f, 871.8f);
+		settings_back_sprite->size = glm::vec2(473.0f, 108.0f);
 		settings_back_sprite->layer = 1;
 		settings_back_sprite->isVisible = true;
-		UIButtonComponent* settings_button = settings_back->AddComponent<UIButtonComponent>();
+		UIButtonComponent* settings_button = credits_back->AddComponent<UIButtonComponent>();
 
 		settings_button->onClick = [&](GameObject* go)
 		{
@@ -382,8 +343,6 @@ public:
 		};
 
 		grp_settings.push_back(settings_back);
-
-		//pause
 
 		ShowOnly(&grp_main);
 	}
