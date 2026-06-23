@@ -23,7 +23,6 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <shader.h>
-#include <unused/camera.h>
 #include <model.h>
 #include <prefab.h>
 #include <filesystem>
@@ -63,7 +62,8 @@
 #include "gameplay/crematorium_puzzle.h"
 #include "gameplay/menu.h"
 #include "systems/SurfaceDecorationSystem.h"
-
+#include "utils/transform_gizmo.h"
+#include "utils/placement_editor.h"
 
 static void glfw_error_callback(int error, const char* description)
 {
@@ -143,10 +143,11 @@ GLuint VBO;
 GLuint VAO;
 GLuint texture;
 std::unique_ptr<Shader> skyboxShader;
+extern GameObject * selectedGameObject;
 //std::unique_ptr<Shader> reflectShader;
 //std::unique_ptr<Shader> refractShader;
 
-#include "impl/main/list_prefab.ipp";
+#include "impl/main/list_prefab.ipp"
 
 unsigned int triangleVAO = 0;
 unsigned int triangleVBO = 0;
@@ -531,6 +532,7 @@ int main(int, char**)
     p1NoteUI->fontPath = "res/fonts/NothingYouCouldDo-Regular.ttf";
 
     connectAllModels();
+    PlacementEditor::LoadPlacements(*scena1, PlacementEditor::DefaultPrefabLookup);
     LoadPlayerAnimations();
 
     GameObject* model1 = bed1Model->Instantiate(*scena1, nullptr, nullptr);
@@ -1230,6 +1232,12 @@ int main(int, char**)
             }
         }
 
+        TransformGizmo::UpdateAndDraw(
+    selectedGameObject,
+    *camCompLeft, *camTransform1,
+    window, focused,
+    display_w, display_h
+);
         sceneManager.Update(deltaTime);
 
         if (audioSys) {

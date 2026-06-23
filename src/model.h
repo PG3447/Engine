@@ -41,12 +41,6 @@ struct TextureData
     bool hasAlpha;
 };
 
-
-//
-//struct Mesh {
-//    std::vector<MeshNode> meshes;
-//};
-
 //MeshNode to tak naprawde dane nie zaladowane do RenderComponent
 struct MeshNode {
     //bool instancingPrepared = false;
@@ -120,18 +114,6 @@ public:
 
     void SetShader(Shader* shader);
 
-
-    //AABB GetLocalAABB() const {
-    //    AABB result;
-    //    for (auto& node : nodes) {
-    //        result.min = glm::min(result.min, node.aabb.min);
-    //        result.max = glm::max(result.max, node.aabb.max);
-    //    }
-    //    return result;
-    //}
-
-   // int GetTriangleCount() const {
-
     int CountTriangles(const ModelNode* node) const
     {
         int total = 0;
@@ -157,14 +139,6 @@ public:
 
         return CountTriangles(rootNode.get());
     }
-
-    //int GetTriangleCount() const {
-    //    int total = 0;
-    //    for (auto& node : nodes)
-    //        if (node.cpuData)
-    //            total += node.cpuData->indices.size() / 3;
-    //    return total;
-    //}
 
 private:
     void loadModel(const std::string& path);
