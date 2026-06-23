@@ -281,6 +281,7 @@ public:
 		//CREDITS
 		GameObject* BG_Object_2 = scenaMenu->CreateGameObject(nullptr);
 		SpriteComponent* BG_sprite_credits = BG_Object_2->AddComponent<SpriteComponent>();
+		for (int i = 86400; i <= 86518; i++)
 		BG_sprite_credits->sprites = {ResourceManager::LoadTexture("credits.png", "res/sprites/menu/credits").id };
 		BG_sprite_credits->screenPosition = glm::vec2(0.0f, 0.0f);
 		BG_sprite_credits->size = glm::vec2(1920.0f, 1080.0f);
@@ -331,11 +332,11 @@ public:
 		GameObject* settings_back = scenaMenu->CreateGameObject(nullptr);
 		SpriteComponent* settings_back_sprite = settings_back->AddComponent<SpriteComponent>();
 		settings_back_sprite->sprites = {ResourceManager::LoadTexture("settings.png", "res/sprites/menu/settings").id};
-		settings_back_sprite->screenPosition = glm::vec2(0.0f, 0.0f);
-		settings_back_sprite->size = glm::vec2(1920.0f, 1080.0f);
-		settings_back_sprite->layer = 0;
+		settings_back_sprite->screenPosition = glm::vec2(1375.7f, 871.8f);
+		settings_back_sprite->size = glm::vec2( 1920.0f, 1080.0f);
+		settings_back_sprite->layer = 1;
 		settings_back_sprite->isVisible = true;
-		UIButtonComponent* settings_button = settings_back->AddComponent<UIButtonComponent>();
+		UIButtonComponent* settings_button = credits_back->AddComponent<UIButtonComponent>();
 
 		settings_button->onClick = [&](GameObject* go)
 		{
