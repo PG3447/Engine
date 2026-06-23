@@ -290,6 +290,11 @@ void createRentgenRoom(Scene* scena);
 void createTrigger(Scene* scena);
 
 
+void loadGame()
+{
+    
+}
+
 int main(int, char**)
 {
     if (!init())
@@ -326,6 +331,15 @@ int main(int, char**)
     Menu menu(&sceneManager, scenaMenu, window);
     menu.Init();
 
+
+    sceneManager.ChangeScene("menu");
+    sceneManager.UpdateChangeScene();
+    sceneManager.Update(0.16f);
+    end_frame();
+
+
+    sceneManager.ChangeScene("Scena 1");
+    sceneManager.UpdateChangeScene();
     //menu->GetECS().AddExistingSystem(scena1->GetECS().GetSystem<RenderSystem>());
 
     postacGracza = std::make_unique<Prefab>("res/models/postac_test.glb");
@@ -731,8 +745,9 @@ int main(int, char**)
     availablePrefabs,
     *scena1,
     nullptr);*/
-    sceneManager.Update(deltaTime);
+    sceneManager.Update(0.16f);
     sceneManager.ChangeScene("menu");
+    sceneManager.UpdateChangeScene();
     while (!glfwWindowShouldClose(window))
     {
         float currentFrame = static_cast<float>(glfwGetTime());
