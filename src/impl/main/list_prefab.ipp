@@ -32,7 +32,7 @@ std::unique_ptr<Prefab> telephoneModel;
 std::unique_ptr<Prefab> toiletModel;
 std::unique_ptr<Prefab> roomModel;
 std::unique_ptr<Prefab> placeholderModel;
-std::unique_ptr<Prefab> doorsToiletModel;
+//std::unique_ptr<Prefab> doorsToiletModel;
 std::unique_ptr<Prefab> toiletPaperRedModel;
 std::unique_ptr<Prefab> toiletPaperGreenModel;
 std::unique_ptr<Prefab> toiletPaperBlueModel;
@@ -113,8 +113,8 @@ std::unique_ptr<Prefab> wallRentgenModel;
 std::unique_ptr<Prefab> wallMainRoomModel;
 std::unique_ptr<Prefab> wallBathroomModel;
 std::unique_ptr<Prefab> wallCrematoriumModel;
-
-std::unique_ptr<Prefab> koparkaModel;
+std::unique_ptr<Prefab> doorsToiletModel;
+//std::unique_ptr<Prefab> koparkaModel;
 
 
 //std::unique_ptr<Prefab> dyingModelPrefab;
@@ -134,7 +134,8 @@ void connectAllModels() {
     placeholderModel = std::make_unique<Prefab>("res/models/placeholder.glb");
     sinkModel        = std::make_unique<Prefab>("res/models/sink_2.glb");
     toiletModel      = std::make_unique<Prefab>("res/models/toilet_f.glb");
-    doorsToiletModel = std::make_unique<Prefab>("res/models/doors_toliet_tex6.glb");
+    //doorsToiletModel = std::make_unique<Prefab>("res/models/doors_toliet_tex6.glb");
+    doorsToiletModel = std::make_unique<Prefab>("res/models/doors_toilet_new.glb");
     toiletPaperRedModel = std::make_unique<Prefab>("res/models/papier_czerwony.glb");
     toiletPaperGreenModel = std::make_unique<Prefab>("res/models/papier_zielony.glb");
     toiletPaperBlueModel = std::make_unique<Prefab>("res/models/papier_niebieski.glb");
