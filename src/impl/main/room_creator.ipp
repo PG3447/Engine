@@ -102,15 +102,15 @@ void createFirstRoom(Scene* scena1) {
     // Drzwi do kibla
     for (int i = 0; i < 8; i++) {
         if (i != 2 && i != 3) {
-            glm::vec3 doorPos      = glm::vec3{ 15.0f, 10.050, -24.65f + (-10.0f * i) };
-            glm::vec3 doorScale    = glm::vec3{ 11.0f, 10.0f, 16.0f };
-            glm::vec3 pivotOffset  = glm::vec3(0.2f, 0.0f, 3.8f);
-            glm::vec3 colliderSize = glm::vec3{ 0.9f, 10.0f, 4.5f };
+            glm::vec3 doorPos      = glm::vec3{ 14.830, 9, -19.5 + (-10.0f * i) };
+            glm::vec3 doorScale    = glm::vec3{ 3.040f, 2.580f, 2.100f };
+            glm::vec3 pivotOffset  = glm::vec3(0.0f, 0.0f, 0.1);
+            glm::vec3 colliderSize = glm::vec3{ 1, 10, 5 };
 
             GameObject* hinge = CreateInteractableDoor(
                 scena1, doorsToiletModel.get(), nullptr,
                 "ToiletDoor_" + std::to_string(i),
-                doorPos, doorScale, pivotOffset, colliderSize, 90.0f
+                doorPos, doorScale, pivotOffset, colliderSize, 90.0f, 90, glm::vec3{ 5, 10, 1 }, glm::vec3{-4.5,0, 0}, glm::vec3{0,0, -4.5}
             );
             unlockedDoors.insert(hinge);
         }
