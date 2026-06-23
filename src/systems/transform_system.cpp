@@ -27,6 +27,7 @@ void TransformSystem::forceUpdateSelfAndChild(GameObject* obj)
     if (obj->GetParent())
     {
         auto* parentT = obj->GetParent()->GetComponent<TransformComponent>();
+        tComp->parent = parentT;
 
         if (parentT)
             TransformHelper::computeModelMatrix(parentT->modelMatrix, *tComp);

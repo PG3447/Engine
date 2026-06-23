@@ -907,9 +907,6 @@ void createRentgenRoom(Scene* scena) {
     rentgen->GetComponent<TransformComponent>()->position =glm::vec3(-83.319+10, 10.160, -213.257+10);
     rentgen->GetComponent<TransformComponent>()->rotation = glm::vec3(0, -90, 0);
     rentgen->GetComponent<TransformComponent>()->scale = glm::vec3(1.5);
-    rentgen->AddComponent<RigidbodyComponent>();
-    rentgen->GetComponent<RigidbodyComponent>()->useGravity = false;
-    rentgen->GetComponent<RigidbodyComponent>()->isStatic = true;
 
     rentgen->TraverseChildren([&](GameObject* go) {
         if (go->name.find("lights_") != std::string::npos) {
@@ -929,6 +926,7 @@ void createRentgenRoom(Scene* scena) {
 
 
     });
+
 
 
     int puzzleLightIndex = 4;
@@ -978,6 +976,41 @@ void createRentgenRoom(Scene* scena) {
     createPuzzleSlot(glm::vec3(-85.052+10, 9, -212.70+10), glm::vec3(0, -90, 0), objPuzel1);
     createPuzzleSlot(glm::vec3(-83.382+10, 9, -212.70+10), glm::vec3(0, -90, 0), objPuzel3);
     createPuzzleSlot(glm::vec3(-81.820+10, 9, -212.70+10), glm::vec3(0, -90, 0), objPuzel5);
+    
+    GameObject* triggerRentgen = scena->CreateGameObject(rentgen);
+    triggerRentgen->name = "triggerRentgen";
+    triggerRentgen->GetComponent<TransformComponent>()->position = glm::vec3(5.0f, 0.0f, 0.0f);
+
+    //ColliderComponent* colliderRentgen = triggerRentgen->AddComponent<ColliderComponent>();
+    //colliderRentgen->halfSize = glm::vec3(10.0f);
+    //colliderRentgen->isTrigger = true;
+    //colliderRentgen->onTriggerEnter = [](GameObject* other)
+    //{
+    //    spdlog::info("Gracz wszedl w kolizje");
+    //    if (other->name == "Gracz1" || other->name == "Gracz2")
+    //    {
+    //        vector<LightComponent*> lights = other->GetComponentsInChildren<LightComponent>();
+
+    //        for (auto& light : lights)
+    //        {
+    //            light->isOn = false;
+    //        }
+    //    }
+    //};
+
+    //colliderRentgen->onTriggerExit = [](GameObject* other)
+    //{
+    //    if (other->name == "Gracz1" || other->name == "Gracz2")
+    //    {
+    //        vector<LightComponent*> lights = other->GetComponentsInChildren<LightComponent>();
+
+    //        for (auto& light : lights)
+    //        {
+    //            light->isOn = true;
+    //        }
+    //    }
+
+    //};
 
     //-85.197, 6.250, -182.170
     GameObject * lampaOperacyjna = lampaOperacyjnaModel->Instantiate(*scena, nullptr, nullptr);
