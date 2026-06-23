@@ -31,7 +31,7 @@ void createFirstRoom(Scene* scena1) {
     GameObject* floor = CreateStaticObject(scena1, floorModelB.get(), nullptr,"PodlogawLazience", glm::vec3(12.440, 1.170, -53.770), glm::vec3(2.270, 1, 4.430));
     floor->GetComponent<ColliderComponent>()->isWalkable = true;
     //CreateStaticObject(scena1, floorModel.get(), nullptr, "SufitWKiblu",       glm::vec3(0, 20, 0),  glm::vec3(100, 1, 100), glm::vec3(0)); //glm::vec3(100, 1, 100)
-    CreateStaticObject(scena1, ceilingModelB.get(), nullptr, "SufitWKiblu",       glm::vec3(11.200, 22.800, -55.330),  glm::vec3(2.400, 1, 4.540)); //glm::vec3(100, 1, 100)
+    CreateStaticObject(scena1, ceilingModelB.get(), nullptr, "SufitWKiblu",       glm::vec3(11.200, 20.120, -55.330),  glm::vec3(2.400, 1, 4.540)); //glm::vec3(100, 1, 100)
 
     // Sciany
     //CreateStaticObject(scena1, wallModel.get(),  nullptr, "ScianaTylnaKibel",           glm::vec3(0, 0, -10),    glm::vec3(50, 50, 1),  glm::vec3(0)); // glm::vec3(50, 50, 1)
@@ -86,7 +86,7 @@ void createFirstRoom(Scene* scena1) {
     for (int i = 0; i < 9; i++) {
 
         tablicaZaslon[i] = wallModel3->Instantiate(*scena1, zaslony, nullptr);
-        tablicaZaslon[i]->GetComponent<TransformComponent>()->scale = glm::vec3{ 0.3, 30, 20 };
+        tablicaZaslon[i]->GetComponent<TransformComponent>()->scale = glm::vec3{ 0.3, 20, 20 };
         tablicaZaslon[i]->name = "Zaslona" + std::to_string(i);
         tablicaZaslon[i]->AddComponent<ColliderComponent>();
         tablicaZaslon[i]->GetComponent<ColliderComponent>()->halfSize     = glm::vec3{ 20, 15, 0.3 };
@@ -102,11 +102,10 @@ void createFirstRoom(Scene* scena1) {
     // Drzwi do kibla
     for (int i = 0; i < 8; i++) {
         if (i != 2 && i != 3) {
-            glm::vec3 doorPos      = glm::vec3{ 14.830, 9, -19.5 + (-10.0f * i) };
-            glm::vec3 doorScale    = glm::vec3{ 3.040f, 2.580f, 2.100f };
+            glm::vec3 doorPos      = glm::vec3{ 14.830, 9, -20 + (-10.0f * i) };
+            glm::vec3 doorScale    = glm::vec3{ 3.040f, 2.80f, 1.8 };
             glm::vec3 pivotOffset  = glm::vec3(0.0f, 0.0f, 0.1);
             glm::vec3 colliderSize = glm::vec3{ 1, 10, 5 };
-
             GameObject* hinge = CreateInteractableDoor(
                 scena1, doorsToiletModel.get(), nullptr,
                 "ToiletDoor_" + std::to_string(i),
