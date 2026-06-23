@@ -85,7 +85,7 @@ public:
 		GameObject* Logo_Object = scenaMenu->CreateGameObject(nullptr);
 		SpriteComponent* Logo_SPRITE = Logo_Object->AddComponent<SpriteComponent>();
 		Logo_SPRITE->sprites = {ResourceManager::LoadTexture("logo.png", "res/sprites/menu/").id };
-		Logo_SPRITE->screenPosition = glm::vec2(0.0f, 0.0f);
+		Logo_SPRITE->screenPosition = glm::vec2(123.0f, 45.9f);
 		Logo_SPRITE->size = glm::vec2(458.0f, 316.0f);
 		Logo_SPRITE->layer = 0;
 		Logo_SPRITE->isVisible = true;
@@ -94,8 +94,8 @@ public:
 
 		GameObject* Button_Object_1 = scenaMenu->CreateGameObject(nullptr);
 		SpriteComponent* Start_sprite = Button_Object_1->AddComponent<SpriteComponent>();
-		Start_sprite->sprites = {ResourceManager::LoadTexture("new_game_z_sprite.png", "res/sprites/menu/").id };
-		Start_sprite->screenPosition = glm::vec2(0.0f, 0.0f);
+		Start_sprite->sprites = {ResourceManager::LoadTexture("new_game_z_sprite.png", "res/sprites/menu/").id, ResourceManager::LoadTexture("newgame_hover.png", "res/sprites/menu/").id};
+		Start_sprite->screenPosition = glm::vec2(126.7f, 429.0f);
 		Start_sprite->size = glm::vec2(473.0f, 108.0f);
 		Start_sprite->layer = 1;
 		Start_sprite->isVisible = true;
@@ -103,8 +103,8 @@ public:
 
 		GameObject* Button_Object_2 = scenaMenu->CreateGameObject(nullptr);
 		SpriteComponent* Load_sprite = Button_Object_2->AddComponent<SpriteComponent>();
-		Load_sprite->sprites = {ResourceManager::LoadTexture("logo.png", "res/sprites/menu/").id };
-		Load_sprite->screenPosition = glm::vec2(0.0f, 0.0f);
+		Load_sprite->sprites = {ResourceManager::LoadTexture("load_game_z_sprite.png", "res/sprites/menu/").id, ResourceManager::LoadTexture("loadgame_hover.png", "res/sprites/menu/").id };
+		Load_sprite->screenPosition = glm::vec2(126.7f, 548.0f);
 		Load_sprite->size = glm::vec2(473.0f, 108.0f);
 		Load_sprite->layer = 1;
 		Load_sprite->isVisible = true;
@@ -112,8 +112,8 @@ public:
 
 		GameObject* Button_Object_3 = scenaMenu->CreateGameObject(nullptr);
 		SpriteComponent* Settings_sprite = Button_Object_3->AddComponent<SpriteComponent>();
-		Settings_sprite->sprites = {ResourceManager::LoadTexture("logo.png", "res/sprites/menu/").id };
-		Settings_sprite->screenPosition = glm::vec2(0.0f, 0.0f);
+		Settings_sprite->sprites = {ResourceManager::LoadTexture("settings_z_sprite.png", "res/sprites/menu/").id, ResourceManager::LoadTexture("settings_hover.png", "res/sprites/menu/").id };
+		Settings_sprite->screenPosition = glm::vec2(126.7f, 666.8f);
 		Settings_sprite->size = glm::vec2(473.0f, 108.0f);
 		Settings_sprite->layer = 1;
 		Settings_sprite->isVisible = true;
@@ -121,8 +121,8 @@ public:
 
 		GameObject* Button_Object_4 = scenaMenu->CreateGameObject(nullptr);
 		SpriteComponent* Credits_sprite = Button_Object_4->AddComponent<SpriteComponent>();
-		Credits_sprite->sprites = {ResourceManager::LoadTexture("logo.png", "res/sprites/menu/").id };
-		Credits_sprite->screenPosition = glm::vec2(0.0f, 0.0f);
+		Credits_sprite->sprites = {ResourceManager::LoadTexture("credits_z_sprite.png", "res/sprites/menu/").id, ResourceManager::LoadTexture("credits_hover.png", "res/sprites/menu/").id };
+		Credits_sprite->screenPosition = glm::vec2(126.7f, 788.5);
 		Credits_sprite->size = glm::vec2(473.0f, 108.0f);
 		Credits_sprite->layer = 1;
 		Credits_sprite->isVisible = true;
@@ -130,12 +130,93 @@ public:
 
 		GameObject* Button_Object_5 = scenaMenu->CreateGameObject(nullptr);
 		SpriteComponent* Exit_sprite = Button_Object_5->AddComponent<SpriteComponent>();
-		Exit_sprite->sprites = {ResourceManager::LoadTexture("logo.png", "res/sprites/menu/").id };
-		Exit_sprite->screenPosition = glm::vec2(0.0f, 0.0f);
+		Exit_sprite->sprites = {ResourceManager::LoadTexture("exit_z_sprite.png", "res/sprites/menu/").id, ResourceManager::LoadTexture("exit_hover.png", "res/sprites/menu/").id };
+		Exit_sprite->screenPosition = glm::vec2(126.7f, 907.7f);
 		Exit_sprite->size = glm::vec2(473.0f, 108.0f);
 		Exit_sprite->layer = 1;
 		Exit_sprite->isVisible = true;
 		UIButtonComponent* button7 = Button_Object_5->AddComponent<UIButtonComponent>();
+
+		button3->onHoverEnter = [&](GameObject* go)
+		{
+			auto* sprite = go->GetComponent<SpriteComponent>();
+			if (!sprite) return;
+
+			sprite->currentSprite=1;
+		};
+
+		button3->onHoverExit = [&](GameObject* go)
+		{
+			auto* sprite = go->GetComponent<SpriteComponent>();
+			if (!sprite) return;
+
+			sprite->currentSprite=0;
+		};
+
+		button4->onHoverEnter = [&](GameObject* go)
+		{
+			auto* sprite = go->GetComponent<SpriteComponent>();
+			if (!sprite) return;
+
+			sprite->currentSprite=1;
+		};
+
+		button4->onHoverExit = [&](GameObject* go)
+		{
+			auto* sprite = go->GetComponent<SpriteComponent>();
+			if (!sprite) return;
+
+			sprite->currentSprite=0;
+		};
+
+		button5->onHoverEnter = [&](GameObject* go)
+		{
+			auto* sprite = go->GetComponent<SpriteComponent>();
+			if (!sprite) return;
+
+			sprite->currentSprite=1;
+		};
+
+		button5->onHoverExit = [&](GameObject* go)
+		{
+			auto* sprite = go->GetComponent<SpriteComponent>();
+			if (!sprite) return;
+
+			sprite->currentSprite=0;
+		};
+
+
+		button6->onHoverEnter = [&](GameObject* go)
+		{
+			auto* sprite = go->GetComponent<SpriteComponent>();
+			if (!sprite) return;
+
+			sprite->currentSprite=1;
+		};
+
+		button6->onHoverExit = [&](GameObject* go)
+		{
+			auto* sprite = go->GetComponent<SpriteComponent>();
+			if (!sprite) return;
+
+			sprite->currentSprite=0;
+		};
+
+		button7->onHoverEnter = [&](GameObject* go)
+		{
+			auto* sprite = go->GetComponent<SpriteComponent>();
+			if (!sprite) return;
+
+			sprite->currentSprite=1;
+		};
+
+		button7->onHoverExit = [&](GameObject* go)
+		{
+			auto* sprite = go->GetComponent<SpriteComponent>();
+			if (!sprite) return;
+
+			sprite->currentSprite=0;
+		};
 
 
 	}
