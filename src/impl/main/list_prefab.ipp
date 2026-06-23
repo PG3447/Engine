@@ -116,6 +116,11 @@ std::unique_ptr<Prefab> wallCrematoriumModel;
 std::unique_ptr<Prefab> doorsToiletModel;
 //std::unique_ptr<Prefab> koparkaModel;
 
+std::unique_ptr<Prefab> coffinRedEmptyModel;
+std::unique_ptr<Prefab> coffinRedCorpseModel;
+std::unique_ptr<Prefab> coffinGreenEmptyModel;
+std::unique_ptr<Prefab> coffinGreenCorpseModel;
+
 
 //std::unique_ptr<Prefab> dyingModelPrefab;
 //std::unique_ptr<Prefab> jumpSkeletonPrefab;
@@ -149,7 +154,7 @@ void connectAllModels() {
     szafkaModel      = std::make_unique<Prefab>("res/models/szafka_pop_main.glb");
     szafka_labModel      = std::make_unique<Prefab>("res/models/szafka_lab.glb");
     ruraModel        = std::make_unique<Prefab>("res/models/placeholder_rura_wysuwana.glb");
-    panelModel       = std::make_unique<Prefab>("res/models/Panel.glb");
+    panelModel       = std::make_unique<Prefab>("res/models/panel_kostnica_fin.glb");
     puzel1       = std::make_unique<Prefab>("res/models/Puzel1.glb");
     puzel2       = std::make_unique<Prefab>("res/models/Puzel2.glb");
     puzel3       = std::make_unique<Prefab>("res/models/Puzel3.glb");
@@ -220,4 +225,9 @@ void connectAllModels() {
     wallMainRoomModel = std::make_unique<Prefab>("res/models/wall1_main_room.glb");
     wallBathroomModel = std::make_unique<Prefab>("res/models/wall1_toilet.glb");
     wallCrematoriumModel = std::make_unique<Prefab>("res/models/wall1_toilet.glb");
+
+    coffinRedEmptyModel = std::make_unique<Prefab>("res/models/szuflada_cz_pusta.glb");
+    coffinRedCorpseModel = std::make_unique<Prefab>("res/models/szuflada_cz.glb");
+    coffinGreenEmptyModel = std::make_unique<Prefab>("res/models/szuflada_ziel_pusta.glb");
+    coffinGreenCorpseModel = std::make_unique<Prefab>("res/models/szuflada_ziel.glb");
 }
