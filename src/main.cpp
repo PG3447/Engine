@@ -23,11 +23,12 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <shader.h>
-#include <unused/camera.h>
 #include <model.h>
 #include <prefab.h>
 #include <filesystem>
 #include <optional>
+#include <fstream>
+#include <sstream>
 
 #include <fmod.h>
 #include <fmod.hpp>
@@ -53,13 +54,17 @@
 #include "systems/PostProcessingSystem.h"
 #include "systems/NavPathSystem.h"
 #include "systems/NpcSystem.h"
+#include "systems/UI_system.h"
 #include "utils/render_helper.h"
 #include "utils/animation_helper.h"
 #include "utils/player_animation_helper.h"
 #include "systems/NavMeshBenchmark.h"
 
 #include "gameplay/crematorium_puzzle.h"
-
+#include "gameplay/menu.h"
+#include "systems/SurfaceDecorationSystem.h"
+#include "utils/transform_gizmo.h"
+#include "utils/placement_editor.h"
 
 static void glfw_error_callback(int error, const char* description)
 {
@@ -84,6 +89,7 @@ bool processCameraInput(ECS& ecs, CameraComponent& cam, TransformComponent& play
     const std::string& right);
 
 bool processCameraGamepad(ECS& ecs, CameraComponent& cam, TransformComponent& transformCamera, TransformComponent& playerTransform, int gamepad_id);
+void connectAllModels();
 
 void imgui_begin();
 void imgui_render(SceneManager& sceneManager);
@@ -127,121 +133,22 @@ float  rotationY      = 0.0f;
 ImVec4 clear_color   = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 bool   autoRotation  = false;
 
+
 unsigned int cubemapTexture;
 unsigned int skyboxVAO;
 
 CrematoriumPuzzle crematoriumPuzzle;
+SurfaceDecorationSystem decorSystem;
 
 GLuint VBO;
 GLuint VAO;
 GLuint texture;
-std::unique_ptr<Prefab> sunModel;
 std::unique_ptr<Shader> skyboxShader;
+extern GameObject * selectedGameObject;
 //std::unique_ptr<Shader> reflectShader;
 //std::unique_ptr<Shader> refractShader;
 
-std::unique_ptr<Prefab> postacGracza;
-std::unique_ptr<Prefab> bed1Model;
-std::unique_ptr<Prefab> bed2Model;
-std::unique_ptr<Prefab> bed3Model;
-std::unique_ptr<Prefab> deskModel;
-std::unique_ptr<Prefab> doorsModel;
-std::unique_ptr<Prefab> krzesloModel;
-std::unique_ptr<Prefab> lampa1Model;
-std::unique_ptr<Prefab> lampa2Model;
-std::unique_ptr<Prefab> lampa3Model;
-std::unique_ptr<Prefab> needleModel;
-std::unique_ptr<Prefab> bad1Model;
-std::unique_ptr<Prefab> bad2Model;
-std::unique_ptr<Prefab> bad3Model;
-std::unique_ptr<Prefab> bossModel;
-std::unique_ptr<Prefab> bossCapsuleModel;
-std::unique_ptr<Prefab> characterModel;
-std::unique_ptr<Prefab> vial1Model;
-std::unique_ptr<Prefab> vial2Model;
-std::unique_ptr<Prefab> vial3Model;
-std::unique_ptr<Prefab> vial4Model;
-std::unique_ptr<Prefab> vial5Model;
-std::unique_ptr<Prefab> vial61Model;
-std::unique_ptr<Prefab> vial7Model;
-std::unique_ptr<Prefab> sinkModel;
-std::unique_ptr<Prefab> szafa1Model;
-std::unique_ptr<Prefab> szafa2Model;
-std::unique_ptr<Prefab> szafa3Model;
-std::unique_ptr<Prefab> telephoneModel;
-std::unique_ptr<Prefab> toiletModel;
-std::unique_ptr<Prefab> wozekModel;
-std::unique_ptr<Prefab> zaslonaModel;
-std::unique_ptr<Prefab> roomModel;
-std::unique_ptr<Prefab> placeholderModel;
-std::unique_ptr<Prefab> doorsToiletModel;
-std::unique_ptr<Prefab> toiletPaperRedModel;
-std::unique_ptr<Prefab> toiletPaperGreenModel;
-std::unique_ptr<Prefab> toiletPaperBlueModel;
-std::unique_ptr<Prefab> mirrorModel1;
-std::unique_ptr<Prefab> mirrorModel2;
-std::unique_ptr<Prefab> mirrorModel3;
-std::unique_ptr<Prefab> mirrorModel4;
-std::unique_ptr<Prefab> washroomExit;
-std::unique_ptr<Prefab> urinModel;
-std::unique_ptr<Prefab> szafkaModel;
-std::unique_ptr<Prefab> ruraModel;
-std::unique_ptr<Prefab> panelModel;
-std::unique_ptr<Prefab> floorModel;
-std::unique_ptr<Prefab> wallModel;
-std::unique_ptr<Prefab> wallModel2;
-std::unique_ptr<Prefab> wallModel3;
-std::unique_ptr<Prefab> NormalDoor;
-std::unique_ptr<Prefab> cockroachModel;
-
-std::unique_ptr<Prefab> puzel1;
-std::unique_ptr<Prefab> puzel2;
-std::unique_ptr<Prefab> puzel3;
-std::unique_ptr<Prefab> puzel4;
-std::unique_ptr<Prefab> puzel5;
-std::unique_ptr<Prefab> puzel6;
-
-std::unique_ptr<Prefab> czerwonaTablica;
-std::unique_ptr<Prefab> zielonaTablica;
-std::unique_ptr<Prefab> Rentgen;
-
-std::unique_ptr<Prefab> kredensModel;
-std::unique_ptr<Prefab> eksp1Model;
-std::unique_ptr<Prefab> fiolka2Model;
-std::unique_ptr<Prefab> fiolka1Model;
-std::unique_ptr<Prefab> ksiazkaModel;
-std::unique_ptr<Prefab> eksp2Model;
-
-std::unique_ptr<Prefab> probowka7Model;
-std::unique_ptr<Prefab> probowka6Model;
-std::unique_ptr<Prefab> probowka5Model;
-std::unique_ptr<Prefab> probowkaArka_1_Model;
-std::unique_ptr<Prefab> probowka3Model;
-std::unique_ptr<Prefab> probowka4Model;
-std::unique_ptr<Prefab> labOla1Model;
-std::unique_ptr<Prefab> probowka2Model;
-std::unique_ptr<Prefab> folderModel;
-std::unique_ptr<Prefab> papersModel;
-std::unique_ptr<Prefab> cupModel;
-std::unique_ptr<Prefab> corkBoardModel;
-std::unique_ptr<Prefab> clockModel;
-std::unique_ptr<Prefab> computer_pbrModel;
-std::unique_ptr<Prefab> laboratoryStuff1Model;
-std::unique_ptr<Prefab> laboratoryStuff2Model;
-std::unique_ptr<Prefab> laboratoryStuff3Model;
-
-std::unique_ptr<Prefab> dyingModelPrefab;
-std::unique_ptr<Prefab> jumpSkeletonPrefab;
-
-// testowe obiekty do postprocessingu
-std::unique_ptr<Prefab> RedModel;
-std::unique_ptr<Prefab> BlueModel;
-std::unique_ptr<Prefab> GreenModel;
-
-std::unique_ptr<Prefab> roofModel;
-std::unique_ptr<Prefab> groundModel;
-
-std::unique_ptr<Prefab> koparkaModel;
+#include "impl/main/list_prefab.ipp"
 
 unsigned int triangleVAO = 0;
 unsigned int triangleVBO = 0;
@@ -289,6 +196,11 @@ struct DoorState {
     GameObject* hinge  = nullptr;
     glm::vec3 originalOffset = glm::vec3(0.0f);
     bool canBeClicked  = true;
+
+    glm::vec3 closedHalfSize = glm::vec3(0.8f, 10.0f, 4.0f);
+    glm::vec3 openHalfSize   = glm::vec3(1.0f, 10.0f, 1.0f);
+    glm::vec3 openOffset     = glm::vec3(0.0f);
+    bool requiresUnlock = false;
 };
 
 std::unordered_map<GameObject*, CabinetState> cabinetsMap;
@@ -296,6 +208,17 @@ std::unordered_map<GameObject*, DoorState>    toiletDoorsMap;
 std::unordered_set<GameObject*>               pickupObjects;
 GameObject* p1HeldObject = nullptr;
 GameObject* p2HeldObject = nullptr;
+
+bool p1IsReading = false;
+bool p2IsReading = false;
+
+GameObject* p1NoteUI_obj = nullptr;
+SpriteComponent* p1NoteUI = nullptr;
+
+GameObject* p2NoteUI_obj = nullptr;
+SpriteComponent* p2NoteUI = nullptr;
+
+std::unordered_map<GameObject*, std::string> noteContents;
 
 std::vector<GameObject*> mainRoomDoors;
 
@@ -353,564 +276,22 @@ GameObject* CreateRaycastTestObject(
     return go;
 }
 
+#include "impl/main/process_input.ipp"
 
-bool processCameraInput(ECS& ecs, CameraComponent& cam, TransformComponent& playerTransform,
-    const std::string& up,
-    const std::string& down,
-    const std::string& left,
-    const std::string& right)
-{
-    const auto& hid = ecs.GetSystem<HID>();
-    glm::vec3 dir(0.0f);
-
-    glm::vec3 camFront = cam.state.Front;
-    camFront.y = 0.0f;
-    camFront = glm::normalize(camFront);
-
-    glm::vec3 camRight = cam.state.Right;
-    camRight.y = 0.0f;
-    camRight = glm::normalize(camRight);
-
-    if (hid->is_action_pressed(up))    dir += camFront;
-    if (hid->is_action_pressed(down))  dir -= camFront;
-    if (hid->is_action_pressed(left))  dir -= camRight;
-    if (hid->is_action_pressed(right)) dir += camRight;
-
-    if (glm::length(dir) > 0.0f) {
-        dir = glm::normalize(dir);
-        playerTransform.position += dir * MovementSpeed * 0.04f; //deltaTime; aktualnie fixedDeltaTime
-        playerTransform.isDirty = true;
-        cam.dirty = true;
-        return true;
-    }
-    return false;
-}
-
-
-const float sensitivityCamera = 1200.0f;
-
-void processCameraMouse(ECS& ecs, CameraComponent& cam, TransformComponent& transformCamera, TransformComponent& playerTransform)
-{
-    const auto& hid = ecs.GetSystem<HID>();
-    float dx = hid->get_mouse_dx();
-    float dy = hid->get_mouse_dy();
-    const float epsilon = 0.01f;
-
-    if (glm::abs(dx) < epsilon && glm::abs(dy) < epsilon)
-        return;
-
-    playerTransform.rotation.y -= dx * sensitivityCamera / 600.0f * 0.04f;// deltaTime; aktualnie fixedDeltaTime
-    playerTransform.isDirty = true;
-
-    CameraHelper::ProcessMouseMovement(cam, transformCamera, 0.0f, dy);
-}
-
-float lookDeadzone = 0.0f;
-
-bool processCameraGamepad(ECS& ecs, CameraComponent& cam, TransformComponent& transformCamera, TransformComponent& playerTransform, int gamepad_id)
-{
-    const auto& hid = ecs.GetSystem<HID>();
-
-    float lx = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_LEFT_X, gamepad_id);
-    float ly = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_LEFT_Y, gamepad_id);
-
-    glm::vec3 dir(0.0f);
-
-    glm::vec3 camFront = cam.state.Front;
-    camFront.y = 0.0f;
-    camFront = glm::normalize(camFront);
-
-    glm::vec3 camRight = cam.state.Right;
-    camRight.y = 0.0f;
-    camRight = glm::normalize(camRight);
-
-    dir += camFront * (-ly);
-    dir += camRight * lx;
-
-    bool isMoving = false;
-    if (glm::length(dir) > 0.0f) {
-        dir = glm::normalize(dir);
-        playerTransform.position += dir * MovementSpeed * 0.04f;// deltaTime; aktualnie fixedDeltaTime
-        playerTransform.isDirty = true;
-        cam.dirty = true;
-        isMoving = true;
-    }
-
-    float rx = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_RIGHT_X, gamepad_id);
-    float ry = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_RIGHT_Y, gamepad_id);
-
-
-    if (lookDeadzone <= 0.01f)
-        lookDeadzone += 0.0005f;
-    else if (glm::abs(rx) < lookDeadzone && glm::abs(ry) < lookDeadzone)
-        return isMoving;
-
-    playerTransform.rotation.y -= rx * sensitivityCamera / 10.0f * deltaTime;// deltaTime; aktualnie fixedDeltaTime
-    playerTransform.isDirty = true;
-
-    CameraHelper::ProcessMouseMovement(cam, transformCamera, 0.0f, ry * sensitivityCamera * deltaTime);
-    return isMoving;
-}
-
-
-void addAllSystems(ECS& ecs);
-void connectAllModels();
 void LoadPlayerAnimations();
+void createRentgenCorridor(Scene * scena);
+void createCrematoriumCorridor(Scene * scena);
 
-struct PuzzleSlot {
-    glm::vec3 targetRotation;
-    GameObject* occupant       = nullptr;
-    GameObject* slotObject     = nullptr;
-    GameObject* expectedObject = nullptr;
-    GameObject* lightObject    = nullptr;
-};
-
-GameObject* puzzleRewardObject = nullptr;
-
-
-void OnPuzzleSolved(Scene* scene) {
-    spdlog::info("Puzzle rozwiązany!");
-
-    // Zabezpieczenie przed wielokrotnym wywołaniem
-    if (puzzleRewardObject != nullptr) return;
-
-    if (placeholderModel == nullptr) {
-        spdlog::error("placeholderModel nie zaladowany!");
-        return;
-    }
-
-    puzzleRewardObject = placeholderModel->Instantiate(*scene, nullptr, nullptr);
-    puzzleRewardObject->name = "PuzzleReward";
-
-    TransformComponent* tr = puzzleRewardObject->GetComponent<TransformComponent>();
-    tr->position = glm::vec3(0.0f, 5.0f, -270.0f);
-    tr->scale    = glm::vec3(3.0f);
-    tr->isDirty  = true;
-
-    RigidbodyComponent* rb = puzzleRewardObject->AddComponent<RigidbodyComponent>();
-    rb->useGravity = false;
-    rb->isStatic   = true;
-
-    puzzleRewardObject->AddComponent<ColliderComponent>();
-}
-
-std::unordered_map<GameObject*, PuzzleSlot> puzzleSlotsMap; // klucz = slotObject
-std::unordered_map<GameObject*, glm::vec3>  objectOriginalRotations;
-
-bool IsPuzzleSolved() {
-    if (puzzleSlotsMap.empty()) return false;
-    for (auto& [slotGO, slot] : puzzleSlotsMap) {
-        if (slot.occupant == nullptr) return false;             // slot pusty
-        if (slot.occupant != slot.expectedObject) return false; // zła kostka
-    }
-    return true;
-}
-
-void HandlePlayerInteraction(
-    ECS& ecs,
-    const std::string& inputAction,
-    RaycastComponent* playerRaycast,
-    GameObject* playerCamera,
-    GameObject*& myHeldObject,
-    GameObject* otherPlayerHeldObject,
-    Scene* scene,
-    std::unordered_map<GameObject*, float>& rotatingObjects,
-    std::unordered_set<GameObject*>& rotatingInProgress,
-    float& outShakeTimer,
-    AnimatorComponent* playerAnimator,
-    Prefab* playerPrefab
-) {
-    if (!ecs.GetSystem<HID>()->is_action_just_pressed(inputAction)) return;
-    //upuszczanie
-    if (myHeldObject != nullptr) {
-        TransformComponent* camTr   = playerCamera->GetComponent<TransformComponent>();
-        TransformComponent* heldTr  = myHeldObject->GetComponent<TransformComponent>();
-        CameraComponent*    camComp = playerCamera->GetComponent<CameraComponent>();
-
-        // Sprawdź czy raycast widzi slot
-        PuzzleSlot* targetSlot = nullptr;
-        if (playerRaycast->anyHit()) {
-            RaycastHit hit = playerRaycast->closestHit();
-            if (hit.hitObject && puzzleSlotsMap.count(hit.hitObject)) {
-                PuzzleSlot& slot = puzzleSlotsMap[hit.hitObject];
-                if (slot.occupant == nullptr)   // tylko wolny slot
-                    targetSlot = &slot;
-            }
-        }
-
-        myHeldObject->SetParent(scene->GetRoot());
-
-        if (targetSlot != nullptr) {
-            // ── Gracz patrzy na wolny slot ──
-            TransformComponent* slotTr = targetSlot->slotObject->GetComponent<TransformComponent>();
-            heldTr->position = slotTr->position;
-            heldTr->rotation = targetSlot->targetRotation;
-            heldTr->isDirty  = true;
-            targetSlot->occupant = myHeldObject;
-            if (IsPuzzleSolved())
-                OnPuzzleSolved(scene);
-
-            if (auto rb = myHeldObject->GetComponent<RigidbodyComponent>()) {
-                rb->useGravity = false;
-                rb->isStatic   = true;
-                rb->velocity = glm::vec3(0.0f);
-                rb->acceleration = glm::vec3(0.0f);
-            }
-        }
-        else {
-            // ── Gracz patrzy gdzie indziej — normalne upuszczenie ──
-            heldTr->position = TransformHelper::getGlobalPosition(*camTr) + (camComp->state.Front * 5.0f);
-            heldTr->rotation = objectOriginalRotations.count(myHeldObject)
-                                   ? objectOriginalRotations[myHeldObject]
-                                   : glm::vec3(0.0f);
-            heldTr->isDirty  = true;
-
-            if (auto rb = myHeldObject->GetComponent<RigidbodyComponent>()) {
-                rb->useGravity = true;
-                rb->isStatic   = false;
-                rb->previousPosition = heldTr->position;
-                rb->physicsPosition = heldTr->position;
-                rb->velocity   = glm::vec3(0.0f);
-                rb->acceleration   = glm::vec3(0.0f);
-            }
-        }
-
-        myHeldObject = nullptr;
-    }
-    else if (playerRaycast->anyHit()) {
-        RaycastHit hit = playerRaycast->closestHit();
-        if (hit.hitObject != nullptr) {
-            // Obracanie
-            if (rotatableObjects.count(hit.hitObject)) {
-                if (!rotatingInProgress.count(hit.hitObject)) {
-                    rotatingObjects[hit.hitObject] = 60.0f;
-                    rotatingInProgress.insert(hit.hitObject);
-                    PlayerAnimationHelper::TriggerAction(playerAnimator, playerPrefab, PlayerAnimationHelper::INTERACT_ANIM_INDEX);
-                }
-            }
-            // PAIN
-            if (majorDoors.count(hit.hitObject)) {
-                if (can_open_door_1) {
-                    for (GameObject* door : majorDoors) {
-                        TransformComponent* t = door->GetComponent<TransformComponent>();
-                        if (t) t->position = glm::vec3(-1000.0f, -1000.0f, -1000.0f);
-                    }
-                } else {
-                    outShakeTimer = SHAKE_DURATION;
-                }
-                PlayerAnimationHelper::TriggerAction(playerAnimator, playerPrefab, PlayerAnimationHelper::INTERACT_ANIM_INDEX);
-            }
-            // Otwieranie drzwi
-            else if (toiletDoorsMap.count(hit.hitObject)) {
-                DoorState& state = toiletDoorsMap[hit.hitObject];
-                if (state.canBeClicked) {
-                    state.isOpen      = !state.isOpen;
-                    state.targetAngle = state.isOpen ? state.openAngle : state.closedAngle;
-
-                    if (auto col = hit.hitObject->GetComponent<ColliderComponent>()) {
-                        col->halfSize = state.isOpen ? glm::vec3{ 1.0f, 10.0f, 1.0f } : glm::vec3{ 0.8f, 10.0f, 4.0f };
-                        col->offset   = state.isOpen ? glm::vec3(0.0f) : state.originalOffset;
-                    }
-                    PlayerAnimationHelper::TriggerAction(playerAnimator, playerPrefab, PlayerAnimationHelper::INTERACT_ANIM_INDEX);
-                }
-            }
-            // Otwieranie szafki
-            else if (cabinetsMap.count(hit.hitObject)) {
-                if (!isCabinetButtonPushed) {
-                    isCabinetButtonPushed = true;
-                    CabinetState& state   = cabinetsMap[hit.hitObject];
-                    state.isOpen          = true;
-                    state.targetAngle     = 90.0f;
-
-                    for (GameObject* hinge : mainRoomDoors) {
-                        if (hinge && toiletDoorsMap.count(hinge)) {
-                            DoorState& dState  = toiletDoorsMap[hinge];
-                            dState.isOpen      = true;
-                            dState.targetAngle = dState.openAngle;
-
-                            if (auto col = hinge->GetComponent<ColliderComponent>()) {
-                                col->halfSize = glm::vec3(0.0f);
-                            }
-                        }
-                    }
-                    PlayerAnimationHelper::TriggerAction(playerAnimator, playerPrefab, PlayerAnimationHelper::INTERACT_ANIM_INDEX);
-                }
-            }
-            if (puzzleSlotsMap.count(hit.hitObject)) {
-                PuzzleSlot& slot = puzzleSlotsMap[hit.hitObject];
-                if (slot.occupant != nullptr && slot.occupant != otherPlayerHeldObject) {
-                    myHeldObject = slot.occupant;
-                    slot.occupant = nullptr;
-
-                    myHeldObject->SetParent(playerCamera);
-
-                    TransformComponent* heldTr = myHeldObject->GetComponent<TransformComponent>();
-                    heldTr->position = glm::vec3(1.0f, -1.0f, -3.0f);
-                    heldTr->rotation = glm::vec3(0.0f);
-                    heldTr->isDirty  = true;
-
-                    if (auto rb = myHeldObject->GetComponent<RigidbodyComponent>()) {
-                        rb->useGravity = false;
-                        rb->isStatic   = true;
-                    }
-
-                    PlayerAnimationHelper::TriggerAction(playerAnimator, playerPrefab, PlayerAnimationHelper::PICKUP_ANIM_INDEX);
-                }
-            }
-            // Podnoszenie (zabezpieczone przed wyrwaniem obiektu drugiemu graczowi)
-            else if (pickupObjects.count(hit.hitObject) && hit.hitObject != otherPlayerHeldObject) {
-                myHeldObject = hit.hitObject;
-
-                for (auto& [slotGO, slot] : puzzleSlotsMap) {
-                    if (slot.occupant == myHeldObject) {
-                        puzzleSlotsMap[slotGO].occupant = nullptr;
-                        break;
-                    }
-                }
-
-                myHeldObject->SetParent(playerCamera);
-
-                TransformComponent* heldTr = myHeldObject->GetComponent<TransformComponent>();
-                heldTr->position = glm::vec3(1.0f, -1.0f, -3.0f);
-                heldTr->rotation = glm::vec3(0.0f);
-                heldTr->isDirty  = true;
-
-                if (auto rb = myHeldObject->GetComponent<RigidbodyComponent>()) {
-                    rb->useGravity = false;
-                    rb->isStatic   = true;
-                }
-
-                PlayerAnimationHelper::TriggerAction(playerAnimator, playerPrefab, PlayerAnimationHelper::PICKUP_ANIM_INDEX);
-            }
-            // zagadka z trumnami
-            else if (hit.hitObject->name.find("Coffin") != std::string::npos) {
-                crematoriumPuzzle.ToggleCoffin(hit.hitObject);
-                PlayerAnimationHelper::TriggerAction(playerAnimator, playerPrefab, PlayerAnimationHelper::INTERACT_ANIM_INDEX);
-            }
-        }
-    }
-}
-
-void HandleAltRotate(
-    ECS& ecs,
-    const std::string& inputAction,
-    RaycastComponent* playerRaycast,
-    std::unordered_map<GameObject*, float>& rotatingObjects,
-    std::unordered_set<GameObject*>& rotatingInProgress
-) {
-    if (!ecs.GetSystem<HID>()->is_action_just_pressed(inputAction)) return;
-    if (!playerRaycast->anyHit()) return;
-
-    RaycastHit hit = playerRaycast->closestHit();
-    if (hit.hitObject && rotatableObjects.count(hit.hitObject)) {
-        if (!rotatingInProgress.count(hit.hitObject)) {
-            rotatingObjects[hit.hitObject] = -60.0f;
-            rotatingInProgress.insert(hit.hitObject);
-        }
-    }
-}
-
-void UpdateDoors(float deltaTime) {
-    float doorAnimSpeed = 180.0f;
-    for (auto& [doorObj, state] : toiletDoorsMap) {
-        if (std::abs(state.currentAngle - state.targetAngle) > 0.1f) {
-            float direction = (state.targetAngle > state.currentAngle) ? 1.0f : -1.0f;
-            state.currentAngle += direction * doorAnimSpeed * deltaTime;
-
-            if ((direction > 0.0f && state.currentAngle > state.targetAngle) ||
-                (direction < 0.0f && state.currentAngle < state.targetAngle)) {
-                state.currentAngle = state.targetAngle;
-            }
-
-            TransformComponent* hingeTr = state.hinge->GetComponent<TransformComponent>();
-            if (hingeTr) {
-                hingeTr->rotation.y = state.currentAngle;
-                hingeTr->isDirty = true;
-            }
-        }
-    }
-}
-
-void UpdateCabinets(float deltaTime) {
-    float animSpeed   = 180.0f;
-    float buttonSpeed = 5.0f;
-
-    for (auto& [buttonObj, state] : cabinetsMap) {
-        if (std::abs(state.currentAngle - state.targetAngle) > 0.1f) {
-            float direction = (state.targetAngle > state.currentAngle) ? 1.0f : -1.0f;
-            state.currentAngle += direction * animSpeed * deltaTime;
-
-            if ((direction > 0.0f && state.currentAngle > state.targetAngle) ||
-                (direction < 0.0f && state.currentAngle < state.targetAngle)) {
-                state.currentAngle = state.targetAngle;
-            }
-
-            if (state.leftDoor) {
-                TransformComponent* t = state.leftDoor->GetComponent<TransformComponent>();
-                if (t) { t->rotation.y = -state.currentAngle; t->isDirty = true; }
-            }
-            if (state.rightDoor) {
-                TransformComponent* t = state.rightDoor->GetComponent<TransformComponent>();
-                if (t) { t->rotation.y = state.currentAngle; t->isDirty = true; }
-            }
-        }
-
-        if (isCabinetButtonPushed && state.button) {
-            TransformComponent* btnTr = state.button->GetComponent<TransformComponent>();
-            btnTr->position = glm::mix(btnTr->position, state.buttonTargetPos, deltaTime * buttonSpeed);
-            if (glm::distance(btnTr->position, state.buttonTargetPos) > 0.01f) {
-                btnTr->isDirty = true;
-            }
-        }
-    }
-}
-GameObject* CreateInteractableDoor(Scene* scene, Prefab* prefab, Shader* shader,
-    const std::string& name,
-    const glm::vec3& position,
-    const glm::vec3& scale,
-    const glm::vec3& pivotOffset,
-    const glm::vec3& colliderHalfSize,
-    float openAngle,
-    float baseRotationY = 90.0f)
-{
-    GameObject* hinge  = scene->CreateGameObject(nullptr);
-    hinge->name        = "Hinge_" + name;
-    TransformComponent* hingeTr = hinge->AddComponent<TransformComponent>();
-    hingeTr->position  = position + pivotOffset;
-
-    GameObject* door   = prefab->Instantiate(*scene, hinge, shader);
-    door->name         = name;
-    TransformComponent* doorTr = door->GetComponent<TransformComponent>();
-    doorTr->scale      = scale;
-    doorTr->rotation   = glm::vec3(0.0f, baseRotationY, 0.0f);
-    doorTr->position   = -pivotOffset;
-
-
-    ColliderComponent* col = hinge->AddComponent<ColliderComponent>();
-    col->halfSize       = colliderHalfSize;
-    col->offset         = -pivotOffset;
-    col->isWalkable     = false;
-    col->affectsNavMesh = true;
-
-    DoorState state;
-    state.hinge          = hinge;
-    state.openAngle      = openAngle;
-    state.closedAngle    = 0.0f;
-    state.currentAngle   = 0.0f;
-    state.targetAngle    = 0.0f;
-    state.originalOffset = -pivotOffset;
-    toiletDoorsMap[hinge] = state;
-    return hinge;
-}
-
-GameObject* CreateStaticObject(
-    Scene* scene,
-    Prefab* prefab,
-    Shader* shader,
-    const std::string& name,
-    const glm::vec3& position,
-    const glm::vec3& scale,
-    std::optional<glm::vec3> rotation         = std::nullopt,
-    std::optional<glm::vec3> colliderHalfSize = std::nullopt,
-    bool affectsNavMesh = false
-) {
-    GameObject* go = prefab->Instantiate(*scene, nullptr, shader);
-    go->name       = name;
-
-    TransformComponent* tr = go->GetComponent<TransformComponent>();
-    if (tr) {
-        tr->position = position;
-        tr->scale    = scale;
-        if (rotation.has_value())
-            tr->rotation = rotation.value();
-        tr->isDirty  = true;
-    }
-
-    ColliderComponent* col = go->AddComponent<ColliderComponent>();
-    if (colliderHalfSize.has_value())
-        col->halfSize = colliderHalfSize.value();
-    col->affectsNavMesh = affectsNavMesh;
-
-    return go;
-}
-
-GameObject* CreateCockroachLeader(
-    Scene& scene,
-    Prefab& prefab,
-    Shader* shader,
-    const glm::vec3& homePos,
-    float moveSpeed = 4.0f)
-{
-    GameObject* go = prefab.Instantiate(scene, nullptr, shader);
-    go->name       = "CockroachLeader";
-
-    auto* tr      = go->GetComponent<TransformComponent>();
-    tr->position  = homePos;
-    tr->scale     = glm::vec3(0.3f);
-    tr->isDirty   = true;
-
-    auto* col      = go->AddComponent<ColliderComponent>();
-    col->halfSize  = glm::vec3(0.3f, 0.2f, 0.3f);
-
-    auto* nav         = go->AddComponent<NavPathComponent>();
-    nav->state        = NavAgentState::ExternalControl;
-    nav->moveSpeed    = moveSpeed;
-    nav->idleTimeMax  = 0.0f;
-
-    auto* leader                = go->AddComponent<CockroachLeaderComponent>();
-    leader->homePosition        = homePos;
-    leader->homeRadius          = 15.0f;
-    leader->homeTimeRequired    = 8.0f;
-    leader->exploreRadius       = 50.0f;
-    leader->exploreDuration     = 20.0f;
-    leader->detectionRadius     = 25.0f;
-    leader->escapeRadius        = 35.0f;
-    leader->idleWanderRadius    = 8.0f;
-    leader->state               = LeaderState::Idle;
-
-    return go;
-}
-
-GameObject* CreateCockroachFollower(
-    Scene& scene,
-    Prefab& prefab,
-    Shader* shader,
-    GameObject* leaderGO,
-    const glm::vec3& spawnPos,
-    float moveSpeed = 4.5f)
-{
-    GameObject* go = prefab.Instantiate(scene, nullptr, shader);
-    go->name       = "CockroachFollower";
-
-    auto* tr      = go->GetComponent<TransformComponent>();
-    tr->position  = spawnPos;
-    tr->scale     = glm::vec3(0.25f);
-    tr->isDirty   = true;
-
-
-    auto* col      = go->AddComponent<ColliderComponent>();
-    col->halfSize  = glm::vec3(0.25f, 0.15f, 0.25f);
-
-    auto* nav        = go->AddComponent<NavPathComponent>();
-    nav->state       = NavAgentState::ExternalControl;
-    nav->moveSpeed   = moveSpeed;
-    nav->idleTimeMax = 0.0f;
-
-    auto* follower                  = go->AddComponent<CockroachFollowerComponent>();
-    follower->leaderGameObject      = leaderGO;
-    follower->followDistance        = 6.0f;
-    follower->followStopDistance    = 2.0f;
-    follower->idleWanderRadius      = 6.0f;
-    follower->state                 = FollowerState::Follow;
-
-    return go;
-}
+#include "impl/main/logic_update.ipp"
 
 void createFirstRoom(Scene* scena1);
 void createMainRooom(Scene* scena);
 void createNuclearRooom(Scene* scena);
 void createCrematorium(Scene* scena);
 void createRentgenRoom(Scene* scena);
+void createTrigger(Scene* scena);
+void CheckFallenPickupObjects();
+
 
 int main(int, char**)
 {
@@ -924,14 +305,31 @@ int main(int, char**)
     init_imgui();
     spdlog::info("Initialized ImGui.");
 
-    ECS ecs;
-    SceneManager sceneManager;
+    ECS* ecs;
+    SceneManager sceneManager(ecs, renderSystem, postProcessingSystem, window);
 
-    sceneManager.CreateScene("Scena 1", ecs);
+    sceneManager.CreateScene("Scena 1");
+    sceneManager.CreateScene("menu");
 
     Scene* scena1 = sceneManager.GetActiveScene();
+    Scene* scenaMenu = sceneManager.GetScene("menu");
+    ecs = &scena1->GetECS();
 
-    addAllSystems(ecs);
+    scenaMenu->GetECS().AddSystem<HID>(scenaMenu->GetECS(), window);
+    scenaMenu->GetECS().AddSystem<UISystem>(scenaMenu->GetECS(), *scenaMenu->GetECS().GetSystem<HID>());
+    scenaMenu->GetECS().AddSystem<TransformSystem>(scenaMenu->GetECS());
+    scenaMenu->GetECS().AddSystem<RenderSystem>(scenaMenu->GetECS(), window);
+    scenaMenu->GetECS().AddSystem<SpriteSystem>(scenaMenu->GetECS(), window);
+    scenaMenu->GetECS().AddSystem<PostProcessingSystem>(scenaMenu->GetECS(), window);
+    scena1->addAllSystems(window);
+    
+    scenaMenu->GetECS().GetSystem<PostProcessingSystem>()->SetActive(false);
+
+    sceneManager.ChangeScene("Scena 1");
+    Menu menu(&sceneManager, scenaMenu);
+    menu.Init();
+
+    //menu->GetECS().AddExistingSystem(scena1->GetECS().GetSystem<RenderSystem>());
 
     postacGracza = std::make_unique<Prefab>("res/models/postac_test.glb");
     groundModel = std::make_unique<Prefab>("res/models/podloze.glb");
@@ -976,25 +374,28 @@ int main(int, char**)
 
     ColliderComponent* camera1collider = gracz1->AddComponent<ColliderComponent>();
     RigidbodyComponent* rigidBodyCamera1 = gracz1->AddComponent<RigidbodyComponent>();
-    gracz1->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 20.0f, -20.0f);
+    gracz1->GetComponent<TransformComponent>()->position = glm::vec3(11.986f, 6.250f, -12.000f);
     gracz1->GetComponent<TransformComponent>()->rotation = glm::vec3(0.0f, -180.0f, 0.0f);
     gracz1->GetComponent<RigidbodyComponent>()->mass = 10.0f;
     gracz1->GetComponent<RigidbodyComponent>()->bounce = 0.1f;
     gracz1->GetComponent<RigidbodyComponent>()->useGravity = true;
-    gracz1->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1.0f, 5.25f, 1.0f };
+    gracz1->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1.2f, 5.25f, 1.2f };
 
 
     GameObject* camera1 = scena1->CreateGameObject(nullptr);//groundModel->Instantiate(*scena1, nullptr, ourShader.get());
     camera1->name = "Kamera";
     gracz1->AddChild(camera1);
-    camera1->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 4.7f, 0.0f);
-    camera1->GetComponent<TransformComponent>()->rotation = glm::vec3(0.0f, -180.0f, 0.0f);
+    camera1->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 4.7f, -0.8f);
     CameraComponent* camCompLeft = camera1->AddComponent<CameraComponent>();
     RaycastComponent*  player1Raycast   = camera1->AddComponent<RaycastComponent>();
     player1Raycast->debugDraw = false;
 
-    camera1->AddComponent<LightComponent>();
-    LightComponent* light2 = camera1->GetComponent<LightComponent>();
+    GameObject* latarka1 = scena1->CreateGameObject(nullptr);
+    latarka1->name = "Latarka";
+    camera1->AddChild(latarka1);
+    latarka1->GetComponent<TransformComponent>()->position = glm::vec3(1.10f, -0.11f, -0.25f);
+    latarka1->GetComponent<TransformComponent>()->rotation = glm::vec3(-0.40f, 4.50f, 0.00f);
+    LightComponent* light2 = latarka1->AddComponent<LightComponent>();
 
     light2->type      = Spot;
     light2->index     = 0;
@@ -1004,13 +405,14 @@ int main(int, char**)
     light2->constant  = 1.0f;
     light2->linear    = 0.10f;
     light2->quadratic = 0.00001f;
-    light2->intensity = 450.0f;
+    light2->intensity = 650.0f;
     light2->cutOff      = glm::cos(glm::radians(8.0f));
     light2->outerCutOff = glm::cos(glm::radians(22.0f));
 
     GameObject* modelPostac1 = postacGracza->Instantiate(*scena1, nullptr, nullptr);
     gracz1->AddChild(modelPostac1);
-    modelPostac1->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 0.9f, -1.7f);
+    modelPostac1->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, -0.2f, 0.0f);
+    modelPostac1->GetComponent<TransformComponent>()->rotation = glm::vec3(0.0f, -180.0f, 0.0f);
     AnimatorComponent* p1Animator = modelPostac1->GetComponent<AnimatorComponent>();
     if (p1Animator == nullptr) {
         p1Animator = modelPostac1->AddComponent<AnimatorComponent>();
@@ -1023,24 +425,28 @@ int main(int, char**)
 
     ColliderComponent*  camera2collider  = gracz2->AddComponent<ColliderComponent>();
     RigidbodyComponent* rigidBodyCamera2 = gracz2->AddComponent<RigidbodyComponent>();
-    gracz2->GetComponent<TransformComponent>()->position = glm::vec3(-10.0f, 20.0f, -20.0f);
+    gracz2->GetComponent<TransformComponent>()->position = glm::vec3(0.070, 6.250f, -18.649f);
     gracz2->GetComponent<TransformComponent>()->rotation = glm::vec3(0.0f, -180.0f, 0.0f);
     gracz2->GetComponent<RigidbodyComponent>()->mass = 10.0f;
     gracz2->GetComponent<RigidbodyComponent>()->bounce = 0.1f;
     gracz2->GetComponent<RigidbodyComponent>()->useGravity = true;
-    gracz2->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1.0f, 5.25f, 1.0f };
+    gracz2->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1.2f, 5.25f, 1.2f };
 
     GameObject* camera2 = scena1->CreateGameObject(nullptr);
     camera2->name = "Kamera";
     gracz2->AddChild(camera2);
-    camera2->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 4.7f, 0.0f);
-    camera2->GetComponent<TransformComponent>()->rotation = glm::vec3(0.0f, 0.0f, 0.0f);
+    camera2->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 4.7f, -0.8f);
     CameraComponent* camCompRight = camera2->AddComponent<CameraComponent>();
     RaycastComponent* player2Raycast = camera2->AddComponent<RaycastComponent>();
     player2Raycast->debugDraw = false;
 
-    camera2->AddComponent<LightComponent>();
-    LightComponent* light3 = camera2->AddComponent<LightComponent>();
+    GameObject* latarka2 = scena1->CreateGameObject(nullptr);
+    latarka2->name = "Latarka";
+    camera2->AddChild(latarka2);
+    latarka2->GetComponent<TransformComponent>()->position = glm::vec3(1.10f, -0.11f, -0.25f);
+    latarka2->GetComponent<TransformComponent>()->rotation = glm::vec3(-0.40f, 4.50f, 0.00f);
+    LightComponent* light3 = latarka2->AddComponent<LightComponent>();
+
     light3->type = Spot;
     light3->index = 2;
     light3->ambient = glm::vec3(0.25f);
@@ -1049,14 +455,14 @@ int main(int, char**)
     light3->constant = 1.0f;
     light3->linear = 0.10f;
     light3->quadratic = 0.00001f;
-    light3->intensity = 450.0f;
+    light3->intensity = 650.0f;
     light3->cutOff = glm::cos(glm::radians(8.0f));
     light3->outerCutOff = glm::cos(glm::radians(22.0f));
 
     GameObject* modelPostac2 = postacGracza->Instantiate(*scena1, nullptr, nullptr);
     gracz2->AddChild(modelPostac2);
-    modelPostac2->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 0.9f, 1.7f);
-	modelPostac2->GetComponent<TransformComponent>()->rotation = glm::vec3(0.0f, 180.0f, 0.0f);
+    modelPostac2->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, -0.2f, 0.0f);
+    modelPostac2->GetComponent<TransformComponent>()->rotation = glm::vec3(0.0f, -180.0f, 0.0f);
     AnimatorComponent* p2Animator = modelPostac2->GetComponent<AnimatorComponent>();
     if (p2Animator == nullptr) {
         p2Animator = modelPostac2->AddComponent<AnimatorComponent>();
@@ -1102,7 +508,45 @@ int main(int, char**)
     player2InteractionInfo->textCentered       = true;
     player2InteractionInfo->layer              = 1;
 
+    // UI notatki gracz 1
+    p1NoteUI_obj = scena1->CreateGameObject(nullptr);
+    p1NoteUI = p1NoteUI_obj->AddComponent<SpriteComponent>();
+    p1NoteUI->sprites = { ResourceManager::LoadTexture("note_bg.png", "res/sprites/").id };
+    p1NoteUI->size = glm::vec2(500.0f, 700.0f);
+    p1NoteUI->screenPosition = glm::vec2(480.0f - 250.0f, 540.0f - 350.0f);
+    p1NoteUI->layer = 3;
+    p1NoteUI->isVisible = false;
+
+    p1NoteUI->textEnabled = true;
+    p1NoteUI->textCentered = false;
+    p1NoteUI->textColor = glm::vec3(0.1f, 0.1f, 0.1f);
+    p1NoteUI->textOutlineEnabled = false;
+    p1NoteUI->fontSize = 14.0f;
+    p1NoteUI->textOffset = glm::vec2(30.0f, 30.0f);
+    p1NoteUI->text = "";
+    p1NoteUI->fontPath = "res/fonts/NothingYouCouldDo-Regular.ttf";
+
+
+    /// UI notatki gracz 2
+    p2NoteUI_obj = scena1->CreateGameObject(nullptr);
+    p2NoteUI = p2NoteUI_obj->AddComponent<SpriteComponent>();
+    p2NoteUI->sprites = { ResourceManager::LoadTexture("note_bg.png", "res/sprites/").id };
+    p2NoteUI->size = glm::vec2(500.0f, 700.0f);
+    p2NoteUI->screenPosition = glm::vec2(1440.0f - 250.0f, 540.0f - 350.0f);
+    p2NoteUI->layer = 3;
+    p2NoteUI->isVisible = false;
+
+    p2NoteUI->textEnabled = true;
+    p2NoteUI->textCentered = false;
+    p2NoteUI->textColor = glm::vec3(0.1f, 0.1f, 0.1f);
+    p2NoteUI->textOutlineEnabled = false;
+    p2NoteUI->fontSize = 14.0f;
+    p2NoteUI->textOffset = glm::vec2(30.0f, 30.0f);
+    p2NoteUI->text = "";
+    p1NoteUI->fontPath = "res/fonts/NothingYouCouldDo-Regular.ttf";
+
     connectAllModels();
+    PlacementEditor::LoadPlacements(*scena1, PlacementEditor::DefaultPrefabLookup);
     LoadPlayerAnimations();
 
     GameObject* model1 = bed1Model->Instantiate(*scena1, nullptr, nullptr);
@@ -1130,14 +574,17 @@ int main(int, char**)
     updateFocus();
 
 
-    renderSystem         = ecs.GetSystem<RenderSystem>();
-    postProcessingSystem = ecs.GetSystem<PostProcessingSystem>();
+    renderSystem         = ecs->GetSystem<RenderSystem>();
+    postProcessingSystem = ecs->GetSystem<PostProcessingSystem>();
 
     createFirstRoom(scena1);
     createMainRooom(scena1);
     createNuclearRooom(scena1);
     createCrematorium(scena1);
     createRentgenRoom(scena1);
+    createRentgenCorridor(scena1);
+    createCrematoriumCorridor(scena1);
+    createTrigger(scena1);
 
     NavMeshBenchmarkSystem* benchSys =
             ecs.GetSystem<NavMeshBenchmarkSystem>();
@@ -1191,34 +638,81 @@ int main(int, char**)
         spdlog::info("[Main] Benchmark zakończony. Wyniki: {}", outputFile);
     }
 
-    dyingModelPrefab   = std::make_unique<Prefab>("res/models/Dying.fbx");
-    jumpSkeletonPrefab = std::make_unique<Prefab>("res/models/Jump.fbx");
+    //dyingModelPrefab   = std::make_unique<Prefab>("res/models/Dying.fbx");
+    //jumpSkeletonPrefab = std::make_unique<Prefab>("res/models/Jump.fbx");
 
-    GameObject* dyingObj = dyingModelPrefab->Instantiate(*scena1, nullptr, nullptr);
-    dyingObj->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, -50.0f, -50.0f);
-    dyingObj->GetComponent<TransformComponent>()->scale    = glm::vec3(0.1f);
+    //GameObject* dyingObj = dyingModelPrefab->Instantiate(*scena1, nullptr, nullptr);
+    //dyingObj->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, -50.0f, -50.0f);
+    //dyingObj->GetComponent<TransformComponent>()->scale    = glm::vec3(0.1f);
 
-    AnimatorComponent* animator = dyingObj->AddComponent<AnimatorComponent>();
+    //AnimatorComponent* animator = dyingObj->AddComponent<AnimatorComponent>();
 
     // PostProcessTest
-    RedModel   = std::make_unique<Prefab>("res/models/test/red_test.glb");
-    GreenModel = std::make_unique<Prefab>("res/models/test/green_test.glb");
-    BlueModel  = std::make_unique<Prefab>("res/models/test/blue_test.glb");
+    //RedModel   = std::make_unique<Prefab>("res/models/test/red_test.glb");
+    //GreenModel = std::make_unique<Prefab>("res/models/test/green_test.glb");
+    //BlueModel  = std::make_unique<Prefab>("res/models/test/blue_test.glb");
 
-    GameObject* redObject   = RedModel->Instantiate(*scena1,   nullptr, nullptr);
-    GameObject* blueObject  = BlueModel->Instantiate(*scena1,  nullptr, nullptr);
-    GameObject* greenObject = GreenModel->Instantiate(*scena1, nullptr, nullptr);
+    //GameObject* redObject   = RedModel->Instantiate(*scena1,   nullptr, nullptr);
+    //GameObject* blueObject  = BlueModel->Instantiate(*scena1,  nullptr, nullptr);
+    //GameObject* greenObject = GreenModel->Instantiate(*scena1, nullptr, nullptr);
 
-    redObject->GetComponent<TransformComponent>()->position   = glm::vec3(0.0f, 30.0f,  50.0f);
-    blueObject->GetComponent<TransformComponent>()->position  = glm::vec3(0.0f, 30.0f,   0.0f);
-    greenObject->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 30.0f, -50.0f);
+    //redObject->GetComponent<TransformComponent>()->position   = glm::vec3(0.0f, 30.0f,  50.0f);
+    //blueObject->GetComponent<TransformComponent>()->position  = glm::vec3(0.0f, 30.0f,   0.0f);
+    //greenObject->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 30.0f, -50.0f);
 
     rigidBodyCamera1->useGravity = true;
     rigidBodyCamera2->useGravity = true;
 
     // FMOD
+    AudioSystem* audioSys = ecs->GetSystem<AudioSystem>();
+
     FMOD::Sound* sound = nullptr;
-    ecs.GetSystem<AudioSystem>()->createSound("res/sound/door_unlock.wav", sound);
+    audioSys->createSound("res/sound/door_unlock.wav", sound);
+
+    FMOD::Sound* sndAmbient = nullptr;
+    audioSys->createSound("res/sound/ambient.aiff", sndAmbient, true);
+
+    if (audioSys && sndAmbient) {
+        FMOD::Channel* ambientChannel = audioSys->playSoundEx(sndAmbient);
+        //if (ambientChannel) {
+        //    ambientChannel->setVolume(0.4f);
+        //}
+    }
+
+    FMOD::Sound* sndBtnClick = nullptr;
+    FMOD::Sound* sndPickup = nullptr;
+    FMOD::Sound* sndInsert = nullptr;
+    FMOD::Sound* sndDoorLocked = nullptr;
+    FMOD::Sound* sndGear = nullptr;
+    FMOD::Sound* sndLorePaper = nullptr;
+    audioSys->createSound("res/sound/button_click.wav", sndBtnClick, false);
+    audioSys->createSound("res/sound/pick_up.wav", sndPickup, false);
+    audioSys->createSound("res/sound/insert_puzzle.wav", sndInsert, false);
+    audioSys->createSound("res/sound/door_locked.wav", sndDoorLocked, false);
+    audioSys->createSound("res/sound/falling_gear.wav", sndGear, false);
+    audioSys->createSound("res/sound/page.wav", sndLorePaper, false);
+
+    FMOD::Sound* sndPaperRoll = nullptr;
+    FMOD::Sound* sndDoorOpen = nullptr;
+    FMOD::Sound* sndDoorClosed = nullptr;
+    FMOD::Sound* sndDoorCloseStart = nullptr;
+
+    audioSys->createSound("res/sound/paper_roll.wav", sndPaperRoll, false);
+    audioSys->createSound("res/sound/bathroom_door_open.wav", sndDoorOpen, false);
+    audioSys->createSound("res/sound/bathroom_door_closed.wav", sndDoorClosed, false);
+    audioSys->createSound("res/sound/door_close_start.wav", sndDoorCloseStart, false);
+
+    FMOD::Sound* sndCoffinSlideOut = nullptr;
+    FMOD::Sound* sndCoffinSlideIn = nullptr;
+    FMOD::Sound* sndCoffinCollide = nullptr;
+    FMOD::Sound* sndCoffinClose = nullptr;
+
+    audioSys->createSound("res/sound/coffin_open.wav", sndCoffinSlideOut, true);
+    audioSys->createSound("res/sound/coffin_open.wav", sndCoffinSlideIn, true);
+    audioSys->createSound("res/sound/coffin_collision.wav", sndCoffinCollide, false);
+    audioSys->createSound("res/sound/coffin_closed.wav", sndCoffinClose, false);
+
+    crematoriumPuzzle.SetupAudio(audioSys, sndCoffinSlideOut, sndCoffinSlideIn, sndCoffinCollide, sndCoffinClose, sndGear);
 
     // obracanie
     std::unordered_map<GameObject*, float> rotatingObjects;
@@ -1249,7 +743,7 @@ int main(int, char**)
         }
 
         if (allCorrect == true) {
-            ecs.GetSystem<AudioSystem>()->playSound(sound);
+            ecs->GetSystem<AudioSystem>()->playSound(sound);
         }
 
         can_open_door_1 = allCorrect;
@@ -1296,7 +790,14 @@ int main(int, char**)
     const glm::vec2 CH1_CENTER(480.0f,  540.0f);
     const glm::vec2 CH2_CENTER(1440.0f, 540.0f);
 
+    bool isCrematoriumGearSpawned = false;
+
     // Main loop
+    /*decorSystem.LoadInstancesFromYaml(
+    "res/level1_decorations.yaml",
+    availablePrefabs,
+    *scena1,
+    nullptr);*/
     while (!glfwWindowShouldClose(window))
     {
         float currentFrame = static_cast<float>(glfwGetTime());
@@ -1304,13 +805,53 @@ int main(int, char**)
         lastFrame = currentFrame;
         updateFPS(deltaTime);
 
+        sceneManager.UpdateChangeScene();
+
+        int display_w, display_h;
+        glfwGetFramebufferSize(window, &display_w, &display_h);
+
+        // ostroznie przy zmianie rozdzielczosci recznie ciagnac myszka.
+        // zmiana rozdzielczosci powinna tylko byc mozliwa poprzez ustawienia gry jak juz beda istniec
+        if (display_h > 0) {
+            float scaleY = (float)display_h / 1080.0f;
+
+            if (p1NoteUI) {
+                p1NoteUI->size = glm::vec2(500.0f * scaleY, 700.0f * scaleY);
+                p1NoteUI->textOffset = glm::vec2(30.0f * scaleY, 30.0f * scaleY);
+
+                p1NoteUI->fontPath = "res/fonts/Roboto-Regular.ttf";
+                p1NoteUI->fontSize = 15.0f * scaleY;
+
+                p1NoteUI->fontPath2 = "res/fonts/NothingYouCouldDo-Regular.ttf";
+                p1NoteUI->fontSize2 = 18.0f * scaleY;
+
+                p1NoteUI->screenPosition = glm::vec2((display_w * 0.25f) - (p1NoteUI->size.x * 0.5f),
+                    (display_h * 0.5f) - (p1NoteUI->size.y * 0.5f));
+            }
+
+            if (p2NoteUI) {
+                p2NoteUI->size = glm::vec2(500.0f * scaleY, 700.0f * scaleY);
+                p2NoteUI->textOffset = glm::vec2(30.0f * scaleY, 30.0f * scaleY);
+
+				p2NoteUI->fontPath = "res/fonts/Roboto-Regular.ttf";
+				p2NoteUI->fontSize = 15.0f * scaleY;
+
+				p2NoteUI->fontPath2 = "res/fonts/NothingYouCouldDo-Regular.ttf";
+                p2NoteUI->fontSize2 = 18.0f * scaleY;
+
+                p2NoteUI->screenPosition = glm::vec2((display_w * 0.75f) - (p2NoteUI->size.x * 0.5f),
+                    (display_h * 0.5f) - (p2NoteUI->size.y * 0.5f));
+            }
+        }
+
         CpuTimer cpuTimer;
         cpuTimer.start();
 
+
         bool allFilled = !puzzleSlotsMap.empty() && std::all_of(
-    puzzleSlotsMap.begin(), puzzleSlotsMap.end(),
-    [](const auto& pair) { return pair.second.occupant != nullptr; }
-);
+            puzzleSlotsMap.begin(), puzzleSlotsMap.end(),
+            [](const auto& pair) { return pair.second.occupant != nullptr; }
+        );
 
         for (auto& [slotGO, slot] : puzzleSlotsMap) {
             if (slot.lightObject == nullptr) continue;
@@ -1318,52 +859,68 @@ int main(int, char**)
             if (light == nullptr) continue;
 
             if (!allFilled) {
-                light->isOn    = false;
+                light->isOn = false;
                 light->diffuse = glm::vec3(0.0f);
                 light->ambient = glm::vec3(0.0f);
                 light->specular = glm::vec3(0.0f);
-            } else if (slot.occupant == slot.expectedObject) {
-                light->isOn     = true;
-                light->diffuse  = glm::vec3(0.0f, 1.0f, 0.0f);
-                light->ambient  = glm::vec3(0.0f, 0.1f, 0.0f);
+            }
+            else if (slot.occupant == slot.expectedObject) {
+                light->isOn = true;
+                light->diffuse = glm::vec3(0.0f, 1.0f, 0.0f);
+                light->ambient = glm::vec3(0.0f, 0.1f, 0.0f);
                 light->specular = glm::vec3(0.0f, 0.5f, 0.0f);
-            } else {
-                light->isOn     = true;
-                light->diffuse  = glm::vec3(1.0f, 0.0f, 0.0f);
-                light->ambient  = glm::vec3(0.1f, 0.0f, 0.0f);
+            }
+            else {
+                light->isOn = true;
+                light->diffuse = glm::vec3(1.0f, 0.0f, 0.0f);
+                light->ambient = glm::vec3(0.1f, 0.0f, 0.0f);
                 light->specular = glm::vec3(0.5f, 0.0f, 0.0f);
             }
         }
 
-        UpdateDoors(deltaTime);
+        UpdateDoors(deltaTime, audioSys, sndDoorClosed);
         UpdateCabinets(deltaTime);
+        CheckFallenPickupObjects();
+
 
         auto inputStart = std::chrono::high_resolution_clock::now();
 
-        if (ecs.GetSystem<HID>()->is_action_just_pressed("right_click")) {
+        if (ecs->GetSystem<HID>()->is_action_just_pressed("right_click")) {
             focused = !focused;
             updateFocus();
         }
-        if (ecs.GetSystem<HID>()->is_action_just_pressed("toggle_frustum_culling")) {
+        if (ecs->GetSystem<HID>()->is_action_just_pressed("toggle_frustum_culling")) {
             renderSystem->frustumCullingEnabled = !renderSystem->frustumCullingEnabled;
             spdlog::info("Frustum culling: {}",
                 renderSystem->frustumCullingEnabled ? "ON" : "OFF");
         }
-        if (ecs.GetSystem<HID>()->is_action_just_pressed("toggle_oclussion_culling")) {
+        if (ecs->GetSystem<HID>()->is_action_just_pressed("toggle_oclussion_culling")) {
             renderSystem->occlusionCullingEnabled = !renderSystem->occlusionCullingEnabled;
             spdlog::info("Oclussion culling: {}",
                 renderSystem->frustumCullingEnabled ? "ON" : "OFF");
         }
 
-        if (ecs.GetSystem<HID>()->is_action_just_pressed("gamma_up")) {
+        if (ecs->GetSystem<HID>()->is_action_just_pressed("ui_menu")) {
+            if (sceneManager.GetActiveSceneName() == "Scena 1")
+            {
+                sceneManager.ChangeScene("menu");
+            }
+
+            if (sceneManager.GetActiveSceneName() == "menu")
+            {
+                sceneManager.ChangeScene("Scena 1");
+            }
+        }
+
+        if (ecs->GetSystem<HID>()->is_action_just_pressed("gamma_up")) {
             postProcessingSystem->set_gamma(postProcessingSystem->get_gamma() + 0.1f);
         }
-        if (ecs.GetSystem<HID>()->is_action_just_pressed("gamma_down")) {
+        if (ecs->GetSystem<HID>()->is_action_just_pressed("gamma_down")) {
             postProcessingSystem->set_gamma(postProcessingSystem->get_gamma() - 0.1f);
         }
 
-        if (ecs.GetSystem<HID>()->is_action_just_pressed("play_sound")) {
-            ecs.GetSystem<AudioSystem>()->playSound(sound);
+        if (ecs->GetSystem<HID>()->is_action_just_pressed("play_sound")) {
+            ecs->GetSystem<AudioSystem>()->playSound(sound);
         }
 
         std::string hintText = "";
@@ -1378,6 +935,28 @@ int main(int, char**)
                     else if (slot.occupant != nullptr)
                         hintText = "Pull out";
                 }
+                else if (machineSlotsMap.count(hit.hitObject)) {
+                    PuzzleSlot& slot = machineSlotsMap[hit.hitObject];
+                    if (slot.occupant != nullptr) {
+                        hintText = "Gear Inserted";
+                    }
+                    else if (p1HeldObject != nullptr && p1HeldObject->name.find("Gear") != std::string::npos) {
+                        hintText = "Insert Gear";
+                    }
+                    else {
+                        hintText = "Requires Gear";
+                    }
+                }
+                else if (hit.hitObject == machineStartButton) {
+                    bool allInserted = true;
+                    for (auto& [mSlotGO, mSlot] : machineSlotsMap) {
+                        if (mSlot.occupant == nullptr) { allInserted = false; break; }
+                    }
+
+                    if (isMachineFixed) hintText = "Machine Running";
+                    else if (allInserted) hintText = "Start Machine";
+                    else hintText = "Missing Gears";
+                }
                 else if (p1HeldObject != nullptr) {
                     hintText = "Drop";
                 }
@@ -1386,19 +965,23 @@ int main(int, char**)
                 else if (toiletDoorsMap.count(hit.hitObject))
                     hintText = toiletDoorsMap[hit.hitObject].isOpen ? "Close" : "Open";
                 else if (cabinetsMap.count(hit.hitObject))
-                    hintText = isCabinetButtonPushed ? "..." : "Open Cabinet";
+                    hintText = isCabinetButtonPushed ? "" : "Open Cabinet";
                 else if (majorDoors.count(hit.hitObject))
                     hintText = can_open_door_1 ? "Open" : "Unlock";
                 else if (pickupObjects.count(hit.hitObject)) {
                     bool isInSlot = false;
                     for (auto& [slotGO, slot] : puzzleSlotsMap)
                         if (slot.occupant == hit.hitObject) { isInSlot = true; break; }
-                    hintText = isInSlot ? "Pull out" : (hit.hitObject == p2HeldObject ? "Held by Player 2" : "Pick up");
+                    hintText = isInSlot ? "Pull out" : (hit.hitObject == p2HeldObject ? "" : "Pick up");
                 }
                 else if (hit.hitObject->name.find("Coffin") != std::string::npos)
                     hintText = "Pull Coffin";
+                else if (noteContents.count(hit.hitObject)) {
+                    hintText = "Read Note";
+                }
             }
-        } else if (p1HeldObject != nullptr) {
+        }
+        else if (p1HeldObject != nullptr) {
             hintText = "Drop";
         }
         player1InteractionInfo->text = hintText;
@@ -1414,6 +997,28 @@ int main(int, char**)
                     else if (slot.occupant != nullptr)
                         hintText2 = "Pull out";
                 }
+                else if (machineSlotsMap.count(hit.hitObject)) {
+                    PuzzleSlot& slot = machineSlotsMap[hit.hitObject];
+                    if (slot.occupant != nullptr) {
+                        hintText2 = "Gear Inserted";
+                    }
+                    else if (p2HeldObject != nullptr && p2HeldObject->name.find("Gear") != std::string::npos) {
+                        hintText2 = "Insert Gear";
+                    }
+                    else {
+                        hintText2 = "Requires Gear";
+                    }
+                }
+                else if (hit.hitObject == machineStartButton) {
+                    bool allInserted = true;
+                    for (auto& [mSlotGO, mSlot] : machineSlotsMap) {
+                        if (mSlot.occupant == nullptr) { allInserted = false; break; }
+                    }
+
+                    if (isMachineFixed) hintText2 = "Machine Running";
+                    else if (allInserted) hintText2 = "Start Machine";
+                    else hintText2 = "Missing Gears";
+                }
                 else if (p2HeldObject != nullptr) {
                     hintText2 = "Drop";
                 }
@@ -1422,19 +1027,23 @@ int main(int, char**)
                 else if (toiletDoorsMap.count(hit.hitObject))
                     hintText2 = toiletDoorsMap[hit.hitObject].isOpen ? "Close" : "Open";
                 else if (cabinetsMap.count(hit.hitObject))
-                    hintText2 = isCabinetButtonPushed ? "..." : "Open Cabinet";
+                    hintText2 = isCabinetButtonPushed ? "" : "Open Cabinet";
                 else if (majorDoors.count(hit.hitObject))
                     hintText2 = can_open_door_1 ? "Open" : "Unlock";
                 else if (pickupObjects.count(hit.hitObject)) {
                     bool isInSlot = false;
                     for (auto& [slotGO, slot] : puzzleSlotsMap)
                         if (slot.occupant == hit.hitObject) { isInSlot = true; break; }
-                    hintText2 = isInSlot ? "Pull out" : (hit.hitObject == p1HeldObject ? "Held by Player 1" : "Pick up");
+                    hintText2 = isInSlot ? "Pull out" : (hit.hitObject == p1HeldObject ? "" : "Pick up");
                 }
                 else if (hit.hitObject->name.find("Coffin") != std::string::npos)
                     hintText2 = "Pull Coffin";
+                else if (noteContents.count(hit.hitObject)) {
+                    hintText2 = "Read Note";
+                }
             }
-        } else if (p2HeldObject != nullptr) {
+        }
+        else if (p2HeldObject != nullptr) {
             hintText2 = "Drop";
         }
         player2InteractionInfo->text = hintText2;
@@ -1467,38 +1076,90 @@ int main(int, char**)
             else ++it;
         }
 
-        HandlePlayerInteraction(ecs, "interact_p1", player1Raycast, camera1, p1HeldObject, p2HeldObject, scena1, rotatingObjects, rotatingInProgress, p1ShakeTimer, p1Animator, postacGracza.get());
-        HandlePlayerInteraction(ecs, "interact_p2", player2Raycast, camera2, p2HeldObject, p1HeldObject, scena1, rotatingObjects, rotatingInProgress, p2ShakeTimer, p2Animator, postacGracza.get());
+        if (focused) {
+            if (ecs->GetSystem<HID>()->is_action_just_pressed("interact_p1")) {
+                if (p1IsReading) {
+                    p1IsReading = false;
+                    p1NoteUI->isVisible = false;
+                    if (audioSys && sndLorePaper) audioSys->playSound(sndLorePaper);
+                }
+                else if (player1Raycast->anyHit()) {
+                    auto hit = player1Raycast->closestHit();
+                    if (hit.hitObject && noteContents.count(hit.hitObject)) {
+                        p1IsReading = true;
+                        p1NoteUI->text = noteContents[hit.hitObject];
+                        p1NoteUI->isVisible = true;
+                        if (audioSys && sndLorePaper) audioSys->playSound(sndLorePaper);
+                    }
+                }
+            }
 
-        HandleAltRotate(ecs, "alt_interact_p1", player1Raycast, rotatingObjects, rotatingInProgress);
-        HandleAltRotate(ecs, "alt_interact_p2", player2Raycast, rotatingObjects, rotatingInProgress);
+            if (!p1IsReading) {
+                HandlePlayerInteraction(*ecs, "interact_p1", player1Raycast, camera1, p1HeldObject, p2HeldObject, scena1, rotatingObjects, rotatingInProgress, p1ShakeTimer, p1Animator, postacGracza.get(), audioSys, sndPaperRoll, sndDoorOpen, sndDoorCloseStart, sndBtnClick, sound, sndPickup, sndInsert, sndDoorLocked, sndGear);
+                HandleAltRotate(*ecs, "alt_interact_p1", player1Raycast, rotatingObjects, rotatingInProgress, audioSys, sndPaperRoll);
+            }
 
-        // testy animacji
-        if (ecs.GetSystem<HID>()->is_action_just_pressed("anim_play_dying")) {
-            auto* clip = AnimationHelper::FindAnimation(dyingModelPrefab->rootModel->animations, "mixamo.com");
-            if (clip) {
-                AnimationHelper::Play(animator, clip, true, 1.0f);
-                spdlog::info("Odtworzono animacje umierania");
+            if (ecs->GetSystem<HID>()->is_action_just_pressed("interact_p2")) {
+                if (p2IsReading) {
+                    p2IsReading = false;
+                    p2NoteUI->isVisible = false;
+                    if (audioSys && sndLorePaper) audioSys->playSound(sndLorePaper);
+                }
+                else if (player2Raycast->anyHit()) {
+                    auto hit = player2Raycast->closestHit();
+                    if (hit.hitObject && noteContents.count(hit.hitObject)) {
+                        p2IsReading = true;
+                        p2NoteUI->text = noteContents[hit.hitObject];
+                        p2NoteUI->isVisible = true;
+                        if (audioSys && sndLorePaper) audioSys->playSound(sndLorePaper);
+                    }
+                }
+            }
+
+            if (!p2IsReading) {
+                HandlePlayerInteraction(*ecs, "interact_p2", player2Raycast, camera2, p2HeldObject, p1HeldObject, scena1, rotatingObjects, rotatingInProgress, p2ShakeTimer, p2Animator, postacGracza.get(), audioSys, sndPaperRoll, sndDoorOpen, sndDoorCloseStart, sndBtnClick, sound, sndPickup, sndInsert, sndDoorLocked, sndGear);
+                HandleAltRotate(*ecs, "alt_interact_p2", player2Raycast, rotatingObjects, rotatingInProgress, audioSys, sndPaperRoll);
             }
         }
 
-        if (ecs.GetSystem<HID>()->is_action_just_pressed("anim_play_jump")) {
-            auto* clip = &jumpSkeletonPrefab->rootModel->animations[0];
-            if (clip) {
-                AnimationHelper::Play(animator, clip, true, 1.0f);
-                spdlog::info("Odtworzono animacje skoku");
+        auto updateHeldGear = [&](GameObject* heldObj) {
+            if (heldObj && heldObj->name.find("Gear") != std::string::npos) {
+                if (auto tr = heldObj->GetComponent<TransformComponent>()) {
+                    tr->position = gearHeldOffset;
+                    tr->rotation = gearHeldRotation;
+                    tr->isDirty = true;
+                }
             }
-        }
+            };
+        updateHeldGear(p1HeldObject);
+        updateHeldGear(p2HeldObject);
 
-        if (ecs.GetSystem<HID>()->is_action_pressed("anim_slow_mo")) {
-            animator->playbackSpeed = 0.5f;
-        }
-        else if (ecs.GetSystem<HID>()->is_action_pressed("anim_fast_forward")) {
-            animator->playbackSpeed = 2.0f;
-        }
-        else {
-            animator->playbackSpeed = 1.0f;
-        }
+        //// testy animacji
+        //if (ecs->GetSystem<HID>()->is_action_just_pressed("anim_play_dying")) {
+        //    auto* clip = AnimationHelper::FindAnimation(dyingModelPrefab->rootModel->animations, "mixamo.com");
+        //    if (clip) {
+        //        AnimationHelper::Play(animator, clip, true, 1.0f);
+        //        spdlog::info("Odtworzono animacje umierania");
+        //    }
+        //}
+
+        //if (ecs->GetSystem<HID>()->is_action_just_pressed("anim_play_jump")) {
+        //    auto* clip = &jumpSkeletonPrefab->rootModel->animations[0];
+        //    if (clip) {
+        //        AnimationHelper::Play(animator, clip, true, 1.0f);
+        //        spdlog::info("Odtworzono animacje skoku");
+        //    }
+        //}
+
+        //if (ecs->GetSystem<HID>()->is_action_pressed("anim_slow_mo")) {
+        //    animator->playbackSpeed = 0.5f;
+        //}
+        //else if (ecs->GetSystem<HID>()->is_action_pressed("anim_fast_forward")) {
+        //    animator->playbackSpeed = 2.0f;
+        //}
+        //else {
+        //    animator->playbackSpeed = 1.0f;
+        //}
 
         input();
 
@@ -1506,13 +1167,16 @@ int main(int, char**)
         bool p2IsMoving = false;
 
         if (focused) {
-            p1IsMoving |= processCameraInput(ecs, *camCompLeft, *t0, "move_up", "move_down", "move_left", "move_right");
-            p2IsMoving |= processCameraInput(ecs, *camCompRight, *t1, "move_up_2", "move_down_2", "move_left_2", "move_right_2");
+            if (!p1IsReading) {
+                p1IsMoving |= processCameraInput(*ecs, *camCompLeft, *t0, "move_up", "move_down", "move_left", "move_right");
+                processCameraMouse(*ecs, *camCompLeft, *camTransform1, *t0);
+                p1IsMoving |= processCameraGamepad(*ecs, *camCompLeft, *camTransform1, *t0, 0);
+            }
 
-            processCameraMouse(ecs, *camCompLeft, *camTransform1, *t0);
-
-            p1IsMoving |= processCameraGamepad(ecs, *camCompLeft, *camTransform1, *t0, 0);
-            p2IsMoving |= processCameraGamepad(ecs, *camCompRight,*camTransform2, *t1, 1);
+            if (!p2IsReading) {
+                p2IsMoving |= processCameraInput(*ecs, *camCompRight, *t1, "move_up_2", "move_down_2", "move_left_2", "move_right_2");
+                p2IsMoving |= processCameraGamepad(*ecs, *camCompRight, *camTransform2, *t1, 1);
+            }
         }
 
         bool p1IsHolding = (p1HeldObject != nullptr);
@@ -1528,10 +1192,11 @@ int main(int, char**)
             float t = currentFrame * 40.0f;
             float strength = 6.0f;
             player1InteractionInfo->screenPosition = p1BasePos + glm::vec2(
-                sin(t)        * strength,
+                sin(t) * strength,
                 sin(t * 1.3f) * strength * 0.5f
             );
-        } else {
+        }
+        else {
             player1InteractionInfo->screenPosition = p1BasePos;
         }
 
@@ -1542,7 +1207,8 @@ int main(int, char**)
                 sin(t + 1.0f) * strength,
                 sin(t * 1.3f + 1.0f) * strength * 0.5f
             );
-        } else {
+        }
+        else {
             player2InteractionInfo->screenPosition = p2BasePos;
         }
 
@@ -1552,24 +1218,29 @@ int main(int, char**)
             auto hit = player1Raycast->closestHit();
             if (hit.hitObject &&
                 (rotatableObjects.count(hit.hitObject) ||
-                 toiletDoorsMap.count(hit.hitObject)   ||
-                 cabinetsMap.count(hit.hitObject)       ||
-                 majorDoors.count(hit.hitObject)        ||
-                 pickupObjects.count(hit.hitObject)     ||
-                 hit.hitObject->name.find("Coffin") != std::string::npos ||
-                 (puzzleSlotsMap.count(hit.hitObject) && puzzleSlotsMap[hit.hitObject].occupant != nullptr)))
-                            p1Int = 1.0f;
+                    toiletDoorsMap.count(hit.hitObject) ||
+                    cabinetsMap.count(hit.hitObject) ||
+                    majorDoors.count(hit.hitObject) ||
+                    pickupObjects.count(hit.hitObject) ||
+                    hit.hitObject->name.find("Coffin") != std::string::npos ||
+                    (puzzleSlotsMap.count(hit.hitObject) && puzzleSlotsMap[hit.hitObject].occupant != nullptr) ||
+                    machineSlotsMap.count(hit.hitObject) ||
+                    hit.hitObject == machineStartButton))
+                p1Int = 1.0f;
         }
         if (player2Raycast->anyHit()) {
             auto hit = player2Raycast->closestHit();
             if (hit.hitObject &&
-                 (rotatableObjects.count(hit.hitObject) ||
-                 toiletDoorsMap.count(hit.hitObject)   ||
-                 cabinetsMap.count(hit.hitObject)       ||
-                 majorDoors.count(hit.hitObject)        ||
-                 pickupObjects.count(hit.hitObject)     ||
-                 (puzzleSlotsMap.count(hit.hitObject) && puzzleSlotsMap[hit.hitObject].occupant != nullptr)))
-                            p2Int = 1.0f;
+                (rotatableObjects.count(hit.hitObject) ||
+                    toiletDoorsMap.count(hit.hitObject) ||
+                    cabinetsMap.count(hit.hitObject) ||
+                    majorDoors.count(hit.hitObject) ||
+                    pickupObjects.count(hit.hitObject) ||
+                    hit.hitObject->name.find("Coffin") != std::string::npos ||
+                    (puzzleSlotsMap.count(hit.hitObject) && puzzleSlotsMap[hit.hitObject].occupant != nullptr) ||
+                    machineSlotsMap.count(hit.hitObject) ||
+                    hit.hitObject == machineStartButton))
+                p1Int = 1.0f;
         }
 
         float chLerpSpeed = 10.0f;
@@ -1583,7 +1254,60 @@ int main(int, char**)
 
         auto logicStart = std::chrono::high_resolution_clock::now();
         crematoriumPuzzle.Update(deltaTime);
+
+        if (crematoriumPuzzle.isPuzzleSolved && !isCrematoriumGearSpawned) {
+            SpawnGearReward(scena1, glm::vec3(175.0f, 8.0f, -255.0f), "Gear_Crematorium");
+
+            if (audioSys && sndGear) {
+                audioSys->playSound(sndGear);
+            }
+
+            isCrematoriumGearSpawned = true;
+        }
+
+        if (isMachineFixed) {
+            float baseSpeed = 100.0f * deltaTime;
+
+            for (auto& [mSlotGO, mSlot] : machineSlotsMap) {
+                if (mSlot.occupant != nullptr) {
+                    if (auto tr = mSlot.occupant->GetComponent<TransformComponent>()) {
+
+                        float dir = 1.0f;
+                        if (mSlotGO->name == "MachineSlot_3") dir = -1.0f;
+
+                        tr->rotation.x += baseSpeed * dir;
+                        tr->isDirty = true;
+                    }
+                }
+            }
+
+            if (fixedGear1) {
+                if (auto tr = fixedGear1->GetComponent<TransformComponent>()) {
+                    tr->rotation.x += baseSpeed * 1.0f;
+                    tr->isDirty = true;
+                }
+            }
+
+            if (fixedGear2) {
+                if (auto tr = fixedGear2->GetComponent<TransformComponent>()) {
+                    tr->rotation.x += baseSpeed * -1.0f;
+                    tr->isDirty = true;
+                }
+            }
+        }
+
+        TransformGizmo::UpdateAndDraw(
+    selectedGameObject,
+    *camCompLeft, *camTransform1,
+    window, focused,
+    display_w, display_h
+);
         sceneManager.Update(deltaTime);
+
+        if (audioSys) {
+            audioSys->Update(*ecs, deltaTime);
+        }
+
         update();
         auto logicEnd = std::chrono::high_resolution_clock::now();
 
@@ -1591,15 +1315,16 @@ int main(int, char**)
         imgui_render(sceneManager);
         imgui_end();
 
+
         cpuTimer.stop();
 
         float cpuFrameTime = cpuTimer.getMilliseconds();
-        float logicTime    = std::chrono::duration<float, std::milli>(logicEnd    - logicStart).count();
-        float inputTime    = std::chrono::duration<float, std::milli>(inputEnd    - inputStart).count();
+        float logicTime = std::chrono::duration<float, std::milli>(logicEnd - logicStart).count();
+        float inputTime = std::chrono::duration<float, std::milli>(inputEnd - inputStart).count();
 
         perf.cpuFrameTime = cpuFrameTime;
-        perf.logicTime    = logicTime;
-        perf.inputTime    = inputTime;
+        perf.logicTime = logicTime;
+        perf.inputTime = inputTime;
 
         end_frame();
     }
@@ -1711,384 +1436,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
 }
 
-void imgui_begin()
-{
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
-}
-
-GameObject* selectedGameObject = nullptr;
-
-
-void ShowGameObjectTree(GameObject* obj)
-{
-    if (!obj) return;
-
-    ImGuiTreeNodeFlags flags =
-        ImGuiTreeNodeFlags_OpenOnArrow |
-        ImGuiTreeNodeFlags_OpenOnDoubleClick |
-        ((obj == selectedGameObject) ? ImGuiTreeNodeFlags_Selected : 0);
-
-    const char* displayName = obj->name.empty() ? "GameObject" : obj->name.c_str();
-
-    if (!obj->HasChildren())
-        flags |= ImGuiTreeNodeFlags_Leaf;
-
-    bool opened = ImGui::TreeNodeEx((void*)obj, flags, "%s", displayName);
-
-    if (ImGui::IsItemClicked())
-        selectedGameObject = obj;
-
-    if (opened) {
-        for (GameObject* child : obj->GetChildren())
-            ShowGameObjectTree(child);
-        ImGui::TreePop();
-    }
-}
-
-void ShowTransformEditor(TransformComponent& transform)
-{
-    glm::vec3 pos   = TransformHelper::getLocalPosition(transform);
-    glm::vec3 rot   = TransformHelper::getLocalRotation(transform);
-    glm::vec3 scale = TransformHelper::getLocalScale(transform);
-
-    if (ImGui::DragFloat3("Position", &pos.x, 0.01f))
-        TransformHelper::setLocalPosition(transform, pos);
-
-    if (ImGui::DragFloat3("Rotation", &rot.x, 0.1f))
-        TransformHelper::setLocalRotation(transform, rot);
-
-    if (ImGui::DragFloat3("Scale", &scale.x, 0.01f, 0.01f))
-        TransformHelper::setLocalScale(transform, scale);
-}
-
-void ShowRigidbodyEditor(RigidbodyComponent& rb)
-{
-    ImGui::Text("Rigidbody");
-
-    ImGui::DragFloat("Mass", &rb.mass, 0.01f, 0.0f, 1000.0f);
-    ImGui::DragFloat("Bounce", &rb.bounce, 0.01f, 0.0f, 1.0f);
-    ImGui::DragFloat("Angular Damping", &rb.angularDamping, 0.01f, 0.0f, 1.0f);
-
-    ImGui::Separator();
-    ImGui::Checkbox("Use Gravity", &rb.useGravity);
-    ImGui::Checkbox("Is Static", &rb.isStatic);
-
-    ImGui::Separator();
-    ImGui::DragFloat3("Velocity", &rb.velocity.x, 0.01f);
-    ImGui::DragFloat3("Acceleration", &rb.acceleration.x, 0.01f);
-    ImGui::DragFloat3("Angular Velocity", &rb.angularVelocity.x, 0.01f);
-    ImGui::DragFloat3("Torque", &rb.torque.x, 0.01f);
-
-    ImGui::Separator();
-    ImGui::BeginDisabled();
-    ImGui::DragFloat3("Physics Position", &rb.physicsPosition.x, 0.01f);
-    ImGui::DragFloat3("Previous Position", &rb.previousPosition.x, 0.01f);
-    ImGui::EndDisabled();
-
-    if (ImGui::Button("Reset Velocity")) {
-        rb.velocity = glm::vec3(0.0f);
-        rb.angularVelocity = glm::vec3(0.0f);
-        rb.torque = glm::vec3(0.0f);
-        rb.acceleration = glm::vec3(0.0f);
-    }
-}
-
-void ShowColliderEditor(ColliderComponent& col)
-{
-    ImGui::Text("Collider");
-    ImGui::DragFloat3("Offset", &col.offset.x, 0.01f);
-    ImGui::DragFloat3("HalfSize", &col.halfSize.x, 0.01f, 0.0f);
-    ImGui::Checkbox("Is Trigger", &col.isTrigger);
-    ImGui::Checkbox("Affects NavMesh", &col.affectsNavMesh);
-    ImGui::Checkbox("Is Walkable", &col.isWalkable);
-}
-
-void ShowLightEditor(LightComponent& light)
-{
-    ImGui::Text("Light");
-    ImGui::Checkbox("Enabled", &light.isOn);
-
-    const char* lightTypes[] = { "Directional", "Point", "Spot" };
-    int currentType = static_cast<int>(light.type);
-    if (ImGui::Combo("Type", &currentType, lightTypes, IM_ARRAYSIZE(lightTypes)))
-        light.type = static_cast<LightType>(currentType);
-
-    ImGui::Separator();
-    ImGui::ColorEdit3("Ambient",  &light.ambient.x);
-    ImGui::ColorEdit3("Diffuse",  &light.diffuse.x);
-    ImGui::ColorEdit3("Specular", &light.specular.x);
-    ImGui::DragFloat("Intensity", &light.intensity, 0.001f, 0.0f, 1000.0f);
-    ImGui::Separator();
-
-    if (light.type == Point || light.type == Spot) {
-        ImGui::Text("Attenuation");
-        ImGui::DragFloat("Constant",  &light.constant,  0.001f, 0.0f, 10.0f);
-        ImGui::DragFloat("Linear",    &light.linear,    0.001f, 0.0f, 10.0f);
-        ImGui::DragFloat("Quadratic", &light.quadratic, 0.001f, 0.0f, 10.0f);
-        ImGui::DragFloat("Range", &light.range, 0.001f, 0.0f, 1000.0f);
-    }
-
-    if (light.type == Spot) {
-        ImGui::Separator();
-        ImGui::Text("Spotlight");
-
-        float innerAngle = glm::degrees(glm::acos(light.cutOff));
-        float outerAngle = glm::degrees(glm::acos(light.outerCutOff));
-
-        if (ImGui::DragFloat("Inner Cutoff", &innerAngle, 0.1f, 0.0f, 90.0f))
-            light.cutOff = glm::cos(glm::radians(innerAngle));
-
-        if (ImGui::DragFloat("Outer Cutoff", &outerAngle, 0.1f, 0.0f, 90.0f))
-            light.outerCutOff = glm::cos(glm::radians(outerAngle));
-    }
-}
-
-std::string OpenFileDialog()
-{
-    char filename[MAX_PATH] = "";
-
-    OPENFILENAMEA ofn   = {};
-    ofn.lStructSize     = sizeof(OPENFILENAMEA);
-    ofn.lpstrFile       = filename;
-    ofn.nMaxFile        = MAX_PATH;
-    ofn.lpstrInitialDir = "res";
-    ofn.lpstrFilter     =
-        "Model Files\0*.obj;*.fbx;*.glb;*.gltf\0"
-        "All Files\0*.*\0";
-    ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
-
-    if (GetOpenFileNameA(&ofn)) {
-        std::filesystem::path fullPath    = filename;
-        std::filesystem::path projectRoot = std::filesystem::absolute("../../");
-        std::filesystem::path relative    = std::filesystem::relative(fullPath, projectRoot);
-        std::string result                = relative.string();
-        std::replace(result.begin(), result.end(), '\\', '/');
-        return result;
-    }
-    return "";
-}
-
-static std::unordered_map<std::string, Prefab> prefabs;
-
-void imgui_render(SceneManager& sceneManager)
-{
-    if (show_demo_window) { }
-
-    ImGui::Begin("Hello, world!");
-
-    if (ImGui::Button(wireframeMode ? "Switch to Fill Mode" : "Switch to Wireframe")) {
-        wireframeMode = !wireframeMode;
-        glPolygonMode(GL_FRONT_AND_BACK, wireframeMode ? GL_LINE : GL_FILL);
-    }
-
-    ImGui::Separator();
-    ImGui::Text("Ambient");
-    ImGui::DragFloat("Ambient strength", &renderSystem->ambientStrength, 0.000001f, 0.0f, 1.0f, "%.6f");
-    ImGui::Separator();
-    ImGui::Text("Hierarchy");
-    ShowGameObjectTree(sceneManager.GetActiveScene()->GetRoot());
-
-    if (selectedGameObject) {
-        ImGui::Separator();
-        ImGui::Text("Selected Entity: %s", selectedGameObject->name.c_str());
-        ShowTransformEditor(*selectedGameObject->GetComponent<TransformComponent>());
-
-        RigidbodyComponent* rb = selectedGameObject->GetComponent<RigidbodyComponent>();
-        if (rb != nullptr)
-            ShowRigidbodyEditor(*rb);
-
-        ColliderComponent* col = selectedGameObject->GetComponent<ColliderComponent>();
-        if (col != nullptr)
-            ShowColliderEditor(*col);
-
-        LightComponent* light = selectedGameObject->GetComponent<LightComponent>();
-        if (light != nullptr)
-            ShowLightEditor(*light);
-    }
-
-    if (ImGui::Button("Zapisz"))
-        sceneManager.Save();
-
-    ImGui::Separator();
-
-    Scene& scene = *sceneManager.GetActiveScene();
-
-    for (auto& [name, weakModel] : ResourceManager::Models) {
-        ImGui::PushID(name.c_str());
-        std::shared_ptr<Model> model = weakModel;
-        ImGui::Text("%s", name.c_str());
-        ImGui::SameLine();
-
-        if (!model) {
-            ImGui::TextDisabled("[loading]");
-        }
-        else {
-            if (!prefabs.contains(name))
-                prefabs.emplace(name, Prefab(model));
-
-            if (ImGui::Button("Instantiate")) {
-                Prefab& prefab = prefabs.at(name);
-                GameObject* obj = prefab.Instantiate(scene, nullptr, nullptr);
-                if (obj) obj->name = name;
-            }
-        }
-        ImGui::PopID();
-    }
-
-    ImGui::End();
-
-
-
-    ImGui::Begin("Loaded Models");
-
-    if (ImGui::Button("Load Model")) {
-        std::string path = OpenFileDialog();
-        if (!path.empty())
-            ResourceManager::LoadModel(path);
-    }
-
-    if (ImGui::Button("Load asset")) {
-        std::string path = "assets.yaml";
-        ResourceManager::LoadAssets(path);
-    }
-
-    if (ImGui::Button("Zapisz asset"))
-        ResourceManager::SaveAsset();
-
-    ImGui::Separator();
-
-    for (const auto& [name, weakModel] : ResourceManager::Models)
-        ImGui::Text("%s", name.c_str());
-
-    ImGui::End();
-
-    if (ImGui::Begin("Debug hizTexture")) {
-        auto system = sceneManager.GetActiveScene()->GetECS().GetSystem<RenderSystem>();
-        static int debugMip = 0;
-        ImGui::SliderInt("Mip", &debugMip, 0, 10);
-        int i = 0;
-        for (auto& [cam, hiz] : system->cameraHiZ) {
-            ImGui::Text("Kamera %d", i++);
-            if (hiz.hizTexture != 0)
-                system->ShowR32FTextureImGui(hiz.hizTexture, debugMip);
-        }
-    }
-    ImGui::End();
-
-    // Osobno — cały ImGui
-    //static int debugMip = 0;
-    //ImGui::Begin("HiZ Debug Controls");
-    //auto* renderer = system->drivenManager.GetRenderer(0);
-    //ImGui::SliderInt("Mip", &debugMip, 0, renderer->hizMipLevels - 1);
-    //ImGui::End();
-
-    //// Pobierz renderer żeby wywołać debug
-    //if (renderer) renderer->DebugShowHiZ(debugMip);
-
-    ImGui::Begin("Performance");
-
-    ImGui::Text("FPS: %.1f",        ImGui::GetIO().Framerate);
-    ImGui::Text("Frame time: %.3f ms", 1000.0f / ImGui::GetIO().Framerate);
-
-    static bool vsyncEnabled = true;
-    if (ImGui::Checkbox("VSync", &vsyncEnabled))
-    {
-        glfwSwapInterval(vsyncEnabled ? 1 : 0);
-    }
-
-    if (ImGui::CollapsingHeader("CPU")) {
-        ImGui::Text("Total CPU: %.3f ms", perf.cpuFrameTime);
-        ImGui::Text("Input:     %.3f ms", perf.inputTime);
-        ImGui::Text("Logic:     %.3f ms", perf.logicTime);
-        ImGui::Text("Culling:   %.3f ms", renderSystem->stats.cullingTimeMs);
-        ImGui::Text("Draw prep: %.3f ms", renderSystem->stats.drawSubmitTimeMs);
-    }
-    if (ImGui::CollapsingHeader("GPU")) {
-        ImGui::Text("GPU Frame: %.3f ms", renderSystem->gpuQuery.getLastResult());
-    }
-    if (ImGui::CollapsingHeader("Render Stats")) {
-        ImGui::Text("Draw calls:    %d", renderSystem->stats.drawCalls);
-        ImGui::Text("Objects:       %d", renderSystem->stats.renderedObjects);
-        ImGui::Text("Triangles:     %d", renderSystem->stats.triangles);
-        ImGui::Text("State changes: %d", renderSystem->stats.stateChanges);
-    }
-    if (ImGui::CollapsingHeader("Culling")) {
-        ImGui::Checkbox("Frustum culling",   &renderSystem->frustumCullingEnabled);
-        ImGui::Checkbox("Occlusion culling", &renderSystem->occlusionCullingEnabled);
-        ImGui::Text("Frustum culled:   %d", renderSystem->stats.frustumCulledSet.size());
-        ImGui::Text("Occlusion culled: %d", renderSystem->stats.occlusionCulledSet.size());
-    }
-    ImGui::PlotLines("Frame time", frameTimes, MAX_SAMPLES, index,
-        nullptr, 0.0f, 1.0f, ImVec2(0, 60));
-
-    ImGui::End();
-
-    ImGui::Begin("Puzzle Debug");
-
-    if (puzzleSlotsMap.empty()) {
-        ImGui::TextColored(ImVec4(1,1,0,1), "Brak slotów puzzle");
-    } else {
-        int i = 0;
-        for (auto& [slotGO, slot] : puzzleSlotsMap) {
-            ImGui::PushID(i++);
-
-            std::string slotName = slotGO ? slotGO->name : "???";
-            std::string expectedName = slot.expectedObject ? slot.expectedObject->name : "???";
-            std::string occupantName = slot.occupant       ? slot.occupant->name       : "(pusty)";
-
-            bool isEmpty   = (slot.occupant == nullptr);
-            bool isCorrect = (!isEmpty && slot.occupant == slot.expectedObject);
-
-            // Kolor: zielony = dobry, czerwony = zły, szary = pusty
-            ImVec4 color = isEmpty
-                ? ImVec4(0.5f, 0.5f, 0.5f, 1.0f)   // szary
-                : isCorrect
-                    ? ImVec4(0.0f, 1.0f, 0.0f, 1.0f) // zielony
-                    : ImVec4(1.0f, 0.3f, 0.3f, 1.0f); // czerwony
-
-            const char* status = isEmpty ? "[PUSTY]" : isCorrect ? "[OK]" : "[ZLE]";
-
-            ImGui::TextColored(color, "%s  Slot: %-20s  Oczekiwany: %-10s  Aktualny: %-10s",
-                status,
-                slotName.c_str(),
-                expectedName.c_str(),
-                occupantName.c_str()
-            );
-
-            ImGui::PopID();
-        }
-
-        ImGui::Separator();
-
-        // Podsumowanie
-        int correct = 0, filled = 0;
-        for (auto& [slotGO, slot] : puzzleSlotsMap) {
-            if (slot.occupant != nullptr) filled++;
-            if (slot.occupant != nullptr && slot.occupant == slot.expectedObject) correct++;
-        }
-        int total = (int)puzzleSlotsMap.size();
-
-        ImGui::Text("Wypełnione: %d / %d", filled, total);
-        ImGui::Text("Poprawne:   %d / %d", correct, total);
-
-        if (correct == total)
-            ImGui::TextColored(ImVec4(0,1,0,1), ">> PUZZLE ROZWIAZANY! <<");
-    }
-
-    ImGui::End();
-}
-
-void imgui_end()
-{
-    ImGui::Render();
-    int display_w, display_h;
-    glfwMakeContextCurrent(window);
-    glfwGetFramebufferSize(window, &display_w, &display_h);
-    glViewport(0, 0, display_w, display_h);
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-}
+#include "impl/main/imgui.ipp"
 
 void end_frame()
 {
@@ -2098,20 +1446,20 @@ void end_frame()
 }
 
 
-void addAllSystems(ECS& ecs) {
-    ecs.AddSystem<TransformSystem>(ecs);
-    ecs.AddSystem<PhysicsSystem>(ecs);
-    ecs.AddSystem<AnimationSystem>(ecs);
-    ecs.AddSystem<RenderSystem>(ecs, window);
-    ecs.AddSystem<HID>(ecs, window);
-    ecs.AddSystem<PostProcessingSystem>(ecs, window);
-    ecs.AddSystem<SpriteSystem>(ecs, window);
-    ecs.AddSystem<RaycastSystem>(ecs);
-    ecs.AddSystem<NavMeshBenchmarkSystem>(ecs);
-    ecs.AddSystem<NavPathSystem>(ecs);
-    ecs.AddSystem<AudioSystem>(ecs);
-    ecs.AddSystem<NpcSystem>(ecs);
-}
+//void addAllSystems(ECS& ecs) {
+//    ecs.AddSystem<TransformSystem>(ecs);
+//    ecs.AddSystem<PhysicsSystem>(ecs);
+//    ecs.AddSystem<AnimationSystem>(ecs);
+//    ecs.AddSystem<RenderSystem>(ecs, window);
+//    ecs.AddSystem<HID>(ecs, window);
+//    ecs.AddSystem<PostProcessingSystem>(ecs, window);
+//    ecs.AddSystem<SpriteSystem>(ecs, window);
+//    ecs.AddSystem<RaycastSystem>(ecs);
+//    ecs.AddSystem<NavMeshSystem>(ecs);
+//    ecs.AddSystem<NavPathSystem>(ecs);
+//    ecs.AddSystem<AudioSystem>(ecs);
+//    ecs.AddSystem<NpcSystem>(ecs);
+//}
 
 void LoadPlayerAnimations() {
     spdlog::info("Mapowanie animacji z pojedynczego pliku .glb gracza...");
@@ -2162,767 +1510,4 @@ void LoadPlayerAnimations() {
     findAndMap("interaction", 6, "idle");
 }
 
-void connectAllModels() {
-    bed1Model        = std::make_unique<Prefab>("res/models/bed.glb");
-    bed2Model        = std::make_unique<Prefab>("res/models/bed2.glb");
-    bed3Model        = std::make_unique<Prefab>("res/models/bed3.glb");
-    placeholderModel = std::make_unique<Prefab>("res/models/placeholder.glb");
-    sinkModel        = std::make_unique<Prefab>("res/models/sink_2.glb");
-    toiletModel      = std::make_unique<Prefab>("res/models/toilet_f.glb");
-    doorsToiletModel = std::make_unique<Prefab>("res/models/doors_toliet_tex6.glb");
-    toiletPaperRedModel = std::make_unique<Prefab>("res/models/papier_czerwony.glb");
-    toiletPaperGreenModel = std::make_unique<Prefab>("res/models/papier_zielony.glb");
-    toiletPaperBlueModel = std::make_unique<Prefab>("res/models/papier_niebieski.glb");
-    mirrorModel1     = std::make_unique<Prefab>("res/models/glass1_v2.glb");
-    mirrorModel2     = std::make_unique<Prefab>("res/models/lustro_puste.glb");
-    mirrorModel3     = std::make_unique<Prefab>("res/models/glass2_v2.glb");
-    mirrorModel4     = std::make_unique<Prefab>("res/models/glass3_v2.glb");
-    washroomExit     = std::make_unique<Prefab>("res/models/door_other_2.glb");
-    urinModel        = std::make_unique<Prefab>("res/models/uniral_v2.glb");
-    NormalDoor       = std::make_unique<Prefab>("res/models/doors.glb");
-    szafkaModel      = std::make_unique<Prefab>("res/models/szafka_pop_main.glb");
-    ruraModel        = std::make_unique<Prefab>("res/models/placeholder_rura_wysuwana.glb");
-    panelModel       = std::make_unique<Prefab>("res/models/Panel_5x5.glb");
-    puzel1       = std::make_unique<Prefab>("res/models/Puzel1.glb");
-    puzel2       = std::make_unique<Prefab>("res/models/Puzel2.glb");
-    puzel3       = std::make_unique<Prefab>("res/models/Puzel3.glb");
-    puzel4       = std::make_unique<Prefab>("res/models/Puzel4.glb");
-    puzel5       = std::make_unique<Prefab>("res/models/Puzel5.glb");
-    puzel6       = std::make_unique<Prefab>("res/models/Puzel6.glb");
-
-    bossCapsuleModel       = std::make_unique<Prefab>("res/models/boss_capsule.glb");
-    kredensModel       = std::make_unique<Prefab>("res/models/kredens.glb");
-    eksp1Model = std::make_unique<Prefab>("res/models/eksp1.glb");
-    eksp2Model = std::make_unique<Prefab>("res/models/eksp2.glb");
-    fiolka1Model = std::make_unique<Prefab>("res/models/fiolka1.glb");
-    fiolka2Model = std::make_unique<Prefab>("res/models/fiolka2.glb");
-    ksiazkaModel = std::make_unique<Prefab>("res/models/ksiazka.glb");
-    probowka7Model = std::make_unique<Prefab>("res/models/probowka7.glb");
-    probowka6Model = std::make_unique<Prefab>("res/models/probowka6.glb");
-    probowka5Model = std::make_unique<Prefab>("res/models/probowka5.glb");
-    probowkaArka_1_Model = std::make_unique<Prefab>("res/models/probowka_1.glb");
-    probowka3Model = std::make_unique<Prefab>("res/models/probowka3.glb");
-    probowka4Model = std::make_unique<Prefab>("res/models/probowka4.glb");
-    labOla1Model = std::make_unique<Prefab>("res/models/lab_ola_1.glb");
-    probowka2Model = std::make_unique<Prefab>("res/models/probowka_2.glb");
-    folderModel = std::make_unique<Prefab>("res/models/folder.glb");
-    papersModel = std::make_unique<Prefab>("res/models/papers.glb");
-    cupModel = std::make_unique<Prefab>("res/models/cup.glb");
-    corkBoardModel = std::make_unique<Prefab>("res/models/cork_board.glb");
-    clockModel = std::make_unique<Prefab>("res/models/clock.glb");
-    computer_pbrModel = std::make_unique<Prefab>("res/models/computer_no_alpha.glb");
-    laboratoryStuff1Model = std::make_unique<Prefab>("res/models/laboratory_stuff_1.glb");
-    laboratoryStuff2Model = std::make_unique<Prefab>("res/models/laboratory_stuff_2.glb");
-    laboratoryStuff3Model = std::make_unique<Prefab>("res/models/laboratory_stuff_3.glb");
-
-    zielonaTablica = std::make_unique<Prefab>("res/models/ZielonaTablica.glb");
-    czerwonaTablica = std::make_unique<Prefab>("res/models/CzerwonaTablica.glb");
-    Rentgen = std::make_unique<Prefab>("res/models/Rentgen.glb");
-
-    cockroachModel   = std::make_unique<Prefab>("res/models/cockroach.glb");
-
-    bossModel = std::make_unique<Prefab>("res/models/demon_animations_with_textures.glb");
-    bossCapsuleModel = std::make_unique<Prefab>("res/models/boss_capsule.glb");
-}
-
-void createFirstRoom(Scene* scena1) {
-    floorModel = std::make_unique<Prefab>("res/models/number_floor.glb");
-    wallModel  = std::make_unique<Prefab>("res/models/wall.glb");
-    wallModel2 = std::make_unique<Prefab>("res/models/wall2.glb");
-    wallModel3 = std::make_unique<Prefab>("res/models/wall3.glb");
-
-    // Podloga i sufit
-    GameObject* floor = CreateStaticObject(scena1, floorModel.get(), nullptr,
-    "PodlogawLazience", glm::vec3(13.870, 0, -53.680), glm::vec3(37.600, 1, 45.000));
-    floor->GetComponent<ColliderComponent>()->isWalkable = true;
-    CreateStaticObject(scena1, floorModel.get(), nullptr, "SufitWKiblu",       glm::vec3(0, 20, 0),  glm::vec3(100, 1, 100), glm::vec3(0), glm::vec3(100, 1, 100));
-
-    // Sciany
-    CreateStaticObject(scena1, wallModel.get(),  nullptr, "ScianaTylnaKibel",           glm::vec3(0, 0, -10),    glm::vec3(50, 50, 1),  glm::vec3(0), glm::vec3(50, 50, 1));
-    CreateStaticObject(scena1, wallModel2.get(), nullptr, "ScianaKiblowa",              glm::vec3(50, 0, 0),     glm::vec3(100, 50, 1), glm::vec3(0,90,0), glm::vec3(1, 50, 100));
-    CreateStaticObject(scena1, wallModel2.get(), nullptr, "ScianaSinkowa",              glm::vec3(-25, 0, 0),    glm::vec3(100, 50, 1), glm::vec3(0,90,0), glm::vec3(1, 50, 100));
-    CreateStaticObject(scena1, wallModel.get(),  nullptr, "ScianaDrzwiDoMainRoomPrawa", glm::vec3(110, 0, -100), glm::vec3(100, 50, 1), glm::vec3(0), glm::vec3(100,50,1), true);
-    CreateStaticObject(scena1, wallModel.get(),  nullptr, "ScianaDrzwiDoMainRoomLewa",  glm::vec3(-110, 0, -100),glm::vec3(100, 50, 1), glm::vec3(0), glm::vec3(100,50,1), true);
-    CreateStaticObject(scena1, wallModel.get(),  nullptr, "GoraPrzejscieDoMainRoom",    glm::vec3(0, 70, -100),  glm::vec3(100, 50, 1), glm::vec3(0), glm::vec3(100,50,1), true);
-
-    // Kibel
-    GameObject* tablicaKibli[8];
-    for (int i = 0; i < 8; i++) {
-        if (i !=2 && i != 3) {
-            tablicaKibli[i] = toiletModel->Instantiate(*scena1, nullptr, nullptr);
-            tablicaKibli[i]->name = "Kibel" + std::to_string(i);
-            tablicaKibli[i]->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1.5, 1.5, 1.5 };
-            tablicaKibli[i]->AddComponent<ColliderComponent>();
-            tablicaKibli[i]->GetComponent<ColliderComponent>()->halfSize     = glm::vec3{ 2.5, 4, 2.5 };
-            tablicaKibli[i]->GetComponent<ColliderComponent>()->offset       = glm::vec3{ 0, 4, 0 };
-            tablicaKibli[i]->GetComponent<TransformComponent>()->position    = glm::vec3{ 45, 0.5f, -25 + (-10 * i) };
-            tablicaKibli[i]->GetComponent<TransformComponent>()->rotation    = glm::vec3{ 0, 90, 0 };
-            tablicaKibli[i]->GetComponent<ColliderComponent>()->isWalkable     = false;
-            tablicaKibli[i]->GetComponent<ColliderComponent>()->affectsNavMesh = true;
-        }
-
-        if (i == 2 || i == 3) {
-            tablicaKibli[i] = urinModel->Instantiate(*scena1, nullptr, nullptr);
-            tablicaKibli[i]->name = "Kibel" + std::to_string(i);
-            tablicaKibli[i]->GetComponent<TransformComponent>()->scale    = glm::vec3{ 12, 12, 12 };
-            tablicaKibli[i]->AddComponent<ColliderComponent>();
-            tablicaKibli[i]->GetComponent<ColliderComponent>()->halfSize     = glm::vec3{ 2.5, 4, 2.5 };
-            tablicaKibli[i]->GetComponent<ColliderComponent>()->offset       = glm::vec3{ 0, 4, 0 };
-            tablicaKibli[i]->GetComponent<TransformComponent>()->position    = glm::vec3{ 47.6, 2.0f, -25 + (-10 * i) };
-            tablicaKibli[i]->GetComponent<TransformComponent>()->rotation    = glm::vec3{ 0, 270, 0 };
-            tablicaKibli[i]->GetComponent<ColliderComponent>()->isWalkable     = false;
-            tablicaKibli[i]->GetComponent<ColliderComponent>()->affectsNavMesh = true;
-        }
-    }
-
-    // Zaslony
-    GameObject* tablicaZaslon[9];
-    for (int i = 0; i < 9; i++) {
-
-        tablicaZaslon[i] = wallModel3->Instantiate(*scena1, nullptr, nullptr);
-        tablicaZaslon[i]->GetComponent<TransformComponent>()->scale = glm::vec3{ 0.3, 30, 20 };
-        tablicaZaslon[i]->name = "Zaslona" + std::to_string(i);
-        tablicaZaslon[i]->AddComponent<ColliderComponent>();
-        tablicaZaslon[i]->GetComponent<ColliderComponent>()->halfSize     = glm::vec3{ 20, 15, 0.3 };
-        tablicaZaslon[i]->GetComponent<TransformComponent>()->position    = glm::vec3{ 50, 0, -20 + (-10 * i) };
-        tablicaZaslon[i]->GetComponent<ColliderComponent>()->isWalkable     = false;
-        tablicaZaslon[i]->GetComponent<ColliderComponent>()->affectsNavMesh = true;
-
-        if (i==3) {
-            tablicaZaslon[i]->GetComponent<TransformComponent>()->position    = glm::vec3{ 5000, 0, -20 + (-10 * i) };
-        }
-    }
-
-    // Drzwi do kibla
-    for (int i = 0; i < 8; i++) {
-        if (i != 2 && i != 3) {
-            glm::vec3 doorPos      = glm::vec3{ 30.0f, 6.0f, -24.65f + (-10.0f * i) };
-            glm::vec3 doorScale    = glm::vec3{ 11.0f, 10.0f, 16.0f };
-            glm::vec3 pivotOffset  = glm::vec3(0.2f, 0.0f, 3.8f);
-            glm::vec3 colliderSize = glm::vec3{ 0.9f, 10.0f, 4.5f };
-
-            GameObject* hinge = CreateInteractableDoor(
-                scena1, doorsToiletModel.get(), nullptr,
-                "ToiletDoor_" + std::to_string(i),
-                doorPos, doorScale, pivotOffset, colliderSize, 90.0f
-            );
-            unlockedDoors.insert(hinge);
-        }
-    }
-
-    // Papier toaletowy
-    for (int i = 0; i < 6; i++) {
-        if (i == 0 || i == 3)
-            tablicaPapierowKibel[i] = toiletPaperGreenModel->Instantiate(*scena1, nullptr, nullptr);
-        if (i == 1 || i == 5)
-            tablicaPapierowKibel[i] = toiletPaperRedModel->Instantiate(*scena1, nullptr, nullptr);
-        if (i == 2 || i == 4)
-            tablicaPapierowKibel[i] = toiletPaperBlueModel->Instantiate(*scena1, nullptr, nullptr);
-
-        tablicaKibli[i]->name = "PapierKibel" + std::to_string(i);
-        tablicaPapierowKibel[i]->GetComponent<TransformComponent>()->scale    = glm::vec3{ 2, 2, 2 };
-        tablicaPapierowKibel[i]->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 90, 0 };
-        tablicaPapierowKibel[i]->AddComponent<ColliderComponent>();
-        tablicaPapierowKibel[i]->GetComponent<TransformComponent>()->position   = glm::vec3{ 35, 5.0, -40.7 + (-10 * i) };
-        rotatableObjects.insert(tablicaPapierowKibel[i]);
-        if (i < 2) {
-            tablicaPapierowKibel[i]->GetComponent<TransformComponent>()->position   = glm::vec3{ 35, 5.0, -40.7 + (-10 * i) + 20 };
-        }
-    }
-
-    // Zlewy - pozycja X z MainRoomIPoprawkiModeli (-20.5)
-    GameObject* tablicaSink[8];
-    for (int i = 0; i < 8; i++) {
-        tablicaSink[i] = sinkModel->Instantiate(*scena1, nullptr, nullptr);
-        tablicaSink[i]->name = "Sink" + std::to_string(i);
-        tablicaSink[i]->GetComponent<TransformComponent>()->scale    = glm::vec3{ 3, 3, 3 };
-        tablicaSink[i]->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 90, 0 };
-        tablicaSink[i]->GetComponent<TransformComponent>()->position = glm::vec3{ -20.5, 6.0, -20 + (-10 * i) };
-        tablicaSink[i]->AddComponent<ColliderComponent>();
-    }
-
-    /*
-    // Urinary - 7 sztuk, uklad z mastera (poziomy, skala 12,12,12, obrot 180)
-    GameObject* tablicaurin[7];
-    for (int i = 0; i < 7; i++) {
-        tablicaurin[i] = urinModel->Instantiate(*scena1, nullptr, nullptr);
-        tablicaurin[i]->GetComponent<TransformComponent>()->scale    = glm::vec3{ 12, 12, 12 };
-        tablicaurin[i]->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 180, 0 };
-        tablicaurin[i]->AddComponent<RigidbodyComponent>();
-        tablicaurin[i]->AddComponent<ColliderComponent>();
-        tablicaurin[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
-        tablicaurin[i]->GetComponent<RigidbodyComponent>()->isStatic   = true;
-        tablicaurin[i]->GetComponent<ColliderComponent>()->halfSize     = glm::vec3{ 3, 20, 3 };
-        tablicaurin[i]->GetComponent<TransformComponent>()->position    = glm::vec3{ -17.5 + (10 * i), 2.0, -12.5 };
-    }*/
-
-    // Lustra 1-3
-    GameObject* lustro1 = mirrorModel1->Instantiate(*scena1, nullptr, nullptr);
-    lustro1->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1, 2, 8 };
-    lustro1->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, -180, 0 };
-    lustro1->AddComponent<ColliderComponent>();
-    lustro1->GetComponent<TransformComponent>()->position   = glm::vec3{ -23.5, 12.0, -25 + (-20 * 0) };
-
-    GameObject* lustro2 = mirrorModel2->Instantiate(*scena1, nullptr, nullptr);
-    lustro2->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1, 2, 8 };
-    lustro2->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, -180, 0 };
-    lustro2->AddComponent<ColliderComponent>();
-    lustro2->GetComponent<TransformComponent>()->position   = glm::vec3{ -23.5, 12.0, -25 + (-20 * 1) };
-
-    GameObject* lustro3 = mirrorModel3->Instantiate(*scena1, nullptr, nullptr);
-    lustro3->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1, 2, 8 };
-    lustro3->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, -180, 0 };
-    lustro3->AddComponent<ColliderComponent>();
-    lustro3->GetComponent<TransformComponent>()->position   = glm::vec3{ -23.5, 12.0, -25 + (-20 * 2) };
-
-    // Lustro 4 - dodane z mirrorModel4 (lustro_puste.glb)
-    GameObject* lustro4 = mirrorModel4->Instantiate(*scena1, nullptr, nullptr);
-    lustro4->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1, 2, 8 };
-    lustro4->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, -180, 0 };
-    lustro4->AddComponent<ColliderComponent>();
-    lustro4->GetComponent<TransformComponent>()->position   = glm::vec3{ -23.5, 12.0, -25 + (-20 * 3) };
-
-    // Drzwi wyjsciowe z lazienki (washroomExit)
-    GameObject* tablicaDrzwi[2];
-    for (int i = 0; i < 2; i++) {
-        tablicaDrzwi[i] = washroomExit->Instantiate(*scena1, nullptr, nullptr);
-        tablicaDrzwi[i]->GetComponent<TransformComponent>()->scale    = glm::vec3{ 10, 11, 10 };
-        tablicaDrzwi[i]->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 180 * i, 0 };
-        tablicaDrzwi[i]->AddComponent<ColliderComponent>();
-        tablicaDrzwi[i]->GetComponent<ColliderComponent>()->halfSize     = glm::vec3{ 5, 22, 1 };
-        tablicaDrzwi[i]->GetComponent<TransformComponent>()->position    = glm::vec3{ -5 + (10 * i), 0.0, -100 };
-        majorDoors.insert(tablicaDrzwi[i]);
-        tablicaDrzwi[i]->GetComponent<ColliderComponent>()->isWalkable     = false;
-        tablicaDrzwi[i]->GetComponent<ColliderComponent>()->affectsNavMesh = true;
-    }
-
-    // Kubek - kolider domyslny (bez jawnego halfSize)
-    GameObject* cup = cupModel->Instantiate(*scena1, nullptr, nullptr);
-    cup->name = "Magiczny_Kubek";
-
-    TransformComponent* cupTr = cup->GetComponent<TransformComponent>();
-    cupTr->position = glm::vec3{ 20.0f, 5.0f, -30.0f };
-    cupTr->scale    = glm::vec3{ 2, 2, 2 };
-
-    RigidbodyComponent* cupRb = cup->AddComponent<RigidbodyComponent>();
-    cupRb->useGravity = true;
-    cupRb->isStatic   = false;
-
-    cup->AddComponent<ColliderComponent>();
-
-    pickupObjects.insert(cup);
-}
-
-void createMainRooom(Scene* scena) {
-    // Podloga i sufit
-    CreateStaticObject(scena, floorModel.get(), nullptr, "PodlogaMainRoom", glm::vec3(0, 0, -158),  glm::vec3(60, 1, 60));
-    CreateStaticObject(scena, floorModel.get(), nullptr, "SufitMainRoom",   glm::vec3(0, 25, -200), glm::vec3(100, 1, 100), std::nullopt, glm::vec3(100, 1, 100));
-
-    // Sciany
-    CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaDoRentgenaPrawa",        glm::vec3(35, 0, -218),   glm::vec3(25, 50, 1));
-    CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaDoRentgenaLewa",         glm::vec3(-30, 0, -218),  glm::vec3(30, 50, 1));
-    CreateStaticObject(scena, wallModel2.get(), nullptr, "ScianaPrawaDoKrematorium",     glm::vec3(60, 0, -112),   glm::vec3(12, 50, 1), std::nullopt, glm::vec3(1, 50, 12));
-    CreateStaticObject(scena, wallModel2.get(), nullptr, "ScianaLewaDoKrematorium",      glm::vec3(60, 0, -177.2),   glm::vec3(41.79, 50, 1), std::nullopt, glm::vec3(1, 50, 41.79));
-    CreateStaticObject(scena, wallModel2.get(), nullptr, "ScianaPrawaWRentgenie",      glm::vec3(60, 0, -260.350),   glm::vec3(41.79, 50, 1), std::nullopt, glm::vec3(1, 50, 41.79));
-    CreateStaticObject(scena, wallModel2.get(), nullptr, "ScianaPrawaDoATOMU",           glm::vec3(-60, 0, -130),  glm::vec3(30, 50, 1), std::nullopt, glm::vec3(1, 50, 30));
-    CreateStaticObject(scena, wallModel2.get(), nullptr, "ScianaLewaDoATOMU",            glm::vec3(-60, 0, -235),  glm::vec3(65, 50, 1), std::nullopt, glm::vec3(1, 50, 65));
-
-    // Gora przejscia
-    CreateStaticObject(scena, wallModel.get(), nullptr, "GoraPrzejscieDoRentgena",              glm::vec3(0, 70, -218),   glm::vec3(100, 50, 1));
-    CreateStaticObject(scena, wallModel.get(), nullptr, "GoraPrzejscieDoKrematorium",           glm::vec3(60, 70, -218),  glm::vec3(100, 50, 1), glm::vec3(0, 90, 0));
-    CreateStaticObject(scena, wallModel.get(), nullptr, "GoraPrzejscieDoREAKTORAATOMOWEGO",     glm::vec3(-60, 70, -218), glm::vec3(100, 50, 1), glm::vec3(0, 90, 0));
-
-    glm::vec3 scaleDoors = glm::vec3(2.25, 2.2, 1);
-
-    GameObject* hingeKrematorium = CreateInteractableDoor(
-        scena, NormalDoor.get(), nullptr, "DrzwiDoKrematorium",
-        glm::vec3(59.850f, 3.000f, -131.060f), glm::vec3(2.5, 2.2, 1),
-        glm::vec3(0.0f, 0.0f, -5.0f), glm::vec3(0.8f, 20.0f, 5.0f), -90.0f, 90.0f
-    );
-    toiletDoorsMap[hingeKrematorium].canBeClicked = false;
-    mainRoomDoors.push_back(hingeKrematorium);
-
-    GameObject* hingeRentgen = CreateInteractableDoor(
-        scena, NormalDoor.get(), nullptr, "DrzwiDoRentgen",
-        glm::vec3(5.440f, 2.750f, -217.800f), scaleDoors,
-        glm::vec3(5.0f, 0.0f, 0.0f), glm::vec3(5.0f, 20.0f, 0.8f), 90.0f, 0.0f
-    );
-    toiletDoorsMap[hingeRentgen].canBeClicked = false;
-    mainRoomDoors.push_back(hingeRentgen);
-
-    GameObject* hingeATOM = CreateInteractableDoor(
-        scena, NormalDoor.get(), nullptr, "DrzwiDoATOMU",
-        glm::vec3(-60.440f, 2.750f, -165.180f), scaleDoors,
-        glm::vec3(0.0f, 0.0f, -5.0f), glm::vec3(0.8f, 20.0f, 5.0f), -90.0f, 90.0f
-    );
-    toiletDoorsMap[hingeATOM].canBeClicked = false;
-    mainRoomDoors.push_back(hingeATOM);
-
-    GameObject* szafkaObj = szafkaModel->Instantiate(*scena, nullptr, nullptr);
-    szafkaObj->name = "Szafka";
-
-    TransformComponent* szafkaTr = szafkaObj->GetComponent<TransformComponent>();
-    szafkaTr->position = glm::vec3{ 27.0f, 9.0f, -216.490f };
-    szafkaTr->scale    = glm::vec3{ 8.0f, 8.0f, 8.0f };
-    szafkaTr->rotation = glm::vec3{ 0.0f, -90.0f, 0.0f };
-
-    ColliderComponent* szafkaCol = szafkaObj->AddComponent<ColliderComponent>();
-    szafkaCol->affectsNavMesh = true;
-    szafkaCol->halfSize        = glm::vec3{ 10.0f, 8.0f, 3.0f };
-    szafkaCol->offset          = glm::vec3{ 2.0f, 6.0f, 0.0f };
-
-    CabinetState cabState;
-    szafkaObj->TraverseChildren([&](GameObject* go) {
-        if (go->name == "Left_Door")  cabState.leftDoor  = go;
-        if (go->name == "Right_Door") cabState.rightDoor = go;
-        if (go->name == "Guzik")      cabState.button    = go;
-    });
-
-    GameObject * bossCapsule = bossCapsuleModel->Instantiate(*scena, nullptr, nullptr);
-    bossCapsule->name = "BossCapsule";
-    bossCapsule->AddComponent<ColliderComponent>();
-    bossCapsule->GetComponent<TransformComponent>()->scale    = glm::vec3{ 2, 2, 2 };
-    bossCapsule->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -45.0f, 0.0f };
-    bossCapsule->GetComponent<TransformComponent>()->position = glm::vec3{51.58 ,5, -209.64f };
-    bossCapsule->GetComponent<ColliderComponent>()->halfSize    = glm::vec3{ 5.34, 5.34f, 5.34f };
-
-    CreateStaticObject(scena, kredensModel.get(), nullptr, "kredens1",     glm::vec3(56, 4.8, -176), glm::vec3(8, 8, 8), glm::vec3(0, -90, 0), glm::vec3(2, 5, 13));
-    CreateStaticObject(scena, kredensModel.get(), nullptr, "kredens2",     glm::vec3(56, 4.8, -152), glm::vec3(8, 8, 8), glm::vec3(0, -90, 0), glm::vec3(2, 5, 13));
-    CreateStaticObject(scena, kredensModel.get(), nullptr, "kredens3",     glm::vec3(20, 4.8, -176), glm::vec3(8, 8, 8), glm::vec3(0, -90, 0), glm::vec3(2, 5, 13));
-    CreateStaticObject(scena, kredensModel.get(), nullptr, "kredens4",     glm::vec3(20, 4.8, -152), glm::vec3(8, 8, 8), glm::vec3(0, -90, 0), glm::vec3(2, 5, 13));
-    GameObject * kredens5 = CreateStaticObject(scena, kredensModel.get(), nullptr, "kredens5",     glm::vec3(27.7, 4.8, -177), glm::vec3(8, 8, 8), glm::vec3(0, -270, 0), glm::vec3(4, 5, 13));
-    GameObject * kredens6 = CreateStaticObject(scena, kredensModel.get(), nullptr, "kredens6",     glm::vec3(27.7, 4.8, -153), glm::vec3(8, 8, 8), glm::vec3(0, -270, 0), glm::vec3(4, 5, 13));
-    kredens5->GetComponent<ColliderComponent>()->offset = glm::vec3{ -2.0f, 0.0f, 0.0f };
-    kredens6->GetComponent<ColliderComponent>()->offset = glm::vec3{ -2.0f, 0.0f, 0.0f };
-
-    GameObject * eksp1 = eksp1Model->Instantiate(*scena, nullptr, nullptr);
-    eksp1->name = "eksp1";
-    eksp1->GetComponent<TransformComponent>()->scale    = glm::vec3{ 10, 10, 10 };
-    eksp1->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -180.0f, 0.0f };
-    eksp1->GetComponent<TransformComponent>()->position = glm::vec3{ 57.170 ,9.510, -165.340 };
-
-    GameObject * eksp2 = eksp2Model->Instantiate(*scena, nullptr, nullptr);
-    eksp2->name = "eksp2";
-    eksp2->GetComponent<TransformComponent>()->scale    = glm::vec3{ 10, 10, 10 };
-    eksp2->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -111.000f, 0.0f };
-    eksp2->GetComponent<TransformComponent>()->position = glm::vec3{ 57.250 ,9.000, -178.730f };
-
-    GameObject * fiolka1 = fiolka1Model->Instantiate(*scena, nullptr, nullptr);
-    fiolka1->name = "fiolka1";
-    fiolka1->GetComponent<TransformComponent>()->scale    = glm::vec3{ 10, 10, 10 };
-    fiolka1->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -45.0f, 0.0f };
-    fiolka1->GetComponent<TransformComponent>()->position = glm::vec3{ 20 ,9, -144.64f };
-    GameObject * fiolka1b = fiolka1Model->Instantiate(*scena, nullptr, nullptr);
-    fiolka1b->name = "fiolka1b";
-    fiolka1b->GetComponent<TransformComponent>()->scale    = glm::vec3{ 10, 10, 10 };
-    fiolka1b->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -300.0f, 0.0f };
-    fiolka1b->GetComponent<TransformComponent>()->position = glm::vec3{ 22 ,9, -146.64f };
-    GameObject * fiolka1c = fiolka1Model->Instantiate(*scena, nullptr, nullptr);
-    fiolka1c->name = "fiolka1c";
-    fiolka1c->GetComponent<TransformComponent>()->scale    = glm::vec3{ 10, 10, 10 };
-    fiolka1c->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -200.0f, 0.0f };
-    fiolka1c->GetComponent<TransformComponent>()->position = glm::vec3{ 22 ,9, -142.64f };
-
-    GameObject * fiolka2 = fiolka2Model->Instantiate(*scena, nullptr, nullptr);
-    fiolka2->name = "fiolka2";
-    fiolka2->GetComponent<TransformComponent>()->scale    = glm::vec3{ 10.000, 10.000, 10.000 };
-    fiolka2->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -45.0f, 0.0f };
-    fiolka2->GetComponent<TransformComponent>()->position = glm::vec3{ 58.270 ,9.000, -174.380f };
-    GameObject * fiolka2b = fiolka2Model->Instantiate(*scena, nullptr, nullptr);
-    fiolka2b->name = "fiolka2b";
-    fiolka2b->GetComponent<TransformComponent>()->scale    = glm::vec3{ 10.000, 10.000, 10.000 };
-    fiolka2b->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -45.0f, 0.0f };
-    fiolka2b->GetComponent<TransformComponent>()->position = glm::vec3{ 57.630 ,9.000, -171.140f };
-
-    GameObject * ksiazka = ksiazkaModel->Instantiate(*scena, nullptr, nullptr);
-    ksiazka->name = "ksiazka";
-    ksiazka->GetComponent<TransformComponent>()->scale    = glm::vec3{ 10, 10, 10 };
-    ksiazka->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -45.0f, 0.0f };
-    ksiazka->GetComponent<TransformComponent>()->position = glm::vec3{ 56.920 ,8.560, -150.740 };
-
-    GameObject * probowka7 = probowka7Model->Instantiate(*scena, nullptr, nullptr);
-    probowka7->name = "probowka7";
-    probowka7->GetComponent<TransformComponent>()->scale    = glm::vec3{ 2, 2, 2 };
-    probowka7->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -45.0f, 0.0f };
-    probowka7->GetComponent<TransformComponent>()->position = glm::vec3{ 57.570 ,9, -174.640f };
-    GameObject * probowka7b = probowka7Model->Instantiate(*scena, nullptr, nullptr);
-    probowka7b->name = "probowka7b";
-    probowka7b->GetComponent<TransformComponent>()->scale    = glm::vec3{ 2, 2, 2 };
-    probowka7b->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -30.0f, 0.0f };
-    probowka7b->GetComponent<TransformComponent>()->position = glm::vec3{ 25.960 ,9, -174.640f };
-    GameObject * probowka7c = probowka7Model->Instantiate(*scena, nullptr, nullptr);
-    probowka7c->name = "probowka7c";
-    probowka7c->GetComponent<TransformComponent>()->scale    = glm::vec3{ 2, 2, 2 };
-    probowka7c->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, 45.0f, 0.0f };
-    probowka7c->GetComponent<TransformComponent>()->position = glm::vec3{ 21.360 ,9, -182.860 };
-
-    GameObject * probowka6 = probowka6Model->Instantiate(*scena, nullptr, nullptr);
-    probowka6->name = "probowka6";
-    probowka6->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1.5, 1.5, 1.5 };
-    probowka6->GetComponent<TransformComponent>()->rotation = glm::vec3{ 90.0f, -66.900, 0.0f };
-    probowka6->GetComponent<TransformComponent>()->position = glm::vec3{ 56.930 ,8.580, -172.450 };
-    GameObject * probowka6b = probowka6Model->Instantiate(*scena, nullptr, nullptr);
-    probowka6b->name = "probowka6b";
-    probowka6b->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1.5, 1.5, 1.5 };
-    probowka6b->GetComponent<TransformComponent>()->rotation = glm::vec3{ 90.0f, -115.900, 0.0f };
-    probowka6b->GetComponent<TransformComponent>()->position = glm::vec3{ 56.930 ,8.580, -174.460 };
-
-    GameObject * probowka5 = probowka5Model->Instantiate(*scena, nullptr, nullptr);
-    probowka5->name = "probowka5";
-    probowka5->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1.5, 1.5, 1.5 };
-    probowka5->GetComponent<TransformComponent>()->rotation = glm::vec3{ 90.0f, -45.0f, 0.0f };
-    probowka5->GetComponent<TransformComponent>()->position = glm::vec3{ 25.690 ,8.570, -144.030 };
-    GameObject * probowka5b = probowka5Model->Instantiate(*scena, nullptr, nullptr);
-    probowka5b->name = "probowka5b";
-    probowka5b->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1.5, 1.5, 1.5 };
-    probowka5b->GetComponent<TransformComponent>()->rotation = glm::vec3{ 90.0f, -112.0f, 0.0f };
-    probowka5b->GetComponent<TransformComponent>()->position = glm::vec3{ 25.880 ,8.570, -147.370 };
-
-    GameObject * probowkaArka_1 = probowkaArka_1_Model->Instantiate(*scena, nullptr, nullptr);
-    probowkaArka_1->name = "probowkaArka_1";
-    probowkaArka_1->GetComponent<TransformComponent>()->scale    = glm::vec3{ 0.250, 0.250, 0.250 };
-    probowkaArka_1->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -11.300, 0.0f };
-    probowkaArka_1->GetComponent<TransformComponent>()->position = glm::vec3{ 57.550 ,9.260, -184.430 };
-
-    GameObject * probowka3 = probowka3Model->Instantiate(*scena, nullptr, nullptr);
-    probowka3->name = "probowka3";
-    probowka3->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1.500, 1.500, 1.500 };
-    probowka3->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -151.800, 0.0f };
-    probowka3->GetComponent<TransformComponent>()->position = glm::vec3{ 55.760 ,9.640, -185.700 };
-
-    GameObject * probowka4 = probowka4Model->Instantiate(*scena, nullptr, nullptr);
-    probowka4->name = "probowka4";
-    probowka4->GetComponent<TransformComponent>()->scale    = glm::vec3{ 0.250, 0.250, 0.250 };
-    probowka4->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -45.0f, 0.0f };
-    probowka4->GetComponent<TransformComponent>()->position = glm::vec3{ 56.080 ,10.500, -162.990 };
-    GameObject * probowka4b = probowka4Model->Instantiate(*scena, nullptr, nullptr);
-    probowka4b->name = "probowka4b";
-    probowka4b->GetComponent<TransformComponent>()->scale    = glm::vec3{ 0.250, 0.250, 0.250 };
-    probowka4b->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -45.0f, 0.0f };
-    probowka4b->GetComponent<TransformComponent>()->position = glm::vec3{ 57.500 ,10.500, -161.540 };
-
-    GameObject * labOla1 = labOla1Model->Instantiate(*scena, nullptr, nullptr);
-    labOla1->name = "labOla1";
-    labOla1->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1, 1, 1 };
-    labOla1->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, 0.0f, 0.0f };
-    labOla1->GetComponent<TransformComponent>()->position = glm::vec3{ 56.840 ,9.540, -157.110 };
-
-    GameObject * probowka2 = probowka2Model->Instantiate(*scena, nullptr, nullptr);
-    probowka2->name = "probowka2";
-    probowka2->GetComponent<TransformComponent>()->scale    = glm::vec3{ 2, 2, 2 };
-    probowka2->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -176.200, 0.0f };
-    probowka2->GetComponent<TransformComponent>()->position = glm::vec3{ 24.200 ,9.400, -145.450 };
-
-    GameObject * folder = folderModel->Instantiate(*scena, nullptr, nullptr);
-    folder->name = "folder";
-    folder->GetComponent<TransformComponent>()->scale    = glm::vec3{ 3, 3, 3 };
-    folder->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -93.300, 0.0f };
-    folder->GetComponent<TransformComponent>()->position = glm::vec3{ 26.550 ,8.390, -150.040 };
-
-    GameObject * papers = papersModel->Instantiate(*scena, nullptr, nullptr);
-    papers->name = "papers";
-    papers->GetComponent<TransformComponent>()->scale    = glm::vec3{ 3, 3, 3 };
-    papers->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -45.0f, 0.0f };
-    papers->GetComponent<TransformComponent>()->position = glm::vec3{ 22.080 ,8.270, -149.310 };
-
-    GameObject * cup = cupModel->Instantiate(*scena, nullptr, nullptr);
-    cup->name = "cup";
-    cup->GetComponent<TransformComponent>()->scale    = glm::vec3{ 2, 2, 2 };
-    cup->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -45.0f, 0.0f };
-    cup->GetComponent<TransformComponent>()->position = glm::vec3{ 21.060 ,8.420, -186.810 };
-    GameObject * cup2 = cupModel->Instantiate(*scena, nullptr, nullptr);
-    cup2->name = "cup2";
-    cup2->GetComponent<TransformComponent>()->scale    = glm::vec3{ 2, 2, 2 };
-    cup2->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -169.600, 0.0f };
-    cup2->GetComponent<TransformComponent>()->position = glm::vec3{ 24.210 ,8.420, -185.480 };
-
-    GameObject * corkBoard = corkBoardModel->Instantiate(*scena, nullptr, nullptr);
-    corkBoard->name = "corkBoard";
-    corkBoard->GetComponent<TransformComponent>()->scale    = glm::vec3{ 2, 2, 2 };
-    corkBoard->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -90.000, 0.0f };
-    corkBoard->GetComponent<TransformComponent>()->position = glm::vec3{ 58.740 ,17.690, -177.210 };
-
-    GameObject * clock = clockModel->Instantiate(*scena, nullptr, nullptr);
-    clock->name = "clock";
-    clock->GetComponent<TransformComponent>()->scale    = glm::vec3{ 2, 2, 2 };
-    clock->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, 180.000, 0.0f };
-    clock->GetComponent<TransformComponent>()->position = glm::vec3{ 58.840 ,17.530, -147.150 };
-
-    GameObject * computer_pbr = computer_pbrModel->Instantiate(*scena, nullptr, nullptr);
-    computer_pbr->name = "computer_pbr";
-    computer_pbr->GetComponent<TransformComponent>()->scale    = glm::vec3{ 2, 2, 2 };
-    computer_pbr->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, 0.0f, 0.0f };
-    computer_pbr->GetComponent<TransformComponent>()->position = glm::vec3{ 57.280 ,8.170, -142.870 };
-    GameObject * computer_pbr2 = computer_pbrModel->Instantiate(*scena, nullptr, nullptr);
-    computer_pbr2->name = "computer_pbr2";
-    computer_pbr2->GetComponent<TransformComponent>()->scale    = glm::vec3{ 2, 2, 2 };
-    computer_pbr2->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, 0.0f, 0.0f };
-    computer_pbr2->GetComponent<TransformComponent>()->position = glm::vec3{ 57.280 ,8.170, -147.460 };
-
-    GameObject * laboratoryStuff1 = laboratoryStuff1Model->Instantiate(*scena, nullptr, nullptr);
-    laboratoryStuff1->name = "laboratoryStuff1";
-    laboratoryStuff1->GetComponent<TransformComponent>()->scale    = glm::vec3{ 3, 3, 3 };
-    laboratoryStuff1->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -123.800, 0.0f };
-    laboratoryStuff1->GetComponent<TransformComponent>()->position = glm::vec3{ 24.490 ,11.490, -157.870 };
-
-    GameObject * laboratoryStuff2 = laboratoryStuff2Model->Instantiate(*scena, nullptr, nullptr);
-    laboratoryStuff2->name = "laboratoryStuff2";
-    laboratoryStuff2->GetComponent<TransformComponent>()->scale    = glm::vec3{ 2.5, 2.5, 2.5 };
-    laboratoryStuff2->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -72.300, 0.0f };
-    laboratoryStuff2->GetComponent<TransformComponent>()->position = glm::vec3{ 23.630 ,10.250, -165.330 };
-
-    GameObject * laboratoryStuff3 = laboratoryStuff3Model->Instantiate(*scena, nullptr, nullptr);
-    laboratoryStuff3->name = "laboratoryStuff3";
-    laboratoryStuff3->GetComponent<TransformComponent>()->scale    = glm::vec3{ 3, 3, 3 };
-    laboratoryStuff3->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, 7.500, 0.0f };
-    laboratoryStuff3->GetComponent<TransformComponent>()->position = glm::vec3{ 23.540 ,8.540, -178.320 };
-
-    if (cabState.button) {
-        ColliderComponent* btnCol = cabState.button->AddComponent<ColliderComponent>();
-        btnCol->halfSize = glm::vec3{ 1.0f, 1.0f, 1.0f };
-
-        TransformComponent* btnTr = cabState.button->GetComponent<TransformComponent>();
-        cabState.buttonStartPos  = btnTr->position;
-        cabState.buttonTargetPos = cabState.buttonStartPos + glm::vec3{ 0.0f, 0.0f, -0.15f };
-
-        cabinetsMap[cabState.button] = cabState;
-    }
-
-    glm::vec3 bossRoomCenter = glm::vec3(-35.0f, 5.3f, -190.0f);
-
-    // kapsuła
-
-    //GameObject* capsuleObj = CreateStaticObject(
-    //    scena,
-    //    bossCapsuleModel.get(),
-    //    nullptr,
-    //    "BossCapsule",
-    //    bossRoomCenter,
-    //    glm::vec3(3.0f),
-    //    std::nullopt,
-    //    glm::vec3(3.0f, 8.0f, 3.0f),
-    //    true
-    //);
-
-    GameObject* bossObj = bossModel->Instantiate(*scena, nullptr, nullptr);
-    bossObj->name = "DemonBoss";
-
-    TransformComponent* bossTr = bossObj->GetComponent<TransformComponent>();
-    bossTr->position = glm::vec3(bossRoomCenter.x - 2.2f, bossRoomCenter.y + 8.7f, bossRoomCenter.z - 3.9f);
-    bossTr->scale = glm::vec3(3.0f);
-    bossTr->rotation = glm::vec3(0.0f, -140.0f, 0.0f);
-    bossTr->isDirty = true;
-
-    AnimatorComponent* bossAnimator = bossObj->AddComponent<AnimatorComponent>();
-
-    if (bossModel->rootModel && !bossModel->rootModel->animations.empty()) {
-        AnimationClip* defaultBossClip = &bossModel->rootModel->animations[0];
-
-        AnimationHelper::Play(bossAnimator, defaultBossClip, true, 1.0f);
-    }
-}
-
-void createNuclearRooom(Scene* scena) {
-    CreateStaticObject(scena, floorModel.get(), nullptr, "PodlogaNucearRoom", glm::vec3(-120, 0, -180),  glm::vec3(60, 1, 80));
-    CreateStaticObject(scena, floorModel.get(), nullptr, "SufitATOM",         glm::vec3(-120, 20, -180), glm::vec3(60, 1, 80));
-    CreateStaticObject(scena, wallModel2.get(), nullptr, "ScianaKoncowaAtom", glm::vec3(-180, 0, -180),  glm::vec3(80, 50, 1), std::nullopt, glm::vec3(1, 50, 80));
-    CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaATOMPrawa",   glm::vec3(-120.180, 0, -259.680), glm::vec3(60, 50, 1), std::nullopt, glm::vec3(60, 100, 1));
-}
-
-void createCrematorium(Scene* scena) {
-
-    CreateStaticObject(scena, floorModel.get(), nullptr, "PodlogaKrematorium",   glm::vec3(120, 0, -180),  glm::vec3(60, 1, 80));
-    CreateStaticObject(scena, floorModel.get(), nullptr, "SufitCrematorium",     glm::vec3(120, 25, -180), glm::vec3(60, 1, 80));
-    CreateStaticObject(scena, wallModel2.get(), nullptr, "ScianaKoncowaKrematorium", glm::vec3(180, 0, -180), glm::vec3(80, 50, 1), std::nullopt, glm::vec3(1, 50, 80));
-    CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaKremLewa",       glm::vec3(120.180, 0, -259.680), glm::vec3(60, 50, 1), std::nullopt, glm::vec3(60, 100, 1));
-
-    crematoriumPuzzle.spacingHorizontal = 6.0f;
-    crematoriumPuzzle.spacingVertical   = 4.5f;
-
-    crematoriumPuzzle.minExtensionDistance = 9.5f;
-    crematoriumPuzzle.maxExtensionDistance = 34.0f;
-
-    crematoriumPuzzle.coffinDimensions = glm::vec3(1.25f, 1.0f, 30.0f);
-
-    crematoriumPuzzle.wallOffset = 17.0f;
-
-    crematoriumPuzzle.w1_buildDirX  = -1.0f;
-    crematoriumPuzzle.w1_extendDirZ =  1.0f;
-    crematoriumPuzzle.w2_buildDirZ  =  1.0f;
-    crematoriumPuzzle.w2_extendDirX = -1.0f;
-
-    glm::vec3 cornerPosition(175.0f, 4.0f, -255.0f);
-
-    if (ruraModel != nullptr && panelModel != nullptr && ruraModel->rootModel != nullptr) {
-        crematoriumPuzzle.Init(scena, ruraModel->rootModel, panelModel.get(), nullptr, cornerPosition);
-    }
-    else {
-        spdlog::error("Model rury albo panelu nie zostal poprawnie zaladowany!");
-    }
-}
-
-void createRentgenRoom(Scene* scena) {
-    CreateStaticObject(scena, floorModel.get(), nullptr, "PodlogaRentgenRoom",    glm::vec3(0.040, 0, -257.800),  glm::vec3(60, 1, 40));
-    CreateStaticObject(scena, floorModel.get(), nullptr, "SufitRentgen",          glm::vec3(0.040, 20, -257.800), glm::vec3(60, 1, 40));
-    CreateStaticObject(scena, wallModel.get(),  nullptr, "KoncowaScianaRentgen",  glm::vec3(0, 0, -297),          glm::vec3(61, 50, 1));
-
-
-    /*if (i == 2 || i == 3) {
-        tablicaKibli[i] = urinModel->Instantiate(*scena1, nullptr, ourShader.get());
-        tablicaKibli[i]->name = "Kibel" + std::to_string(i);
-        tablicaKibli[i]->GetComponent<TransformComponent>()->scale    = glm::vec3{ 12, 12, 12 };
-        tablicaKibli[i]->AddComponent<RigidbodyComponent>();
-        tablicaKibli[i]->AddComponent<ColliderComponent>();
-        tablicaKibli[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
-        tablicaKibli[i]->GetComponent<RigidbodyComponent>()->isStatic   = true;
-        tablicaKibli[i]->GetComponent<ColliderComponent>()->halfSize     = glm::vec3{ 2.5, 4, 2.5 };
-        tablicaKibli[i]->GetComponent<ColliderComponent>()->offset       = glm::vec3{ 0, 4, 0 };
-        tablicaKibli[i]->GetComponent<TransformComponent>()->position    = glm::vec3{ 47.6, 2.0f, -25 + (-10 * i) };
-        tablicaKibli[i]->GetComponent<TransformComponent>()->rotation    = glm::vec3{ 0, 270, 0 };
-        tablicaKibli[i]->GetComponent<ColliderComponent>()->isWalkable     = false;
-        tablicaKibli[i]->GetComponent<ColliderComponent>()->affectsNavMesh = true;
-    }*/
-    GameObject * objPuzel1 = puzel1->Instantiate(*scena, nullptr, nullptr);
-    objPuzel1->name = "puzel1";
-    objPuzel1->GetComponent<TransformComponent>()->position = glm::vec3(-10, 3, -280);
-    objPuzel1->GetComponent<TransformComponent>()->rotation = glm::vec3(0, -90, 0);
-    objPuzel1->AddComponent<RigidbodyComponent>();
-    objPuzel1->GetComponent<RigidbodyComponent>()->useGravity = true;
-    objPuzel1->GetComponent<RigidbodyComponent>()->isStatic = false;
-    objPuzel1->AddComponent<ColliderComponent>();
-    objectOriginalRotations[objPuzel1] = objPuzel1->GetComponent<TransformComponent>()->rotation;
-    pickupObjects.insert(objPuzel1);
-
-    GameObject * objPuzel2 = puzel2->Instantiate(*scena, nullptr, nullptr);
-    objPuzel2->name = "puzel2";
-    objPuzel2->GetComponent<TransformComponent>()->position = glm::vec3(-5, 3, -280);
-    objPuzel2->GetComponent<TransformComponent>()->rotation = glm::vec3(0, -90, 0);
-    objPuzel2->AddComponent<RigidbodyComponent>();
-    objPuzel2->GetComponent<RigidbodyComponent>()->useGravity = true;
-    objPuzel2->GetComponent<RigidbodyComponent>()->isStatic = false;
-    objPuzel2->AddComponent<ColliderComponent>();
-    objectOriginalRotations[objPuzel2] = objPuzel2->GetComponent<TransformComponent>()->rotation;
-    pickupObjects.insert(objPuzel2);
-
-    GameObject * objPuzel3 = puzel3->Instantiate(*scena, nullptr, nullptr);
-    objPuzel3->name = "puzel3";
-    objPuzel3->GetComponent<TransformComponent>()->position = glm::vec3(0, 3, -280);
-    objPuzel3->GetComponent<TransformComponent>()->rotation = glm::vec3(0, -90, 0);
-    objPuzel3->AddComponent<RigidbodyComponent>();
-    objPuzel3->GetComponent<RigidbodyComponent>()->useGravity = true;
-    objPuzel3->GetComponent<RigidbodyComponent>()->isStatic = false;
-    objPuzel3->AddComponent<ColliderComponent>();
-    objectOriginalRotations[objPuzel3] = objPuzel3->GetComponent<TransformComponent>()->rotation;
-    pickupObjects.insert(objPuzel3);
-
-    GameObject * objPuzel4 = puzel4->Instantiate(*scena, nullptr, nullptr);
-    objPuzel4->name = "puzel4";
-    objPuzel4->GetComponent<TransformComponent>()->position = glm::vec3(5, 3, -280);
-    objPuzel4->GetComponent<TransformComponent>()->rotation = glm::vec3(0, -90, 0);
-    objPuzel4->AddComponent<RigidbodyComponent>();
-    objPuzel4->GetComponent<RigidbodyComponent>()->useGravity = true;
-    objPuzel4->GetComponent<RigidbodyComponent>()->isStatic = false;
-    objPuzel4->AddComponent<ColliderComponent>();
-    objectOriginalRotations[objPuzel4] = objPuzel4->GetComponent<TransformComponent>()->rotation;
-    pickupObjects.insert(objPuzel4);
-
-    GameObject * objPuzel5 = puzel5->Instantiate(*scena, nullptr, nullptr);
-    objPuzel5->name = "puzel5";
-    objPuzel5->GetComponent<TransformComponent>()->position = glm::vec3(10, 3, -280);
-    objPuzel5->GetComponent<TransformComponent>()->rotation = glm::vec3(0, -90, 0);
-    objPuzel5->AddComponent<RigidbodyComponent>();
-    objPuzel5->GetComponent<RigidbodyComponent>()->useGravity = true;
-    objPuzel5->GetComponent<RigidbodyComponent>()->isStatic = false;
-    objPuzel5->AddComponent<ColliderComponent>();
-    objectOriginalRotations[objPuzel5] = objPuzel5->GetComponent<TransformComponent>()->rotation;
-    pickupObjects.insert(objPuzel5);
-
-    GameObject * objPuzel6 = puzel6->Instantiate(*scena, nullptr, nullptr);
-    objPuzel6->name = "puzel6";
-    objPuzel6->GetComponent<TransformComponent>()->position = glm::vec3(15, 3, -280);
-    objPuzel6->GetComponent<TransformComponent>()->rotation = glm::vec3(0, -90, 0);
-    objPuzel6->AddComponent<RigidbodyComponent>();
-    objPuzel6->GetComponent<RigidbodyComponent>()->useGravity = true;
-    objPuzel6->GetComponent<RigidbodyComponent>()->isStatic = false;
-    objPuzel6->AddComponent<ColliderComponent>();
-    objectOriginalRotations[objPuzel6] = objPuzel6->GetComponent<TransformComponent>()->rotation;
-    pickupObjects.insert(objPuzel6);
-
-    GameObject * CzerwonaTablica = czerwonaTablica->Instantiate(*scena, nullptr, nullptr);
-    CzerwonaTablica->name = "CzerwonaTablica";
-    CzerwonaTablica->GetComponent<TransformComponent>()->position = glm::vec3(-40, 12, -296);
-    CzerwonaTablica->GetComponent<TransformComponent>()->rotation = glm::vec3(180, 90, 90);
-    CzerwonaTablica->GetComponent<TransformComponent>()->scale = glm::vec3(6, 0.1, 10);
-    CzerwonaTablica->AddComponent<RigidbodyComponent>();
-    CzerwonaTablica->GetComponent<RigidbodyComponent>()->useGravity = false;
-    CzerwonaTablica->GetComponent<RigidbodyComponent>()->isStatic = true;
-
-    GameObject * ZielonaTablica = zielonaTablica->Instantiate(*scena, nullptr, nullptr);
-    ZielonaTablica->name = "ZielonaTablica";
-    ZielonaTablica->GetComponent<TransformComponent>()->position = glm::vec3(40, 12, -296);
-    ZielonaTablica->GetComponent<TransformComponent>()->rotation = glm::vec3(180, 90, 90);
-    ZielonaTablica->GetComponent<TransformComponent>()->scale = glm::vec3(6, 0.1, 10);
-    ZielonaTablica->AddComponent<RigidbodyComponent>();
-    ZielonaTablica->GetComponent<RigidbodyComponent>()->useGravity = false;
-    ZielonaTablica->GetComponent<RigidbodyComponent>()->isStatic = true;
-
-    GameObject * rentgen = Rentgen->Instantiate(*scena, nullptr, nullptr);
-    rentgen->name = "RentgenTablica";
-    rentgen->GetComponent<TransformComponent>()->position = glm::vec3(4, 12, -296);
-    rentgen->GetComponent<TransformComponent>()->rotation = glm::vec3(180, 90, 90);
-    rentgen->GetComponent<TransformComponent>()->scale = glm::vec3(6, 0.1, 10);
-    rentgen->AddComponent<RigidbodyComponent>();
-    rentgen->GetComponent<RigidbodyComponent>()->useGravity = false;
-    rentgen->GetComponent<RigidbodyComponent>()->isStatic = true;
-
-
-    int puzzleLightIndex = 4;
-    auto createPuzzleSlot = [&](const glm::vec3& pos, const glm::vec3& targetRot, GameObject* expected) {
-        GameObject* slotGO = scena->CreateGameObject(nullptr);
-        slotGO->name = "PuzzleSlot_" + expected->name;
-
-        TransformComponent* tr = slotGO->AddComponent<TransformComponent>();
-        tr->position = pos;
-
-        ColliderComponent* col = slotGO->AddComponent<ColliderComponent>();
-        col->halfSize  = glm::vec3(2, 2, 0.5);
-        col->isTrigger = true;
-
-        RigidbodyComponent* rb = slotGO->AddComponent<RigidbodyComponent>();
-        rb->useGravity = false;
-        rb->isStatic   = true;
-
-        GameObject* lightGO = scena->CreateGameObject(nullptr);
-        lightGO->name = "PuzzleLight_" + expected->name;
-
-        TransformComponent* lightTr = lightGO->AddComponent<TransformComponent>();
-        lightTr->position = pos + glm::vec3(0.0f, 2.0f, 1.0);
-
-        LightComponent* light = lightGO->AddComponent<LightComponent>();
-        light->type      = Point;
-        light->index = puzzleLightIndex++;
-        light->isOn      = false;
-        light->ambient   = glm::vec3(0.0f);
-        light->diffuse   = glm::vec3(0.0f);
-        light->specular  = glm::vec3(0.0f);
-        light->constant  = 15.0f;
-        light->linear    = 0.3f;
-        light->quadratic = 0.05f;
-        light->range     = 15.0f;
-        light->intensity = 20;
-
-        PuzzleSlot slot;
-        slot.targetRotation = targetRot;
-        slot.slotObject     = slotGO;
-        slot.expectedObject = expected;
-        slot.lightObject    = lightGO;
-        puzzleSlotsMap[slotGO] = slot;
-    };
-
-    createPuzzleSlot(glm::vec3(-2, 15, -295.9), glm::vec3(180, 90,  90), objPuzel2);
-    createPuzzleSlot(glm::vec3(4, 15, -295.9), glm::vec3(180, 90, 90), objPuzel6);
-    createPuzzleSlot(glm::vec3(11, 15, -295.9), glm::vec3(180, 90, 90), objPuzel4);
-    createPuzzleSlot(glm::vec3(-2, 9, -295.9), glm::vec3(180, 90, 90), objPuzel1);
-    createPuzzleSlot(glm::vec3(4, 9, -295.9), glm::vec3(180, 90, 90), objPuzel3);
-    createPuzzleSlot(glm::vec3(11, 9, -295.9), glm::vec3(180, 90, 90), objPuzel5);
-}
+#include "impl/main/room_creator.ipp"

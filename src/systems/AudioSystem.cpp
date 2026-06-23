@@ -4,6 +4,8 @@
      //unused
  }
 
- void AudioSystem::Update(ECS &, float dt) {
-     //unused
+ void AudioSystem::Update(ECS&, float dt) {
+     if (system) {
+         system->update();
+     }
  }

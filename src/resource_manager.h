@@ -18,6 +18,16 @@ public:
     static std::unordered_map<std::string, TextureData> Textures;
 
     static std::unordered_map<std::string, std::shared_ptr<Model>> Models;
+    
+    static std::unordered_map<GLuint, std::string> TextureIDToPath;
+    
+    static std::unordered_map<uint32_t, std::string> MeshNodeToModelPath;
+
+    static void RegisterMeshNodes(ModelNode* node, const std::string& path);
+
+    static std::string GetModelPathByMeshNodeID(uint32_t id);
+
+    static std::string GetTexturePath(GLuint id);
 
     static TextureData LoadTexture(const std::string& path, const std::string& directory = "", const aiTexture* aiTex = nullptr);
 

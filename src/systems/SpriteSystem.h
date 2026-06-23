@@ -186,80 +186,110 @@ private:
     }
 
     void RenderText(SpriteComponent& sprite, const glm::mat4& proj)
-    {
-        auto& chars = GetOrLoadFont(sprite.fontPath, (int)sprite.fontSize);
+{
+    auto& chars = GetOrLoadFont(sprite.fontPath, (int)sprite.fontSize);
+    std::map<char, Character>* chars2 = nullptr;
 
-        textShader->use();
-        textShader->setMat4("projection", proj);
-        textShader->setInt("text", 0);
+    if (!sprite.fontPath2.empty()) {
+        chars2 = &GetOrLoadFont(sprite.fontPath2, (int)sprite.fontSize2);
+    }
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindVertexArray(textVAO);
+    textShader->use();
+    textShader->setMat4("projection", proj);
+    textShader->setInt("text", 0);
 
-        float baseX = sprite.screenPosition.x + sprite.textOffset.x;
-        float baseY = sprite.screenPosition.y + sprite.textOffset.y;
+    glActiveTexture(GL_TEXTURE0);
+    glBindVertexArray(textVAO);
+
+    float baseX = sprite.screenPosition.x + sprite.textOffset.x;
+    float baseY = sprite.screenPosition.y + sprite.textOffset.y;
 
         if (sprite.textCentered)
         {
             float textWidth = 0.0f;
             for (char c : sprite.text) {
+                if (c == '^' || c == '\n' || c == '\r') continue;
                 auto it = chars.find(c);
                 if (it != chars.end())
                     textWidth += (it->second.advance >> 6);
             }
-            float outlinePadding = sprite.textOutlineEnabled ? sprite.textOutlineSize : 0.0f;
-            baseX -= (textWidth / 2.0f) - outlinePadding;
+            baseX -= textWidth / 2.0f;
+            if (sprite.textOutlineEnabled)
+                baseY += sprite.textOutlineSize;
         }
 
-        auto renderString = [&](float offsetX, float offsetY, glm::vec3 color)
+    auto renderString = [&](float offsetX, float offsetY, glm::vec3 color)
+    {
+        textShader->setVec3("textColor", color);
+        float startX = baseX + offsetX;
+        float x = startX;
+        float y = baseY + offsetY;
+
+        bool useSecondFont = false;
+
+        for (char c : sprite.text)
         {
-            textShader->setVec3("textColor", color);
-            float x = baseX + offsetX;
-            float y = baseY + offsetY;
+            if (c == '\r') continue;
 
-            for (char c : sprite.text)
-            {
-                auto it = chars.find(c);
-                if (it == chars.end()) continue;
-
-                const Character& ch = it->second;
-                float xpos = x + ch.bearing.x;
-                float ypos = y + ((int)sprite.fontSize - ch.bearing.y);
-                float w = (float)ch.size.x;
-                float h = (float)ch.size.y;
-
-                float verts[6][4] = {
-                    { xpos,     ypos + h, 0.0f, 1.0f },
-                    { xpos + w, ypos,     1.0f, 0.0f },
-                    { xpos,     ypos,     0.0f, 0.0f },
-                    { xpos,     ypos + h, 0.0f, 1.0f },
-                    { xpos + w, ypos + h, 1.0f, 1.0f },
-                    { xpos + w, ypos,     1.0f, 0.0f },
-                };
-
-                glBindTexture(GL_TEXTURE_2D, ch.textureID);
-                glBindBuffer(GL_ARRAY_BUFFER, textVBO);
-                glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(verts), verts);
-                glDrawArrays(GL_TRIANGLES, 0, 6);
-
-                x += (ch.advance >> 6);
+            if (c == '^') {
+                useSecondFont = !useSecondFont;
+                continue;
             }
-        };
+
+            float currentFontSize = (useSecondFont && chars2) ? sprite.fontSize2 : sprite.fontSize;
+
+            if (c == '\n') {
+                y += currentFontSize * 1.2f;
+                x = startX;
+                continue;
+            }
+
+            auto& activeChars = (useSecondFont && chars2) ? *chars2 : chars;
+            auto it = activeChars.find(c);
+            if (it == activeChars.end()) continue;
+
+            const Character& ch = it->second;
+            float xpos = x + ch.bearing.x;
+            float ypos = y - ch.bearing.y + (int)currentFontSize;
+            float w = (float)ch.size.x;
+            float h = (float)ch.size.y;
+
+            float verts[6][4] = {
+                { xpos,     ypos + h, 0.0f, 1.0f },
+                { xpos + w, ypos,     1.0f, 0.0f },
+                { xpos,     ypos,     0.0f, 0.0f },
+                { xpos,     ypos + h, 0.0f, 1.0f },
+                { xpos + w, ypos + h, 1.0f, 1.0f },
+                { xpos + w, ypos,     1.0f, 0.0f },
+            };
+
+            glBindTexture(GL_TEXTURE_2D, ch.textureID);
+            glBindBuffer(GL_ARRAY_BUFFER, textVBO);
+            glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(verts), verts);
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+
+            x += (ch.advance >> 6);
+        }
+    };
 
         if (sprite.textOutlineEnabled)
         {
             float o = sprite.textOutlineSize;
-            for (float dx = -o; dx <= o; dx += o)
-                for (float dy = -o; dy <= o; dy += o)
-                    if (dx != 0.0f || dy != 0.0f)
-                        renderString(dx, dy, sprite.textOutlineColor);
+            const int steps = 8;
+            for (int i = 0; i < steps; i++)
+            {
+                float angle = (2.0f * 3.14159265f * i) / steps;
+                float dx = cos(angle) * o;
+                float dy = sin(angle) * o;
+                renderString(dx, dy, sprite.textOutlineColor);
+            }
         }
 
-        renderString(0.0f, 0.0f, sprite.textColor);
+    renderString(0.0f, 0.0f, sprite.textColor);
 
-        glBindVertexArray(0);
-        glBindTexture(GL_TEXTURE_2D, 0);
-    }
+    glBindVertexArray(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
 
     std::map<char, Character>& GetOrLoadFont(const std::string& path, int size)
     {
@@ -282,35 +312,53 @@ private:
         FT_Set_Pixel_Sizes(face, 0, size);
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-        for (unsigned char c = 0; c < 128; c++)
-        {
-            if (FT_Load_Char(face, c, FT_LOAD_RENDER))
-            {
-                spdlog::warn("SpriteSystem: character skipped '{}'", c);
-                continue;
-            }
-
+        auto loadGlyph = [&](unsigned long charcode, char mapToChar) {
+            if (FT_Load_Char(face, charcode, FT_LOAD_RENDER)) return;
             unsigned int tex;
             glGenTextures(1, &tex);
             glBindTexture(GL_TEXTURE_2D, tex);
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RED,
-                face->glyph->bitmap.width,
-                face->glyph->bitmap.rows,
-                0, GL_RED, GL_UNSIGNED_BYTE,
-                face->glyph->bitmap.buffer
-            );
+                face->glyph->bitmap.width, face->glyph->bitmap.rows,
+                0, GL_RED, GL_UNSIGNED_BYTE, face->glyph->bitmap.buffer);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-            chars[c] = {
+            chars[mapToChar] = {
                 tex,
                 glm::ivec2(face->glyph->bitmap.width, face->glyph->bitmap.rows),
                 glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top),
                 (unsigned int)face->glyph->advance.x
             };
+            };
+
+        for (unsigned char c = 0; c < 128; c++) {
+            loadGlyph(c, c);
         }
+
+        unsigned int blockTex;
+        glGenTextures(1, &blockTex);
+        glBindTexture(GL_TEXTURE_2D, blockTex);
+
+        const int bw = 16;
+        int bh = size;
+        unsigned char* blockPixels = new unsigned char[bw * bh];
+        memset(blockPixels, 255, bw * bh);
+
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, bw, bh, 0, GL_RED, GL_UNSIGNED_BYTE, blockPixels);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+        chars[127] = {
+            blockTex,
+            glm::ivec2(bw, bh),
+            glm::ivec2(0, bh * 0.85f),
+            (unsigned int)((bw + 2) << 6)
+        };
+        delete[] blockPixels;
 
         FT_Done_Face(face);
         glPixelStorei(GL_UNPACK_ALIGNMENT, 4);

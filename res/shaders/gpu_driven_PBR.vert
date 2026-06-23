@@ -25,12 +25,12 @@ struct InstanceData {
 
 layout(std140, binding = 0) uniform FrameUBO
 {
-    mat4  viewProjection;
-    vec4  viewPos;   // xyz = pozycja kamery
-    float zNear;
-    float zFar;
+    mat4 viewProjection;
+    vec4 viewPos;   // xyz = pozycja kamery
     float ambientStrength;
     int numLights;
+    int numShadowLigths;
+    int padding;
 };
 
 // Jedna p³aska tablica wszystkich macierzy koœci dla WSZYSTKICH szkieletów.

@@ -188,6 +188,7 @@ public:
     //GLuint drawCountSSBO = 0; // bind 5
     GLuint meshDataSSBO = 0; // bind 6
     GLuint materialSSBO = 0; /// bind 7
+    GLuint shadowMatrixSSBO = 0; /// bind 7
     //GLuint lightsSSBO = 0;
     GLuint boneMatricesSSBO = 0;
 
@@ -215,7 +216,10 @@ public:
     ComputeShader* shaderBuildCmds = nullptr;
     ComputeShader* shaderHizDownsample = nullptr;
     Shader* shaderRender = nullptr;
+    Shader* shaderShadowRender = nullptr;
 
+    bool firstFrame = true;
+    bool shadowMode = false;
     bool dirtyInstance = true;
     bool frustumsEnabled = false;
     bool occlussionEnabled = false;
@@ -241,6 +245,7 @@ public:
         glDeleteBuffers(1, &drawCmdSSBO);
         glDeleteBuffers(1, &meshDataSSBO);
         glDeleteBuffers(1, &materialSSBO);
+        glDeleteBuffers(1, &shadowMatrixSSBO);
         //glDeleteBuffers(1, &frameUBO);
         //glDeleteBuffers(1, &lightsUBO);
         glDeleteBuffers(1, &boneMatricesSSBO);
@@ -305,6 +310,7 @@ public:
      /*   glGenBuffers(1, &drawCountSSBO);*/
         glGenBuffers(1, &meshDataSSBO);
         glGenBuffers(1, &materialSSBO);
+        glGenBuffers(1, &shadowMatrixSSBO);
      /*   glGenBuffers(1, &lightsSSBO);*/
         glGenBuffers(1, &boneMatricesSSBO);
 
@@ -541,13 +547,20 @@ public:
 
         size_t bytes = materials.size() * sizeof(GPUMaterial);
 
-        spdlog::info(
-            "Material SSBO: {} materials, {} bytes ({:.2f} MB)",
-            materials.size(),
-            bytes,
-            bytes / (1024.0 * 1024.0)
-        );
-        spdlog::warn("Materialy sie wysylaja");
+        //spdlog::info(
+        //    "Material SSBO: {} materials, {} bytes ({:.2f} MB)",
+        //    materials.size(),
+        //    bytes,
+        //    bytes / (1024.0 * 1024.0)
+        //);
+        //spdlog::warn("Materialy sie wysylaja");
+    }
+
+    void UploadShadowMatrix(const std::vector<glm::mat4>& shadowsMatrix)
+    {
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, shadowMatrixSSBO);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, shadowsMatrix.size() * sizeof(glm::mat4), shadowsMatrix.data(), GL_STATIC_DRAW);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     }
 
     void UploadAllBoneMatrices(const std::vector<glm::mat4>& allBones)
@@ -604,8 +617,8 @@ public:
         glUniform2f(glGetUniformLocation(shaderHizWritePass->ID, "screenSize"), (float)(vpWidth > 0 ? vpWidth : screenWidth), (float)(vpHeight > 0 ? vpHeight : screenHeight));
         glUniform1i(glGetUniformLocation(shaderHizWritePass->ID, "hizMipLevels"), hizTexture ? hizMipLevels : 0); // 0 = wyłącz HiZ
         glUniform1ui(glGetUniformLocation(shaderHizWritePass->ID, "objectCount"), objectCount);
-        glUniform1i(glGetUniformLocation(shaderHizWritePass->ID, "enableOcclusion"), occlussionEnabled ? GL_TRUE : GL_FALSE); // 0 = wyłącz HiZ
-        glUniform1i(glGetUniformLocation(shaderHizWritePass->ID, "enableFrustumCulling"), frustumsEnabled ? GL_TRUE : GL_FALSE);
+        glUniform1i(glGetUniformLocation(shaderHizWritePass->ID, "enableOcclusion"), occlussionEnabled ? (shadowMode ? GL_FALSE : GL_TRUE) : GL_FALSE); // 0 = wyłącz HiZ
+        glUniform1i(glGetUniformLocation(shaderHizWritePass->ID, "enableFrustumCulling"), frustumsEnabled ? (shadowMode ? GL_FALSE : GL_TRUE) : GL_FALSE);
 
         glTextureParameteri(hizTexture, GL_TEXTURE_COMPARE_MODE, GL_NONE);
         glBindTextureUnit(0, hizTexture);
@@ -689,6 +702,7 @@ public:
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, instanceSSBO); // vertex shader
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, boneMatricesSSBO); // vertex shader
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, materialSSBO);   // fragment shader
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 8, shadowMatrixSSBO); // fragment shader
     }
 
 
@@ -719,13 +733,50 @@ public:
         DispatchPrefixSum(objectCount);
         dirtyInstance = false;
     }
-    
 
-    void RenderFrame(const glm::mat4& viewProj, const std::vector<RenderData>& objects, GLuint depthTexturePrevFrame, glm::vec3 currentCameraPos, bool cameraDirty)
+    void FirstInTheFrame(const std::vector<RenderData>& objects)
     {
         uint32_t objCount = (uint32_t)objects.size();
-        // 0. Aktualizuj obiekty na GPU
         UploadObjects(objects);
+
+        if (dirtyInstance)
+            BuildInstance(objCount);
+
+        firstFrame = false;
+    }
+    
+    void RenderShadow(bool firstRender, const std::vector<RenderData>& objects)
+    {
+        shadowMode = true;
+
+        if (firstRender)
+        {
+            uint32_t objCount = (uint32_t)objects.size();
+
+            if (firstFrame)
+                FirstInTheFrame(objects);
+
+            DispatchWritePass(glm::mat4(1.0), objCount);
+
+            DispatchBuildCommands();
+        }
+
+        
+        shaderShadowRender->use();
+
+        Draw();
+        
+        shadowMode = false;
+    }
+
+    void RenderFrame(const glm::mat4& viewProj, const std::vector<RenderData>& objects, GLuint depthTexturePrevFrame, GLuint shadowTexture, glm::vec3 currentCameraPos, bool cameraDirty)
+    {
+        uint32_t objCount = (uint32_t)objects.size();
+
+        if (firstFrame)
+            FirstInTheFrame(objects);
+        // 0. Aktualizuj obiekty na GPU
+       /* UploadObjects(objects);*/
         //UploadLights();
         //DebugReadBuffers(objCount, (uint32_t)meshesData.size());
 
@@ -735,8 +786,8 @@ public:
         //    //CopyDepthToHiZ(depthTexturePrevFrame);
         //    BuildHiZ(depthTexturePrevFrame);
         //}
-        if (dirtyInstance)
-            BuildInstance(objCount);
+       /* if (dirtyInstance)
+            BuildInstance(objCount);*/
         //DebugPipelineState(objCount);
   
         // 5. WRITE PASS: zapis instancji
@@ -748,12 +799,18 @@ public:
         // barrier wewnątrz DispatchBuildCommands
 
         shaderRender->use();
+        glUniform1i(glGetUniformLocation(shaderRender->shaderProgramID, "shadowMap"), 0); // unit 0
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D_ARRAY, shadowTexture);
         //shaderRender->setMat4("viewProjection", viewProj);
         //shaderRender->setVec3("viewPos", currentCameraPos);
         //shaderRender->setInt("numLights", (int)gpuLights.size());
         //DebugPipelineState(objCount);
         // 7. Rysuj
         Draw();
+
+        firstFrame = true;
     }
 
     void DebugShowHiZ(int mipLevel = 0)
@@ -852,232 +909,3 @@ public:
 };
 
 #endif
-
-//void BuildHiZ()
-//{
-//    shaderHizDownsample->use();
-
-//    int w = screenWidth, h = screenHeight;
-
-//    for (int mip = 1; mip < hizMipLevels; mip++) {
-//        w = std::max(1, w / 2);
-//        h = std::max(1, h / 2);
-
-//        // Poprzedni mip jako sampler (texture view na mip-1)
-//        // Ograniczamy BASE/MAX żeby sampler czytał tylko ten poziom
-//        glTextureParameteri(hizTexture, GL_TEXTURE_BASE_LEVEL, mip - 1);
-//        glTextureParameteri(hizTexture, GL_TEXTURE_MAX_LEVEL, mip - 1);
-//        glBindTextureUnit(0, hizTexture);
-
-//        // Aktualny mip jako image2D (zapis)
-//        glBindImageTexture(1, hizTexture, mip, GL_FALSE, 0,
-//            GL_WRITE_ONLY, GL_R32F);
-
-//        glDispatchCompute((w + 7) / 8, (h + 7) / 8, 1);
-//        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT
-//            | GL_TEXTURE_FETCH_BARRIER_BIT);
-//    }
-
-//    // Przywróć pełny zakres mipów
-//    glTextureParameteri(hizTexture, GL_TEXTURE_BASE_LEVEL, 0);
-//    glTextureParameteri(hizTexture, GL_TEXTURE_MAX_LEVEL, hizMipLevels - 1);
-//}
-
-    //size_t prevSizeLights = 0;
-
-    //void UpdateAndUploadLights(std::vector<LightComponent*>& lights, std::vector<TransformComponent*>& transforms)
-    //{
-    //    if (lights.empty()) return;
-
-    //    uint32_t count = std::min((uint32_t)lights.size(), (uint32_t)MAX_UBO_LIGHTS);
-    //    gpuLights.resize(count);
-
-    //    for (size_t i = 0; i < count; i++)
-    //    {
-    //        LightComponent* light = lights[i];
-    //        TransformComponent* transform = transforms[i];
-    //        if (!light || !transform) continue;
-
-    //        GPULight& g = gpuLights[i];
-
-    //        const bool on = light->isOn;
-
-    //        g.position = glm::vec4(transform->position, (float)light->type);
-    //        g.direction = (glm::length2(light->direction) < 0.0001f) ? glm::vec4(TransformHelper::getForward(*transform), 0.0f) : glm::vec4(light->direction, 0.0f);
-
-    //        const glm::vec3& zero = glm::vec3(0.0f);
-    //        g.ambient = glm::vec4(on ? light->ambient : zero, 0.0f);
-    //        g.diffuse = glm::vec4(on ? light->diffuse : zero, 0.0f);
-    //        g.specular = glm::vec4(on ? light->specular : zero, 0.0f);
-    //        g.params1 = glm::vec4(light->constant, light->linear, light->quadratic, 0.0f);
-    //        g.params2 = glm::vec4(light->cutOff, light->outerCutOff, on ? 1.0f : 0.0f, 0.0f);
-    //    }
-
-
-    //    glBindBuffer(GL_UNIFORM_BUFFER, lightsUBO);
-    //    glBufferSubData(GL_UNIFORM_BUFFER, 0, count * sizeof(GPULight), gpuLights.data());
-    //    glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
-    //    //if (prevSizeLights == gpuLights.size())
-    //    //{
-    //    //    glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightsSSBO);
-    //    //    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, gpuLights.size() * sizeof(GPULight), gpuLights.data());
-    //    //    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-    //    //}
-    //    //else
-    //    //{
-    //    //    glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightsSSBO);
-    //    //    glBufferData(GL_SHADER_STORAGE_BUFFER, gpuLights.size() * sizeof(GPULight), gpuLights.data(), GL_DYNAMIC_DRAW);
-    //    //    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-    //    //}
-
-    //    prevSizeLights = count;
-    //}
-
-
-//void ResetDrawCount() {
-//    uint32_t zero = 0;
-//    glBindBuffer(GL_SHADER_STORAGE_BUFFER, drawCountSSBO);
-//    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(uint32_t), &zero);
-//    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-//}
-
-//void BindForCompute() {
-//    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, renderDataSSBO);
-//    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, meshDataSSBO);
-//    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, drawCmdSSBO);
-//    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, drawCountSSBO);
-//}
-
-
-    //uint32_t ReadDrawCount() {
-    //    uint32_t count = 0;
-    //    glBindBuffer(GL_SHADER_STORAGE_BUFFER, drawCountSSBO);
-    //    glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(uint32_t), &count);
-    //    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-    //    return count;
-    //}
-
-    //void ComputePrefixSum()
-    //{
-    //    uint32_t meshCount = (uint32_t)meshesData.size();
-
-    //    // Odczytaj liczniki z GPU
-    //    std::vector<uint32_t> counts(meshCount);
-    //    glGetNamedBufferSubData(meshCountersSSBO, 0, meshCount * sizeof(uint32_t), counts.data());
-
-    //    // Prefix-sum: instanceOffset[i] = sum(counts[0..i-1])
-    //    uint32_t offset = 0; // offset = łączna liczba widocznych instancji w tej klatce
-    //    for (uint32_t i = 0; i < meshCount; i++) {
-    //        meshMetaCPU[i].instanceOffset = offset;
-    //        meshMetaCPU[i].instanceCount = 0;   // reset przed write_pass
-    //        offset += counts[i];
-    //    }
-
-    //    // Wyślij MeshMeta z powrotem na GPU
-    //    glNamedBufferSubData(meshMetaSSBO, 0, meshCount * sizeof(GPUMeshMeta), meshMetaCPU.data());
-
-
-    //    // Resize instanceSSBO jeśli potrzeba
-    //    ResizeInstanceBufferIfNeeded(offset);
-    //}
-//struct DrawCommand {
-//     uint32_t count;
-//     uint32_t instanceCount;
-//     uint32_t firstIndex;
-//     uint32_t baseVertex;
-//     uint32_t baseInstance;
-// };
-//
-// GLuint vbo = 0;
-// GLuint ebo = 0;
-// GLuint meshInfoSSBO = 0;
-// GLuint drawCmdSSBO = 0;
-// GLuint compShader = 0;
-// GLuint indirectBuffer = 0;
-//
-// struct MeshInfo {
-//     uint32_t indexCount;
-//     uint32_t firstIndex;
-//     int32_t baseVertex;
-//     uint32_t pad = 0;
-// };
-// 
-// std::vector<MeshInfo> meshInfos;
-//
-// std::vector<Vertex> allVertices;
-// std::vector<uint32_t> allIndices;
-//
-// GLuint RegisterMesh(const MeshData& data)
-// {
-//     uint32_t baseVertex = (uint32_t)allVertices.size();
-//     uint32_t firstIndex = (uint32_t)allIndices.size();
-//
-//     // vertices
-//     allVertices.insert(allVertices.end(),
-//         data.vertices.begin(),
-//         data.vertices.end());
-//
-//     // indices (BEZ OFFSETU)
-//     allIndices.insert(allIndices.end(),
-//         data.indices.begin(),
-//         data.indices.end());
-//
-//     MeshInfo info;
-//     info.indexCount = (uint32_t)data.indices.size();
-//     info.firstIndex = firstIndex;
-//     info.baseVertex = baseVertex;
-//
-//     meshInfos.push_back(info);
-//
-//     return (GLuint)meshInfos.size() - 1;
-// }
-//
-// void InitGPU()
-// {
-//     compShader = ComputeShader("res/shaders/shader.comp").ID;
-//
-//     glGenBuffers(1, &vbo);
-//     glGenBuffers(1, &ebo);
-//     glGenBuffers(1, &meshInfoSSBO);
-//     glGenBuffers(1, &indirectBuffer);
-//
-//     // VBO
-//     glBindBuffer(GL_ARRAY_BUFFER, vbo);
-//     glBufferData(GL_ARRAY_BUFFER,
-//         allVertices.size() * sizeof(Vertex),
-//         allVertices.data(),
-//         GL_STATIC_DRAW);
-//
-//     // EBO
-//     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-//     glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-//         allIndices.size() * sizeof(uint32_t),
-//         allIndices.data(),
-//         GL_STATIC_DRAW);
-//
-//     // MeshInfo SSBO
-//     glBindBuffer(GL_SHADER_STORAGE_BUFFER, meshInfoSSBO);
-//     glBufferData(GL_SHADER_STORAGE_BUFFER,
-//         meshInfos.size() * sizeof(MeshInfo),
-//         meshInfos.data(),
-//         GL_STATIC_DRAW);
-//
-//     glUseProgram(compShader);
-//
-//     //glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, objectsSSBO);
-//     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, meshInfoSSBO);
-//
-//     glDispatchCompute(1, 1, 1);
-//
-//     glMemoryBarrier(GL_COMMAND_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
-// }
-//
-// void DrawGPU()
-// {
-//     glBindVertexArray(VAO);
-//
-//     glBindBuffer(GL_DRAW_INDIRECT_BUFFER, indirectBuffer);
-//
-//     glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, 1, 0);
-// }

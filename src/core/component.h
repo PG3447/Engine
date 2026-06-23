@@ -4,7 +4,6 @@
 #include <glm/glm.hpp>
 #include <memory>
 #include <string>
-#include "../unused/camera.h"
 #include "yaml_config.h"
 #include "mesh_data.h"
 
@@ -32,6 +31,7 @@ struct NodeAnimCache {
 extern uint32_t staticCounterAnimator;
 
 struct Component {
+    static constexpr uint64_t ComponentBit = 0;
     static constexpr bool Unique = false;
     virtual ~Component() {}
 
@@ -47,6 +47,7 @@ struct Component {
 
 struct TransformComponent : Component {
     static constexpr uint64_t ComponentBit = 1ull << 0;
+    static constexpr bool Unique = true;
 
     glm::vec3 position{ 0.0f, 0.0f, 0.0f };
     glm::vec3 rotation{ 0.0f, 0.0f, 0.0f };
@@ -116,6 +117,11 @@ struct RenderComponent : Component {
     //Model* model = nullptr;
     //Shader* shader = nullptr;
     //std::shared_ptr<Material> materialOverride = nullptr;
+
+
+    void Serialize(YAML::Node& node) override;
+    void Deserialize(const YAML::Node& node) override;
+
 };
 
 
@@ -169,7 +175,7 @@ struct CameraComponent : Component {
     float pitch = 0.0f;*/
 
     float fov = 45.0f;
-    float nearPlane = 0.1f;
+    float nearPlane = 1.4f;
     float farPlane = 10000.0f;
     bool dirty = true;
 
@@ -205,6 +211,8 @@ struct SpriteComponent : Component {
     std::string text = "";
     std::string fontPath = "res/textures/fonts/arial.ttf";
     float fontSize = 32.0f;
+    std::string fontPath2 = "";
+    float fontSize2 = 22.0f;
     glm::vec3 textColor = { 255.0f, 255.0f, 255.0f };
     glm::vec2 textOffset = { 0.0f, 0.0f };
     bool textOutlineEnabled = false;
@@ -222,7 +230,6 @@ struct SpriteComponent : Component {
 };
 
 
-
 struct ColliderComponent : Component {
     static constexpr uint64_t ComponentBit = 1ull << 5;
 
@@ -236,6 +243,9 @@ struct ColliderComponent : Component {
     bool affectsNavMesh = false;
     bool isWalkable = false;
     
+    std::function<void(GameObject* other)> onTriggerEnter;
+    std::function<void(GameObject* other)> onTriggerExit;
+
     const char* GetTypeName() const override { return "Collider"; }
 
     void OnEnable(GameObject* owner) override;
@@ -245,6 +255,8 @@ struct ColliderComponent : Component {
         node["offset"] = offset;
         node["halfSize"] = halfSize;
         node["isTrigger"] = isTrigger;
+        node["affectsNavMesh"] = affectsNavMesh;
+        node["isWalkable"] = isWalkable;
     }
 
     void Deserialize(const YAML::Node& node) override
@@ -257,8 +269,28 @@ struct ColliderComponent : Component {
 
         if (node["isTrigger"])
             isTrigger = node["isTrigger"].as<bool>();
+
+        if (node["affectsNavMesh"])
+            affectsNavMesh = node["affectsNavMesh"].as<bool>();
+
+        if (node["isWalkable"])
+            isWalkable = node["isWalkable"].as<bool>();
     }
 
+    void Recalculate(GameObject* owner);
+
+    void OnTriggerEnter(GameObject* other)
+    {
+        if (onTriggerEnter)
+            onTriggerEnter(other);
+    }
+
+    void OnTriggerExit(GameObject* other)
+    {
+        if (onTriggerExit)
+            onTriggerExit(other);
+    }
+    
 };
 
 enum LightType {
@@ -297,8 +329,6 @@ struct LightComponent : Component {
 
     void Serialize(YAML::Node& node) override
     {
-        node["type"] = "Light";
-
         node["index"] = index;
         node["isOn"] = isOn;
 
@@ -597,6 +627,42 @@ struct CockroachFollowerComponent : Component {
     bool hasActiveNavGoal = false;
 };
 
+struct UIButtonComponent : Component
+{
+    static constexpr uint64_t ComponentBit = 1ull << 14;
 
+    bool isHovered = false;
+    bool isPressed = false;
+    bool isEnabled = true;
+
+    std::function<void(GameObject*)> onClick;
+    std::function<void(GameObject*)> onHoverEnter;
+    std::function<void(GameObject*)> onHoverExit;
+
+    glm::vec4 normalColor = { 1,1,1,1 };
+    glm::vec4 hoverColor = { 0.8f,0.8f,0.8f,1 };
+    glm::vec4 pressColor = { 0.6f,0.6f,0.6f,1 };
+
+    const char* GetTypeName() const override { return "UIButton"; }
+};
+
+struct UISliderComponent : Component
+{
+    static constexpr uint64_t ComponentBit = 1ull << 15;
+
+    float value = 0.5f; // 0 - 1
+
+    bool isDragging = false;
+
+    std::function<void(float)> onValueChanged;
+
+    glm::vec4 barColor = { 0.3f,0.3f,0.3f,1 };
+    glm::vec4 fillColor = { 0.8f,0.8f,0.2f,1 };
+
+    float minValue = 0.0f;
+    float maxValue = 1.0f;
+
+    const char* GetTypeName() const override { return "UISlider"; }
+};
 
 #endif

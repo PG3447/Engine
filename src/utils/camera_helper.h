@@ -16,8 +16,6 @@ public:
     static void InitialCamera(CameraComponent& cam, TransformComponent& transform, glm::vec3 up, Viewport vp) //, float yaw, float pitch
     {
         cam.state.WorldUp = up;
-        //cam.yaw = yaw;
-        //cam.pitch = pitch;
         cam.viewport = vp;
 
         updateCameraVectors(cam, transform);
@@ -41,20 +39,10 @@ public:
     static void updateCameraVectors(CameraComponent& cam, TransformComponent& transform)
     {
         cam.dirty = true;
-        // calculate the new Front vector
-        //glm::vec3 front;
-        //front.x = cos(glm::radians(cam.yaw)) * cos(glm::radians(cam.pitch));
-        //front.y = sin(glm::radians(cam.pitch));
-        //front.z = sin(glm::radians(cam.yaw)) * cos(glm::radians(cam.pitch));
 
         cam.state.Front = TransformHelper::getForward(transform);
         cam.state.Right = TransformHelper::getRight(transform);
         cam.state.Up = TransformHelper::getUp(transform);
-
-        //cam.state.Front = glm::normalize(front);
-        //// also re-calculate the Right and Up vector
-        //cam.state.Right = glm::normalize(glm::cross(cam.state.Front, cam.state.WorldUp));  // normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
-        //cam.state.Up = glm::normalize(glm::cross(cam.state.Right, cam.state.Front));
     }
 
 
@@ -79,6 +67,7 @@ public:
         }
 
         transform.rotation = rot;
+        transform.isDirty = true;
 
         // update Front, Right and Up Vectors using the updated Euler angles
         updateCameraVectors(cam, transform);

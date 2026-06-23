@@ -19,6 +19,7 @@ private:
 
     Query<TransformComponent, RigidbodyComponent, ColliderComponent>* query;
     Query<TransformComponent, ColliderComponent>* colliderOnlyQuery;
+    std::set<std::pair<GameObject*, GameObject*>> activeTriggers;
 
     float physicsAccumulator = 0.0f;
     static constexpr float fixedDeltaTime = 0.04f;

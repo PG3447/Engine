@@ -17,9 +17,12 @@ public:
         result.max = glm::vec3(-FLT_MAX);
 
         for (auto& node : meshes) {
-            result.min = glm::min(result.min, node.cpuData->aabb.min);
-            result.max = glm::max(result.max, node.cpuData->aabb.max);
+            const AABB& aabb = node.cpuData->aabb;
+
+            result.min = glm::min(result.min, aabb.min);
+            result.max = glm::max(result.max, aabb.max);
         }
+        result.centerLocal = (result.min + result.max) * 0.5f;
         return result;
     }
     

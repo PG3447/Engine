@@ -25,66 +25,14 @@ Model::Model() : gammaCorrection(false)
 }
 
 Model::~Model() {
-    //if (instanceVBO != 0) {
-    //    glDeleteBuffers(1, &instanceVBO);
-    //}
 }
 
 Model::Model(string const& path, bool gamma) : gammaCorrection(gamma)
 {
     loadModel(path);
 }
-
-
-/*
-// constructor, expects a filepath to a 3D model.
-Model::Model(string const& path, float meshScale, bool gamma) : meshScale(meshScale), gammaCorrection(gamma)
-{
-    if (!path.empty())
-    {
-        loadModel(path);
-    }
-}
-*/
-
-//
-//void Model::PrepareInstancing()
-//{
-//    if (instancingPrepared) return;
-//
-//    if (instanceVBO == 0) {
-//        glGenBuffers(1, &instanceVBO);
-//    }
-//
-//    for (auto& node : nodes) {
-//        node.gpuMesh->EnableInstancing(instanceVBO);
-//    }
-//
-//    instancingPrepared = true;
-//}
-
-
-// draws the model, and thus all its meshes
-//void Model::Draw(GLsizei instanceCount, Material* materialOverride)
-//{
-//    for (auto& node : nodes)
-//    {
-//        Material* activeMaterial = materialOverride ? materialOverride : node.material.get();
-//        if (activeMaterial) {
-//            activeMaterial->Apply();
-//        }
-//
-//        node.gpuMesh->Draw(instanceCount);
-//    }
-//}
-
 void Model::turnOnReflect(unsigned int cubemapTexture)
 {
-    //for (unsigned int i = 0; i < meshes.size(); i++)
-    //{
-    //    meshes[i].reflect = true;
-    //    meshes[i].cubemapTexture = cubemapTexture;
-    //}
 }
 
 void Model::loadModel(string const& path)
@@ -128,10 +76,6 @@ void Model::loadModel(string const& path)
     this->skeleton.totalNodes = nodeCounter;
 
     LoadAnimations(scene);
-
-    //this->nodes = std::move(rootNode->nodes);
-    //this->children = std::move(rootNode->children);
-    //this->transform = rootNode->transform;
 }
 
 std::shared_ptr<ModelNode> Model::processNode(aiNode* node, const aiScene* scene)
@@ -171,38 +115,6 @@ std::shared_ptr<ModelNode> Model::processNode(aiNode* node, const aiScene* scene
 
     return model;
 }
-
-//// diffuse
-//vector<Texture> diffuseMaps = loadMaterialTextures(aiMat, aiTextureType_DIFFUSE, "texture_diffuse", scene);
-//if (diffuseMaps.empty()) {
-//
-//    @@ - 218, 16 + 219, 27 @@ MeshNode Model::processMesh(aiMesh * mesh, const aiScene * scene)
-//}
-//if (!diffuseMaps.empty()) {
-//    myMaterial->diffuseMap = diffuseMaps[0].id;
-//
-//    if (diffuseMaps[0].hasAlpha)
-//        myMaterial->transparent = true;
-//}
-//else {
-//    aiColor4D color(1.0f, 1.0f, 1.0f, 1.0f);
-//    if (aiGetMaterialColor(aiMat, AI_MATKEY_BASE_COLOR, &color) == AI_SUCCESS ||
-//        aiGetMaterialColor(aiMat, AI_MATKEY_COLOR_DIFFUSE, &color) == AI_SUCCESS)
-//        if (aiGetMaterialColor(aiMat, AI_MATKEY_BASE_COLOR, &color) == AI_SUCCESS || aiGetMaterialColor(aiMat, AI_MATKEY_COLOR_DIFFUSE, &color) == AI_SUCCESS)
-//        {
-//            myMaterial->diffuseColor = glm::vec3(color.r, color.g, color.b);
-//            myMaterial->baseColor = glm::vec4(color.r, color.g, color.b, color.a);
-//        }
-//}
-//
-//float opacity = 1.0f;
-//aiGetMaterialFloat(aiMat, AI_MATKEY_OPACITY, &opacity);
-//
-//int blendMode = aiBlendMode_Default;
-//aiGetMaterialInteger(aiMat, AI_MATKEY_BLEND_FUNC, &blendMode);
-//
-//myMaterial->transparent = (!diffuseMaps.empty() && diffuseMaps[0].hasAlpha) || (opacity < 1.0f) || (blendMode != aiBlendMode_Default);
-
 
 // specul
 
@@ -272,19 +184,6 @@ MeshNode Model::processMesh(aiMesh* mesh, const aiScene* scene)
     // process materials
     aiMaterial* aiMat = scene->mMaterials[mesh->mMaterialIndex];
     std::shared_ptr<Material> myMaterial = std::make_shared<Material>();
-
-
-    //vector<Texture> diffuseMaps = loadMaterialTextures(aiMat, aiTextureType_DIFFUSE, "texture_diffuse", scene);
-//if (diffuseMaps.empty()) {
-//
-//    @@ - 218, 16 + 219, 27 @@ MeshNode Model::processMesh(aiMesh * mesh, const aiScene * scene)
-//}
-//if (!diffuseMaps.empty()) {
-//    myMaterial->diffuseMap = diffuseMaps[0].id;
-//
-//    if (diffuseMaps[0].hasAlpha)
-//        myMaterial->transparent = true;
-//}
 
     float opacity = 1.0f;
     aiGetMaterialFloat(aiMat, AI_MATKEY_OPACITY, &opacity);
@@ -394,15 +293,6 @@ MeshNode Model::processMesh(aiMesh* mesh, const aiScene* scene)
     node.cpuData->aabb = aabb;
     return node;
 }
-
-//void Model::SetShader(Shader* shader)
-//{
-//    for (auto& node : nodes) {
-//        if (node.material) {
-//            node.material->shader = shader;
-//        }
-//    }
-//}
 
 void Model::SetShader(Shader* shader)
 {
@@ -644,80 +534,3 @@ void Model::ReadKeyframes(aiNodeAnim* channel, AnimationChannel& destChannel)
         destChannel.scales.push_back(key);
     }
 }
-
-//
-//
-//std::unique_ptr<Model> Model::createOrbit(float radius, int segments, float tiltDegrees, float scale, vector<Texture>* textures)
-//{
-//    auto orbit = std::make_unique<Model>();
-//    orbit->transform.setLocalScale(glm::vec3(scale));
-//
-//    std::vector<Vertex> vertices;
-//    std::vector<unsigned int> indices;
-//
-//    float tilt = glm::radians(tiltDegrees);
-//
-//    for (int i = 0; i <= segments; ++i)
-//    {
-//        float angle = (float)i / segments * 2.0f * 3.14159265f;
-//
-//        float x = radius * cos(angle);
-//        float y = 0.0f;
-//        float z = radius * sin(angle);
-//
-//        glm::vec3 p(
-//            x,
-//            y * cos(tilt) - z * sin(tilt),
-//            y * sin(tilt) + z * cos(tilt)
-//        );
-//
-//        Vertex v{};
-//        v.Position = p;
-//        v.Normal = glm::vec3(0, 1, 0);
-//        v.TexCoords = glm::vec2((float)i / segments, 0.0f);
-//
-//        vertices.push_back(v);
-//        indices.push_back(i);
-//    }
-//    vector<Texture> finalTextures;
-//
-//    if (textures != nullptr)
-//        finalTextures = *textures;
-//
-//    Mesh orbitMesh(vertices, indices, finalTextures);
-//    orbitMesh.meshType = Mesh::MESH_LINES;
-//
-//    orbit->meshes.push_back(std::move(orbitMesh));
-//    return orbit;
-//}
-//
-//std::unique_ptr<Model> Model::createSphere(int rings, int sectors, const std::string& texturePath)
-//{
-//    auto model = std::make_unique<Model>();
-//
-//    std::vector<float> ringIDs;
-//    for (int r = 0; r < rings; ++r)
-//        ringIDs.push_back((float)r);
-//    Mesh mesh(ringIDs);
-//    mesh.meshType = Mesh::MESH_POINTS;
-//    if (!texturePath.empty())
-//    {
-//        size_t pos = texturePath.find_last_of("/\\");
-//        std::string directory = "";
-//        std::string filename = texturePath;
-//        if (pos != std::string::npos)
-//        {
-//            directory = texturePath.substr(0, pos);
-//            filename = texturePath.substr(pos + 1);
-//        }
-//
-//        Texture tex;
-//        tex.id = ResourceManager::LoadTexture(filename, directory);
-//        tex.type = "texture_diffuse";
-//        tex.path = texturePath;
-//        mesh.textures.push_back(tex);
-//    }
-//    model->meshes.push_back(mesh);
-//
-//    return model;
-//}

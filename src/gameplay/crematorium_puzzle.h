@@ -5,6 +5,7 @@
 #include "shader.h"
 #include <vector>
 #include <algorithm>
+#include <systems/AudioSystem.h>
 
 enum class WallSide {
     Left,
@@ -20,7 +21,6 @@ struct CoffinData {
 
     bool isInteractable = true;
     bool isActivated = false;
-    //uint64_t activationOrder = 0;
 
     int preDeterminedLevel = 0;
     bool isBouncingBack = false;
@@ -29,33 +29,79 @@ struct CoffinData {
     float currentExtensionAnim = 0.0f;
 
     glm::vec3 basePosition;
+
+    FMOD::Channel* slidingChannel = nullptr;
 };
 
 class CrematoriumPuzzle {
 public:
-    int rows = 5;
-    int cols = 5;
+    int rows = 4;
+    int cols = 4;
 
     std::vector<std::vector<int>> configLeftWall = {
-        {3, 3, 2, 5, 0},
-        {5, 5, 4, 2, 1},
-        {2, 1, 4, 3, 2},
-        {4, 0, 5, 0, 0},
-        {4, 2, 3, 4, 3}
+        {4, 4, 3, 1},
+        {2, 3, 2, 1},
+        {4, 4, 0, 2},
+        {1, 4, 2, 1}
     };
 
     std::vector<std::vector<int>> configRightWall = {
-        {2, 3, 3, 5, 2},
-        {2, 0, 2, 5, 5},
-        {1, 3, 2, 0, 4},
-        {4, 4, 2, 5, 4},
-        {0, 2, 0, 5, 1}
+        {3, 2, 4, 0},
+        {4, 3, 2, 1},
+        {1, 2, 3, 3},
+        {3, 1, 3, 4}
     };
 
-    std::pair<int, int> leftStart = { 0, 0 };
-    std::pair<int, int> leftEnd = { 4, 4 };
+    std::vector<std::vector<int>> corpsesLeftWall = {
+        {0, 1, 0, 0},
+        {1, 0, 0, 1},
+        {0, 1, 1, 0},
+        {0, 0, 0, 1}
+    };
 
-    std::pair<int, int> rightStart = { 4, 4 };
+    std::vector<std::vector<int>> corpsesRightWall = {
+        {1, 0, 1, 0},
+        {0, 0, 1, 0},
+        {1, 1, 0, 0},
+        {0, 0, 0, 1}
+    };
+
+    //int rows = 5;
+    //int cols = 5;
+
+    //std::vector<std::vector<int>> configLeftWall = {
+    //    {3, 3, 2, 5, 0},
+    //    {5, 5, 4, 2, 1},
+    //    {2, 1, 4, 3, 2},
+    //    {4, 0, 5, 0, 0},
+    //    {4, 2, 3, 4, 3}
+    //};
+
+    //std::vector<std::vector<int>> configRightWall = {
+    //    {2, 3, 3, 5, 2},
+    //    {2, 0, 2, 5, 5},
+    //    {1, 3, 2, 0, 4},
+    //    {4, 4, 2, 5, 4},
+    //    {0, 2, 0, 5, 1}
+    //};
+
+    AudioSystem* audioSystem = nullptr;
+    FMOD::Sound* soundSlideOut = nullptr;
+    FMOD::Sound* soundSlideIn = nullptr;
+    FMOD::Sound* soundCollide = nullptr;
+    FMOD::Sound* soundClose = nullptr;
+    FMOD::Sound* soundPuzzleSolved = nullptr;
+
+    //std::pair<int, int> leftStart = { 0, 0 };
+    //std::pair<int, int> leftEnd = { 4, 4 };
+
+    //std::pair<int, int> rightStart = { 4, 4 };
+    //std::pair<int, int> rightEnd = { 0, 0 };
+
+    std::pair<int, int> leftStart = { 0, 0 };
+    std::pair<int, int> leftEnd = { 3, 3 };
+
+    std::pair<int, int> rightStart = { 3, 3 };
     std::pair<int, int> rightEnd = { 0, 0 };
 
     std::unordered_map<GameObject*, std::shared_ptr<Material>> activeMaterials;
@@ -71,7 +117,7 @@ public:
     float minExtensionDistance = 12.0f;
     float maxExtensionDistance = 40.5f;
 
-    float wallOffset = 18.0f;
+    float wallOffset = 16.0f;
 
     glm::vec3 renderScale = glm::vec3(1.0f, 1.0f, 1.0f);
 
@@ -89,7 +135,8 @@ public:
     std::vector<CoffinData> coffins;
     uint64_t activationCounter = 1;
 
-    void Init(Scene* scene, std::shared_ptr<Model> coffinModel, Prefab* panelPrefab, Shader* shader, glm::vec3 cornerPosition);
+    void Init(Scene* scene, Prefab* redEmpty, Prefab* redCorpse, Prefab* greenEmpty, Prefab* greenCorpse, Prefab* panelPrefab, Shader* shader, glm::vec3 cornerPosition);
+    void SetupAudio(AudioSystem* audioSys, FMOD::Sound* slideOut, FMOD::Sound* slideIn, FMOD::Sound* collide, FMOD::Sound* close, FMOD::Sound* puzzleSolved = nullptr);
     void Update(float deltaTime);
     void ToggleCoffin(GameObject* clickedObject);
 };

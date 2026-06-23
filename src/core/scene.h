@@ -10,13 +10,15 @@
 #include "../systems/SpriteSystem.h"
 #include "../systems/animation_system.h"
 
+
 class Scene {
 private:
-    ECS& ecs;
+    ECS ecs;
     std::unique_ptr<GameObject> root;
 
 public:
-    Scene(ECS& ecsRef) : ecs(ecsRef)
+    //Scene(ECS& ecsRef) : ecs(ecsRef)
+    Scene()
     {
         root = std::make_unique<GameObject>(&ecs);
         root->AddComponent<TransformComponent>();
@@ -41,9 +43,15 @@ public:
     Query<Components...>* CreateQuery() {
         return ecs.CreateQuery<Components...>();
     }
+    
+    void DestroyGameObject(GameObject* go) {
+        if (!go || go == root.get()) return;
+        go->SetParent(nullptr);
+    }
 
     void Update(float deltaTime);
 
+    void addAllSystems(GLFWwindow *window);
 
     void DebugHierarchy(GameObject* obj, int depth = 0);
     //std::vector<GameObject*> GetGameObjects();

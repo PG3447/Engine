@@ -1,12 +1,19 @@
 #include "crematorium_puzzle.h"
 
-void CrematoriumPuzzle::Init(Scene* scene, std::shared_ptr<Model> coffinModel, Prefab* panelPrefab, Shader* shader, glm::vec3 cornerPosition)
+void CrematoriumPuzzle::Init(Scene* scene, Prefab* redEmpty, Prefab* redCorpse, Prefab* greenEmpty, Prefab* greenCorpse, Prefab* panelPrefab, Shader* shader, glm::vec3 cornerPosition)
 {
     GameObject* puzzleRoot = scene->CreateGameObject();
     puzzleRoot->name = "Crematorium_Puzzle_Root";
 
     for (int r = 0; r < rows; ++r) {
         for (int c = 0; c < cols; ++c) {
+            int configRow = (rows - 1) - r;
+            int configCol = (cols - 1) - c;
+            int targetLvl = configLeftWall[configRow][configCol];
+            bool interactable = (targetLvl > 0);
+
+            Prefab* prefabToUse = (corpsesLeftWall[configRow][configCol] == 1) ? redCorpse : redEmpty;
+
             GameObject* obj = scene->CreateGameObject(puzzleRoot);
             obj->name = "Coffin_L_" + std::to_string(r) + "_" + std::to_string(c);
 
@@ -14,29 +21,27 @@ void CrematoriumPuzzle::Init(Scene* scene, std::shared_ptr<Model> coffinModel, P
             transform->scale = renderScale;
 
             glm::vec3 posOnWall = cornerPosition + glm::vec3((c + 1) * spacingHorizontal * w1_buildDirX, r * spacingVertical, 0.0f);
-            glm::vec3 pos = posOnWall - glm::vec3(0.0f, 0.0f, (coffinDimensions.z + wallOffset) * w1_extendDirZ);
+            glm::vec3 pos = posOnWall - glm::vec3(0.0f, 0.0f, wallOffset * w1_extendDirZ);
             transform->position = pos;
 
-            int configRow = (rows - 1) - r;
-            int configCol = (cols - 1) - c;
-
-            int targetLvl = configLeftWall[configRow][configCol];
-            bool interactable = (targetLvl > 0);
-
-            glm::vec4 coffinColor = interactable ? glm::vec4(1.0f, 0.0f, 0.0f, 1.0f) : glm::vec4(0.1f, 0.1f, 0.1f, 1.0f);
-
             auto* render = obj->AddComponent<RenderComponent>();
-            render->meshes = coffinModel->rootNode->meshes;
-            for (auto& mesh : render->meshes) {
-                if (mesh.material) {
-                    mesh.material = std::make_shared<Material>(*mesh.material);
-                    mesh.material->diffuseColor = coffinColor;
-                }
+            if (prefabToUse->rootModel && prefabToUse->rootModel->rootNode) {
+                auto gatherMeshes = [](auto& self, ModelNode* node, RenderComponent* rc) -> void {
+                    if (!node) return;
+                    for (auto& mesh : node->meshes) {
+                        rc->meshes.push_back(mesh);
+                    }
+                    for (auto& child : node->children) {
+                        self(self, child.get(), rc);
+                    }
+                    };
+                gatherMeshes(gatherMeshes, prefabToUse->rootModel->rootNode.get(), render);
             }
 
             auto* collider = obj->AddComponent<ColliderComponent>();
-            collider->halfSize = glm::vec3(coffinDimensions.x * 0.8f, coffinDimensions.y * 0.8f, coffinDimensions.z * 1.0f);
-            collider->offset = glm::vec3(0.0f, 0.0f, coffinDimensions.z * 0.5f * w1_extendDirZ);
+            collider->halfSize = glm::vec3(coffinDimensions.x * 0.5f, coffinDimensions.y * 0.5f, coffinDimensions.z * 0.5f);
+
+            collider->offset = glm::vec3(0.0f, 0.0f, -coffinDimensions.z * 0.5f * w1_extendDirZ);
 
             CoffinData data;
             data.gameObject = obj;
@@ -53,6 +58,13 @@ void CrematoriumPuzzle::Init(Scene* scene, std::shared_ptr<Model> coffinModel, P
 
     for (int r = 0; r < rows; ++r) {
         for (int c = 0; c < cols; ++c) {
+            int configRow = (rows - 1) - r;
+            int configCol = c;
+            int targetLvl = configRightWall[configRow][configCol];
+            bool interactable = (targetLvl > 0);
+
+            Prefab* prefabToUse = (corpsesRightWall[configRow][configCol] == 1) ? greenCorpse : greenEmpty;
+
             GameObject* obj = scene->CreateGameObject(puzzleRoot);
             obj->name = "Coffin_R_" + std::to_string(r) + "_" + std::to_string(c);
 
@@ -60,30 +72,28 @@ void CrematoriumPuzzle::Init(Scene* scene, std::shared_ptr<Model> coffinModel, P
             transform->scale = renderScale;
 
             glm::vec3 posOnWall = cornerPosition + glm::vec3(0.0f, r * spacingVertical, (c + 1) * spacingHorizontal * w2_buildDirZ);
-            glm::vec3 pos = posOnWall - glm::vec3((coffinDimensions.z + wallOffset) * w2_extendDirX, 0.0f, 0.0f);
+            glm::vec3 pos = posOnWall - glm::vec3(wallOffset * w2_extendDirX, 0.0f, 0.0f);
             transform->position = pos;
             transform->rotation = glm::vec3(0.0f, -90.0f, 0.0f);
 
-            int configRow = (rows - 1) - r;
-            int configCol = c;
-
-            int targetLvl = configRightWall[configRow][configCol];
-            bool interactable = (targetLvl > 0);
-
-            glm::vec4 coffinColor = interactable ? glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) : glm::vec4(0.1f, 0.1f, 0.1f, 1.0f);
-
             auto* render = obj->AddComponent<RenderComponent>();
-            render->meshes = coffinModel->rootNode->meshes;
-            for (auto& mesh : render->meshes) {
-                if (mesh.material) {
-                    mesh.material = std::make_shared<Material>(*mesh.material);
-                    mesh.material->diffuseColor = coffinColor;
-                }
+            if (prefabToUse->rootModel && prefabToUse->rootModel->rootNode) {
+                auto gatherMeshes = [](auto& self, ModelNode* node, RenderComponent* rc) -> void {
+                    if (!node) return;
+                    for (auto& mesh : node->meshes) {
+                        rc->meshes.push_back(mesh);
+                    }
+                    for (auto& child : node->children) {
+                        self(self, child.get(), rc);
+                    }
+                    };
+                gatherMeshes(gatherMeshes, prefabToUse->rootModel->rootNode.get(), render);
             }
 
             auto* collider = obj->AddComponent<ColliderComponent>();
-            collider->halfSize = glm::vec3(coffinDimensions.z * 1.0f, coffinDimensions.y * 0.8f, coffinDimensions.x * 0.8f);
-            collider->offset = glm::vec3(coffinDimensions.z * 0.5f * w2_extendDirX, 0.0f, 0.0f);
+            collider->halfSize = glm::vec3(coffinDimensions.z * 0.5f, coffinDimensions.y * 0.5f, coffinDimensions.x * 0.5f);
+
+            collider->offset = glm::vec3(-coffinDimensions.z * 0.5f * w2_extendDirX, 0.0f, 0.0f);
 
             CoffinData data;
             data.gameObject = obj;
@@ -100,47 +110,19 @@ void CrematoriumPuzzle::Init(Scene* scene, std::shared_ptr<Model> coffinModel, P
 
     leftPanelObj = panelPrefab->Instantiate(*scene, puzzleRoot, shader);
     leftPanelObj->name = "Panel_Left";
-
     auto* tLeft = leftPanelObj->GetComponent<TransformComponent>();
-    //tLeft->position = cornerPosition + glm::vec3(-15.0f, 20.0f, -5.0f);
-    tLeft->position = glm::vec3(130.0f, 10.15f, -260.34f);
+    tLeft->position = cornerPosition + glm::vec3(-1.0f, -0.1f, 35.0f);
     tLeft->scale = glm::vec3(1.0f);
     tLeft->rotation = glm::vec3(0.0f, -90.0f, 0.0f);
     tLeft->isDirty = true;
 
-    leftPanelObj->TraverseChildren([](GameObject* child) {
-        auto* render = child->GetComponent<RenderComponent>();
-        if (render) {
-            for (auto& mesh : render->meshes) {
-                if (mesh.material) {
-                    mesh.material = std::make_shared<Material>(*mesh.material);
-                    mesh.material->diffuseColor = glm::vec4(0.1f, 0.1f, 0.1f, 1.0f);
-                }
-            }
-        }
-    });
-
     rightPanelObj = panelPrefab->Instantiate(*scene, puzzleRoot, shader);
     rightPanelObj->name = "Panel_Right";
-
     auto* tRight = rightPanelObj->GetComponent<TransformComponent>();
-    //tRight->position = cornerPosition + glm::vec3(-5.0f, 20.0f, -15.0f);
-    tRight->position = glm::vec3(180.66f, 10.77f, -210.87f);
+    tRight->position = cornerPosition + glm::vec3(-35.0f, -0.1f, 1.0f);
     tRight->scale = glm::vec3(1.0f);
-    tRight->rotation = glm::vec3(0.0f, 180.0f, 0.0f);
+    tRight->rotation = glm::vec3(0.0f, 0.0f, 0.0f);
     tRight->isDirty = true;
-
-    rightPanelObj->TraverseChildren([](GameObject* child) {
-        auto* render = child->GetComponent<RenderComponent>();
-        if (render) {
-            for (auto& mesh : render->meshes) {
-                if (mesh.material) {
-                    mesh.material = std::make_shared<Material>(*mesh.material);
-                    mesh.material->diffuseColor = glm::vec4(0.1f, 0.1f, 0.1f, 1.0f);
-                }
-            }
-        }
-    });
 
     auto setupPanelMaterials = [&](GameObject* panelObj, glm::vec4 activeColor) {
         if (!panelObj) return;
@@ -175,8 +157,8 @@ void CrematoriumPuzzle::Init(Scene* scene, std::shared_ptr<Model> coffinModel, P
             });
         };
 
-    setupPanelMaterials(leftPanelObj, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
-    setupPanelMaterials(rightPanelObj, glm::vec4(0.0f, 1.0f, 0.0f, 1.04));
+    setupPanelMaterials(leftPanelObj, glm::vec4(25.0f, 0.0f, 0.0f, 1.0f));
+    setupPanelMaterials(rightPanelObj, glm::vec4(0.0f, 25.0f, 0.0f, 1.0f));
 }
 
 void CrematoriumPuzzle::ToggleCoffin(GameObject* clickedObject)
@@ -197,9 +179,25 @@ void CrematoriumPuzzle::ToggleCoffin(GameObject* clickedObject)
         clickedData->isActivated = false;
         clickedData->isBouncingBack = false;
         clickedData->currentTargetLevel = 0;
+
+        if (clickedData->slidingChannel) {
+            clickedData->slidingChannel->stop();
+            clickedData->slidingChannel = nullptr;
+        }
+        if (audioSystem && soundSlideIn) {
+            clickedData->slidingChannel = audioSystem->playSoundEx(soundSlideIn);
+        }
     }
     else {
         clickedData->isActivated = true;
+
+        if (clickedData->slidingChannel) {
+            clickedData->slidingChannel->stop();
+            clickedData->slidingChannel = nullptr;
+        }
+        if (audioSystem && soundSlideOut) {
+            clickedData->slidingChannel = audioSystem->playSoundEx(soundSlideOut);
+        }
 
         std::vector<bool> gridOccupied(rows * cols * cols, false);
 
@@ -241,7 +239,8 @@ void CrematoriumPuzzle::ToggleCoffin(GameObject* clickedObject)
 
 void CrematoriumPuzzle::Update(float deltaTime)
 {
-    float animSpeed = 60.0f;
+    float animSpeed = 25.0f;
+    float fadeDistance = 4.0f;
 
     for (auto& coffin : coffins) {
         if (!coffin.gameObject || !coffin.transform) continue;
@@ -255,17 +254,41 @@ void CrematoriumPuzzle::Update(float deltaTime)
                 targetDistance = minExtensionDistance + t * (maxExtensionDistance - minExtensionDistance);
             }
             else {
-                targetDistance = minExtensionDistance * 0.4f;
+                targetDistance = minExtensionDistance * 0.8f;
             }
 
             if (coffin.currentExtensionAnim < targetDistance) {
                 coffin.currentExtensionAnim += animSpeed * deltaTime;
+
+                if (coffin.slidingChannel) {
+                    float distanceLeft = targetDistance - coffin.currentExtensionAnim;
+                    float volume = 1.0f;
+                    if (distanceLeft < fadeDistance) {
+                        volume = std::max(0.0f, distanceLeft / fadeDistance);
+                    }
+                    coffin.slidingChannel->setVolume(volume);
+                }
+
                 if (coffin.currentExtensionAnim >= targetDistance) {
                     coffin.currentExtensionAnim = targetDistance;
+
+                    if (coffin.slidingChannel) {
+                        coffin.slidingChannel->stop();
+                        coffin.slidingChannel = nullptr;
+                    }
+
                     if (coffin.isBouncingBack) {
+                        if (audioSystem && soundCollide) {
+                            audioSystem->playSoundEx(soundCollide);
+                        }
+
                         coffin.isActivated = false;
                         coffin.isBouncingBack = false;
                         coffin.currentTargetLevel = 0;
+
+                        if (audioSystem && soundSlideIn) {
+                            coffin.slidingChannel = audioSystem->playSoundEx(soundSlideIn);
+                        }
                     }
                 }
             }
@@ -273,20 +296,38 @@ void CrematoriumPuzzle::Update(float deltaTime)
         else {
             if (coffin.currentExtensionAnim > 0.0f) {
                 coffin.currentExtensionAnim -= animSpeed * deltaTime;
-                if (coffin.currentExtensionAnim < 0.0f)
+
+                if (coffin.slidingChannel) {
+                    float volume = 1.0f;
+                    if (coffin.currentExtensionAnim < fadeDistance) {
+                        volume = std::max(0.0f, coffin.currentExtensionAnim / fadeDistance);
+                    }
+                    coffin.slidingChannel->setVolume(volume);
+                }
+
+                if (coffin.currentExtensionAnim <= 0.0f) {
                     coffin.currentExtensionAnim = 0.0f;
+
+                    if (coffin.slidingChannel) {
+                        coffin.slidingChannel->stop();
+                        coffin.slidingChannel = nullptr;
+                    }
+                    if (audioSystem && soundClose) {
+                        audioSystem->playSoundEx(soundClose);
+                    }
+                }
             }
         }
 
         if (coffin.currentExtensionAnim != oldExtension) {
-            float extensionDistance = coffin.currentExtensionAnim;
-
+            glm::vec3 animOffset = glm::vec3(0.0f);
             if (coffin.wall == WallSide::Left) {
-                coffin.transform->position = coffin.basePosition + glm::vec3(0.0f, 0.0f, extensionDistance * w1_extendDirZ);
+                animOffset = glm::vec3(0.0f, 0.0f, coffin.currentExtensionAnim * w1_extendDirZ);
             }
             else {
-                coffin.transform->position = coffin.basePosition + glm::vec3(extensionDistance * w2_extendDirX, 0.0f, 0.0f);
+                animOffset = glm::vec3(coffin.currentExtensionAnim * w2_extendDirX, 0.0f, 0.0f);
             }
+            coffin.transform->position = coffin.basePosition + animOffset;
             coffin.transform->isDirty = true;
         }
     }
@@ -490,10 +531,17 @@ void CrematoriumPuzzle::Update(float deltaTime)
 
         if (isLeftSolved && isRightSolved && !isPuzzleSolved) {
             spdlog::warn("ZAGADKA KREMATORIUM ZOSTALA ROZWIAZANA W PELNI WOOOOOOOOOOOW");
+
             isPuzzleSolved = true;
         }
-        else if ((!isLeftSolved || !isRightSolved) && isPuzzleSolved) {
-            isPuzzleSolved = false;
-        }
     }
+}
+
+void CrematoriumPuzzle::SetupAudio(AudioSystem* audioSys, FMOD::Sound* slideOut, FMOD::Sound* slideIn, FMOD::Sound* collide, FMOD::Sound* close, FMOD::Sound* puzzleSolved) {
+    audioSystem = audioSys;
+    soundSlideOut = slideOut;
+    soundSlideIn = slideIn;
+    soundCollide = collide;
+    soundClose = close;
+    soundPuzzleSolved = puzzleSolved;
 }

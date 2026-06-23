@@ -10,6 +10,7 @@
 
 class PostProcessingSystem : public System {
 private:
+    ECS& postECS;
     GLFWwindow* window;
     RenderSystem* renderSystem;
 
@@ -18,8 +19,9 @@ private:
     GLuint quadVAO = 0;
     GLuint quadVBO = 0;
 
-    float gamma = 1.0f;
+    float gamma = 1.5f;
     float time = 0.0f;
+    bool enabled = true;
 
     void InitQuad() {
         // Fullscreen quad — dwa trójkąty pokrywające NDC [-1,1]
@@ -51,14 +53,11 @@ private:
     }
 
 public:
-    PostProcessingSystem(ECS& ecs, GLFWwindow* win)
+    PostProcessingSystem(ECS& ecs, GLFWwindow* win) : postECS(ecs)
     {
         renderSystem = ecs.GetSystem<RenderSystem>();
         window = win;
-        postShader = std::make_unique<Shader>(
-            "res/shaders/postprocess.vert",
-            "res/shaders/postprocess.frag"
-        );
+        postShader = std::make_unique<Shader>("res/shaders/postprocess.vert", "res/shaders/postprocess.frag");
         InitQuad();
     }
 
@@ -69,6 +68,11 @@ public:
 
     void OnGameObjectUpdated(GameObject* e) override {
         //unused
+    }
+
+    void SetActive(bool postProcessingIsOn)
+    {
+        enabled = postProcessingIsOn;
     }
 
     void Update(ECS& ecs, float dt) override {
@@ -83,6 +87,7 @@ public:
 
         postShader->use();
         postShader->setInt("screenTexture", 0);
+        postShader->setInt("postEnabled", enabled ? 1 : 0);
         postShader->setFloat("gamma", gamma);
         postShader->setFloat("time", time);
 

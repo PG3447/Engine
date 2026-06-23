@@ -16,7 +16,7 @@
 class ECS {
 private:
     std::vector<std::unique_ptr<GameObject>> gameobjects;
-    std::vector<std::unique_ptr<System>> systems;
+    std::vector<std::shared_ptr<System>> systems;
     std::vector<std::unique_ptr<QueryBase>> queries;
 
 
@@ -48,6 +48,29 @@ public:
         }
         return nullptr;
     }
+
+    void AddExistingSystem(System* sys) {
+        if (!sys) return;
+        for (auto& e : gameobjects)
+            sys->OnGameObjectUpdated(e.get());
+        systems.push_back(std::shared_ptr<System>(sys, [](System*) {}));
+    }
+
+    void InformActiveECS(GLFWwindow* window)
+    {
+        for (auto& sys : systems) {
+            sys->InformedActiveECS(*this, window);
+        }
+    }
+
+    //void AddSystems(std::vector<std::shared_ptr<System>> sysList)
+    //{
+    //    for (auto& sys : sysList) {
+    //        for (auto& e : gameobjects)
+    //            sys->OnGameObjectUpdated(e.get());
+    //        systems.emplace_back(std::move(sys));
+    //    }
+    //}
 
     void NotifyGameObjectChanged(GameObject* e);
 

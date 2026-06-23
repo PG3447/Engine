@@ -11,7 +11,8 @@ void TransformSystem::updateSelfAndChild(GameObject* obj) {
         return;
     }
 
-    for (auto* child : obj->GetChildren()) {
+    for (auto* child : obj->GetChildren())
+    {
         updateSelfAndChild(child);
     }
     

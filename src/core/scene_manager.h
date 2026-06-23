@@ -3,29 +3,83 @@
 
 #include "scene.h"
 
+class ECS;
+class RenderSystem;
+class PostProcessingSystem;
+class GLFWwindow;
 
 class SceneManager {
 private:
+    ECS*& ecsMain;
+    RenderSystem*& renderSystemMain;
+    PostProcessingSystem*& postProcessingSystemMain;
+    GLFWwindow*& windowMain;
+
     std::unordered_map<std::string, std::unique_ptr<Scene>> scenes;
     Scene* activeScene = nullptr;
-
+    Scene* nextScene = nullptr;
 public:
-    SceneManager() = default;
+    
+    SceneManager(ECS*& ecs, RenderSystem*& render, PostProcessingSystem*& post, GLFWwindow*& window) : ecsMain(ecs), renderSystemMain(render), postProcessingSystemMain(post), windowMain(window)
+    {
+        
+    }
 
-    Scene* CreateScene(const std::string& name, ECS& ecs) {
-        auto scene = std::make_unique<Scene>(ecs);
+    Scene* CreateScene(const std::string& name)
+    {
+        auto scene = std::make_unique<Scene>();
         Scene* ptr = scene.get();
         scenes[name] = std::move(scene);
         if (!activeScene) activeScene = ptr;
         return ptr;
     }
 
-    void SetActiveScene(const std::string& name) {
+    void SetActiveScene(const std::string& name, GLFWwindow* window)
+    {
         auto it = scenes.find(name);
-        if (it != scenes.end()) activeScene = it->second.get();
+        if (it != scenes.end())
+        {
+            activeScene = it->second.get();
+            activeScene->GetECS().InformActiveECS(window);
+        }
+
     }
 
+    void ChangeScene(std::string nameScene)
+    {
+        nextScene = GetScene(nameScene);
+    }
+
+    void UpdateChangeScene()
+    {
+        if (activeScene != nextScene)
+        {
+            activeScene = nextScene;
+            ecsMain = &activeScene->GetECS();
+            renderSystemMain = ecsMain->GetSystem<RenderSystem>();
+            postProcessingSystemMain = ecsMain->GetSystem<PostProcessingSystem>();
+        }
+    }
+
+
     Scene* GetActiveScene() { return activeScene; }
+
+    std::string GetActiveSceneName()
+    {
+        for (const auto& [name, scenePtr] : scenes)
+        {
+            if (scenePtr.get() == activeScene)
+                return name;
+        }
+        return "";
+    }
+
+    Scene* GetScene(const std::string& name)
+    {
+        auto it = scenes.find(name);
+        if (it != scenes.end()) return it->second.get();
+        return nullptr;
+    }
 
     void Update(float deltaTime) {
         if (activeScene) activeScene->Update(deltaTime);
@@ -33,6 +87,82 @@ public:
 
     void Load()
     {
+        Scene* scene = GetActiveScene();
+        ECS& ecs = scene->GetECS();
+
+        YamlConfig cfg;
+        if (!cfg.load("scene.yaml"))
+            return;
+        
+        YAML::Node sceneNode = cfg.getRoot();
+
+        if (!sceneNode["Scene"] || !sceneNode["Scene"]["GameObjects"])
+            return;
+        
+        YAML::Node objectsNode = sceneNode["Scene"]["GameObjects"];
+
+        std::unordered_map<size_t, GameObject*> idMap;
+
+        for (GameObject* obj : ecs.GetAllGameObjects())
+        {
+            idMap[obj->id] = obj;
+        }
+
+        // 1. TWORZENIE OBIEKTÓW + KOMPONENTY
+        for (auto objNode : objectsNode)
+        {
+            size_t id = objNode["id"].as<size_t>();
+
+            auto found = idMap.find(id);
+            if (found == idMap.end())
+                continue;
+
+            GameObject* obj = found->second;
+
+            //update components
+            YAML::Node compsNode = objNode["Components"];
+
+            for (auto compIt : compsNode)
+            {
+                YAML::Node compNode = compIt;
+
+                std::string type = compNode["type"].as<std::string>();
+
+                // znajdź istniejący komponent
+                if (type == "Transform" || type == "Light" || type == "Collider")
+                {
+                    Component* comp = obj->GetComponentByName(type);
+                    if (!comp)
+                        continue;
+                    comp->Deserialize(compNode);
+                }
+
+
+            }
+        }
+
+        // 2. ODTWORZENIE HIERARCHII (parent-child)
+        //for (auto it : objectsNode)
+        //{
+        //    YAML::Node objNode = it.second;
+
+        //    int id = objNode["id"].as<int>();
+        //    int parentId = objNode["parent"].as<int>();
+
+        //    GameObject* obj = idMap[id];
+
+        //    if (!obj)
+        //        continue;
+
+        //    if (parentId != -1 && idMap.count(parentId))
+        //    {
+        //        obj->SetParent(idMap[parentId]);
+        //    }
+        //    else
+        //    {
+        //        obj->SetParent(nullptr);
+        //    }
+        //}
         //for (auto compNode : node["Components"])
         //{
         //    std::string type = compNode["type"].as<std::string>();
@@ -56,14 +186,12 @@ public:
 
         YAML::Node sceneNode;
 
-        int i = 0;
-
         for (GameObject* obj : objects)
         {
             YAML::Node objNode;
             SaveGameObject(objNode, obj);
 
-            sceneNode["Scene"]["GameObjects"][i++] = objNode;
+            sceneNode["Scene"]["GameObjects"].push_back(objNode);
         }
 
 
@@ -86,6 +214,7 @@ public:
             YAML::Node compNode;
 
             compNode["type"] = comp->GetTypeName();
+            compNode["bit"] = comp->ComponentBit;
             comp->Serialize(compNode);
 
             compsNode.push_back(compNode);

@@ -25,17 +25,6 @@ protected:
 		return glm::translate(glm::mat4(1.0f), comp.position) * rotationMatrix * glm::scale(glm::mat4(1.0f), comp.scale);
 	}
 
-	//static glm::mat4 getLocalModelMatrix(const TransformComponent& comp)
-	//{
-	//	glm::mat4 m(1.0f);
-
-	//	m = glm::translate(m, comp.position);
-	//	m *= glm::toMat4(glm::quat(glm::radians(comp.rotation)));
-	//	m = glm::scale(m, comp.scale);
-
-	//	return m;
-	//}
-
 public:
 
 	static void computeModelMatrix(TransformComponent& comp)

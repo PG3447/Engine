@@ -9,7 +9,8 @@ file(GLOB_RECURSE SOURCE_FILES
 file(GLOB_RECURSE HEADER_FILES 
 	 *.h
 	 *.hpp
-	 *.tpp)
+	 *.tpp
+	 *.ipp)
 	 
 # Search for the assets files
 file(GLOB_RECURSE ASSETS_FILES 
@@ -39,6 +40,10 @@ add_executable(${PROJECT_NAME} ${HEADER_FILES} ${SOURCE_FILES} ${ASSETS_FILES} "
 		systems/NavMeshBenchmark.cpp
 		systems/NavMeshBenchmark.h
 		systems/NavPathSystembenchmark.cpp
+		systems/SurfaceDecorationSystem.cpp
+		systems/SurfaceDecorationSystem.h
+		utils/placement_editor.h
+		utils/transform_gizmo.h
 )
 
 

@@ -11,8 +11,45 @@
 #define GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT 0x84FF
 #endif
 
+#ifndef GL_COMPRESSED_RGB_S3TC_DXT1_EXT
+#define GL_COMPRESSED_RGB_S3TC_DXT1_EXT  0x83F0
+#endif
+
+#ifndef GL_COMPRESSED_RGBA_S3TC_DXT3_EXT
+#define GL_COMPRESSED_RGBA_S3TC_DXT3_EXT 0x83F2
+#endif
+
+#ifndef GL_COMPRESSED_RGBA_S3TC_DXT5_EXT
+#define GL_COMPRESSED_RGBA_S3TC_DXT5_EXT 0x83F3
+#endif
+
 std::unordered_map<std::string, TextureData> ResourceManager::Textures;
 std::unordered_map<std::string, std::shared_ptr<Model>> ResourceManager::Models;
+
+std::unordered_map<GLuint, std::string> ResourceManager::TextureIDToPath;
+std::unordered_map<uint32_t, std::string> ResourceManager::MeshNodeToModelPath;
+
+void ResourceManager::RegisterMeshNodes(ModelNode* node, const std::string& path)
+{
+    if (!node) return;
+    for (auto& mesh : node->meshes)
+        MeshNodeToModelPath[mesh.meshNodeID] = path;
+    for (auto& child : node->children)
+        RegisterMeshNodes(child.get(), path);
+}
+
+std::string ResourceManager::GetModelPathByMeshNodeID(uint32_t id)
+{
+    auto it = MeshNodeToModelPath.find(id);
+    return it != MeshNodeToModelPath.end() ? it->second : "";
+}
+
+std::string ResourceManager::GetTexturePath(GLuint id)
+{
+    if (id == 0) return "";
+    auto it = TextureIDToPath.find(id);
+    return it != TextureIDToPath.end() ? it->second : "";
+}
 
 TextureData ResourceManager::LoadTexture(const std::string& path, const std::string& directory, const aiTexture* aiTex)
 {
@@ -33,20 +70,11 @@ TextureData ResourceManager::LoadTexture(const std::string& path, const std::str
 
     TextureData textureData = loadTextureFromFile(path, directory, aiTex);
 
-    /*spdlog::info("==== TEXTURE CACHE DUMP ====");
-    spdlog::info("Total textures: {}", Textures.size());
-
-    for (const auto& [path, textureData] : Textures)
-    {
-        spdlog::info("Texture: {} | ID: {}", path, textureData.id);
-    }
-
-    spdlog::info("============================");*/
     if (textureData.id != 0) {
         Textures[fullPath].id = textureData.id;
         Textures[fullPath].hasAlpha = textureData.hasAlpha;
+        TextureIDToPath[textureData.id] = fullPath;
     }
-
 
     return textureData;
 }
@@ -71,7 +99,7 @@ std::shared_ptr<Model> ResourceManager::LoadModel(const std::string& path)
     }
 
     Models[path] = model;
-
+    RegisterMeshNodes(model->rootNode.get(), path);
     spdlog::info("ResourceManager: Zaladowano model {}", path);
     return model;
 }
@@ -113,21 +141,26 @@ TextureData ResourceManager::loadTextureFromFile(const std::string& path, const 
         glGenTextures(1, &textureID);
 
         GLenum format = GL_RED;
-        GLenum internalFormat = GL_COMPRESSED_RED;
+        GLenum internalFormat = GL_RED;// GL_COMPRESSED_RED_RGTC1;
         if (nrComponents == 1)
         {
             format = GL_RED;
-            internalFormat = GL_COMPRESSED_RED;
+            internalFormat = GL_RED;// GL_COMPRESSED_RED_RGTC1;
+        }
+        else if (nrComponents == 2)
+        {
+            format = GL_RG;
+            internalFormat = GL_RG;
         }
         else if (nrComponents == 3)
         {
             format = GL_RGB;
-            internalFormat = GL_COMPRESSED_RGB;
+            internalFormat = GL_RGB;// GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
         }
         else if (nrComponents == 4) {
             hasAlpha = true;
             format = GL_RGBA;
-            internalFormat = GL_COMPRESSED_RGBA;
+            internalFormat = GL_RGBA; //GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
         }
 
         glBindTexture(GL_TEXTURE_2D, textureID);
@@ -241,7 +274,7 @@ void ResourceManager::SaveAsset()
 
         YAML::Node modelNode;
         modelNode["path"] = modelPath;
-
+        
         assetsNode["Assets"]["Models"][i++] = modelNode;
     }
 
@@ -272,5 +305,6 @@ void ResourceManager::Clear()
 {
     Textures.clear();
     Models.clear();
+    MeshNodeToModelPath.clear();
     spdlog::info("ResourceManager: Wyczyszczono pamiec tekstur.");
 }

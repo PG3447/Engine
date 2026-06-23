@@ -42,10 +42,51 @@ struct PassEntry {
 struct FrameUBO {
     glm::mat4 viewProjection;
     glm::vec4 viewPos;   // xyz=kamera, w=unused
-    float     zNear;
-    float     zFar;
-    float     ambientStrength;
-    int       numLights;
+    float ambientStrength;
+    int numLights;
+    int numShadowLigths;
+    int padding;
+};
+
+struct ShadowMapArray {
+    GLuint fboShadow = 0;
+    GLuint depthArray = 0;
+    int resolution = 512;
+    int maxLayers = -1;
+
+    void Init(int res, int layers) {
+        resolution = res;
+        maxLayers = layers;
+
+        // tekstura
+        glGenTextures(1, &depthArray);
+        glBindTexture(GL_TEXTURE_2D_ARRAY, depthArray);
+        glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT32F, res, res, layers, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+        //glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        //glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+        float borderColor[] = { 1.0, 1.0, 1.0, 1.0 };
+        glTexParameterfv(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BORDER_COLOR, borderColor);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+        //glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+
+        // FBO (bez attachmentu — ustawiamy per warstwa)
+        glGenFramebuffers(1, &fboShadow);
+        glBindFramebuffer(GL_FRAMEBUFFER, fboShadow);
+        glDrawBuffer(GL_NONE);
+        glReadBuffer(GL_NONE);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        spdlog::critical("Inicjalizacja");
+    }
+
+    void Destroy() {
+        glDeleteTextures(1, &depthArray);
+        glDeleteFramebuffers(1, &fboShadow);
+    }
 };
 
 
@@ -86,10 +127,12 @@ public:
     ComputeShader* shaderBuildCmds = nullptr;
     ComputeShader* shaderHizDownsample = nullptr;
     Shader* defaultShaderRender = nullptr;
+    Shader* depthShadowShader = nullptr;
 
     std::unordered_map<AnimatorComponent*, uint32_t> animatorIDMap;
     std::vector<glm::mat4> boneMatricesCache;
 
+    ShadowMapArray shadowMapArray;
 
     void Init(int w, int h)
     {
@@ -102,6 +145,7 @@ public:
         shaderBuildCmds = new ComputeShader("res/shaders/build_commands.comp");
         shaderHizDownsample = new ComputeShader("res/shaders/hiz_build.comp");
         defaultShaderRender = new Shader("res/shaders/gpu_driven_PBR.vert", "res/shaders/gpu_driven_PBR.frag");
+        depthShadowShader = new Shader("res/shaders/shadowDepth.vert", "res/shaders/shadowDepth.frag");
 
         glGenBuffers(1, &frameUBO);
         glBindBuffer(GL_UNIFORM_BUFFER, frameUBO);
@@ -121,6 +165,21 @@ public:
         spdlog::info("RendererManager::Init {}x{}", w, h);
     }
 
+    void InitSceneOpengl(int w, int h)
+    {
+        glGenBuffers(1, &frameUBO);
+        glBindBuffer(GL_UNIFORM_BUFFER, frameUBO);
+        glBufferData(GL_UNIFORM_BUFFER, sizeof(FrameUBO), nullptr, GL_DYNAMIC_DRAW);
+        glBindBufferBase(GL_UNIFORM_BUFFER, 0, frameUBO);
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+        glGenBuffers(1, &lightsUBO);
+        glBindBuffer(GL_UNIFORM_BUFFER, lightsUBO);
+        glBufferData(GL_UNIFORM_BUFFER, sizeof(LightsUBO), nullptr, GL_DYNAMIC_DRAW);
+        glBindBufferBase(GL_UNIFORM_BUFFER, 1, lightsUBO);
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    }
+
     void InitHiZ(int w, int h)
     {
         hizMipLevels = static_cast<int>(std::floor(std::log2(std::max(w, h)))) + 1;
@@ -136,6 +195,8 @@ public:
 
         spdlog::info("RendererManager: HiZ {}x{} mips={}", w, h, hizMipLevels);
     }
+
+
 
     void AttachCameraHiZ(GLuint hizTexture, int hizMipLevels, int vpW, int vpH, bool frustumEnabled, bool occlusionEnabled, int vpX = 0, int vpY = 0)
     {
@@ -381,7 +442,6 @@ public:
             RenderComponent* rc = renderers[i];
             if (!t || !rc) continue;
 
-
             if (!rc->rendererDirty && !t->rendererDirty && !rebuildCollectData && !isTransparent)
             {
                 //spdlog::error("OMIJAM");
@@ -583,6 +643,7 @@ public:
         entry.renderer->shaderBuildCmds = shaderBuildCmds;
         entry.renderer->shaderHizDownsample = shaderHizDownsample;
         entry.renderer->shaderRender = cfg.shader ? cfg.shader : defaultShaderRender;
+        entry.renderer->shaderShadowRender = depthShadowShader;
         entry.renderer->AttachHiZ(hizTexture, hizMipLevels, screenWidth, screenHeight);
         spdlog::info("Add pass");
         passes.push_back(std::move(entry));
@@ -683,36 +744,6 @@ public:
             e.objects.clear();
     }
 
-    void UpdateAndUploadLights(std::vector<LightComponent*>& lights, std::vector<TransformComponent*>& transforms)
-    {
-        if (lights.empty()) return;
-
-        uint32_t count = std::min((uint32_t)lights.size(), (uint32_t)MAX_UBO_LIGHTS);
-        gpuLights.resize(count);
-
-        for (uint32_t i = 0; i < count; i++) {
-            LightComponent* light = lights[i];
-            TransformComponent* transform = transforms[i];
-            if (!light || !transform) continue;
-
-            GPULight& g = gpuLights[i];
-            const bool on = light->isOn;
-            const glm::vec3 zero(0.0f);
-
-            g.position = glm::vec4(TransformHelper::getGlobalPosition(*transform), (float)light->type);
-            g.direction = (glm::length2(light->direction) < 0.0001f) ? glm::vec4(TransformHelper::getForward(*transform), 0.0f) : glm::vec4(light->direction, 0.0f);
-            g.ambient = glm::vec4(on ? light->ambient : zero, 0.0f);
-            g.diffuse = glm::vec4(on ? light->diffuse : zero, 0.0f);
-            g.specular = glm::vec4(on ? light->specular : zero, 0.0f);
-            g.params1 = glm::vec4(light->constant, light->linear, light->quadratic, light->intensity);
-            g.params2 = glm::vec4(light->cutOff, light->outerCutOff, on ? 1.0f : 0.0f, light->range);
-        }
-
-        glBindBuffer(GL_UNIFORM_BUFFER, lightsUBO);
-        glBufferSubData(GL_UNIFORM_BUFFER, 0, count * sizeof(GPULight), gpuLights.data());
-        glBindBuffer(GL_UNIFORM_BUFFER, 0);
-    }
-
     void DebugRenderFrameInput(const PassEntry& entry, const glm::vec3& cameraPos)
     {
         spdlog::info("=== PassID={} type={} objects={} transparentBuffer={} ===",
@@ -746,12 +777,124 @@ public:
         if (entry.objects.empty())
             spdlog::warn("  PUSTY — nic nie idzie do GPU!");
     }
+    std::vector<glm::mat4> lightSpaceMatrix;
+
+    void UpdateAndUploadLights(std::vector<LightComponent*>& lights, std::vector<TransformComponent*>& transforms)
+    {
+        if (lights.empty()) return;
+
+        uint32_t count = std::min((uint32_t)lights.size(), (uint32_t)MAX_UBO_LIGHTS);
+        gpuLights.resize(count);
+        lightSpaceMatrix.resize(count);
+
+        for (uint32_t i = 0; i < count; i++) {
+            LightComponent* light = lights[i];
+            TransformComponent* transform = transforms[i];
+            if (!light || !transform) continue;
+
+            GPULight& g = gpuLights[i];
+            const bool on = light->isOn;
+            const glm::vec3 zero(0.0f);
+
+            g.position = glm::vec4(TransformHelper::getGlobalPosition(*transform), (float)light->type);
+            g.direction = (glm::length2(light->direction) < 0.0001f) ? glm::vec4(TransformHelper::getForward(*transform), 0.0f) : glm::vec4(light->direction, 0.0f);
+            g.ambient = glm::vec4(on ? light->ambient : zero, 0.0f);
+            g.diffuse = glm::vec4(on ? light->diffuse : zero, 0.0f);
+            g.specular = glm::vec4(on ? light->specular : zero, 0.0f);
+            g.params1 = glm::vec4(light->constant, light->linear, light->quadratic, light->intensity);
+            g.params2 = glm::vec4(light->cutOff, light->outerCutOff, on ? 1.0f : 0.0f, light->range);
+
+            float near_plane = 1.0f, far_plane = 500.0f;
+            glm::mat4 lightProjection, lightView;
+
+            glm::vec3 pos = TransformHelper::getGlobalPosition(*transform);
+            glm::vec3 dir = glm::normalize(glm::vec3(g.direction)); // już ustawiony wyżej
+            if (light->type == Directional) {
+                lightProjection = glm::ortho(-10.f, 10.f, -10.f, 10.f, near_plane, far_plane);
+                lightView = glm::lookAt(pos, glm::vec3(g.position) + TransformHelper::getForward(*transform), glm::vec3(0.0f, 1.0f, 0.0f));
+                lightSpaceMatrix[i] = lightProjection * lightView;
+            }
+
+            if (light->type == Spot) {
+                float fov = glm::acos(glm::clamp(light->outerCutOff, -1.f, 1.f)) * 2.f;
+                lightProjection = glm::perspective(fov, 1.0f, near_plane, far_plane);
+                //lightView = glm::lookAt(pos, pos + dir, safeUp(dir));
+                lightView = glm::lookAt(pos, glm::vec3(g.position) + TransformHelper::getForward(*transform), glm::vec3(0.0f, 1.0f, 0.0f));
+                lightSpaceMatrix[i] = lightProjection * lightView;
+            }
+        }
+
+        glBindBuffer(GL_UNIFORM_BUFFER, lightsUBO);
+        glBufferSubData(GL_UNIFORM_BUFFER, 0, count * sizeof(GPULight), gpuLights.data());
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    
+        for (auto& entry : passes) {
+            if (entry.config.type == RenderPassType::Skybox) {
+                continue;
+            }
+
+            if (entry.renderer)
+            {
+                entry.renderer->UploadShadowMatrix(lightSpaceMatrix);
+            }
+        }
+    }
+
+    int SHADOW_RESOLUTION = 512;
+    void RenderShadow()
+    {
+        const int numLights = (int)gpuLights.size();
+        if (numLights == 0) return;
+        if (shadowMapArray.maxLayers != numLights)
+        {
+            if (shadowMapArray.fboShadow != 0)
+                shadowMapArray.Destroy();
+            
+            shadowMapArray.Init(SHADOW_RESOLUTION, numLights);
+        }
+
+        glViewport(0, 0, shadowMapArray.resolution, shadowMapArray.resolution);
+        glBindFramebuffer(GL_FRAMEBUFFER, shadowMapArray.fboShadow);
+        glEnable(GL_DEPTH_TEST);
+        glCullFace(GL_FRONT);
+        bool first = true;
+
+        for (uint32_t i = 0; i < numLights; i++) {
+
+            if (gpuLights[i].position.w == 1)
+                continue;
+
+            UploadFrameUBO(glm::mat4(1.0f), glm::vec3(1.0f), 0.0f, numLights, i);
+
+            glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, shadowMapArray.depthArray, 0, i);
+            glClear(GL_DEPTH_BUFFER_BIT);
+            
+
+            //Render depth texture - shadow map
+            for (auto& entry : passes)
+            {
+                if (entry.config.type == RenderPassType::Skybox || entry.config.type == RenderPassType::Transparent)
+                {
+                    continue;
+                }
+
+                if (entry.renderer)
+                {
+                    entry.renderer->RenderShadow(first, entry.objects);
+                }
+
+            }
+            first = false;
+        }
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
 
     // Główna pętla renderowania
     void RenderFrame(const glm::mat4& view, const glm::mat4& projection, const glm::mat4& viewProj, glm::vec3 cameraPos, float ambientStrength, GLuint prevDepth, bool cameraDirty, float zNear = 0.1f, float zFar = 1000.0f)
     {
         const int numLights = (int)gpuLights.size();
-        UploadFrameUBO(viewProj, cameraPos, ambientStrength, numLights, zNear, zFar);
+        UploadFrameUBO(viewProj, cameraPos, ambientStrength, numLights, numLights);
 
         //if (prevDepth && hizTexture) {
         //    glCopyImageSubData(prevDepth, GL_TEXTURE_2D, 0, 0, 0, 0,
@@ -777,10 +920,10 @@ public:
             ApplyPassState(entry.config);
             
 
-            if (entry.renderer);
+            if (entry.renderer)
             {
                 //DebugRenderFrameInput(entry, cameraPos);
-                entry.renderer->RenderFrame(viewProj, entry.objects, prevDepth, cameraPos, cameraDirty);
+                entry.renderer->RenderFrame(viewProj, entry.objects, prevDepth, shadowMapArray.depthArray, cameraPos, cameraDirty);
             }
         }
 
@@ -801,15 +944,14 @@ public:
         }
     }
 
-    void UploadFrameUBO(const glm::mat4& viewProj, const glm::vec3& cameraPos, float ambientStrength, int numLights, float zNear, float zFar)
+    void UploadFrameUBO(const glm::mat4& viewProj, const glm::vec3& cameraPos, float ambientStrength, int numLights, int numShadowLights)
     {
         FrameUBO data{};
         data.viewProjection = viewProj;
         data.viewPos = glm::vec4(cameraPos, 1.0f);
-        data.zNear = zNear;
-        data.zFar = zFar;
         data.ambientStrength = ambientStrength;
         data.numLights = numLights;
+        data.numShadowLigths = numShadowLights;
 
         glBindBuffer(GL_UNIFORM_BUFFER, frameUBO);
         glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(FrameUBO), &data);
@@ -871,6 +1013,188 @@ public:
             isTransparent ? "Transparent" : "Opaque");
         return pid;
     }
+
+
+    void DebugShadowMapImGui()
+    {
+        // ── Shadery (inline, kompilowane raz) ────────────────────────────────────
+        static const char* kVert = R"glsl(
+#version 430 core
+out vec2 vUV;
+void main() {
+    vec2 p  = vec2((gl_VertexID & 1) << 2, (gl_VertexID & 2) << 1) - 1.0;
+    vUV     = p * 0.5 + 0.5;
+    gl_Position = vec4(p, 0.0, 1.0);
+})glsl";
+
+        static const char* kFrag = R"glsl(
+#version 430 core
+in  vec2 vUV;
+out vec4 fragColor;
+uniform sampler2DArray uDepthArray;
+uniform int   uLayer;
+uniform float uNear;
+uniform float uFar;
+void main() {
+    float d   = texture(uDepthArray, vec3(vUV, float(uLayer))).r;
+    float lin = (2.0 * uNear) / (uFar + uNear - d * (uFar - uNear));
+    fragColor = vec4(vec3(lin), 1.0);
+})glsl";
+
+        // ── Zasoby GL (lazy init, niszczone przy zamknięciu okna) ───────────────
+        static GLuint prog = 0;
+        static GLuint vao = 0;
+        static GLuint tex = 0;
+        static GLuint fbo = 0;
+        static int    texRes = 0;
+
+        // ── ImGui okno ──────────────────────────────────────────────────────────
+        if (!ImGui::Begin("Shadow Debug")) { ImGui::End(); return; }
+
+        const int usedLayers = (int)gpuLights.size();
+        const int maxLayers = shadowMapArray.maxLayers;
+
+        ImGui::Text("Lights: %d", usedLayers);
+        ImGui::Text("Shadow layers: %d / %d", usedLayers, maxLayers);
+        ImGui::Text("Resolution: %dx%d", shadowMapArray.resolution, shadowMapArray.resolution);
+        ImGui::Text("FBO: %u  DepthArray: %u", shadowMapArray.fboShadow, shadowMapArray.depthArray);
+        ImGui::Separator();
+
+        static int   layer = 0;
+        static float previewSize = 256.f;
+        static float near_z = 1.f;
+        static float far_z = 1000.f;
+
+        if (usedLayers <= 0 || shadowMapArray.depthArray == 0)
+        {
+            ImGui::TextColored(ImVec4(1.f, 0.4f, 0.4f, 1.f),
+                "Brak swiatel lub depth array nie zainicjalizowane");
+            ImGui::End();
+            return;
+        }
+
+        ImGui::SliderInt("Layer", &layer, 0, usedLayers - 1);
+        ImGui::SliderFloat("Preview size", &previewSize, 128.f, 512.f);
+        ImGui::SliderFloat("Near", &near_z, 0.01f, 10.f);
+        ImGui::SliderFloat("Far", &far_z, 10.f, 2000.f);
+
+        // ── Lazy init shadera + VAO ──────────────────────────────────────────────
+        if (prog == 0)
+        {
+            auto compile = [](GLenum type, const char* src) -> GLuint {
+                GLuint s = glCreateShader(type);
+                glShaderSource(s, 1, &src, nullptr);
+                glCompileShader(s);
+                GLint ok = 0; glGetShaderiv(s, GL_COMPILE_STATUS, &ok);
+                if (!ok) {
+                    char b[512]; glGetShaderInfoLog(s, 512, nullptr, b);
+                    spdlog::error("ShadowDebug shader: {}", b);
+                }
+                return s;
+                };
+            GLuint vs = compile(GL_VERTEX_SHADER, kVert);
+            GLuint fs = compile(GL_FRAGMENT_SHADER, kFrag);
+            prog = glCreateProgram();
+            glAttachShader(prog, vs); glAttachShader(prog, fs);
+            glLinkProgram(prog);
+            glDeleteShader(vs); glDeleteShader(fs);
+            glGenVertexArrays(1, &vao);
+        }
+
+        // ── Lazy init / przebudowa tekstury i FBO ───────────────────────────────
+        const int res = shadowMapArray.resolution;
+        if (tex == 0 || texRes != res)
+        {
+            if (tex) glDeleteTextures(1, &tex);
+            if (fbo) glDeleteFramebuffers(1, &fbo);
+
+            glGenTextures(1, &tex);
+            glBindTexture(GL_TEXTURE_2D, tex);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, res, res, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glBindTexture(GL_TEXTURE_2D, 0);
+
+            glGenFramebuffers(1, &fbo);
+            glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex, 0);
+            if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+                spdlog::error("ShadowDebug: FBO niekompletne");
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+            texRes = res;
+        }
+
+        // ── Zapis stanu GL ───────────────────────────────────────────────────────
+        GLint prevFBO = 0;      glGetIntegerv(GL_FRAMEBUFFER_BINDING, &prevFBO);
+        GLint prevVP[4];        glGetIntegerv(GL_VIEWPORT, prevVP);
+        GLint prevProg = 0;     glGetIntegerv(GL_CURRENT_PROGRAM, &prevProg);
+        GLint prevVAO = 0;      glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &prevVAO);
+        GLboolean prevDepth = glIsEnabled(GL_DEPTH_TEST);
+        GLboolean prevBlend = glIsEnabled(GL_BLEND);
+
+        // ── Render depth array → tex ─────────────────────────────────────────────
+        glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+        glViewport(0, 0, res, res);
+        glDisable(GL_DEPTH_TEST);
+        glDisable(GL_BLEND);
+
+        glUseProgram(prog);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D_ARRAY, shadowMapArray.depthArray);
+        glUniform1i(glGetUniformLocation(prog, "uDepthArray"), 0);
+        glUniform1i(glGetUniformLocation(prog, "uLayer"), layer);
+        glUniform1f(glGetUniformLocation(prog, "uNear"), near_z);
+        glUniform1f(glGetUniformLocation(prog, "uFar"), far_z);
+
+        glBindVertexArray(vao);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+
+        // ── Przywróć stan GL ─────────────────────────────────────────────────────
+        glBindVertexArray(prevVAO);
+        glUseProgram(prevProg);
+        glBindFramebuffer(GL_FRAMEBUFFER, prevFBO);
+        glViewport(prevVP[0], prevVP[1], prevVP[2], prevVP[3]);
+        if (prevDepth) glEnable(GL_DEPTH_TEST);  else glDisable(GL_DEPTH_TEST);
+        if (prevBlend) glEnable(GL_BLEND);       else glDisable(GL_BLEND);
+
+        // ── Podgląd ──────────────────────────────────────────────────────────────
+        ImGui::Text("Layer %d  (near=%.2f  far=%.2f)", layer, near_z, far_z);
+        ImGui::Image(
+            reinterpret_cast<ImTextureID>(static_cast<intptr_t>(tex)),
+            ImVec2(previewSize, previewSize),
+            ImVec2(0, 1), ImVec2(1, 0));   // flip Y (OpenGL vs ImGui)
+        ImGui::TextDisabled("Jasny = blisko, ciemny = daleko (zlinearyzowany)");
+
+        ImGui::Separator();
+
+        // ── Lista swiatel ─────────────────────────────────────────────────────────
+        if (ImGui::CollapsingHeader("GPULights"))
+        {
+            for (int i = 0; i < usedLayers; i++)
+            {
+                const GPULight& g = gpuLights[i];
+                ImGui::PushID(i);
+                char label[32]; snprintf(label, sizeof(label), "Light %d", i);
+                if (ImGui::TreeNode(label))
+                {
+                    ImGui::Text("pos   (%.2f, %.2f, %.2f)  type=%.0f",
+                        g.position.x, g.position.y, g.position.z, g.position.w);
+                    ImGui::Text("dir   (%.2f, %.2f, %.2f)",
+                        g.direction.x, g.direction.y, g.direction.z);
+                    ImGui::Text("on=%.0f  intensity=%.2f  range=%.2f",
+                        g.params2.z, g.params1.w, g.params2.w);
+                    ImGui::TreePop();
+                }
+                ImGui::PopID();
+            }
+        }
+
+        ImGui::End();
+    }
+
+
+
 };
 
 #endif

@@ -14,7 +14,7 @@ void AnimationSystem::OnGameObjectUpdated(GameObject* e) {
     query->OnGameObjectUpdated(e);
 }
 
-void AnimationSystem::Update(ECS&, float) {
+void AnimationSystem::Update(ECS&, float deltatime) {
     auto& animators = std::get<0>(query->componentsVectors);
 
 	// to samo dt co w PhysicsSystem, kiedys mozna zmienic na globalny timer czy cos
@@ -26,7 +26,8 @@ void AnimationSystem::Update(ECS&, float) {
     std::chrono::duration<float> elapsed = currentTime - lastTime;
     lastTime = currentTime;
 
-    float dt = elapsed.count();
+    //float dt = elapsed.count();
+    float dt = deltatime;
 
     if (dt > 0.1f) dt = 0.016f;
 

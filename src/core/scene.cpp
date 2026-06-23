@@ -6,6 +6,8 @@
 #include "systems/NavPathSystem.h"
 #include "systems/NpcSystem.h"
 #include "systems/raycastSystem.h"
+#include "systems/AudioSystem.h"
+#include "systems/UI_system.h"
 
 
 //Scene::Scene(ECS& ecsRef) : ecs(ecsRef) {}
@@ -31,7 +33,11 @@ GameObject* Scene::CreateGameObject(GameObject* parent) {
 }
 
 void Scene::Update(float deltaTime) {
-    if (auto* hid = ecs.GetSystem<HID>()) hid->Update(ecs, deltaTime);
+    if (auto* hid = ecs.GetSystem<HID>())
+        hid->Update(ecs, deltaTime);
+
+    if (auto* ui = ecs.GetSystem<UISystem>())
+        ui->Update(ecs, deltaTime);
 
     if (auto* ps = ecs.GetSystem<PhysicsSystem>())
         ps->Update(ecs, deltaTime);    
@@ -65,6 +71,7 @@ void Scene::Update(float deltaTime) {
         ss->Update(ecs, deltaTime);
 
 
+
     //if (auto* as = ecs.GetSystem<AudioSystem>())
         //as->Update(ecs, deltaTime);
 
@@ -74,6 +81,20 @@ void Scene::Update(float deltaTime) {
 //    return ecs.GetGameObjects();
 //}
 
+void Scene::addAllSystems(GLFWwindow* window) {
+    ecs.AddSystem<TransformSystem>(ecs);
+    ecs.AddSystem<PhysicsSystem>(ecs);
+    ecs.AddSystem<AnimationSystem>(ecs);
+    ecs.AddSystem<RenderSystem>(ecs, window);
+    ecs.AddSystem<HID>(ecs, window);
+    ecs.AddSystem<PostProcessingSystem>(ecs, window);
+    ecs.AddSystem<SpriteSystem>(ecs, window);
+    ecs.AddSystem<RaycastSystem>(ecs);
+    ecs.AddSystem<NavMeshSystem>(ecs);
+    ecs.AddSystem<NavPathSystem>(ecs);
+    ecs.AddSystem<AudioSystem>(ecs);
+    ecs.AddSystem<NpcSystem>(ecs);
+}
 
 void Scene::DebugHierarchy(GameObject* obj, int depth)
 {

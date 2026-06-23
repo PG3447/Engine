@@ -78,14 +78,6 @@ private:
         }
     };
 
-    //struct GroupKeyHash {
-    //    size_t operator()(const GroupKey& k) const {
-    //        return std::hash<void*>()(std::get<0>(k))
-    //            ^ (std::hash<void*>()(std::get<1>(k)) << 1);
-    //    }
-    //};
-
-
     struct OcclusionData {
         GLuint queryId = 0;
         bool isVisible = true;
@@ -129,7 +121,7 @@ private:
     //std::unordered_map<GroupKey, size_t, GroupKeyHash> lookup;
 
     bool groupsDirty = true;
-
+    ECS& rendECS;
     GLFWwindow* window = nullptr;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
     GLuint texture;
@@ -302,18 +294,6 @@ public:
         return f;
     }
 
-    /*bool SphereInFrustum(const Frustum& f, glm::vec3 pos, float radius)
-    {
-        for (int i = 0; i < 6; i++)
-        {
-            float distance =
-                glm::dot(f.planes[i].normal, pos) + f.planes[i].d;
-
-            if (distance < -radius)
-                return false;
-        }
-        return true;
-    }*/
     bool AABBInFrustum(const Frustum& f, const AABB& aabb, const glm::mat4& modelMatrix)
     {
         glm::vec3 corners[8] = {
@@ -339,7 +319,7 @@ public:
         return true;
     }
 
-    RenderSystem(ECS& ecs, GLFWwindow* win) : window(win)
+    RenderSystem(ECS& ecs, GLFWwindow* win) : rendECS(ecs), window(win)
     {
         renderQuery = ecs.CreateQuery<TransformComponent, RenderComponent>();
         lightQuery = ecs.CreateQuery<TransformComponent, LightComponent>();
@@ -350,6 +330,15 @@ public:
 
         Init();
         DebugDrawSystem::Init();
+    }
+
+    void InformedActiveECS(ECS& ecs, GLFWwindow* win) override
+    {
+        if (&rendECS == &ecs)
+        {
+            InitOpenGL();
+            window = win;
+        }
     }
 
     void Init() {
@@ -371,9 +360,29 @@ public:
 
         GLuint available = 0;
         while (!available) {
-            glGetQueryObjectuiv(gpuQuery.queries[0],
-                               GL_QUERY_RESULT_AVAILABLE,
-                               &available);
+            glGetQueryObjectuiv(gpuQuery.queries[0], GL_QUERY_RESULT_AVAILABLE, &available);
+        }
+    }
+
+    void InitOpenGL()
+    {
+        int display_w, display_h;
+        glfwGetFramebufferSize(window, &display_w, &display_h);
+        drivenManager.InitSceneOpengl(display_w, display_h);
+
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glGenQueries(2, gpuQuery.queries);
+
+        for (int i = 0; i < 2; i++) {
+            glBeginQuery(GL_TIME_ELAPSED, gpuQuery.queries[i]);
+            glEndQuery(GL_TIME_ELAPSED);
+        }
+
+        GLuint available = 0;
+        while (!available) {
+            glGetQueryObjectuiv(gpuQuery.queries[0], GL_QUERY_RESULT_AVAILABLE, &available);
         }
     }
 
@@ -470,6 +479,8 @@ public:
         drivenManager.CollectAllPasses(*renderQuery, rebuildCollectData);
         if (rebuildCollectData)
             rebuildCollectData = false;
+        drivenManager.RenderShadow();
+        glBindFramebuffer(GL_FRAMEBUFFER, sceneFBO);
         //if (gpuRendererReady) {
         //    
         //}
@@ -538,25 +549,6 @@ public:
         
         //skybox.Render(view, projection);
     }
-
-
-    // if (gpuRendererReady) {
-
-    //     //std::vector<RenderData> objects = CollectRenderData();
-
-    // /*    gpuRenderer.shaderRender->use();
-    //     gpuRenderer.shaderRender->setMat4("viewProjection", vp);
-    //     gpuRenderer.shaderRender->setVec3("viewPos", currentCameraPos);
-    //     gpuRenderer.shaderRender->setBool("isAnimated", false);*/
-    //     // + światła jak w starym kodzie...
-    //    ;
-
-    //     // Skopiuj depth bieżącej klatki do depthTexturePrev dla następnej
-    ///*     std::vector<float> zeros(width * height, 0.0f);
-    //     glTextureSubImage2D(depthTexturePrev, 0, 0, 0, width, height,
-    //         GL_DEPTH_COMPONENT, GL_FLOAT, zeros.data());*/
-    // }
-
 
 
     void ShowDepthTextureImGui(GLuint depthTex, int w, int h, float zNear, float zFar)
@@ -953,8 +945,8 @@ public:
     }
 
 
-    void InitFBO(int w, int h) {
-        if (fboWidth == w && fboHeight == h) return; // bez zmian
+    void InitFBO(int w, int h, bool openGL = false) {
+        if (fboWidth == w && fboHeight == h && !openGL) return; // bez zmian
         fboWidth = w; fboHeight = h;
 
         spdlog::warn("FBO sie ustawia");
@@ -1011,479 +1003,3 @@ public:
 };
 
 #endif
-
-
-//void RebuildGameObjectInRenderer(GameObject* e) {
-//    // Szukamy tego obiektu w renderQuery po wskaźniku
-//    auto& gos = renderQuery->gameobjects;
-//    auto& renderers = std::get<1>(renderQuery->componentsVectors);
-
-//    for (size_t i = 0; i < gos.size(); ++i) {
-//        if (gos[i] != e) continue;
-
-//        RenderComponent* rc = renderers[i];
-//        if (!rc) return;
-
-//        // 1. Zarejestruj animator jeśli nowy
-//        if (rc->animator &&
-//            drivenManager.animatorIDMap.find(rc->animator) == drivenManager.animatorIDMap.end())
-//        {
-//            drivenManager.animatorIDMap[rc->animator] =
-//                (uint32_t)drivenManager.animatorIDMap.size();
-//        }
-
-//        // 2. Dla każdego mesha sprawdź czy pass/mesh/materiał już istnieje
-//        for (auto& mesh : rc->meshes) {
-//            if (!mesh.cpuData || !mesh.material) continue;
-
-//            MeshData* md = mesh.cpuData.get();
-//            Material* mat = mesh.material.get();
-//            Shader* shader = mat->shader ? mat->shader : drivenManager.defaultShaderRender;
-
-//            uint32_t pid = drivenManager.GetOrCreatePass(shader, mat->surfaceType);
-//            GPUDrivenRenderer* r = drivenManager.GetRenderer(pid);
-//            if (!r) continue;
-
-//            // RegisterMesh/RegisterMaterial są idempotentne —
-//            // zwracają istniejące ID jeśli już zarejestrowane,
-//            // a dodają nowy wpis tylko gdy go nie ma
-//            bool meshIsNew = (r->GetMeshId(md) == UINT32_MAX);
-//            bool materialIsNew = (r->GetMaterialId(mat) == UINT32_MAX);
-
-//            if (meshIsNew)     r->RegisterMesh(md);
-//            if (materialIsNew) r->RegisterMaterial(mat);
-
-//            // Upload na GPU tylko jeśli faktycznie coś nowego trafiło do rejestrów
-//            // UploadMeshes() to pełna realokacja VBO/EBO/meshDataSSBO — wywołujemy rzadko
-//            if (meshIsNew)     r->UploadMeshes();
-//            if (materialIsNew) r->UploadMaterials();
-
-//            // Zawsze oznacz instancje jako brudne — nowy/zmieniony obiekt
-//            // musi przejść przez BuildInstance przy następnym RenderFrame
-//            r->dirtyInstance = true;
-//        }
-
-//        return; // obiekt znaleziony, kończymy
-//    }
-//}
-
-
-/*void RebuildAllRegistries(Query<TransformComponent, RenderComponent>& renderQuery) {
-    for (auto& entry : passes)
-        entry.renderer->Reset();
-
-    animatorIDMap.clear();
-
-    // identyczne jak InitPassesFromScene
-    auto& renderers = std::get<1>(renderQuery.componentsVectors);
-    for (size_t i = 0; i < renderers.size(); i++) {
-        RenderComponent* rc = renderers[i];
-        if (!rc) continue;
-
-        if (rc->animator && animatorIDMap.find(rc->animator) == animatorIDMap.end())
-            animatorIDMap[rc->animator] = (uint32_t)animatorIDMap.size();
-
-        for (auto& mesh : rc->meshes) {
-            if (!mesh.cpuData || !mesh.material) continue;
-            Material* mat = mesh.material.get();
-            Shader* shader = mat->shader ? mat->shader : defaultShaderRender;
-            uint32_t pid = GetOrCreatePass(shader, mat->surfaceType);
-            GPUDrivenRenderer* r = GetRenderer(pid);
-            if (!r) continue;
-            r->RegisterMesh(mesh.cpuData.get());
-            r->RegisterMaterial(mat);
-        }
-    }
-
-    for (auto& entry : passes) {
-        entry.renderer->UploadMeshes();
-        entry.renderer->UploadMaterials();
-    }
-}
-*/
-
-//std::unordered_map<AnimatorComponent*, uint32_t> animatorIDMap;
-
-//void InitGPUDrivenRenderer(int width, int height)
-//{
-//    auto& renderers = std::get<1>(renderQuery->componentsVectors);
-//    gpuRenderer.Init(width, height);
-
-//    for (size_t i = 0; i < renderers.size(); i++) {
-//        RenderComponent* r = renderers[i];
-//        if (!r) continue;
-
-//        if (r->animator && animatorIDMap.find(r->animator) == animatorIDMap.end())
-//            animatorIDMap[r->animator] = (uint32_t)animatorIDMap.size();
-
-//        for (auto& mesh : r->meshes) {
-//            if (!mesh.gpuMesh || !mesh.material || !mesh.cpuData) continue;
-
-//            MeshData* md = mesh.cpuData.get();
-//            Material* mat = mesh.material.get();
-
-//            gpuRenderer.RegisterMesh(md);
-//            gpuRenderer.RegisterMaterial(mat);
-//        }
-//    }
-
-
-//    gpuRenderer.UploadMeshes();
-//    gpuRenderer.UploadMaterials();
-
-//    // Depth texture — tworzona TYLKO RAZ
-//    if (depthTexturePrev == 0) {
-//        glGenTextures(1, &depthTexturePrev);
-//        glBindTexture(GL_TEXTURE_2D, depthTexturePrev);
-//        glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32F, width, height);
-//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-//        glBindTexture(GL_TEXTURE_2D, 0);
-//    }
-
-
-//    gpuRendererReady = true;
-//}
-//std::vector<RenderData> renderDataCache;
-//std::vector<glm::mat4> boneMatricesCache;
-//struct AnimCache { uint32_t slot; AnimatorComponent* anim; };
-
-//std::vector<RenderData>& CollectRenderData()
-//{
-//    auto& transforms = std::get<0>(renderQuery->componentsVectors);
-//    auto& renderers = std::get<1>(renderQuery->componentsVectors);
-
-//    renderDataCache.clear();
-//    renderDataCache.reserve(renderQuery->gameobjects.size());
-
-//    const size_t objectCount = renderQuery->gameobjects.size();
-
-//    // trzeba znalezc to co ustawia animatory w RenderComponent zeby pozbyc sie tej petli i robic to raz
-//    // 1. najpierw zarejestruj nowe animatory
-//    for (size_t i = 0; i < objectCount; ++i) {
-//        const RenderComponent* r = renderers[i];
-//        if (!r || !r->animator) continue;
-//        if (animatorIDMap.find(r->animator) == animatorIDMap.end())
-//            animatorIDMap[r->animator] = (uint32_t)animatorIDMap.size();
-//    }
-
-//    size_t requiredSize = animatorIDMap.size() * MAX_BONES_PER_SKELETON;
-//    if (boneMatricesCache.size() != requiredSize)
-//        boneMatricesCache.resize(requiredSize, glm::mat4(1.0f));
-
-//    for (size_t i = 0; i < objectCount; ++i)
-//    {
-//        const TransformComponent* t = transforms[i];
-//        const RenderComponent* r = renderers[i];
-
-//        if (!t || !r)
-//            continue;
-//        const glm::mat4 model = t->modelMatrix;
-
-//        
-//        const auto& meshes = r->meshes;
-//        auto animator = r->animator;
-
-//        auto animIt = animator ? animatorIDMap.find(animator) : animatorIDMap.end();
-//        if (animIt != animatorIDMap.end() && animator->currentSkeleton)
-//        {
-//            uint32_t slot = animIt->second;
-//            uint32_t boneCount = (uint32_t)std::min(animator->finalBoneMatrices.size(), (size_t)MAX_BONES_PER_SKELETON);
-
-//            std::copy(animator->finalBoneMatrices.begin(), animator->finalBoneMatrices.begin() + boneCount, boneMatricesCache.begin() + slot * MAX_BONES_PER_SKELETON);
-//        }
-
-//        for (const auto& mesh : meshes)
-//        {
-//            auto* gpuMesh = mesh.cpuData.get();
-//            auto* material = mesh.material.get();
-
-//            if (!gpuMesh || !material || !mesh.cpuData)
-//                continue;
-
-//            auto meshID = gpuRenderer.GetMeshId(gpuMesh);
-//            if (meshID == UINT32_MAX)
-//                continue;
-
-//            auto matID = gpuRenderer.GetMaterialId(material);
-//            if (matID == UINT32_MAX)
-//                continue;
-
-
-//            auto& aabb = mesh.cpuData->aabb;
-
-//            renderDataCache.emplace_back(RenderData{
-//                .modelMatrix = model,
-//                .aabbMin = glm::vec4(aabb.min, 0.0f),
-//                .aabbMax = glm::vec4(aabb.max, 0.0f),
-//                .meshID = meshID,
-//                .materialID = matID,
-//                .skeletonID = animIt != animatorIDMap.end() ? animIt->second : NO_SKELETON,
-//                .padding = 0
-//                });            
-//        }
-//    }
-//    
-//    gpuRenderer.ResizeBoneBufferIfNeeded((uint32_t)animatorIDMap.size());
-//    gpuRenderer.UploadAllBoneMatrices(boneMatricesCache);
-
-//    return renderDataCache;
-//}
-
-
-
-//glm::vec3 worldMin(FLT_MAX), worldMax(-FLT_MAX);
-//glm::vec3 corners[8] = {
-//    {aabb.min.x, aabb.min.y, aabb.min.z},
-//    {aabb.max.x, aabb.min.y, aabb.min.z},
-//    {aabb.min.x, aabb.max.y, aabb.min.z},
-//    {aabb.max.x, aabb.max.y, aabb.min.z},
-//    {aabb.min.x, aabb.min.y, aabb.max.z},
-//    {aabb.max.x, aabb.min.y, aabb.max.z},
-//    {aabb.min.x, aabb.max.y, aabb.max.z},
-//    {aabb.max.x, aabb.max.y, aabb.max.z},
-//};
-//for (const auto& c : corners) {
-//    glm::vec3 w = glm::vec3(model * glm::vec4(c, 1.0f));
-//    worldMin = glm::min(worldMin, w);
-//    worldMax = glm::max(worldMax, w);
-//}
-
-//DebugDrawSystem::AddAABB(worldMin, worldMax, glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
-// 
-//
-//
-//struct HiZBuffer {
-//    GLuint fbo = 0;
-//    GLuint depthTex = 0;
-//    int    width = 0;
-//    int    height = 0;
-//    int    mipLevels = 0;
-//
-//    void Init(int w, int h) {
-//        width = w;
-//        height = h;
-//        mipLevels = (int)std::floor(std::log2(std::max(w, h))) + 1;
-//
-//        // Tekstura depth z mipmapy
-//        glGenTextures(1, &depthTex);
-//        glBindTexture(GL_TEXTURE_2D, depthTex);
-//        glTexStorage2D(GL_TEXTURE_2D, mipLevels, GL_DEPTH_COMPONENT32F, w, h);
-//
-//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
-//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-//
-//        // FBO dla mip 0
-//        glGenFramebuffers(1, &fbo);
-//        glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-//        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
-//            GL_TEXTURE_2D, depthTex, 0);
-//        glDrawBuffer(GL_NONE);
-//        glReadBuffer(GL_NONE);
-//        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-//    }
-//};
-
-
-//class HiZOcclusionCuller {
-//public:
-//    HiZBuffer hiz;
-//    GLuint  hizBuildShader = 0;
-//    GLuint  hizCullShader = 0;
-//
-//    GLuint objectSSBO = 0; // dane AABB obiektów
-//    GLuint drawCmdSSBO = 0; // indirect draw commands
-//    GLuint counterSSBO = 0; // licznik widocznych
-//
-//    void Init(int w, int h) {
-//        hiz.Init(w, h);
-//        hizBuildShader = ComputeShader("res/shaders/hiz_build.comp").ID;
-//        hizCullShader = ComputeShader("res/shaders/hiz_culling.comp").ID;
-//    }
-//
-//    // Krok 1 — skopiuj depth z głównego FBO do Hi-Z
-//    void CopyDepth(GLuint mainDepthTex) {
-//        glCopyImageSubData(mainDepthTex, GL_TEXTURE_2D, 0, 0, 0, 0, hiz.depthTex, GL_TEXTURE_2D, 0, 0, 0, 0, hiz.width, hiz.height, 1);
-//    }
-//
-//    // Krok 2 — zbuduj mipmapy Hi-Z
-//    void BuildMips() {
-//        glUseProgram(hizBuildShader); // compute_shader->use
-//
-//        for (int mip = 1; mip < hiz.mipLevels; mip++) {
-//            int mipW = std::max(1, hiz.width >> mip);
-//            int mipH = std::max(1, hiz.height >> mip);
-//
-//            // Czytaj z poprzedniego mipa
-//            glActiveTexture(GL_TEXTURE0);
-//            glBindTexture(GL_TEXTURE_2D, hiz.depthTex);
-//            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, mip - 1);
-//            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, mip - 1);
-//
-//            // Pisz do aktualnego mipa
-//            glBindImageTexture(1, hiz.depthTex, mip, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
-//
-//            glDispatchCompute(
-//                (mipW + 7) / 8,
-//                (mipH + 7) / 8,
-//                1
-//            );
-//            glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-//        }
-//
-//        // Przywróć pełny zakres mipów
-//        glBindTexture(GL_TEXTURE_2D, hiz.depthTex);
-//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
-//        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, hiz.mipLevels - 1);
-//    }
-//
-//    // Krok 3 — culling na GPU
-//    void Cull(const glm::mat4& vp, int objectCount) {
-//        // Zeruj licznik
-//        uint32_t zero = 0;
-//        glBindBuffer(GL_SHADER_STORAGE_BUFFER, counterSSBO);
-//        glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(uint32_t), &zero);
-//
-//        glUseProgram(hizCullShader);  // compute_shader->use
-//        glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(vp));
-//        glUniform1i(1, objectCount);
-//        glUniform1i(2, hiz.mipLevels);
-//        glUniform2f(3, (float)hiz.width, (float)hiz.height);
-//
-//        glActiveTexture(GL_TEXTURE0);
-//        glBindTexture(GL_TEXTURE_2D, hiz.depthTex);
-//
-//        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, objectSSBO);
-//        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, drawCmdSSBO);
-//        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, counterSSBO);
-//
-//        glDispatchCompute((objectCount + 63) / 64, 1, 1);
-//        glMemoryBarrier(GL_COMMAND_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
-//    }
-//
-//    // Krok 4 — rysuj indirect
-//    void DrawIndirect(GLuint VAO, GLuint EBO) {
-//        glBindVertexArray(VAO);
-//        glBindBuffer(GL_DRAW_INDIRECT_BUFFER, drawCmdSSBO);
-//        glBindBuffer(GL_SHADER_STORAGE_BUFFER, counterSSBO);
-//
-//        // Odczytaj liczbę widocznych
-//        uint32_t visibleCount = 0;
-//        glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(uint32_t), &visibleCount);
-//
-//        glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, visibleCount, 0);
-//    }
-//};
-//
-//
-//void RenderCamera(...) {
-//    // === Klatka N ===
-//
-//    // 1. Render sceny do głównego FBO (używa Hi-Z z klatki N-1)
-//    glBindFramebuffer(GL_FRAMEBUFFER, mainFBO);
-//    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-//
-//    culler.Cull(projection * view, objectCount); // GPU culling
-//    culler.DrawIndirect(VAO, EBO);               // indirect draw
-//
-//    // 2. Skopiuj depth → zbuduj Hi-Z dla klatki N+1
-//    culler.CopyDepth(mainDepthTex);
-//    culler.BuildMips();
-//
-//    // 3. Wyświetl
-//    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-//    // blit mainFBO → ekran
-//}
-
-////sort transparent
-//for (auto& [key, vectorMesh] : instancedGroupsTransparent)
-//{
-//    //tylko sortuje instancjonowane obiekty
-//    std::sort(vectorMesh.begin(), vectorMesh.end(),
-//        [](const TransparentMesh& a, const TransparentMesh& b)
-//        {
-//            return a.distance > b.distance; // dalekie -> bliskie (back-to-front)
-//        });
-//}
-
-
-//std::vector<std::pair<GroupKey, std::vector<TransparentMesh>>> items(
-//    instancedGroupsTransparent.begin(),
-//    instancedGroupsTransparent.end()
-//);
-
-//std::sort(items.begin(), items.end(),
-//    [](auto& a, auto& b)
-//    {
-//        float da = a.second.front().distance;
-//        float db = b.second.front().distance;
-//        return da > db;
-//    });
-
-
-
-
-//stary render
-            //Culling
-              /*float dims[3] = { size.x, size.y, size.z };
-                std::sort(dims, dims + 3);*/
-
-            //shader->setVec3("dirLight.direction", glm::vec3(-0.2f, -1.0f, -0.3f));
-            //shader->setVec3("dirLight.ambient", glm::vec3(0.2f, 0.2f, 0.2f));
-            //shader->setVec3("dirLight.diffuse", glm::vec3(0.8f, 0.8f, 0.8f));
-            //shader->setVec3("dirLight.specular", glm::vec3(1.0f, 1.0f, 1.0f));
-
-            //std::vector<size_t> standardVisible;
-            ////std::vector<size_t> animatedVisible;
-
-            //for (size_t i : finalToRender) {
-            //    //auto* go = renderQuery->gameobjects[i];
-            //    //AnimatorComponent* animator = go->template GetComponent<AnimatorComponent>();
-            //    //GameObject* current = go->GetParent();
-            //    //while (animator == nullptr && current != nullptr) {
-            //    //    animator = current->template GetComponent<AnimatorComponent>();
-            //    //    current = current->GetParent();
-            //    //}
-            //   
-            //    standardVisible.push_back(i);
-            //}
-
-
-
-            //if (!final.empty()) {
-            //    
-            //}
-
-            //if (!animatedVisible.empty()) {
-
-            //    for (size_t i : animatedVisible) {
-            //     /*   auto* go = renderQuery->gameobjects[i];
-            //        auto* renderComp = std::get<1>(renderQuery->componentsVectors)[i];*/
-
-            //        
-            //     /*   AnimatorComponent* animator = go->GetComponent<AnimatorComponent>();
-
-            //        GameObject* current = go->GetParent();
-            //        if (animator == nullptr && current != nullptr) {
-            //            animator = current->GetComponentInParent<AnimatorComponent>();
-            //        }*/
-            //        //if (!animator && renderComp->rootAnimator) {
-            //        //    animator = renderComp->rootAnimator;
-            //        //}
-
-            //        auto drawStart = std::chrono::high_resolution_clock::now();
-            //        overrideMat->Apply();
-            //        model->Draw(0);
-            //        stats.drawCalls++;
-            //        stats.renderedObjects++;
-            //        stats.stateChanges++;
-            //        stats.triangles += GetTriangleCount(model);
-            //        auto drawEnd = std::chrono::high_resolution_clock::now();
-            //        stats.drawSubmitTimeMs += std::chrono::duration<float, std::milli>(drawEnd - drawStart).count();
-            //    }
-            //}
-
