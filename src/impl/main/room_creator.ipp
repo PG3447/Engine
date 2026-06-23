@@ -794,7 +794,7 @@ void createCrematorium(Scene* scena) {
     crematoriumPuzzle.minExtensionDistance = 10.0f;
     crematoriumPuzzle.maxExtensionDistance = 30.0f;
 
-    crematoriumPuzzle.coffinDimensions = glm::vec3(3.0f, 2.0f, 50.0f);
+    crematoriumPuzzle.coffinDimensions = glm::vec3(5.0f, 3.0f, 50.0f);
 
     crematoriumPuzzle.wallOffset = 0.0f;
 
@@ -806,7 +806,7 @@ void createCrematorium(Scene* scena) {
     glm::vec3 cornerPosition(159.0f, 4.1f, -176.65f);
 
     if (coffinRedEmptyModel && panelModel) {
-        crematoriumPuzzle.Init(scena, coffinRedEmptyModel.get(), coffinRedCorpseModel.get(), coffinGreenEmptyModel.get(), coffinGreenCorpseModel.get(), panelModel.get(), nullptr, cornerPosition);
+        crematoriumPuzzle.Init(scena, coffinRedEmptyModel.get(), coffinRedCorpseModel.get(), coffinGreenEmptyModel.get(), coffinGreenCorpseModel.get(), coffinBaseEmptyModel.get(), coffinBaseCorpseModel.get(), panelModel.get(), nullptr, cornerPosition);
     }
     else {
         spdlog::error("Modele kostnicy lub panelu niepoprawnie zaladowane");

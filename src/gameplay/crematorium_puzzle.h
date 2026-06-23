@@ -3,6 +3,7 @@
 #include "model.h"
 #include "prefab.h"
 #include "shader.h"
+#include "resource_manager.h"
 #include <vector>
 #include <algorithm>
 #include <systems/AudioSystem.h>
@@ -135,7 +136,7 @@ public:
     std::vector<CoffinData> coffins;
     uint64_t activationCounter = 1;
 
-    void Init(Scene* scene, Prefab* redEmpty, Prefab* redCorpse, Prefab* greenEmpty, Prefab* greenCorpse, Prefab* panelPrefab, Shader* shader, glm::vec3 cornerPosition);
+    void Init(Scene* scene, Prefab* redEmpty, Prefab* redCorpse, Prefab* greenEmpty, Prefab* greenCorpse, Prefab* baseEmpty, Prefab* baseCorpse, Prefab* panelPrefab, Shader* shader, glm::vec3 cornerPosition);
     void SetupAudio(AudioSystem* audioSys, FMOD::Sound* slideOut, FMOD::Sound* slideIn, FMOD::Sound* collide, FMOD::Sound* close, FMOD::Sound* puzzleSolved = nullptr);
     void Update(float deltaTime);
     void ToggleCoffin(GameObject* clickedObject);

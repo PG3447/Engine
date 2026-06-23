@@ -1,6 +1,6 @@
 #include "crematorium_puzzle.h"
 
-void CrematoriumPuzzle::Init(Scene* scene, Prefab* redEmpty, Prefab* redCorpse, Prefab* greenEmpty, Prefab* greenCorpse, Prefab* panelPrefab, Shader* shader, glm::vec3 cornerPosition)
+void CrematoriumPuzzle::Init(Scene* scene, Prefab* redEmpty, Prefab* redCorpse, Prefab* greenEmpty, Prefab* greenCorpse, Prefab* baseEmpty, Prefab* baseCorpse, Prefab* panelPrefab, Shader* shader, glm::vec3 cornerPosition)
 {
     GameObject* puzzleRoot = scene->CreateGameObject();
     puzzleRoot->name = "Crematorium_Puzzle_Root";
@@ -12,7 +12,13 @@ void CrematoriumPuzzle::Init(Scene* scene, Prefab* redEmpty, Prefab* redCorpse, 
             int targetLvl = configLeftWall[configRow][configCol];
             bool interactable = (targetLvl > 0);
 
-            Prefab* prefabToUse = (corpsesLeftWall[configRow][configCol] == 1) ? redCorpse : redEmpty;
+            Prefab* prefabToUse;
+            if (targetLvl == 0) {
+                prefabToUse = (corpsesLeftWall[configRow][configCol] == 1) ? baseCorpse : baseEmpty;
+            }
+            else {
+                prefabToUse = (corpsesLeftWall[configRow][configCol] == 1) ? redCorpse : redEmpty;
+            }
 
             GameObject* obj = scene->CreateGameObject(puzzleRoot);
             obj->name = "Coffin_L_" + std::to_string(r) + "_" + std::to_string(c);
@@ -63,7 +69,13 @@ void CrematoriumPuzzle::Init(Scene* scene, Prefab* redEmpty, Prefab* redCorpse, 
             int targetLvl = configRightWall[configRow][configCol];
             bool interactable = (targetLvl > 0);
 
-            Prefab* prefabToUse = (corpsesRightWall[configRow][configCol] == 1) ? greenCorpse : greenEmpty;
+            Prefab* prefabToUse;
+            if (targetLvl == 0) {
+                prefabToUse = (corpsesRightWall[configRow][configCol] == 1) ? baseCorpse : baseEmpty;
+            }
+            else {
+                prefabToUse = (corpsesRightWall[configRow][configCol] == 1) ? greenCorpse : greenEmpty;
+            }
 
             GameObject* obj = scene->CreateGameObject(puzzleRoot);
             obj->name = "Coffin_R_" + std::to_string(r) + "_" + std::to_string(c);
@@ -111,20 +123,20 @@ void CrematoriumPuzzle::Init(Scene* scene, Prefab* redEmpty, Prefab* redCorpse, 
     leftPanelObj = panelPrefab->Instantiate(*scene, puzzleRoot, shader);
     leftPanelObj->name = "Panel_Left";
     auto* tLeft = leftPanelObj->GetComponent<TransformComponent>();
-    tLeft->position = cornerPosition + glm::vec3(-1.0f, -0.1f, 35.0f);
+    tLeft->position = cornerPosition + glm::vec3(-35.0f, -0.1f, 1.0f);
     tLeft->scale = glm::vec3(1.0f);
-    tLeft->rotation = glm::vec3(0.0f, -90.0f, 0.0f);
+    tLeft->rotation = glm::vec3(0.0f, 0.0f, 0.0f);
     tLeft->isDirty = true;
 
     rightPanelObj = panelPrefab->Instantiate(*scene, puzzleRoot, shader);
     rightPanelObj->name = "Panel_Right";
     auto* tRight = rightPanelObj->GetComponent<TransformComponent>();
-    tRight->position = cornerPosition + glm::vec3(-35.0f, -0.1f, 1.0f);
+    tRight->position = cornerPosition + glm::vec3(-1.0f, -0.1f, 35.0f);
     tRight->scale = glm::vec3(1.0f);
-    tRight->rotation = glm::vec3(0.0f, 0.0f, 0.0f);
+    tRight->rotation = glm::vec3(0.0f, -90.0f, 0.0f);
     tRight->isDirty = true;
 
-    auto setupPanelMaterials = [&](GameObject* panelObj, glm::vec4 activeColor) {
+    auto setupPanelMaterials = [&](GameObject* panelObj, glm::vec3 activeColor) {
         if (!panelObj) return;
         panelObj->TraverseChildren([&](GameObject* child) {
             auto* render = child->GetComponent<RenderComponent>();
@@ -132,16 +144,40 @@ void CrematoriumPuzzle::Init(Scene* scene, Prefab* redEmpty, Prefab* redCorpse, 
                 std::string objName = child->name;
                 std::string parentName = child->GetParent() ? child->GetParent()->name : "";
 
+                bool isCable = (objName.find("->") != std::string::npos) || (parentName.find("->") != std::string::npos);
                 bool isEndObject = (objName.find("End") != std::string::npos) || (parentName.find("End") != std::string::npos);
+
+                bool isPoint = false;
+                for (int r = 0; r < rows; ++r) {
+                    for (int c = 0; c < cols; ++c) {
+                        std::string cubeName = std::to_string(r + 1) + "x" + std::to_string(c + 1);
+                        if (objName.find(cubeName) != std::string::npos || parentName.find(cubeName) != std::string::npos) {
+                            isPoint = true;
+                            break;
+                        }
+                    }
+                    if (isPoint) break;
+                }
+
+                if (!isPoint && !isCable && !isEndObject) return;
 
                 for (auto& mesh : render->meshes) {
                     if (mesh.material) {
-                        auto inactiveMat = std::make_shared<Material>(*mesh.material);
-                        inactiveMat->diffuseColor = glm::vec4(0.1f, 0.1f, 0.1f, 1.0f);
+                        auto createSolidColorMat = [&](glm::vec3 color) {
+                            auto mat = std::make_shared<Material>(*mesh.material);
+                            mat->diffuseMap = 0;
+                            mat->normalMap = 0;
+                            mat->aoMap = 0;
+                            mat->diffuseColor = glm::vec4(color, 1.0f);
+                            mat->metallicRoughnessMap = ResourceManager::CreateTextureFromColor("neon_matte_mr", glm::vec3(1.0f, 1.0f, 0.0f)).id;
+                            mat->shininess = 0.0f;
+                            return mat;
+                            };
+
+                        auto inactiveMat = createSolidColorMat(glm::vec3(0.1f, 0.1f, 0.1f));
                         inactiveMaterials[child] = inactiveMat;
 
-                        auto activeMat = std::make_shared<Material>(*mesh.material);
-                        activeMat->diffuseColor = activeColor;
+                        auto activeMat = createSolidColorMat(activeColor);
                         activeMaterials[child] = activeMat;
 
                         if (isEndObject) {
@@ -154,11 +190,11 @@ void CrematoriumPuzzle::Init(Scene* scene, Prefab* redEmpty, Prefab* redCorpse, 
                 }
                 child->NotifyChanged();
             }
-            });
-        };
+        });
+    };
 
-    setupPanelMaterials(leftPanelObj, glm::vec4(25.0f, 0.0f, 0.0f, 1.0f));
-    setupPanelMaterials(rightPanelObj, glm::vec4(0.0f, 25.0f, 0.0f, 1.0f));
+    setupPanelMaterials(leftPanelObj, glm::vec3(5.0f, 0.0f, 0.0f));
+    setupPanelMaterials(rightPanelObj, glm::vec3(0.0f, 5.0f, 0.0f));
 }
 
 void CrematoriumPuzzle::ToggleCoffin(GameObject* clickedObject)
@@ -373,42 +409,54 @@ void CrematoriumPuzzle::Update(float deltaTime)
             std::string objName = child->name;
             std::string parentName = child->GetParent() ? child->GetParent()->name : "";
 
-            bool shouldBeActive = false;
+            bool isCable = (objName.find("->") != std::string::npos) || (parentName.find("->") != std::string::npos);
             bool isEndObject = (objName.find("End") != std::string::npos) || (parentName.find("End") != std::string::npos);
+
+            bool isPoint = false;
+            for (int r = 0; r < rows; ++r) {
+                for (int c = 0; c < cols; ++c) {
+                    std::string cubeName = std::to_string(r + 1) + "x" + std::to_string(c + 1);
+                    if (objName.find(cubeName) != std::string::npos || parentName.find(cubeName) != std::string::npos) {
+                        isPoint = true;
+                        break;
+                    }
+                }
+                if (isPoint) break;
+            }
+
+            if (!isPoint && !isEndObject && !isCable) return;
+
+            bool shouldBeActive = false;
 
             if (isEndObject) {
                 shouldBeActive = true;
             }
-            else {
-                bool isCable = (objName.find("->") != std::string::npos) || (parentName.find("->") != std::string::npos);
+            else if (isCable) {
+                for (int r = 0; r < rows; ++r) {
+                    for (int c = 0; c < cols; ++c) {
+                        std::string currentCube = std::to_string(r + 1) + "x" + std::to_string(c + 1);
 
-                if (isCable) {
-                    for (int r = 0; r < rows; ++r) {
-                        for (int c = 0; c < cols; ++c) {
-                            std::string currentCube = std::to_string(r + 1) + "x" + std::to_string(c + 1);
-
-                            if (c < cols - 1) {
-                                std::string cableName = currentCube + "->" + std::to_string(r + 1) + "x" + std::to_string(c + 2);
-                                if (objName.find(cableName) != std::string::npos || parentName.find(cableName) != std::string::npos) {
-                                    if (grid[r][c] && grid[r][c + 1]) shouldBeActive = true;
-                                }
+                        if (c < cols - 1) {
+                            std::string cableName = currentCube + "->" + std::to_string(r + 1) + "x" + std::to_string(c + 2);
+                            if (objName.find(cableName) != std::string::npos || parentName.find(cableName) != std::string::npos) {
+                                if (grid[r][c] && grid[r][c + 1]) shouldBeActive = true;
                             }
-                            if (r < rows - 1) {
-                                std::string cableName = currentCube + "->" + std::to_string(r + 2) + "x" + std::to_string(c + 1);
-                                if (objName.find(cableName) != std::string::npos || parentName.find(cableName) != std::string::npos) {
-                                    if (grid[r][c] && grid[r + 1][c]) shouldBeActive = true;
-                                }
+                        }
+                        if (r < rows - 1) {
+                            std::string cableName = currentCube + "->" + std::to_string(r + 2) + "x" + std::to_string(c + 1);
+                            if (objName.find(cableName) != std::string::npos || parentName.find(cableName) != std::string::npos) {
+                                if (grid[r][c] && grid[r + 1][c]) shouldBeActive = true;
                             }
                         }
                     }
                 }
-                else {
-                    for (int r = 0; r < rows; ++r) {
-                        for (int c = 0; c < cols; ++c) {
-                            std::string cubeName = std::to_string(r + 1) + "x" + std::to_string(c + 1);
-                            if (objName.find(cubeName) != std::string::npos || parentName.find(cubeName) != std::string::npos) {
-                                if (grid[r][c]) shouldBeActive = true;
-                            }
+            }
+            else if (isPoint) {
+                for (int r = 0; r < rows; ++r) {
+                    for (int c = 0; c < cols; ++c) {
+                        std::string cubeName = std::to_string(r + 1) + "x" + std::to_string(c + 1);
+                        if (objName.find(cubeName) != std::string::npos || parentName.find(cubeName) != std::string::npos) {
+                            if (grid[r][c]) shouldBeActive = true;
                         }
                     }
                 }
@@ -417,7 +465,8 @@ void CrematoriumPuzzle::Update(float deltaTime)
             bool wasChanged = false;
             for (auto& mesh : render->meshes) {
                 std::shared_ptr<Material> targetMat = shouldBeActive ? activeMaterials[child] : inactiveMaterials[child];
-                if (mesh.material != targetMat) {
+
+                if (targetMat && mesh.material != targetMat) {
                     mesh.material = targetMat;
                     wasChanged = true;
                 }
@@ -426,8 +475,8 @@ void CrematoriumPuzzle::Update(float deltaTime)
             if (wasChanged) {
                 child->NotifyChanged();
             }
-            });
-        };
+        });
+    };
 
     updatePanelColors(leftPanelObj, WallSide::Left, glm::vec3(1.0f, 0.0f, 0.0f));
     updatePanelColors(rightPanelObj, WallSide::Right, glm::vec3(0.0f, 1.0f, 0.0f));
@@ -508,7 +557,7 @@ void CrematoriumPuzzle::Update(float deltaTime)
                 }
             }
             return false;
-        };
+            };
 
         bool currentLeftSolved = hasPath(gridLeft, leftStart, leftEnd);
         bool currentRightSolved = hasPath(gridRight, rightStart, rightEnd);
