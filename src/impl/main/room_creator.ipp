@@ -15,8 +15,6 @@ void createFirstRoom(Scene* scena1) {
     floorModel = std::make_unique<Prefab>("res/models/number_floor.glb");
     wallModel  = std::make_unique<Prefab>("res/models/wall.glb");
     wallModel2 = std::make_unique<Prefab>("res/models/wall2.glb");
-    wallModel3 = std::make_unique<Prefab>("res/models/wall3.glb");
-
 
     roomsLights.resize(2);
 
@@ -95,9 +93,9 @@ void createFirstRoom(Scene* scena1) {
         tablicaZaslon[i]->name = "Zaslona" + std::to_string(i);
         int extra = (i / 3);
         int steps = i - extra;
-        tablicaZaslon[i]->GetComponent<TransformComponent>()->position = glm::vec3{ 26.5, 8.0, -(17.2f + steps * 8 + extra * 4) };
+        tablicaZaslon[i]->GetComponent<TransformComponent>()->position = glm::vec3{ 26.5, 11.0, -(17.2f + steps * 8 + extra * 4) };
         tablicaZaslon[i]->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, 90.0f, 0.0f };
-        tablicaZaslon[i]->GetComponent<TransformComponent>()->scale = glm::vec3{ 0.3, 12, 8 };
+        tablicaZaslon[i]->GetComponent<TransformComponent>()->scale = glm::vec3{ 0.15, 5, 1.6 };
         tablicaZaslon[i]->AddComponent<ColliderComponent>();
         tablicaZaslon[i]->GetComponent<ColliderComponent>()->isWalkable     = false;
         tablicaZaslon[i]->GetComponent<ColliderComponent>()->affectsNavMesh = true;

@@ -150,6 +150,7 @@ void connectAllModels() {
     mirrorModel5     = std::make_unique<Prefab>("res/models/lazienka/lustro5.glb");
     mirrorModel6     = std::make_unique<Prefab>("res/models/lazienka/lustro6.glb");
     mirrorBroken     = std::make_unique<Prefab>("res/models/lazienka/lustro_broken_final.glb");
+    wallModel3 = std::make_unique<Prefab>("res/models/lazienka/wall3.glb");
     washroomExit     = std::make_unique<Prefab>("res/models/door_2.glb");
     urinModel        = std::make_unique<Prefab>("res/models/uniral_v2.glb");
     NormalDoor       = std::make_unique<Prefab>("res/models/doors_smaller.glb");
