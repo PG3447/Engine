@@ -161,7 +161,7 @@ bool IsPuzzleSolved() {
     if (puzzleSlotsMap.empty()) return false;
     for (auto& [slotGO, slot] : puzzleSlotsMap) {
         if (slot.occupant == nullptr) return false;             // slot pusty
-        if (slot.occupant != slot.expectedObject) return false; // z�a kostka
+        if (slot.occupant != slot.expectedObject) return false; // zla kostka
     }
     return true;
 }
@@ -338,7 +338,7 @@ void HandlePlayerInteraction(
 
                     if (allInserted && !isMachineFixed) {
                         isMachineFixed = true; // Maszyna rusza!
-                        outShakeTimer = SHAKE_DURATION; // Mocne trz�sienie kamery z impaktem
+                        outShakeTimer = SHAKE_DURATION; // Mocne trzesienie kamery z impaktem
 
                         spdlog::info("Guzik START wcisniety! Maszyna ruszyla, otwieranie drzwi.");
 
@@ -357,7 +357,7 @@ void HandlePlayerInteraction(
                         }
                     }
                     else if (!isMachineFixed) {
-                        // Brak z�batek - b��d (odrzucenie)
+                        // Brak zebatek - blad
                         outShakeTimer = SHAKE_DURATION * 0.5f; // Ma�e trz�sienie
                         if (audioSystem && soundDoorLocked) audioSystem->playSound(soundDoorLocked);
                     }
@@ -489,7 +489,6 @@ void HandlePlayerInteraction(
                     PlayerAnimationHelper::TriggerAction(playerAnimator, playerPrefab, PlayerAnimationHelper::PICKUP_ANIM_INDEX);
                 }
             }
-            // Podnoszenie (zabezpieczone przed wyrwaniem obiektu drugiemu graczowi)
             else if (pickupObjects.count(hit.hitObject) && hit.hitObject != otherPlayerHeldObject) {
                 myHeldObject = hit.hitObject;
 
@@ -666,7 +665,7 @@ GameObject* CreateInteractableDoor(Scene* scene, Prefab* prefab, Shader* shader,
     float baseRotationY = 90.0f,
     std::optional<glm::vec3> openColliderHalfSize = std::nullopt,
     std::optional<glm::vec3> openColliderOffset = std::nullopt,
-    std::optional<glm::vec3> closedOffsetAdjust = std::nullopt) // NOWE
+    std::optional<glm::vec3> closedOffsetAdjust = std::nullopt)
 {
     GameObject* hinge = scene->CreateGameObject(nullptr);
     hinge->name = "Hinge_" + name;
@@ -680,7 +679,7 @@ GameObject* CreateInteractableDoor(Scene* scene, Prefab* prefab, Shader* shader,
     doorTr->rotation = glm::vec3(0.0f, baseRotationY, 0.0f);
     doorTr->position = -pivotOffset;
 
-    glm::vec3 closedOffset = -pivotOffset + closedOffsetAdjust.value_or(glm::vec3(0.0f)); // NOWE
+    glm::vec3 closedOffset = -pivotOffset + closedOffsetAdjust.value_or(glm::vec3(0.0f));
 
     ColliderComponent* col = hinge->AddComponent<ColliderComponent>();
     col->halfSize = colliderHalfSize;

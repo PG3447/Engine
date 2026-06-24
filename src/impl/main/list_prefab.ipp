@@ -115,7 +115,6 @@ std::unique_ptr<Prefab> wallBathroomModel;
 std::unique_ptr<Prefab> wallCrematoriumModel;
 std::unique_ptr<Prefab> doorsToiletModel;
 std::unique_ptr<Prefab> wallCialaModel;
-//std::unique_ptr<Prefab> koparkaModel;
 
 std::unique_ptr<Prefab> coffinRedEmptyModel;
 std::unique_ptr<Prefab> coffinRedCorpseModel;
@@ -123,17 +122,6 @@ std::unique_ptr<Prefab> coffinGreenEmptyModel;
 std::unique_ptr<Prefab> coffinGreenCorpseModel;
 std::unique_ptr<Prefab> coffinBaseEmptyModel;
 std::unique_ptr<Prefab> coffinBaseCorpseModel;
-
-
-//std::unique_ptr<Prefab> dyingModelPrefab;
-//std::unique_ptr<Prefab> jumpSkeletonPrefab;
-
-// testowe obiekty do postprocessingu
-//std::unique_ptr<Prefab> RedModel;
-//std::unique_ptr<Prefab> BlueModel;
-//std::unique_ptr<Prefab> GreenModel;
-
-
 
 void connectAllModels() {
     bed1Model        = std::make_unique<Prefab>("res/models/bed.glb");

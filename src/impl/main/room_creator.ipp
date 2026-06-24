@@ -868,7 +868,7 @@ void createRentgenRoom(Scene* scena) {
 
     GameObject * objPuzel3 = puzel3->Instantiate(*scena, nullptr, nullptr);
     objPuzel3->name = "puzel3";
-    objPuzel3->GetComponent<TransformComponent>()->position = glm::vec3(0, 1, 0);
+    objPuzel3->GetComponent<TransformComponent>()->position = glm::vec3(-88.680, 6.523, -168.894);
     objPuzel3->GetComponent<TransformComponent>()->rotation = glm::vec3(0, -90, 90);
     objPuzel3->AddComponent<RigidbodyComponent>();
     objPuzel3->GetComponent<RigidbodyComponent>()->useGravity = true;
@@ -881,7 +881,7 @@ void createRentgenRoom(Scene* scena) {
 
     GameObject * objPuzel4 = puzel4->Instantiate(*scena, nullptr, nullptr);
     objPuzel4->name = "puzel4";
-    objPuzel4->GetComponent<TransformComponent>()->position = glm::vec3(0, 1, 0);
+    objPuzel4->GetComponent<TransformComponent>()->position = glm::vec3(-63.418, 4.528, -155.781);
     objPuzel4->GetComponent<TransformComponent>()->rotation = glm::vec3(0, -90, 90);
     objPuzel4->AddComponent<RigidbodyComponent>();
     objPuzel4->GetComponent<RigidbodyComponent>()->useGravity = true;
@@ -1107,7 +1107,17 @@ void createRentgenRoom(Scene* scena) {
     wozek2->GetComponent<TransformComponent>()->rotation = glm::vec3(0, 0, 0);
     wozek2->GetComponent<TransformComponent>()->scale = glm::vec3(7);
     wozek2->AddComponent<ColliderComponent>();
-	wozek2->GetComponent<ColliderComponent>()->offset = glm::vec3(0, -0.5, 0);
+	wozek2->GetComponent<ColliderComponent>()->offset = glm::vec3(0, -3.050, 0);
+
+    GameObject * collWozek2 = scena->CreateGameObject(nullptr);
+    collWozek2->name = "collWozek2";
+    TransformComponent * transform = collWozek2->GetComponent<TransformComponent>();
+    transform->position = glm::vec3(-63.885, 6.245, -156.073);
+    wozek2->GetComponent<TransformComponent>()->position =glm::vec3(-63.541, 4.228, -156.157);
+    ColliderComponent* colliderComnponent = collWozek2->AddComponent<ColliderComponent>();
+    colliderComnponent->halfSize = glm::vec3(2.560, 0.270, 1.620);
+    colliderComnponent->offset = glm::vec3(0);
+
 
     GameObject * desk = deskModel->Instantiate(*scena, nullptr, nullptr);
     desk->name = "desk";
