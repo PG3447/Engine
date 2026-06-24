@@ -59,9 +59,9 @@ void createFirstRoom(Scene* scena1) {
             tablicaKibli[i]->name = "Kibel" + std::to_string(i);
             tablicaKibli[i]->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1.5, 1.5, 1.5 };
             tablicaKibli[i]->AddComponent<ColliderComponent>();
-            tablicaKibli[i]->GetComponent<ColliderComponent>()->halfSize     = glm::vec3{ 2.5, 4, 2.5 };
+            tablicaKibli[i]->GetComponent<ColliderComponent>()->halfSize     = glm::vec3{ 2.5, 4, 3.0 };
             tablicaKibli[i]->GetComponent<ColliderComponent>()->offset       = glm::vec3{ 0, 4, 0 };
-            tablicaKibli[i]->GetComponent<TransformComponent>()->position    = glm::vec3{ 30, 0.5f, -25 + (-10 * i) };
+            tablicaKibli[i]->GetComponent<TransformComponent>()->position    = glm::vec3{ 30, 0.5f, -(21.2f + i * 8 + (int)(i / 2) * 4) };
             tablicaKibli[i]->GetComponent<TransformComponent>()->rotation    = glm::vec3{ 0, 90, 0 };
             tablicaKibli[i]->GetComponent<ColliderComponent>()->isWalkable     = false;
             tablicaKibli[i]->GetComponent<ColliderComponent>()->affectsNavMesh = true;
@@ -74,7 +74,7 @@ void createFirstRoom(Scene* scena1) {
             tablicaKibli[i]->AddComponent<ColliderComponent>();
             tablicaKibli[i]->GetComponent<ColliderComponent>()->halfSize     = glm::vec3{ 2.5, 4, 2.5 };
             tablicaKibli[i]->GetComponent<ColliderComponent>()->offset       = glm::vec3{ 0, 4, 0 };
-            tablicaKibli[i]->GetComponent<TransformComponent>()->position    = glm::vec3{ 32.6, 2.0f, -25 + (-10 * i) };
+            tablicaKibli[i]->GetComponent<TransformComponent>()->position    = glm::vec3{ 32.6, 2.0f, -(21.2f + i * 8 + (int)(i / 2) * 4) };
             tablicaKibli[i]->GetComponent<TransformComponent>()->rotation    = glm::vec3{ 0, 270, 0 };
             tablicaKibli[i]->GetComponent<ColliderComponent>()->isWalkable     = false;
             tablicaKibli[i]->GetComponent<ColliderComponent>()->affectsNavMesh = true;
@@ -85,33 +85,37 @@ void createFirstRoom(Scene* scena1) {
     GameObject* zaslony = scena1->CreateGameObject(nullptr);
     zaslony->name = "Zasolony";
     GameObject* tablicaZaslon[9];
-    for (int i = 0; i < 9; i++) {
+    for (int i = 0; i < 12; i++) {
 
+        if (i == 3 || i == 4 || i == 5) {
+            continue;
+            //tablicaZaslon[i]->GetComponent<TransformComponent>()->position    = glm::vec3{ 5000, 0, -20 + (-10 * i) };
+        }
         tablicaZaslon[i] = wallModel3->Instantiate(*scena1, zaslony, nullptr);
-        tablicaZaslon[i]->GetComponent<TransformComponent>()->scale = glm::vec3{ 0.3, 20, 20 };
         tablicaZaslon[i]->name = "Zaslona" + std::to_string(i);
+        int extra = (i / 3);
+        int steps = i - extra;
+        tablicaZaslon[i]->GetComponent<TransformComponent>()->position = glm::vec3{ 26.5, 8.0, -(17.2f + steps * 8 + extra * 4) };
+        tablicaZaslon[i]->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, 90.0f, 0.0f };
+        tablicaZaslon[i]->GetComponent<TransformComponent>()->scale = glm::vec3{ 0.3, 12, 8 };
         tablicaZaslon[i]->AddComponent<ColliderComponent>();
-        tablicaZaslon[i]->GetComponent<ColliderComponent>()->halfSize     = glm::vec3{ 20, 15, 0.3 };
-        tablicaZaslon[i]->GetComponent<TransformComponent>()->position    = glm::vec3{ 35, 0, -20 + (-10 * i) };
         tablicaZaslon[i]->GetComponent<ColliderComponent>()->isWalkable     = false;
         tablicaZaslon[i]->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+        
 
-        if (i==3) {
-            tablicaZaslon[i]->GetComponent<TransformComponent>()->position    = glm::vec3{ 5000, 0, -20 + (-10 * i) };
-        }
     }
 
     // Drzwi do kibla
     for (int i = 0; i < 8; i++) {
         if (i != 2 && i != 3) {
-            glm::vec3 doorPos      = glm::vec3{ 14.830, 9, -20 + (-10.0f * i) };
-            glm::vec3 doorScale    = glm::vec3{ 3.040f, 2.80f, 1.8 };
-            glm::vec3 pivotOffset  = glm::vec3(0.0f, 0.0f, 0.1);
-            glm::vec3 colliderSize = glm::vec3{ 1, 10, 5 };
+            glm::vec3 doorPos      = glm::vec3{ 18.350, 9, -(17.25f + i * 8 + (int)(i / 2) * 4) };
+            glm::vec3 doorScale    = glm::vec3{ 2.4f, 2.4f, 2.4f };
+            glm::vec3 pivotOffset  = glm::vec3(0.0f, 0.0f, 0.0f);
+            glm::vec3 colliderSize = glm::vec3{ 0.5, 8, 5 };
             GameObject* hinge = CreateInteractableDoor(
                 scena1, doorsToiletModel.get(), nullptr,
                 "ToiletDoor_" + std::to_string(i),
-                doorPos, doorScale, pivotOffset, colliderSize, 90.0f, 90, glm::vec3{ 5, 10, 1 }, glm::vec3{-4.5,0, 0}, glm::vec3{0,0, -4.5}
+                doorPos, doorScale, pivotOffset, colliderSize, 90.0f, 90, glm::vec3{ 5, 10, 0.5 }, glm::vec3{-4.5,0, 0}, glm::vec3{0,0, -4.5}
             );
             unlockedDoors.insert(hinge);
         }
@@ -131,17 +135,17 @@ void createFirstRoom(Scene* scena1) {
         tablicaPokrywek[i]->name = "pokrywkaKibel"+std::to_string(i);
         tablicaPokrywek[i]->GetComponent<TransformComponent>()->scale    = glm::vec3{ 2, 2, 2 };
         tablicaPokrywek[i]->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 90, 0 };
-        tablicaPokrywek[i]->GetComponent<TransformComponent>()->position   = glm::vec3{ 21, 5.0, -40.7 + (-10 * i) };
+        tablicaPokrywek[i]->GetComponent<TransformComponent>()->position   = glm::vec3{ 22, 7.0, -(18.25f + i * 8 + (int)(i / 2) * 4) };
 
         tablicaPapierowKibel[i]->name = "PapierKibel" + std::to_string(i);
         tablicaPapierowKibel[i]->GetComponent<TransformComponent>()->scale    = glm::vec3{ 2, 2, 2 };
         tablicaPapierowKibel[i]->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 90, 0 };
         tablicaPapierowKibel[i]->AddComponent<ColliderComponent>();
-        tablicaPapierowKibel[i]->GetComponent<TransformComponent>()->position   = glm::vec3{ 21, 5.0, -40.7 + (-10 * i) };
+        tablicaPapierowKibel[i]->GetComponent<TransformComponent>()->position   = glm::vec3{ 22, 7.0, -(18.25f + i * 8 + (int)(i / 2) * 4) };
         rotatableObjects.insert(tablicaPapierowKibel[i]);
-        if (i < 2) {
-            tablicaPapierowKibel[i]->GetComponent<TransformComponent>()->position   = glm::vec3{ 21, 5.0, -40.7 + (-10 * i) + 20 };
-            tablicaPokrywek[i]->GetComponent<TransformComponent>()->position   = glm::vec3{ 21, 5.0, -40.7 + (-10 * i) + 20 };
+        if (i >= 2) {
+            tablicaPapierowKibel[i]->GetComponent<TransformComponent>()->position   = glm::vec3{ 22, 7.0, -(18.25f + (i + 2) * 8 + (int)((i + 2) / 2) * 4) };
+            tablicaPokrywek[i]->GetComponent<TransformComponent>()->position   = glm::vec3{ 22, 7.0, -(18.25f + (i + 2) * 8 + (int)((i + 2) / 2) * 4) };
         }
     }
 
