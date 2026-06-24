@@ -87,3 +87,159 @@ Placements:
     colliderIsTrigger: false
     colliderAffectsNavMesh: false
     colliderIsWalkable: false
+  - modelPath: res/models/eksperyment4.glb
+    name: eksperyment4
+    position: [-7.90999985, 7.93014812, -157.848999]
+    rotation: [0, 0, 0]
+    scale: [7, 7, 7]
+    hasCollider: false
+  - modelPath: res/models/eksperyment4.glb
+    name: eksperyment4
+    position: [-5.47419214, 7.92574072, -157.823288]
+    rotation: [0, 3.29999995, 0]
+    scale: [7, 7, 7]
+    hasCollider: false
+  - modelPath: res/models/eksperyment4.glb
+    name: eksperyment4
+    position: [-7.56674004, 7.65592766, -160.158524]
+    rotation: [0, -4, 0]
+    scale: [7, 7, 7]
+    hasCollider: false
+  - modelPath: res/models/eksperyment4.glb
+    name: eksperyment4
+    position: [-5.32650328, 7.8670001, -160.157303]
+    rotation: [0, 0.899999976, 0]
+    scale: [7, 7, 7]
+    hasCollider: false
+  - modelPath: res/models/eksperyment4.glb
+    name: eksperyment4
+    position: [-7.46496058, 7.93014812, -162.315262]
+    rotation: [0, -7.0999999, 0]
+    scale: [7, 7, 7]
+    hasCollider: false
+  - modelPath: res/models/eksperyment4.glb
+    name: eksperyment4
+    position: [-7.46496058, 7.93014812, -162.315262]
+    rotation: [0, -7.0999999, 0]
+    scale: [7, 7, 7]
+    hasCollider: false
+  - modelPath: res/models/eksperyment4.glb
+    name: eksperyment4
+    position: [-5.1540966, 7.92574072, -162.575851]
+    rotation: [0, 3.29999995, 0]
+    scale: [7, 7, 7]
+    hasCollider: false
+  - modelPath: res/models/eksperyment4.glb
+    name: eksperyment4
+    position: [-7.56674004, 7.65592766, -164.53923]
+    rotation: [0, -4, 0]
+    scale: [7, 7, 7]
+    hasCollider: false
+  - modelPath: res/models/eksperyment4.glb
+    name: eksperyment4
+    position: [-5.32650328, 7.8670001, -164.857437]
+    rotation: [0, 0.899999976, 0]
+    scale: [7, 7, 7]
+    hasCollider: false
+  - modelPath: res/models/eksperyment4.glb
+    name: eksperyment4
+    position: [-7.46496058, 7.93014812, -167.05368]
+    rotation: [0, 19.7999992, 0]
+    scale: [7, 7, 7]
+    hasCollider: false
+  - modelPath: res/models/eksperyment4.glb
+    name: eksperyment4
+    position: [-5.1540966, 7.92574072, -167.243988]
+    rotation: [0, -6, 0]
+    scale: [7, 7, 7]
+    hasCollider: false
+  - modelPath: res/models/eksperyment4.glb
+    name: eksperyment4
+    position: [-5.1540966, 7.92574072, -167.243988]
+    rotation: [0, -6, 0]
+    scale: [7, 7, 7]
+    hasCollider: false
+  - modelPath: res/models/eksperyment4.glb
+    name: eksperyment4
+    position: [-7.56674004, 7.65592766, -171.559448]
+    rotation: [0, 5.19999981, 0]
+    scale: [7, 7, 7]
+    hasCollider: false
+  - modelPath: res/models/eksperyment4.glb
+    name: eksperyment4
+    position: [-5.32650328, 7.8670001, -171.574524]
+    rotation: [0, -15.3000002, 0]
+    scale: [7, 7, 7]
+    hasCollider: false
+  - modelPath: res/models/eksperyment4.glb
+    name: eksperyment4
+    position: [-7.46496058, 7.93014812, -173.792801]
+    rotation: [0, -3.9000001, 0]
+    scale: [7, 7, 7]
+    hasCollider: false
+  - modelPath: res/models/eksperyment4.glb
+    name: eksperyment4
+    position: [-5.1540966, 7.92574072, -173.854935]
+    rotation: [0, 3.9000001, 0]
+    scale: [7, 7, 7]
+    hasCollider: false
+  - modelPath: res/models/eksperyment4.glb
+    name: eksperyment4
+    position: [-7.56674004, 7.65592766, -176.164871]
+    rotation: [0, -17, 0]
+    scale: [7, 7, 7]
+    hasCollider: false
+  - modelPath: res/models/eksperyment4.glb
+    name: eksperyment4
+    position: [-5.32650328, 7.8670001, -176.243317]
+    rotation: [0, -15.3000002, 0]
+    scale: [7, 7, 7]
+    hasCollider: false
+  - modelPath: res/models/eksperyment4.glb
+    name: eksperyment4
+    position: [-7.46496058, 7.93014812, -178.881561]
+    rotation: [0, 5.4000001, 0]
+    scale: [7, 7, 7]
+    hasCollider: false
+  - modelPath: res/models/eksperyment4.glb
+    name: eksperyment4
+    position: [-7.46496058, 7.93014812, -178.881561]
+    rotation: [0, 5.4000001, 0]
+    scale: [7, 7, 7]
+    hasCollider: false
+  - modelPath: res/models/eksperyment4.glb
+    name: eksperyment4
+    position: [-5.1540966, 7.92574072, -179.105331]
+    rotation: [0, -16, 0]
+    scale: [7, 7, 7]
+    hasCollider: false
+  - modelPath: res/models/eksperyment4.glb
+    name: eksperyment4
+    position: [-7.56674004, 7.65592766, -181.684082]
+    rotation: [0, 1.29999995, -5.30000019]
+    scale: [7, 7, 7]
+    hasCollider: false
+  - modelPath: res/models/eksperyment4.glb
+    name: eksperyment4
+    position: [-5.32650328, 7.8670001, -181.400543]
+    rotation: [0, 16.2000008, 0]
+    scale: [7, 7, 7]
+    hasCollider: false
+  - modelPath: res/models/salaOperacyjna/eksp2.glb
+    name: eksp2
+    position: [-6.03370762, 3.47687626, -158.552032]
+    rotation: [0, 66.1999969, 0]
+    scale: [7, 7, 7]
+    hasCollider: false
+  - modelPath: res/models/salaOperacyjna/eksp1.glb
+    name: eksp1
+    position: [-6.67761612, 3.42658997, -161.841537]
+    rotation: [0, -44.0999985, 0]
+    scale: [4, 4, 4]
+    hasCollider: false
+  - modelPath: res/models/eksperyment3.glb
+    name: eksperyment3
+    position: [-6.04583549, 4.08576345, -165.746292]
+    rotation: [0, 41.9000015, 0]
+    scale: [7, 7, 7]
+    hasCollider: false

@@ -671,7 +671,7 @@ void createMainRooom(Scene* scena) {
     eksperyment3b->GetComponent<TransformComponent>()->scale    = glm::vec3{ 5 };
     eksperyment3b->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, 102.700, 0.0f };
     eksperyment3b->GetComponent<TransformComponent>()->position = glm::vec3{ -11.400+7 ,9.860, -107.600};
-    for (int i = 0; i < 6; i++) {
+    /*for (int i = 0; i < 6; i++) {
         GameObject * ekperyment4 = eksp4Model->Instantiate(*scena, nullptr, nullptr);
         ekperyment4->name = "ekperyment4_a" + std::to_string(i);
         ekperyment4->GetComponent<TransformComponent>()->scale    = glm::vec3{ 7};
@@ -684,7 +684,7 @@ void createMainRooom(Scene* scena) {
         ekperyment4->GetComponent<TransformComponent>()->scale    = glm::vec3{ 7};
         ekperyment4->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, 0, 0.0f };
         ekperyment4->GetComponent<TransformComponent>()->position = glm::vec3{ -5.000 ,7.760, -157.800 + (-i * 4.5)};
-    }
+    }*/
     GameObject * fiolka_nast = fiolka_nastModel->Instantiate(*scena, nullptr, nullptr);
     fiolka_nast->name = "fiolka_nast";
     fiolka_nast->GetComponent<TransformComponent>()->scale    = glm::vec3{ 10 };
