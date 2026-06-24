@@ -981,36 +981,35 @@ void createRentgenRoom(Scene* scena) {
     triggerRentgen->name = "triggerRentgen";
     triggerRentgen->GetComponent<TransformComponent>()->position = glm::vec3(5.0f, 0.0f, 0.0f);
 
-    //ColliderComponent* colliderRentgen = triggerRentgen->AddComponent<ColliderComponent>();
-    //colliderRentgen->halfSize = glm::vec3(10.0f);
-    //colliderRentgen->isTrigger = true;
-    //colliderRentgen->onTriggerEnter = [](GameObject* other)
-    //{
-    //    spdlog::info("Gracz wszedl w kolizje");
-    //    if (other->name == "Gracz1" || other->name == "Gracz2")
-    //    {
-    //        vector<LightComponent*> lights = other->GetComponentsInChildren<LightComponent>();
+    ColliderComponent* colliderRentgen = triggerRentgen->AddComponent<ColliderComponent>();
+    colliderRentgen->halfSize = glm::vec3(15.0f);
+    colliderRentgen->isTrigger = true;
+    colliderRentgen->onTriggerEnter = [](GameObject* other)
+    {
+        if (other->name == "Gracz1" || other->name == "Gracz2")
+        {
+            vector<LightComponent*> lights = other->GetComponentsInChildren<LightComponent>();
 
-    //        for (auto& light : lights)
-    //        {
-    //            light->isOn = false;
-    //        }
-    //    }
-    //};
+            for (auto& light : lights)
+            {
+                light->intensity = 50.0f;
+            }
+        }
+    };
 
-    //colliderRentgen->onTriggerExit = [](GameObject* other)
-    //{
-    //    if (other->name == "Gracz1" || other->name == "Gracz2")
-    //    {
-    //        vector<LightComponent*> lights = other->GetComponentsInChildren<LightComponent>();
+    colliderRentgen->onTriggerExit = [](GameObject* other)
+    {
+        if (other->name == "Gracz1" || other->name == "Gracz2")
+        {
+            vector<LightComponent*> lights = other->GetComponentsInChildren<LightComponent>();
 
-    //        for (auto& light : lights)
-    //        {
-    //            light->isOn = true;
-    //        }
-    //    }
+            for (auto& light : lights)
+            {
+                light->intensity = 650.0f;
+            }
+        }
 
-    //};
+    };
 
     //-85.197, 6.250, -182.170
     GameObject * lampaOperacyjna = lampaOperacyjnaModel->Instantiate(*scena, nullptr, nullptr);
