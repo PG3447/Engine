@@ -24,6 +24,48 @@ std::unordered_map<std::string, GameObject*> machineLights;
 GameObject* fixedGear1 = nullptr;
 GameObject* fixedGear2 = nullptr;
 
+static bool IsPlayerHierarchy(GameObject* go) {
+    if (!go) return false;
+    for (GameObject* node = go; node; node = node->GetParent()) {
+        if (node->name == "Gracz1" || node->name == "Gracz2") return true;
+    }
+    return false;
+}
+
+static RaycastHit FindInteractionHit(RaycastComponent* playerRaycast, GameObject* excludeObject = nullptr) {
+    RaycastHit best;
+    best.distance = 1e30f;
+    for (const auto& hit : playerRaycast->raycastHits) {
+        if (!hit.hit || !hit.hitObject) continue;
+        if (IsPlayerHierarchy(hit.hitObject)) continue;
+        if (excludeObject && hit.hitObject == excludeObject) continue;
+        if (hit.distance < best.distance) best = hit;
+    }
+    return (best.distance < 1e30f) ? best : RaycastHit{};
+}
+
+static void SaveColliderSizeIfNeeded(GameObject* obj) {
+    if (!obj) return;
+    auto* col = obj->GetComponent<ColliderComponent>();
+    if (!col) return;
+    if (!objectOriginalColliderSizes.count(obj))
+        objectOriginalColliderSizes[obj] = col->halfSize;
+}
+
+static void DisableHeldCollider(GameObject* obj) {
+    SaveColliderSizeIfNeeded(obj);
+    if (auto* col = obj->GetComponent<ColliderComponent>())
+        col->halfSize = glm::vec3(0.0f);
+}
+
+static void RestoreColliderSize(GameObject* obj) {
+    if (!obj) return;
+    auto* col = obj->GetComponent<ColliderComponent>();
+    if (!col) return;
+    if (objectOriginalColliderSizes.count(obj))
+        col->halfSize = objectOriginalColliderSizes[obj];
+}
+
 GameObject* SpawnGearReward(Scene* scene, const glm::vec3& position, const std::string& name) {
     if (!gearModel) {
         spdlog::error("gearModel nie jest zaladowany!");
@@ -199,57 +241,62 @@ void HandlePlayerInteraction(
 
         PuzzleSlot* targetSlot = nullptr;
         bool isMachineSlot = false;
+        float bestSlotDistance = 1e30f;
 
-        if (playerRaycast->anyHit()) {
-            RaycastHit hit = playerRaycast->closestHit();
-            if (hit.hitObject) {
-                if (puzzleSlotsMap.count(hit.hitObject)) {
-                    PuzzleSlot& slot = puzzleSlotsMap[hit.hitObject];
-                    if (slot.occupant == nullptr)
-                        targetSlot = &slot;
+        for (const auto& hit : playerRaycast->raycastHits) {
+            if (!hit.hit || !hit.hitObject || IsPlayerHierarchy(hit.hitObject)) continue;
+
+            if (puzzleSlotsMap.count(hit.hitObject)) {
+                PuzzleSlot& slot = puzzleSlotsMap[hit.hitObject];
+                if (slot.occupant == nullptr && hit.distance < bestSlotDistance) {
+                    bestSlotDistance = hit.distance;
+                    targetSlot = &slot;
+                    isMachineSlot = false;
                 }
-                else if (machineSlotsMap.count(hit.hitObject)) {
-                    PuzzleSlot& slot = machineSlotsMap[hit.hitObject];
-                    if (slot.occupant == nullptr && myHeldObject->name.find("Gear") != std::string::npos) {
-                        targetSlot = &slot;
-                        isMachineSlot = true;
-                    }
+            }
+            else if (machineSlotsMap.count(hit.hitObject)) {
+                PuzzleSlot& slot = machineSlotsMap[hit.hitObject];
+                if (slot.occupant == nullptr && myHeldObject->name.find("Gear") != std::string::npos && hit.distance < bestSlotDistance) {
+                    bestSlotDistance = hit.distance;
+                    targetSlot = &slot;
+                    isMachineSlot = true;
                 }
             }
         }
 
-        myHeldObject->SetParent(scene->GetRoot());
 
-        if (targetSlot != nullptr && isMachineSlot) {
+        if (targetSlot != nullptr) {
             myHeldObject->SetParent(targetSlot->slotObject);
         }
         else {
             myHeldObject->SetParent(scene->GetRoot());
         }
 
-        if (auto col = myHeldObject->GetComponent<ColliderComponent>()) {
-            if (objectOriginalColliderSizes.count(myHeldObject)) {
-                col->halfSize = objectOriginalColliderSizes[myHeldObject];
-            }
-        }
-
         if (targetSlot != nullptr) {
             TransformComponent* slotTr = targetSlot->slotObject->GetComponent<TransformComponent>();
+            TransformHelper::computeModelMatrix(*slotTr);
 
+            myHeldObject->SetParent(targetSlot->slotObject);
+
+            TransformComponent* heldTr = myHeldObject->GetComponent<TransformComponent>();
+            heldTr->parent = slotTr;
             if (isMachineSlot) {
-                heldTr->position = glm::vec3(0.0f, 0.0f, 0.0f);
-
+                heldTr->position = glm::vec3(0.0f);
                 heldTr->rotation = glm::vec3(0.0f, 0.0f, 90.0f);
-
-                heldTr->scale = glm::vec3(0.4375f);
-            }
-            else
-            {
-                TransformHelper::setGlobalPosition(*heldTr, TransformHelper::getGlobalPosition(*slotTr), heldTr->parent);
+                heldTr->scale    = glm::vec3(0.4375f);
+            } else {
+                heldTr->position = glm::vec3(0.0f);
                 heldTr->rotation = targetSlot->targetRotation;
             }
 
-            heldTr->isDirty = true;
+            TransformHelper::computeModelMatrix(slotTr->modelMatrix, *heldTr);
+
+            if (auto rb = myHeldObject->GetComponent<RigidbodyComponent>()) {
+                glm::vec3 globalPos = TransformHelper::getGlobalPosition(*heldTr);
+                rb->physicsPosition = globalPos;
+                rb->previousPosition = globalPos;
+            }
+
             targetSlot->occupant = myHeldObject;
 
             if (audioSystem && soundInsert) {
@@ -288,14 +335,20 @@ void HandlePlayerInteraction(
                 rb->velocity = glm::vec3(0.0f);
                 rb->acceleration = glm::vec3(0.0f);
             }
+            if (auto col = myHeldObject->GetComponent<ColliderComponent>()) {
+                col->halfSize = glm::vec3(0.0f);
+            }
         }
         else {
-            heldTr->position = TransformHelper::getGlobalPosition(*camTr) + (camComp->state.Front * 5.0f);
+            glm::vec3 dropPos = TransformHelper::getGlobalPosition(*camTr) + (camComp->state.Front * 5.0f);
+            TransformHelper::setGlobalPosition(*heldTr, dropPos, nullptr);
             heldTr->rotation = objectOriginalRotations.count(myHeldObject) ? objectOriginalRotations[myHeldObject] : glm::vec3(0.0f);
 
             if (myHeldObject->name.find("Gear") != std::string::npos) {
                 heldTr->scale = glm::vec3(2.0f);
             }
+
+            RestoreColliderSize(myHeldObject);
 
             heldTr->isDirty = true;
 
@@ -315,8 +368,8 @@ void HandlePlayerInteraction(
 
         myHeldObject = nullptr;
     }
-    else if (playerRaycast->anyHit()) {
-        RaycastHit hit = playerRaycast->closestHit();
+    else {
+        RaycastHit hit = FindInteractionHit(playerRaycast, otherPlayerHeldObject);
         if (hit.hitObject != nullptr) {
             // Obracanie
             if (rotatableObjects.count(hit.hitObject)) {
@@ -478,8 +531,7 @@ void HandlePlayerInteraction(
                     heldTr->isDirty = true;
 
                     if (auto col = myHeldObject->GetComponent<ColliderComponent>()) {
-                        objectOriginalColliderSizes[myHeldObject] = col->halfSize;
-                        col->halfSize = glm::vec3(0.0f);
+                        DisableHeldCollider(myHeldObject);
                     }
 
                     if (auto rb = myHeldObject->GetComponent<RigidbodyComponent>()) {
@@ -515,8 +567,7 @@ void HandlePlayerInteraction(
                 heldTr->isDirty = true;
 
                 if (auto col = myHeldObject->GetComponent<ColliderComponent>()) {
-                    objectOriginalColliderSizes[myHeldObject] = col->halfSize;
-                    col->halfSize = glm::vec3(0.0f);
+                    DisableHeldCollider(myHeldObject);
                 }
 
                 if (auto rb = myHeldObject->GetComponent<RigidbodyComponent>()) {
@@ -580,9 +631,7 @@ void HandleAltRotate(
     FMOD::Sound* soundPaper = nullptr
 ) {
     if (!ecs.GetSystem<HID>()->is_action_just_pressed(inputAction)) return;
-    if (!playerRaycast->anyHit()) return;
-
-    RaycastHit hit = playerRaycast->closestHit();
+    RaycastHit hit = FindInteractionHit(playerRaycast);
     if (hit.hitObject && rotatableObjects.count(hit.hitObject)) {
         if (!rotatingInProgress.count(hit.hitObject)) {
             rotatingObjects[hit.hitObject] = -60.0f;
