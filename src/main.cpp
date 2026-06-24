@@ -401,11 +401,12 @@ int main(int, char**)
     ColliderComponent* camera1collider = gracz1->AddComponent<ColliderComponent>();
     RigidbodyComponent* rigidBodyCamera1 = gracz1->AddComponent<RigidbodyComponent>();
     gracz1->GetComponent<TransformComponent>()->position = glm::vec3(11.986f, 6.250f, -12.000f);
-    gracz1->GetComponent<TransformComponent>()->rotation = glm::vec3(0.0f, -180.0f, 0.0f);
+    gracz1->GetComponent<TransformComponent>()->rotation = glm::vec3(0.0f, 0.0f, 0.0f);
     gracz1->GetComponent<RigidbodyComponent>()->mass = 10.0f;
     gracz1->GetComponent<RigidbodyComponent>()->bounce = 0.1f;
     gracz1->GetComponent<RigidbodyComponent>()->useGravity = true;
     gracz1->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1.2f, 5.25f, 1.2f };
+
 
 
     GameObject* camera1 = scena1->CreateGameObject(nullptr);//groundModel->Instantiate(*scena1, nullptr, ourShader.get());
@@ -452,7 +453,7 @@ int main(int, char**)
     ColliderComponent*  camera2collider  = gracz2->AddComponent<ColliderComponent>();
     RigidbodyComponent* rigidBodyCamera2 = gracz2->AddComponent<RigidbodyComponent>();
     gracz2->GetComponent<TransformComponent>()->position = glm::vec3(0.070, 6.250f, -18.649f);
-    gracz2->GetComponent<TransformComponent>()->rotation = glm::vec3(0.0f, -180.0f, 0.0f);
+    gracz2->GetComponent<TransformComponent>()->rotation = glm::vec3(0.0f, 0.0f, 0.0f);
     gracz2->GetComponent<RigidbodyComponent>()->mass = 10.0f;
     gracz2->GetComponent<RigidbodyComponent>()->bounce = 0.1f;
     gracz2->GetComponent<RigidbodyComponent>()->useGravity = true;
@@ -800,9 +801,14 @@ int main(int, char**)
     availablePrefabs,
     *scena1,
     nullptr);*/
+
     sceneManager.Update(0.16f);
     sceneManager.ChangeScene("menu");
     sceneManager.UpdateChangeScene();
+
+    CameraHelper::ProcessMouseMovement(*camCompLeft, *camera1->GetComponent<TransformComponent>(), 0.0f, 0.05f);
+    CameraHelper::ProcessMouseMovement(*camCompRight, *camera2->GetComponent<TransformComponent>(), 0.0f, 0.05f);
+
     while (!glfwWindowShouldClose(window))
     {
         float currentFrame = static_cast<float>(glfwGetTime());
