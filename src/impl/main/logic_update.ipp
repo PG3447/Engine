@@ -1,3 +1,8 @@
+#pragma once
+#include "room.h"
+extern std::vector<Room> roomsLights;
+void InitializeRoomLights(int startingRoomId);
+
 struct PuzzleSlot {
     glm::vec3 targetRotation;
     GameObject* occupant = nullptr;
@@ -5,11 +10,11 @@ struct PuzzleSlot {
     GameObject* expectedObject = nullptr;
     GameObject* lightObject = nullptr;
 };
-
 GameObject* tutorialGearObject = nullptr;
 GameObject* rentgenRewardObject = nullptr;
 
 std::unordered_map<GameObject*, PuzzleSlot> machineSlotsMap;
+std::unordered_map<GameObject*, glm::vec3> objectOriginalScales;
 bool isMachineFixed = false;
 
 std::unordered_map<GameObject*, PuzzleSlot> puzzleSlotsMap; // klucz = slotObject
@@ -94,6 +99,8 @@ GameObject* SpawnGearReward(Scene* scene, const glm::vec3& position, const std::
 
     pickupObjects.insert(gear);
     objectOriginalRotations[gear] = glm::vec3(0.0f);
+    objectOriginalPositions[gear] = position;
+    objectOriginalScales[gear]    = glm::vec3(2.0f);
 
     return gear;
 }
@@ -913,4 +920,225 @@ void CheckFallenPickupObjects()
             spdlog::info("Obiekt '{}' spadl poza mape - reset na pozycje startowa", obj->name);
         }
     }
+}
+void ResetLevel(
+    Scene* scena1,
+    GameObject* gracz1, GameObject* gracz2,
+    TransformComponent* t0, TransformComponent* t1,
+    RigidbodyComponent* rigidBodyCamera1, RigidbodyComponent* rigidBodyCamera2,
+    GameObject*& p1HeldObject, GameObject*& p2HeldObject,
+    bool& p1IsReading, bool& p2IsReading,
+    SpriteComponent* p1NoteUI, SpriteComponent* p2NoteUI,
+    bool& isCrematoriumGearSpawned,
+    bool& rentgenPuzzleSolvedPlayed_ref,
+    std::vector<Room>& roomsLights,
+    std::function<void(int)> initializeRoomLights
+)
+{
+    if (p1HeldObject) {
+        p1HeldObject->SetParent(scena1->GetRoot());
+        if (auto* rb = p1HeldObject->GetComponent<RigidbodyComponent>()) {
+            rb->useGravity = true;
+            rb->isStatic = false;
+        }
+        p1HeldObject = nullptr;
+    }
+    if (p2HeldObject) {
+        p2HeldObject->SetParent(scena1->GetRoot());
+        if (auto* rb = p2HeldObject->GetComponent<RigidbodyComponent>()) {
+            rb->useGravity = true;
+            rb->isStatic = false;
+        }
+        p2HeldObject = nullptr;
+    }
+
+    p1IsReading = false;
+    p2IsReading = false;
+    if (p1NoteUI) p1NoteUI->isVisible = false;
+    if (p2NoteUI) p2NoteUI->isVisible = false;
+
+    t0->position = glm::vec3(11.986f, 6.250f, -12.000f);
+    t0->rotation = glm::vec3(0.0f);
+    t0->isDirty  = true;
+    rigidBodyCamera1->velocity     = glm::vec3(0.0f);
+    rigidBodyCamera1->acceleration = glm::vec3(0.0f);
+    rigidBodyCamera1->physicsPosition  = t0->position;
+    rigidBodyCamera1->previousPosition = t0->position;
+
+    t1->position = glm::vec3(0.070f, 6.250f, -18.649f);
+    t1->rotation = glm::vec3(0.0f);
+    t1->isDirty  = true;
+    rigidBodyCamera2->velocity     = glm::vec3(0.0f);
+    rigidBodyCamera2->acceleration = glm::vec3(0.0f);
+    rigidBodyCamera2->physicsPosition  = t1->position;
+    rigidBodyCamera2->previousPosition = t1->position;
+
+    for (auto* obj : pickupObjects)
+    {
+        obj->SetParent(scena1->GetRoot());
+
+        auto posIt = objectOriginalPositions.find(obj);
+        auto rotIt = objectOriginalRotations.find(obj);
+        auto colIt = objectOriginalColliderSizes.find(obj);
+
+        if (auto* tr = obj->GetComponent<TransformComponent>()) {
+            if (posIt != objectOriginalPositions.end()) tr->position = posIt->second;
+            if (rotIt != objectOriginalRotations.end()) tr->rotation = rotIt->second;
+            auto scaleIt = objectOriginalScales.find(obj);
+            if (scaleIt != objectOriginalScales.end()) tr->scale = scaleIt->second;
+            tr->isDirty = true;
+        }
+        if (auto* col = obj->GetComponent<ColliderComponent>()) {
+            if (colIt != objectOriginalColliderSizes.end()) col->halfSize = colIt->second;
+        }
+        if (auto* rb = obj->GetComponent<RigidbodyComponent>()) {
+            rb->useGravity = true;
+            rb->isStatic   = false;
+            rb->velocity     = glm::vec3(0.0f);
+            rb->acceleration = glm::vec3(0.0f);
+            if (posIt != objectOriginalPositions.end()) {
+                rb->physicsPosition  = posIt->second;
+                rb->previousPosition = posIt->second;
+            }
+        }
+    }
+
+    for (auto& [slotGO, slot] : puzzleSlotsMap) {
+        slot.occupant = nullptr;
+        if (slot.lightObject) {
+            if (auto* lc = slot.lightObject->GetComponent<LightComponent>()) {
+                lc->isOn    = false;
+                lc->diffuse = glm::vec3(0.0f);
+                lc->ambient = glm::vec3(0.0f);
+                lc->specular= glm::vec3(0.0f);
+            }
+        }
+    }
+
+    for (auto& [slotGO, slot] : machineSlotsMap) {
+        slot.occupant = nullptr;
+        if (auto* col = slotGO->GetComponent<ColliderComponent>())
+            col->halfSize = glm::vec3(0.0f);
+    }
+    isMachineFixed = false;
+
+    for (auto& [name, go] : machineLights) {
+        if (name == "lights_2" || name == "lights_5") continue;
+        if (auto* lc = go->GetComponent<LightComponent>())
+            lc->isOn = false;
+    }
+
+    if (machineStartButton) {
+        if (auto* col = machineStartButton->GetComponent<ColliderComponent>())
+            col->halfSize = glm::vec3(0.0f);
+    }
+
+    isCabinetButtonPushed = false;
+    for (auto& [btnObj, state] : cabinetsMap) {
+        state.isOpen       = false;
+        state.currentAngle = 0.0f;
+        state.targetAngle  = 0.0f;
+
+        if (state.leftDoor) {
+            if (auto* t = state.leftDoor->GetComponent<TransformComponent>())
+                { t->rotation.y = 0.0f; t->isDirty = true; }
+        }
+        if (state.rightDoor) {
+            if (auto* t = state.rightDoor->GetComponent<TransformComponent>())
+                { t->rotation.y = 0.0f; t->isDirty = true; }
+        }
+        if (state.button) {
+            if (auto* t = state.button->GetComponent<TransformComponent>())
+                { t->position = state.buttonStartPos; t->isDirty = true; }
+            if (auto* col = state.button->GetComponent<ColliderComponent>())
+                col->halfSize = glm::vec3(1.0f, 1.0f, 1.0f);
+        }
+    }
+
+    for (auto& [hinge, state] : toiletDoorsMap) {
+        state.isOpen       = false;
+        state.currentAngle = 0.0f;
+        state.targetAngle  = state.closedAngle; // = 0.0f
+
+        if (auto* tr = hinge->GetComponent<TransformComponent>())
+            { tr->rotation.y = 0.0f; tr->isDirty = true; }
+
+        if (auto* col = hinge->GetComponent<ColliderComponent>()) {
+            col->halfSize = state.closedHalfSize;
+            col->offset   = state.originalOffset;
+        }
+    }
+    for (GameObject* hinge : mainRoomDoors) {
+        if (!hinge) continue;
+        if (auto it = toiletDoorsMap.find(hinge); it != toiletDoorsMap.end())
+            it->second.canBeClicked = false;
+    }
+
+    const glm::vec3 paperStartRotations[6] = {
+        glm::vec3(0, 90, 0), glm::vec3(0, 90, 0), glm::vec3(0, 90, 0),
+        glm::vec3(0, 90, 0), glm::vec3(0, 90, 0), glm::vec3(0, 90, 0)
+    };
+    for (int i = 0; i < 6; i++) {
+        if (tablicaPapierowKibel[i]) {
+            if (auto* tr = tablicaPapierowKibel[i]->GetComponent<TransformComponent>()) {
+                tr->rotation = paperStartRotations[i];
+                tr->isDirty  = true;
+            }
+        }
+    }
+    can_open_door_1 = false; // puzzle papierów nie rozwiązana
+
+    crematoriumPuzzle.Reset(); // musisz dodać tę metodę do CrematoriumPuzzle!
+    isCrematoriumGearSpawned = false;
+
+    auto removeGear = [&](GameObject*& gearPtr) {
+        if (!gearPtr) return;
+
+        if (auto* tr = gearPtr->GetComponent<TransformComponent>()) {
+            tr->position = glm::vec3(0.0f, -9999.0f, 0.0f);
+            tr->isDirty  = true;
+        }
+        if (auto* rb = gearPtr->GetComponent<RigidbodyComponent>()) {
+            rb->physicsPosition  = glm::vec3(0.0f, -9999.0f, 0.0f);
+            rb->previousPosition = glm::vec3(0.0f, -9999.0f, 0.0f);
+            rb->velocity         = glm::vec3(0.0f);
+            rb->useGravity       = false;
+            rb->isStatic         = true;
+        }
+        if (auto* col = gearPtr->GetComponent<ColliderComponent>()) {
+            col->halfSize = glm::vec3(0.0f); // wyłącz kolizję
+        }
+
+        pickupObjects.erase(gearPtr);
+        objectOriginalPositions.erase(gearPtr);
+        objectOriginalRotations.erase(gearPtr);
+        objectOriginalColliderSizes.erase(gearPtr);
+
+        gearPtr = nullptr;
+    };
+    removeGear(rentgenRewardObject);
+
+    if (tutorialGearObject) {
+        if (auto* tr = tutorialGearObject->GetComponent<TransformComponent>()) {
+            tr->position = glm::vec3(27.956f, 19.0f, -153.894f);
+            tr->scale    = glm::vec3(2.0f);  
+            tr->isDirty  = true;
+        }
+        if (auto* rb = tutorialGearObject->GetComponent<RigidbodyComponent>()) {
+            rb->physicsPosition  = glm::vec3(27.956f, 19.0f, -153.894f);
+            rb->previousPosition = glm::vec3(27.956f, 19.0f, -153.894f);
+            rb->velocity = glm::vec3(0.0f);
+        }
+        pickupObjects.insert(tutorialGearObject); // upewnij się że jest w secie
+    }
+
+    for (auto& room : roomsLights) {
+        room.occupants.clear();
+        for (size_t j = 0; j < room.lights.size(); j++) {
+            room.lights[j]->isOn = (j < room.savedStates.size()) ? room.savedStates[j] : false;
+        }
+    }
+    InitializeRoomLights(0);
+
+    spdlog::info("Poziom zresetowany.");
 }

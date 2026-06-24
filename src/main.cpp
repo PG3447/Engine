@@ -64,6 +64,7 @@
 #include "gameplay/menu.h"
 #include "systems/SurfaceDecorationSystem.h"
 #include "utils/transform_gizmo.h"
+#include "impl/main/room.h"
 #include "utils/placement_editor.h"
 
 static void glfw_error_callback(int error, const char* description)
@@ -1087,6 +1088,25 @@ int main(int, char**)
         }
 
         if (focused) {
+            static bool rentgenPuzzleSolvedPlayed = false;
+
+            if (ecs->GetSystem<HID>()->is_action_just_pressed("reset_level")) {
+                rentgenPuzzleSolvedPlayed = false;
+
+                ResetLevel(
+                    scena1,
+                    gracz1, gracz2,
+                    t0, t1,
+                    rigidBodyCamera1, rigidBodyCamera2,
+                    p1HeldObject, p2HeldObject,
+                    p1IsReading, p2IsReading,
+                    p1NoteUI, p2NoteUI,
+                    isCrematoriumGearSpawned,
+                    rentgenPuzzleSolvedPlayed,
+                    roomsLights,
+                    [](int id) { InitializeRoomLights(id); }
+                );
+            }
             if (ecs->GetSystem<HID>()->is_action_just_pressed("interact_p1")) {
                 if (p1IsReading) {
                     p1IsReading = false;
