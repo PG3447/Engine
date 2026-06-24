@@ -509,14 +509,23 @@ public:
 		settings_back_sprite->size = glm::vec2( 1920.0f, 1080.0f);
 		settings_back_sprite->layer = 0;
 		settings_back_sprite->isVisible = true;
-		UIButtonComponent* settings_button = settings_back->AddComponent<UIButtonComponent>(); ///GIGA CHANGE THIS SHIT
+		
+		GameObject* placeholder_exit_object = scenaMenu->CreateGameObject(nullptr);
+		SpriteComponent* niewiemkurwa = placeholder_exit_object->AddComponent<SpriteComponent>();
+		niewiemkurwa->sprites = {ResourceManager::LoadTexture("back_sprite.png", "res/sprites/menu/credits").id, ResourceManager::LoadTexture("back_sprite_hover.png", "res/sprites/menu/credits").id };
+		niewiemkurwa->screenPosition = glm::vec2(1375.0f, 922.6f);
+		niewiemkurwa->size = glm::vec2(471.0f, 106.0f);
+		niewiemkurwa->layer = 1;
+		niewiemkurwa->isVisible = true;
+		UIButtonComponent* placeholder_exit_object_button = placeholder_exit_object->AddComponent<UIButtonComponent>();
 
-		settings_button->onClick = [&](GameObject* go)
+		placeholder_exit_object_button->onClick = [&](GameObject* go)
 		{
-			//ShowOnly(&grp_main);
+			ShowOnly(&grp_main);
 		};
 
 		grp_settings.push_back(settings_back);
+		grp_settings.push_back(placeholder_exit_object);
 
 		//pause
 
