@@ -855,6 +855,7 @@ void createRentgenRoom(Scene* scena) {
     objPuzel1->GetComponent<RigidbodyComponent>()->isStatic = false;
     objPuzel1->AddComponent<ColliderComponent>();
     objPuzel1->GetComponent<ColliderComponent>()->halfSize = glm::vec3(0.528,0.100,0.834);
+    objectOriginalColliderSizes[objPuzel1] = objPuzel1->GetComponent<ColliderComponent>()->halfSize;
     objectOriginalRotations[objPuzel1] = objPuzel1->GetComponent<TransformComponent>()->rotation;
     objectOriginalPositions[objPuzel1] = objPuzel1->GetComponent<TransformComponent>()->position;
     pickupObjects.insert(objPuzel1);
@@ -868,6 +869,7 @@ void createRentgenRoom(Scene* scena) {
     objPuzel2->GetComponent<RigidbodyComponent>()->isStatic = false;
     objPuzel2->AddComponent<ColliderComponent>();
     objPuzel2->GetComponent<ColliderComponent>()->halfSize = glm::vec3(0.528,0.100,0.834);
+    objectOriginalColliderSizes[objPuzel2] = objPuzel2->GetComponent<ColliderComponent>()->halfSize;
     objectOriginalRotations[objPuzel2] = objPuzel2->GetComponent<TransformComponent>()->rotation;
     objectOriginalPositions[objPuzel2] = objPuzel2->GetComponent<TransformComponent>()->position;
     pickupObjects.insert(objPuzel2);
@@ -881,6 +883,7 @@ void createRentgenRoom(Scene* scena) {
     objPuzel3->GetComponent<RigidbodyComponent>()->isStatic = false;
     objPuzel3->AddComponent<ColliderComponent>();
     objPuzel3->GetComponent<ColliderComponent>()->halfSize = glm::vec3(0.528,0.100,0.834);
+    objectOriginalColliderSizes[objPuzel3] = objPuzel3->GetComponent<ColliderComponent>()->halfSize;
     objectOriginalRotations[objPuzel3] = objPuzel3->GetComponent<TransformComponent>()->rotation;
     objectOriginalPositions[objPuzel3] = objPuzel3->GetComponent<TransformComponent>()->position;
     pickupObjects.insert(objPuzel3);
@@ -894,6 +897,7 @@ void createRentgenRoom(Scene* scena) {
     objPuzel4->GetComponent<RigidbodyComponent>()->isStatic = false;
     objPuzel4->AddComponent<ColliderComponent>();
     objPuzel4->GetComponent<ColliderComponent>()->halfSize = glm::vec3(0.528,0.100,0.834);
+    objectOriginalColliderSizes[objPuzel4] = objPuzel4->GetComponent<ColliderComponent>()->halfSize;
     objectOriginalRotations[objPuzel4] = objPuzel4->GetComponent<TransformComponent>()->rotation;
     objectOriginalPositions[objPuzel4] = objPuzel4->GetComponent<TransformComponent>()->position;
     pickupObjects.insert(objPuzel4);
@@ -907,6 +911,7 @@ void createRentgenRoom(Scene* scena) {
     objPuzel5->GetComponent<RigidbodyComponent>()->isStatic = false;
     objPuzel5->AddComponent<ColliderComponent>();
     objPuzel5->GetComponent<ColliderComponent>()->halfSize = glm::vec3(0.528,0.100,0.834);
+    objectOriginalColliderSizes[objPuzel5] = objPuzel5->GetComponent<ColliderComponent>()->halfSize;
     objectOriginalRotations[objPuzel5] = objPuzel5->GetComponent<TransformComponent>()->rotation;
     objectOriginalPositions[objPuzel5] = objPuzel5->GetComponent<TransformComponent>()->position;
     pickupObjects.insert(objPuzel5);
@@ -920,6 +925,7 @@ void createRentgenRoom(Scene* scena) {
     objPuzel6->GetComponent<RigidbodyComponent>()->isStatic = false;
     objPuzel6->AddComponent<ColliderComponent>();
     objPuzel6->GetComponent<ColliderComponent>()->halfSize = glm::vec3(0.528,0.100,0.834);
+    objectOriginalColliderSizes[objPuzel6] = objPuzel6->GetComponent<ColliderComponent>()->halfSize;
     objectOriginalRotations[objPuzel6] = objPuzel6->GetComponent<TransformComponent>()->rotation;
     objectOriginalPositions[objPuzel6] = objPuzel6->GetComponent<TransformComponent>()->position;
     pickupObjects.insert(objPuzel6);
@@ -989,6 +995,9 @@ void createRentgenRoom(Scene* scena) {
         slot.slotObject     = slotGO;
         slot.expectedObject = expected;
         slot.lightObject    = lightGO;
+        if (auto col = expected->GetComponent<ColliderComponent>()) {
+            objectOriginalColliderSizes[expected] = col->halfSize;
+        }
         puzzleSlotsMap[slotGO] = slot;
     };
 

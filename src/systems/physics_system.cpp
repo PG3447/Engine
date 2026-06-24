@@ -80,10 +80,18 @@ void PhysicsSystem::FixedUpdate(float fixedDeltaTime)
 
         if (tr->isDirty)
         {
-            if (tr->parent)
-                TransformHelper::computeModelMatrix(tr->parent->modelMatrix, *tr);
-            else
+            GameObject* owner = query->gameobjects[i];
+            if (owner && owner->GetParent()) {
+                auto* parentTr = owner->GetParent()->GetComponent<TransformComponent>();
+                tr->parent = parentTr;
+                if (parentTr)
+                    TransformHelper::computeModelMatrix(parentTr->modelMatrix, *tr);
+                else
+                    TransformHelper::computeModelMatrix(*tr);
+            } else {
+                tr->parent = nullptr;
                 TransformHelper::computeModelMatrix(*tr);
+            }
             rb->physicsPosition = TransformHelper::getGlobalPosition(*tr);
             //rb->previousPosition = tr->position;
         }

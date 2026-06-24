@@ -10,14 +10,15 @@ void RaycastSystem::Update(ECS&, float)
     struct Target { GameObject* go; glm::vec3 min, max; };
     std::vector<Target> targets;
 
-    // Targety — wszystkie obiekty z ColliderComponent
     auto& tObjs = targetQuery_->gameobjects;
     auto& tTrs  = std::get<0>(targetQuery_->componentsVectors);
     auto& tCols = std::get<1>(targetQuery_->componentsVectors);
 
     for (size_t i = 0; i < tObjs.size(); i++) {
-        glm::vec3 pos  = glm::vec3(tTrs[i]->modelMatrix[3]);
         glm::vec3 half = tCols[i]->halfSize;
+        if (half.x <= 0.0f && half.y <= 0.0f && half.z <= 0.0f) continue;
+
+        glm::vec3 pos  = glm::vec3(tTrs[i]->modelMatrix[3]);
         targets.push_back({ tObjs[i], pos + tCols[i]->offset - half, pos + tCols[i]->offset + half });
     }
 
@@ -29,7 +30,6 @@ void RaycastSystem::Update(ECS&, float)
         }
     }
 
-    // Shootery — tylko obiekty z RaycastComponent
     auto& sObjs = shooterQuery_->gameobjects;
     auto& sTrs  = std::get<0>(shooterQuery_->componentsVectors);
     auto& sRcs  = std::get<1>(shooterQuery_->componentsVectors);
@@ -58,6 +58,24 @@ void RaycastSystem::Update(ECS&, float)
 
             for (const auto& tgt : targets) {
                 if (tgt.go == sObjs[i]) continue;
+
+                bool skipHierarchy = false;
+                for (GameObject* node = sObjs[i]; node; node = node->GetParent()) {
+                    if (tgt.go == node) {
+                        skipHierarchy = true;
+                        break;
+                    }
+                }
+                if (!skipHierarchy) {
+                    for (GameObject* node = tgt.go; node; node = node->GetParent()) {
+                        if (node == sObjs[i]) {
+                            skipHierarchy = true;
+                            break;
+                        }
+                    }
+                }
+                if (skipHierarchy) continue;
+
                 float dist = rayVsAABB(origin, dir, tgt.min, tgt.max);
                 if (dist >= 0.01f && dist < best.distance) {
                     best.hit = true; best.distance = dist;
