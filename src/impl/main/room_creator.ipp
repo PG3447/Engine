@@ -163,7 +163,7 @@ void createFirstRoom(Scene* scena1) {
     // Lustra 1-3
     GameObject* lustro1 = mirrorModel1->Instantiate(*scena1, lustra, nullptr);
     lustro1->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1, 2, 8 };
-    lustro1->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, -180, 0 };
+    lustro1->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 0, 0 };
     lustro1->AddComponent<ColliderComponent>();
     lustro1->GetComponent<TransformComponent>()->position   = glm::vec3{ -8.5, 12.0, -25 + (-20 * 0) };
 
@@ -265,7 +265,7 @@ void createMainRooom(Scene* scena) {
     GameObject* hingeRentgen = CreateInteractableDoor(
         scena, NormalDoor.get(), nullptr, "DrzwiDoRentgen",
         glm::vec3(5.440f-3+2.65, 7.300f, -217.800f+15+14), glm::vec3(/*3.600*/2.500, 3.400, 1),
-        glm::vec3(8.0f, 0.0f, 0.0f), glm::vec3(5.7f, 20.0f, 1.0f), 90.0f, 0.0f,glm::vec3(1.0f, 20.0f, 4.670), glm::vec3(0.0f, 0.0f, -5.070), glm::vec3(2, 0.0f, 0.0f)
+        glm::vec3(6.0f, 0.0f, 0.0f), glm::vec3(5.7f, 20.0f, 1.0f), 90.0f, 0.0f,glm::vec3(1.0f, 20.0f, 4.670), glm::vec3(0.0f, 0.0f, -5.070), glm::vec3(2, 0.0f, 0.0f)
     );
     /*GameObject* hingeDrzwiDoRentgen = CreateInteractableDoor(
         scena, NormalDoor.get(), nullptr, "DrzwiDoKrematorium",
