@@ -88,7 +88,7 @@ bool processCameraInput(ECS& ecs, CameraComponent& cam, TransformComponent& play
     const std::string& left,
     const std::string& right);
 
-bool processCameraGamepad(ECS& ecs, CameraComponent& cam, TransformComponent& transformCamera, TransformComponent& playerTransform, int gamepad_id);
+bool processCameraGamepad(ECS& ecs, CameraComponent& cam, TransformComponent& transformCamera, TransformComponent& playerTransform, int gamepad_id, bool& outIsTurning);
 void connectAllModels();
 
 void imgui_begin();
@@ -278,7 +278,7 @@ GameObject* CreateRaycastTestObject(
 
 #include "impl/main/process_input.ipp"
 
-void LoadPlayerAnimations();
+void LoadPlayerAnimations(Prefab* postacGracza);
 void createRentgenCorridor(Scene * scena);
 void createCrematoriumCorridor(Scene * scena);
 
@@ -356,7 +356,8 @@ int main(int, char**)
     sceneManager.UpdateChangeScene();
     //menu->GetECS().AddExistingSystem(scena1->GetECS().GetSystem<RenderSystem>());
 
-    postacGracza = std::make_unique<Prefab>("res/models/postac_test.glb");
+    postacGraczaCzerw = std::make_unique<Prefab>("res/models/postac_base_akcje_czerw.glb");
+    postacGraczaZiel = std::make_unique<Prefab>("res/models/postac_base_akcje_ziel.glb");
     groundModel = std::make_unique<Prefab>("res/models/podloze.glb");
     //sunModel    = std::make_unique<Prefab>("res/models/Sun.glb");
 
@@ -434,14 +435,14 @@ int main(int, char**)
     light2->cutOff      = glm::cos(glm::radians(8.0f));
     light2->outerCutOff = glm::cos(glm::radians(22.0f));
 
-    GameObject* modelPostac1 = postacGracza->Instantiate(*scena1, nullptr, nullptr);
+    GameObject* modelPostac1 = postacGraczaCzerw->Instantiate(*scena1, nullptr, nullptr);
     gracz1->AddChild(modelPostac1);
     modelPostac1->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, -0.2f, 0.0f);
     modelPostac1->GetComponent<TransformComponent>()->rotation = glm::vec3(0.0f, -180.0f, 0.0f);
     AnimatorComponent* p1Animator = modelPostac1->GetComponent<AnimatorComponent>();
     if (p1Animator == nullptr) {
         p1Animator = modelPostac1->AddComponent<AnimatorComponent>();
-        p1Animator->currentSkeleton = &postacGracza->rootModel->skeleton;
+        p1Animator->currentSkeleton = &postacGraczaCzerw->rootModel->skeleton;
     }
 
     //Tworzenie gracza nr.2
@@ -484,14 +485,14 @@ int main(int, char**)
     light3->cutOff = glm::cos(glm::radians(8.0f));
     light3->outerCutOff = glm::cos(glm::radians(22.0f));
 
-    GameObject* modelPostac2 = postacGracza->Instantiate(*scena1, nullptr, nullptr);
+    GameObject* modelPostac2 = postacGraczaZiel->Instantiate(*scena1, nullptr, nullptr);
     gracz2->AddChild(modelPostac2);
     modelPostac2->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, -0.2f, 0.0f);
     modelPostac2->GetComponent<TransformComponent>()->rotation = glm::vec3(0.0f, -180.0f, 0.0f);
     AnimatorComponent* p2Animator = modelPostac2->GetComponent<AnimatorComponent>();
     if (p2Animator == nullptr) {
         p2Animator = modelPostac2->AddComponent<AnimatorComponent>();
-        p2Animator->currentSkeleton = &postacGracza->rootModel->skeleton;
+        p2Animator->currentSkeleton = &postacGraczaZiel->rootModel->skeleton;
     }
     
     auto* t0 = gracz1->GetComponent<TransformComponent>();
@@ -574,7 +575,8 @@ int main(int, char**)
     std::string pathAssets = "res/Yaml/assets.yaml";
     ResourceManager::LoadAssets(pathAssets);
     PlacementEditor::LoadPlacements(*scena1, PlacementEditor::DefaultPrefabLookup);
-    LoadPlayerAnimations();
+    LoadPlayerAnimations(postacGraczaCzerw.get());
+    LoadPlayerAnimations(postacGraczaZiel.get());
 
     GameObject* model1 = bed1Model->Instantiate(*scena1, nullptr, nullptr);
     model1->GetComponent<TransformComponent>()->position.x = 0.0f;
@@ -1100,7 +1102,7 @@ int main(int, char**)
             }
 
             if (!p1IsReading) {
-                HandlePlayerInteraction(*ecs, "interact_p1", player1Raycast, camera1, p1HeldObject, p2HeldObject, scena1, rotatingObjects, rotatingInProgress, p1ShakeTimer, p1Animator, postacGracza.get(), audioSys, sndPaperRoll, sndDoorOpen, sndDoorCloseStart, sndBtnClick, sound, sndPickup, sndInsert, sndDoorLocked, sndGear);
+                HandlePlayerInteraction(*ecs, "interact_p1", player1Raycast, camera1, p1HeldObject, p2HeldObject, scena1, rotatingObjects, rotatingInProgress, p1ShakeTimer, p1Animator, postacGraczaCzerw.get(), audioSys, sndPaperRoll, sndDoorOpen, sndDoorCloseStart, sndBtnClick, sound, sndPickup, sndInsert, sndDoorLocked, sndGear);
                 HandleAltRotate(*ecs, "alt_interact_p1", player1Raycast, rotatingObjects, rotatingInProgress, audioSys, sndPaperRoll);
             }
 
@@ -1122,7 +1124,7 @@ int main(int, char**)
             }
 
             if (!p2IsReading) {
-                HandlePlayerInteraction(*ecs, "interact_p2", player2Raycast, camera2, p2HeldObject, p1HeldObject, scena1, rotatingObjects, rotatingInProgress, p2ShakeTimer, p2Animator, postacGracza.get(), audioSys, sndPaperRoll, sndDoorOpen, sndDoorCloseStart, sndBtnClick, sound, sndPickup, sndInsert, sndDoorLocked, sndGear);
+                HandlePlayerInteraction(*ecs, "interact_p2", player2Raycast, camera2, p2HeldObject, p1HeldObject, scena1, rotatingObjects, rotatingInProgress, p2ShakeTimer, p2Animator, postacGraczaZiel.get(), audioSys, sndPaperRoll, sndDoorOpen, sndDoorCloseStart, sndBtnClick, sound, sndPickup, sndInsert, sndDoorLocked, sndGear);
                 HandleAltRotate(*ecs, "alt_interact_p2", player2Raycast, rotatingObjects, rotatingInProgress, audioSys, sndPaperRoll);
             }
         }
@@ -1170,25 +1172,31 @@ int main(int, char**)
 
         bool p1IsMoving = false;
         bool p2IsMoving = false;
+        bool p1IsTurning = false;
+        bool p2IsTurning = false;
 
         if (focused) {
             if (!p1IsReading) {
                 p1IsMoving |= processCameraInput(*ecs, *camCompLeft, *t0, "move_up", "move_down", "move_left", "move_right");
-                processCameraMouse(*ecs, *camCompLeft, *camTransform1, *t0);
-                p1IsMoving |= processCameraGamepad(*ecs, *camCompLeft, *camTransform1, *t0, 0);
+                p1IsTurning |= processCameraMouse(*ecs, *camCompLeft, *camTransform1, *t0);
+                bool g1Turning = false;
+                p1IsMoving |= processCameraGamepad(*ecs, *camCompLeft, *camTransform1, *t0, 0, g1Turning);
+                p1IsTurning |= g1Turning;
             }
 
             if (!p2IsReading) {
                 p2IsMoving |= processCameraInput(*ecs, *camCompRight, *t1, "move_up_2", "move_down_2", "move_left_2", "move_right_2");
-                p2IsMoving |= processCameraGamepad(*ecs, *camCompRight, *camTransform2, *t1, 1);
+                bool g2Turning = false;
+                p2IsMoving |= processCameraGamepad(*ecs, *camCompRight, *camTransform2, *t1, 1, g2Turning);
+                p2IsTurning |= g2Turning;
             }
         }
 
         bool p1IsHolding = (p1HeldObject != nullptr);
         bool p2IsHolding = (p2HeldObject != nullptr);
 
-        PlayerAnimationHelper::UpdateAnimation(p1Animator, postacGracza.get(), p1IsMoving, p1IsHolding);
-        PlayerAnimationHelper::UpdateAnimation(p2Animator, postacGracza.get(), p2IsMoving, p2IsHolding);
+        PlayerAnimationHelper::UpdateAnimation(p1Animator, postacGraczaCzerw.get(), p1IsMoving, p1IsHolding, p1IsTurning);
+        PlayerAnimationHelper::UpdateAnimation(p2Animator, postacGraczaZiel.get(), p2IsMoving, p2IsHolding, p2IsTurning);
 
         if (p1ShakeTimer > 0.0f) p1ShakeTimer -= deltaTime;
         if (p2ShakeTimer > 0.0f) p2ShakeTimer -= deltaTime;
@@ -1466,20 +1474,20 @@ void end_frame()
 //    ecs.AddSystem<NpcSystem>(ecs);
 //}
 
-void LoadPlayerAnimations() {
-    spdlog::info("Mapowanie animacji z pojedynczego pliku .glb gracza...");
+void LoadPlayerAnimations(Prefab* postacGracza) {
+    spdlog::info("Mapowanie animacji z pliku .glb gracza...");
 
     if (!postacGracza || !postacGracza->rootModel) return;
 
     std::vector<AnimationClip> rawAnimations = postacGracza->rootModel->animations;
     postacGracza->rootModel->animations.clear();
-    postacGracza->rootModel->animations.resize(7);
+    postacGracza->rootModel->animations.resize(8);
 
-    auto findAndMap = [&](const std::string& exactName, int targetIdx, const std::string& fallbackName = "") {
+    auto findAndMap = [&](const std::string& exactName, int targetIdx) {
         for (auto& anim : rawAnimations) {
             if (anim.name == exactName) {
                 postacGracza->rootModel->animations[targetIdx] = anim;
-                spdlog::info("Zmapowano animację '{}' pod indeks [{}]", anim.name, targetIdx);
+                spdlog::info("Zmapowano animacje '{}' pod indeks [{}]", anim.name, targetIdx);
                 return true;
             }
         }
@@ -1487,32 +1495,23 @@ void LoadPlayerAnimations() {
         for (auto& anim : rawAnimations) {
             if (anim.name.find(exactName) != std::string::npos) {
                 postacGracza->rootModel->animations[targetIdx] = anim;
-                spdlog::info("Zmapowano (częściowo) animację '{}' pod indeks [{}]", anim.name, targetIdx);
+                spdlog::info("Zmapowano (czesciowo) animacje '{}' pod indeks [{}]", anim.name, targetIdx);
                 return true;
             }
         }
 
-        if (!fallbackName.empty()) {
-            for (auto& anim : rawAnimations) {
-                if (anim.name.find(fallbackName) != std::string::npos) {
-                    postacGracza->rootModel->animations[targetIdx] = anim;
-                    spdlog::warn("Brak '{}', użyto zamiennika '{}' dla indeksu [{}]", exactName, anim.name, targetIdx);
-                    return true;
-                }
-            }
-        }
+        spdlog::warn("Brak animacji '{}' dla indeksu [{}]", exactName, targetIdx);
         return false;
         };
 
-    findAndMap("idle", 0);
-    findAndMap("walk", 1, "idle");
-    findAndMap("pick", 2, "idle");
-
-    findAndMap("idle", 3, "idle");
-
-    findAndMap("idle_pick", 4, "idle");
-    findAndMap("walk_pick", 5, "walk");
-    findAndMap("interaction", 6, "idle");
+    findAndMap("idle", PlayerAnimationHelper::IDLE_ANIM_INDEX);
+    findAndMap("idle_pick", PlayerAnimationHelper::IDLE_HOLD_INDEX);
+    findAndMap("interaction", PlayerAnimationHelper::INTERACT_ANIM_INDEX);
+    findAndMap("pick", PlayerAnimationHelper::PICKUP_ANIM_INDEX);
+    findAndMap("throw_away", PlayerAnimationHelper::DROP_ANIM_INDEX);
+    findAndMap("turn_around", PlayerAnimationHelper::TURN_AROUND_ANIM_INDEX);
+    findAndMap("walk", PlayerAnimationHelper::WALK_ANIM_INDEX);
+    findAndMap("walk_pick", PlayerAnimationHelper::WALK_HOLD_INDEX);
 }
 
 #include "impl/main/room_creator.ipp"

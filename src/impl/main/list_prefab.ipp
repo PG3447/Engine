@@ -1,6 +1,7 @@
 std::unique_ptr<Prefab> sunModel;
 
-std::unique_ptr<Prefab> postacGracza;
+std::unique_ptr<Prefab> postacGraczaCzerw;
+std::unique_ptr<Prefab> postacGraczaZiel;
 std::unique_ptr<Prefab> bed1Model;
 std::unique_ptr<Prefab> bed2Model;
 std::unique_ptr<Prefab> bed3Model;

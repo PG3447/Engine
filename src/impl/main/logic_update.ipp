@@ -289,7 +289,6 @@ void HandlePlayerInteraction(
             }
         }
         else {
-            // normalne upuszczenie
             heldTr->position = TransformHelper::getGlobalPosition(*camTr) + (camComp->state.Front * 5.0f);
             heldTr->rotation = objectOriginalRotations.count(myHeldObject)
                 ? objectOriginalRotations[myHeldObject]
@@ -300,7 +299,6 @@ void HandlePlayerInteraction(
             }
 
             heldTr->isDirty = true;
-
             if (auto rb = myHeldObject->GetComponent<RigidbodyComponent>()) {
                 rb->useGravity = true;
                 rb->isStatic = false;
@@ -310,6 +308,8 @@ void HandlePlayerInteraction(
                 rb->acceleration = glm::vec3(0.0f);
             }
         }
+
+        PlayerAnimationHelper::TriggerAction(playerAnimator, playerPrefab, PlayerAnimationHelper::DROP_ANIM_INDEX);
 
         myHeldObject = nullptr;
     }
