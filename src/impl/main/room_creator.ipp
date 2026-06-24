@@ -123,15 +123,39 @@ void createFirstRoom(Scene* scena1) {
     GameObject* kabelDol[6];
     GameObject* kabelSrodek[6];
     GameObject* tablicaPokrywek[6];
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < 6; i++)
+    {
         if (i == 0 || i == 3)
+        {
+            kabelDol[i] = kabelZ->Instantiate(*scena1, nullptr, nullptr);
+            kabelSrodek[i] = kabelZ->Instantiate(*scena1, nullptr, nullptr);
             tablicaPapierowKibel[i] = toiletPaperGreenModel->Instantiate(*scena1, nullptr, nullptr);
+        }
         if (i == 1 || i == 5)
+        {
+            kabelDol[i] = kabelCZ->Instantiate(*scena1, nullptr, nullptr);
+            kabelSrodek[i] = kabelCZ->Instantiate(*scena1, nullptr, nullptr);
             tablicaPapierowKibel[i] = toiletPaperRedModel->Instantiate(*scena1, nullptr, nullptr);
+        }
         if (i == 2 || i == 4)
+        {
+            kabelDol[i] = kabel->Instantiate(*scena1, nullptr, nullptr);
+            kabelSrodek[i] = kabel->Instantiate(*scena1, nullptr, nullptr);
             tablicaPapierowKibel[i] = toiletPaperBlueModel->Instantiate(*scena1, nullptr, nullptr);
+        }
 
-        tablicaPokrywek[i] = pokrywkaRolkiModel->Instantiate(*scena1, nullptr, nullptr);
+        
+        kabelDol[i]->name = "kabelDol" + std::to_string(i);
+        kabelDol[i]->GetComponent<TransformComponent>()->scale = glm::vec3{ 1, 1, 0.32 };
+        kabelDol[i]->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 90, 26.7 };
+        kabelDol[i]->GetComponent<TransformComponent>()->position = glm::vec3{ 30, 8.0, -(18.00f + i * 8 + (int)(i / 2) * 4) };
+
+        
+        kabelSrodek[i]->name = "kabelSrodek" + std::to_string(i);
+        kabelSrodek[i]->GetComponent<TransformComponent>()->scale = glm::vec3{ 1, 1, 0.32 };
+        kabelSrodek[i]->GetComponent<TransformComponent>()->rotation = glm::vec3{ 264.2, -4.5, -100.0};
+        kabelSrodek[i]->GetComponent<TransformComponent>()->position = glm::vec3{ 33.6, 16.4, -(19.00f + i * 8 + (int)(i / 2) * 4) };
+
 
         tablicaPokrywek[i] = pokrywkaRolkiModel->Instantiate(*scena1, nullptr, nullptr);
         tablicaPokrywek[i]->name = "pokrywkaKibel"+std::to_string(i);
@@ -145,10 +169,23 @@ void createFirstRoom(Scene* scena1) {
         tablicaPapierowKibel[i]->AddComponent<ColliderComponent>();
         tablicaPapierowKibel[i]->GetComponent<TransformComponent>()->position   = glm::vec3{ 22, 7.0, -(18.25f + i * 8 + (int)(i / 2) * 4) };
         rotatableObjects.insert(tablicaPapierowKibel[i]);
-        if (i >= 2) {
+        if (i >= 2)
+        {
+            kabelDol[i]->GetComponent<TransformComponent>()->position = glm::vec3{ 30, 8.0, -(18.00f + (i + 2) * 8 + (int)((i + 2) / 2) * 4) };
+            kabelSrodek[i]->GetComponent<TransformComponent>()->position = glm::vec3{ 33.6, 16.4, -(19.00f + (i + 2) * 8 + (int)((i + 2) / 2) * 4) };
             tablicaPapierowKibel[i]->GetComponent<TransformComponent>()->position   = glm::vec3{ 22, 7.0, -(18.25f + (i + 2) * 8 + (int)((i + 2) / 2) * 4) };
             tablicaPokrywek[i]->GetComponent<TransformComponent>()->position   = glm::vec3{ 22, 7.0, -(18.25f + (i + 2) * 8 + (int)((i + 2) / 2) * 4) };
         }
+    }
+
+    GameObject* kabelGora[8];
+    for (int i = 0; i < 8; i++)
+    {
+        kabelGora[i] = kabel->Instantiate(*scena1, nullptr, nullptr);
+        kabelGora[i]->name = "kabelGora" + std::to_string(i);
+        kabelGora[i]->GetComponent<TransformComponent>()->scale = glm::vec3{ 1, 1, 0.3 };
+        kabelGora[i]->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0, 0.0, -37.5 };
+        kabelGora[i]->GetComponent<TransformComponent>()->position = glm::vec3{ 33.6, 19.3, -(23.25f + i * 8 + (int)(i / 2) * 4)};
     }
 
     // Zlewy - pozycja X z MainRoomIPoprawkiModeli (-20.5)
