@@ -44,10 +44,10 @@ void createFirstRoom(Scene* scena1) {
     GameObject * ScianaDoMainRoomPrawa = CreateStaticObject(scena1, wallBathroomModel.get(),  nullptr, "ScianaDrzwiDoMainRoomPrawa", glm::vec3(23.770, 11, -100), glm::vec3(1.38, 2.28, 2.82));
     ScianaDoMainRoomPrawa->GetComponent< ColliderComponent>()->isWalkable = false;
     ScianaDoMainRoomPrawa->GetComponent< ColliderComponent>()->affectsNavMesh = true;
-    GameObject * ScianaDoMainRoomLewa = CreateStaticObject(scena1, wallBathroomModel.get(),  nullptr, "ScianaDrzwiDoMainRoomLewa",  glm::vec3(-5.050, 11.080, -100),glm::vec3(0.500, 2.280, 1));
+    GameObject * ScianaDoMainRoomLewa = CreateStaticObject(scena1, wallBathroomModel.get(),  nullptr, "ScianaDrzwiDoMainRoomLewa",  glm::vec3(-3.985, 11.080, -100),glm::vec3(0.560, 2.280, 1));
     ScianaDoMainRoomLewa->GetComponent< ColliderComponent>()->isWalkable = false;
     ScianaDoMainRoomLewa->GetComponent< ColliderComponent>()->affectsNavMesh = true;
-    CreateStaticObject(scena1, wallBathroomModel.get(),  nullptr, "GoraPrzejscieDoMainRoom",    glm::vec3(5.090, 32.070, -99.960),  glm::vec3(0.550, 2.630, 0.500));
+    CreateStaticObject(scena1, wallBathroomModel.get(),  nullptr, "GoraPrzejscieDoMainRoom",    glm::vec3(5.090, 30.390, -99.960),  glm::vec3(0.550, 2.630, 0.500));
 
     // Kibel
     GameObject* kible = scena1->CreateGameObject(nullptr);
@@ -189,14 +189,14 @@ void createFirstRoom(Scene* scena1) {
     // Drzwi wyjsciowe z lazienki (washroomExit)
     GameObject* hingeWashroomExit = CreateInteractableDoor(
     scena1, washroomExit.get(), nullptr, "WashroomExit",
-    glm::vec3(5.0f, 0.0f, -100.0f),
-    glm::vec3{ 10, 11, 10 },
-    glm::vec3(5.0f, 0.0f, 0.0f),
+    glm::vec3(10.0f, 9.840, -100.0f),
+    glm::vec3{ 2, 2, 2 },
+    glm::vec3(0.1f, 0.0f, 0.0f),
     glm::vec3{ 5, 22, 0.5 },
     -90.0f,
     180.0f,
     glm::vec3{ 1, 22, 5 },
-    glm::vec3(0.0f, 0.0f, 4.0f)
+    glm::vec3(0.0f, 0.0f, 4.0f),glm::vec3(-4,0,0)
 );
     //majorDoors.insert(hingeWashroomExit);
     toiletDoorsMap[hingeWashroomExit].requiresUnlock = true;
@@ -222,7 +222,7 @@ void createMainRooom(Scene* scena) {
     GameObject * Zauek = CreateStaticObject(scena, wallMainRoomModel.get(),  nullptr, "Zauek",        glm::vec3(37.230, 11.000, -102.700),   glm::vec3(2.240, 2.190, 9.940));
     Zauek->GetComponent<ColliderComponent>()->isWalkable = false;
     Zauek->GetComponent<ColliderComponent>()->affectsNavMesh = true;
-    GameObject * ScianaDoRentgenaLewa = CreateStaticObject(scena, wallMainRoomModel.get(),  nullptr, "ScianaDoRentgenaLewa",         glm::vec3(-6.810, 11.000, -188.720),  glm::vec3(0.600, 2.190, 3.000));
+    GameObject * ScianaDoRentgenaLewa = CreateStaticObject(scena, wallMainRoomModel.get(),  nullptr, "ScianaDoRentgenaLewa",         glm::vec3(-3.185, 11.000, -188.720),  glm::vec3(0.600, 2.190, 3.000));
     ScianaDoRentgenaLewa->GetComponent<ColliderComponent>()->isWalkable = false;
     ScianaDoRentgenaLewa->GetComponent<ColliderComponent>()->affectsNavMesh = true;
     GameObject * ScianaPrawaDoKrematorium = CreateStaticObject(scena, wallMainRoomModel.get(), nullptr, "ScianaPrawaDoKrematorium",     glm::vec3(60, 11, -104.890),   glm::vec3(0.400, 2.190, 3.000), glm::vec3(0,90,0));
@@ -237,15 +237,15 @@ void createMainRooom(Scene* scena) {
     GameObject * ScianaLewaDoATOMU = CreateStaticObject(scena, wallMainRoomModel.get(), nullptr, "ScianaLewaDoATOMU",            glm::vec3(-10.000, 11,  -169.580),  glm::vec3(1.920, 2.190, 3.000), glm::vec3(0,90,0));
     ScianaLewaDoATOMU->GetComponent<ColliderComponent>()->isWalkable = false;
     ScianaLewaDoATOMU->GetComponent<ColliderComponent>()->affectsNavMesh = true;
-    GameObject * ScianaDoLazienkiPrawa = CreateStaticObject(scena, wallMainRoomModel.get(),  nullptr, "ScianaDoLazienkiPrawa",        glm::vec3(35.400, 11.000, -100.720),   glm::vec3(2.540, 2.190, 3.000));
+    GameObject * ScianaDoLazienkiPrawa = CreateStaticObject(scena, wallMainRoomModel.get(),  nullptr, "ScianaDoLazienkiPrawa",        glm::vec3(35.067, 11.000, -100.720),   glm::vec3(2.540, 2.190, 3.000));
     ScianaDoLazienkiPrawa->GetComponent<ColliderComponent>()->isWalkable = false;
     ScianaDoLazienkiPrawa->GetComponent<ColliderComponent>()->affectsNavMesh = true;
-    GameObject * ScianaDoLazienkiLewa = CreateStaticObject(scena, wallMainRoomModel.get(),  nullptr, "ScianaDoLazienkiLewa",         glm::vec3(-5.990, 11.000, -100.720),  glm::vec3(0.600, 2.190, 3.000));
+    GameObject * ScianaDoLazienkiLewa = CreateStaticObject(scena, wallMainRoomModel.get(),  nullptr, "ScianaDoLazienkiLewa",         glm::vec3(-4.681, 11.000, -100.720),  glm::vec3(0.630, 2.190, 3.000));
     ScianaDoLazienkiLewa->GetComponent<ColliderComponent>()->isWalkable = false;
     ScianaDoLazienkiLewa->GetComponent<ColliderComponent>()->affectsNavMesh = true;
     // Gora przejscia-169.010
     //CreateStaticObject(scena, wallModel.get(), nullptr, "GoraPrzejscieDoRentgena",              glm::vec3(0, 66, -189.000),   glm::vec3(10.000, 50, 1));
-    CreateStaticObject(scena, wallMainRoomModel.get(), nullptr, "GoraPrzejscieDoRentgena",              glm::vec3(4.990, 20.890, -188.710),   glm::vec3(0.760, 1, 3.000));
+    CreateStaticObject(scena, wallMainRoomModel.get(), nullptr, "GoraPrzejscieDoRentgena",              glm::vec3(6.634, 20.890, -188.710),   glm::vec3(0.450, 1, 3.000));
     //CreateStaticObject(scena, wallModel.get(), nullptr, "GoraPrzejscieDoKrematorium",           glm::vec3(60, 66, -209.590),  glm::vec3(100, 50, 1), glm::vec3(0, 90, 0));
     CreateStaticObject(scena, wallMainRoomModel.get(), nullptr, "GoraPrzejscieDoKrematorium",           glm::vec3(59.970, 20.990, -114.300),  glm::vec3(0.600, 1, 3.000), glm::vec3(0, 90, 0));
     //CreateStaticObject(scena, wallModel.get(), nullptr, "GoraPrzejscieDoREAKTORAATOMOWEGO",     glm::vec3(-17.000+7, 66, -209.590), glm::vec3(100, 50, 1), glm::vec3(0, 90, 0));
@@ -255,7 +255,7 @@ void createMainRooom(Scene* scena) {
 
     GameObject* hingeKrematorium = CreateInteractableDoor(
         scena, NormalDoor.get(), nullptr, "DrzwiDoKrematorium",
-        glm::vec3(59.850f, 7.300f, -115.090+3), glm::vec3(3.600, 3.400, 1),
+        glm::vec3(59.850f, 7.300f, -115.090+3-2.65), glm::vec3(2.500, 3.400, 1),
         glm::vec3(0.0f, 0.0f, -8.0f), glm::vec3(1, 20.0f, 7), -90.0f, 90.0f
     );
     //129.950 115.090
@@ -264,7 +264,7 @@ void createMainRooom(Scene* scena) {
 
     GameObject* hingeRentgen = CreateInteractableDoor(
         scena, NormalDoor.get(), nullptr, "DrzwiDoRentgen",
-        glm::vec3(5.440f-3, 7.300f, -217.800f+15+14), glm::vec3(3.600, 3.400, 1),
+        glm::vec3(5.440f-3+2.65, 7.300f, -217.800f+15+14), glm::vec3(/*3.600*/2.500, 3.400, 1),
         glm::vec3(8.0f, 0.0f, 0.0f), glm::vec3(5.7f, 20.0f, 1.0f), 90.0f, 0.0f,glm::vec3(1.0f, 20.0f, 4.670), glm::vec3(0.0f, 0.0f, -5.070), glm::vec3(2, 0.0f, 0.0f)
     );
     /*GameObject* hingeDrzwiDoRentgen = CreateInteractableDoor(
@@ -277,7 +277,7 @@ void createMainRooom(Scene* scena) {
 
     GameObject* hingeATOM = CreateInteractableDoor(
         scena, NormalDoor.get(), nullptr, "DrzwiDoATOMU",
-        glm::vec3(-17.000+7, 7.300f, -146.010+3), glm::vec3(3.600, 3.400, 1),
+        glm::vec3(-17.000+7, 7.300f, -146.010+3-2.65), glm::vec3(2.500, 3.400, 1),
         glm::vec3(0.0f, 0.0f, -8.0f), glm::vec3(0.8f, 20.0f, 5.7f), 90.0f, 90.0f,glm::vec3(4.670, 20.0f, 1.0), glm::vec3(-0.070f, 0.0f, 0), glm::vec3(0, 0.0f, -2)
     );
     toiletDoorsMap[hingeATOM].canBeClicked = false;
@@ -521,7 +521,7 @@ void createMainRooom(Scene* scena) {
     //papers->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -45.0f, 0.0f };
     //papers->GetComponent<TransformComponent>()->position = glm::vec3{ 22.080+7 ,8.270, -149.310 + 15  };
 
-    SpawnLoreNote(scena, ksiazkaModel.get(), glm::vec3{ 22.080 + 7 ,8.670, -149.310 + 15 }, "res/lore/Kalfu_ch7.txt", glm::vec3{ 0.0f, -45.0f, 0.0f }, glm::vec3(10), nullptr);
+    //SpawnLoreNote(scena, ksiazkaModel.get(), glm::vec3{ 22.080 + 7 ,8.670, -149.310 + 15 }, "res/lore/Kalfu_ch7.txt", glm::vec3{ 0.0f, -45.0f, 0.0f }, glm::vec3(10), nullptr);
 
     GameObject * cup = cupModel->Instantiate(*scena, nullptr, nullptr);
     cup->name = "cup";
@@ -749,11 +749,14 @@ void createMainRooom(Scene* scena) {
     folder2->GetComponent<TransformComponent>()->scale    = glm::vec3{ 0.25 };
     folder2->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -55.500, 0.0f };
     folder2->GetComponent<TransformComponent>()->position = glm::vec3{ 0.320, 0.710, -0.720  };
+    SpawnLoreNote(scena, folderModel.get(), glm::vec3(1.060, 0.550, -0.430), "res/lore/Kalfu_ch7.txt", glm::vec3(0.0f, -55.500, 0.0f), glm::vec3(0.25), szafka_inna2);
+    /*
     GameObject * folder3 = folderModel->Instantiate(*scena, szafka_inna2, nullptr);
     folder3->name = "folder3";
     folder3->GetComponent<TransformComponent>()->scale    = glm::vec3{ 0.25 };
     folder3->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -55.500, 0.0f };
     folder3->GetComponent<TransformComponent>()->position = glm::vec3{ 1.060, 0.550, -0.430  };
+    */
     GameObject * cup3 = cupModel->Instantiate(*scena, szafka_inna2, nullptr);
     cup3->name = "cup3";
     cup3->GetComponent<TransformComponent>()->scale    = glm::vec3{ 0.25 };
@@ -787,7 +790,7 @@ void createCrematorium(Scene* scena) {
     GameObject * ScianaKremLewa2 = CreateStaticObject(scena, wallCrematoriumModel.get(),  nullptr, "ScianaKremLewa2",       glm::vec3(106.000, 10.890, -121.890), glm::vec3(1.500, 2, 2));
     ScianaKremLewa2->GetComponent< ColliderComponent>()->isWalkable = false;
     ScianaKremLewa2->GetComponent< ColliderComponent>()->affectsNavMesh = true;
-    GameObject * ScianaKremLewa3 = CreateStaticObject(scena, wallCrematoriumModel.get(),  nullptr, "ScianaKremLewa3",       glm::vec3(147.180, 10.890, -121.890), glm::vec3(1.500, 2, 2));
+    GameObject * ScianaKremLewa3 = CreateStaticObject(scena, wallCrematoriumModel.get(),  nullptr, "ScianaKremLewa3",       glm::vec3(145.015, 10.890, -121.890), glm::vec3(1.610, 2, 2));
     ScianaKremLewa3->GetComponent< ColliderComponent>()->isWalkable = false;
     ScianaKremLewa3->GetComponent< ColliderComponent>()->affectsNavMesh = true;
     CreateStaticObject(scena, wallCrematoriumModel.get(),  nullptr, "ScianaKremLewaGora",       glm::vec3(127.290, 26.210, -122.070), glm::vec3(0.650, 2, 1));
@@ -1285,7 +1288,7 @@ void createRentgenCorridor(Scene * scena){
     CreateStaticObject(scena, ceilingModelB.get(), nullptr, "SufitKorytarzRentgen",    glm::vec3(-52.750, 20, -145.150),  glm::vec3(4.210, 1, 0.790));
     GameObject* hingeDrzwiDoRentgen = CreateInteractableDoor(
         scena, NormalDoor.get(), nullptr, "DrzwiDoRentgenZKorytarza",
-        glm::vec3(-79, 7.300f, -152.310), glm::vec3(3.600, 3.400, 1),
+        glm::vec3(-79+2.65, 7.300f, -152.310), glm::vec3(2.500, 3.400, 1),
         glm::vec3(8.0f, 0.0f, 0.0f), glm::vec3(5.7f, 20.0f, 1.0f), -90.0f, 0.0f, glm::vec3(1.0f, 20.0f, 4.670), glm::vec3(0.0f, 0.0f, -5.070), glm::vec3(2, 0.0f, 0.0f)
     );
     unlockedDoors.insert(hingeDrzwiDoRentgen);
@@ -1300,7 +1303,7 @@ void createCrematoriumCorridor(Scene * scena){
     GameObject * ScianaLewaKorytarzKrematorium = CreateStaticObject(scena, wallMainRoomModel.get(),  nullptr, "ScianaLewaKorytarzKrematorium",         glm::vec3(100.920, 10.780, -107.230),  glm::vec3(4.080, 1.930, 3.000));
     ScianaLewaKorytarzKrematorium->GetComponent<ColliderComponent>()->isWalkable = false;
     ScianaLewaKorytarzKrematorium->GetComponent<ColliderComponent>()->affectsNavMesh = true;
-    GameObject * ScianaPrawaKorytarzKrematorium1 = CreateStaticObject(scena, wallMainRoomModel.get(),  nullptr, "ScianaPrawaKorytarzKrematorium1",         glm::vec3(137.490, 10.780, -121.430),  glm::vec3(0.520, 1.930, 2.000));
+    GameObject * ScianaPrawaKorytarzKrematorium1 = CreateStaticObject(scena, wallMainRoomModel.get(),  nullptr, "ScianaPrawaKorytarzKrematorium1",         glm::vec3(135.202, 10.780, -121.430),  glm::vec3(0.630, 1.930, 2.000));
     ScianaPrawaKorytarzKrematorium1->GetComponent<ColliderComponent>()->isWalkable = false;
     ScianaPrawaKorytarzKrematorium1->GetComponent<ColliderComponent>()->affectsNavMesh = true;
     GameObject * ScianaPrawaKorytarzKrematorium2 = CreateStaticObject(scena, wallMainRoomModel.get(),  nullptr, "ScianaPrawaKorytarzKrematorium2",         glm::vec3(90.490, 10.780, -121.660),  glm::vec3(3.050, 1.930, 3));
@@ -1312,9 +1315,9 @@ void createCrematoriumCorridor(Scene * scena){
 
     CreateStaticObject(scena, wallMainRoomModel.get(), nullptr, "GoraPrzejscieDoKrematoriumZKorytarza",              glm::vec3(127.090, 18.060, -121.260),   glm::vec3(1.000, 0.480, 1));
     GameObject* hingeDrzwiDoRentgen = CreateInteractableDoor(
-        scena, NormalDoor.get(), nullptr, "DrzwiDoKrematorium",
-        glm::vec3(131.390-5-2-0.3, 7.300f, -121.670), glm::vec3(3.600, 3.400, 1),
-        glm::vec3(8.0f, 0.0f, 0.0f), glm::vec3(5.7f, 20.0f, 1.0f), -90.0f, 0.0f, glm::vec3(1.0f, 20.0f, 4.670), glm::vec3(0.0f, 0.0f, -5.070), glm::vec3(2, 0.0f, 0.0f)
+        scena, NormalDoor.get(), nullptr, "DrzwiDoKrematoriumZKorytarza",
+        glm::vec3(123.122, 7.300f, -121.618), glm::vec3(2.500, 3.400, 1),
+        glm::vec3(6.0f, 0.0f, 0.0f), glm::vec3(5.7f, 20.0f, 1.0f), -90.0f, 0.0f, glm::vec3(1.0f, 20.0f, 4.670), glm::vec3(0.0f, 0.0f, -5.070), glm::vec3(2, 0.0f, 0.0f)
     );
     unlockedDoors.insert(hingeDrzwiDoRentgen);
 }
