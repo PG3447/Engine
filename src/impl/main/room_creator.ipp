@@ -315,7 +315,7 @@ void createMainRooom(Scene* scena) {
     //CreateStaticObject(scena, wallModel.get(), nullptr, "GoraPrzejscieDoREAKTORAATOMOWEGO",     glm::vec3(-17.000+7, 66, -209.590), glm::vec3(100, 50, 1), glm::vec3(0, 90, 0));
     CreateStaticObject(scena, wallMainRoomModel.get(), nullptr, "GoraPrzejscieDoREAKTORAATOMOWEGO",     glm::vec3(-9.970, 21.060, -145.270), glm::vec3(0.540, 1, 3.000), glm::vec3(0, 90, 0));
 
-    puzzleRewardObject = SpawnGearReward(scena, glm::vec3(27.956, 19.0f, -153.894), "Gear_Tutorial");
+    tutorialGearObject = SpawnGearReward(scena, glm::vec3(27.956, 19.0f, -153.894), "Gear_Tutorial");
 
     glm::vec3 scaleDoors = glm::vec3(2.25, 2.2, 1);
 
