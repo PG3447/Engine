@@ -1086,9 +1086,9 @@ void ResetLevel(
             }
         }
     }
-    can_open_door_1 = false; // puzzle papierów nie rozwiązana
+    can_open_door_1 = false;
 
-    crematoriumPuzzle.Reset(); // musisz dodać tę metodę do CrematoriumPuzzle!
+    crematoriumPuzzle.Reset();
     isCrematoriumGearSpawned = false;
 
     auto removeGear = [&](GameObject*& gearPtr) {
@@ -1106,7 +1106,7 @@ void ResetLevel(
             rb->isStatic         = true;
         }
         if (auto* col = gearPtr->GetComponent<ColliderComponent>()) {
-            col->halfSize = glm::vec3(0.0f); // wyłącz kolizję
+            col->halfSize = glm::vec3(0.0f);
         }
 
         pickupObjects.erase(gearPtr);
@@ -1121,7 +1121,7 @@ void ResetLevel(
     if (tutorialGearObject) {
         if (auto* tr = tutorialGearObject->GetComponent<TransformComponent>()) {
             tr->position = glm::vec3(27.956f, 19.0f, -153.894f);
-            tr->scale    = glm::vec3(2.0f);  
+            tr->scale    = glm::vec3(2.0f);
             tr->isDirty  = true;
         }
         if (auto* rb = tutorialGearObject->GetComponent<RigidbodyComponent>()) {
@@ -1129,7 +1129,7 @@ void ResetLevel(
             rb->previousPosition = glm::vec3(27.956f, 19.0f, -153.894f);
             rb->velocity = glm::vec3(0.0f);
         }
-        pickupObjects.insert(tutorialGearObject); // upewnij się że jest w secie
+        pickupObjects.insert(tutorialGearObject);
     }
 
     for (auto& room : roomsLights) {
