@@ -41,8 +41,8 @@ public:
 
     std::vector<std::vector<int>> configLeftWall = {
         {4, 4, 3, 1},
-        {2, 3, 2, 1},
-        {4, 4, 0, 2},
+        {2, 3, 0, 1},
+        {4, 4, 1, 2},
         {1, 4, 2, 1}
     };
 
