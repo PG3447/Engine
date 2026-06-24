@@ -762,7 +762,7 @@ int main(int, char**)
     *scena1,
     nullptr);*/
     sceneManager.Update(0.16f);
-    sceneManager.ChangeScene("menu");
+    sceneManager.ChangeScene("Scena 1");
     sceneManager.UpdateChangeScene();
     while (!glfwWindowShouldClose(window))
     {
