@@ -44,8 +44,8 @@ void main() {
             float m1 = max(s1, s2);
             float m2 = max(s3, s4);
 
-            float ss1 = smoothstep(0.1, 0.15, m1);
-            float ss2 = smoothstep(0.1, 0.15, m2);
+            float ss1 = smoothstep(0.12, 0.17, m1);
+            float ss2 = smoothstep(0.12, 0.17, m2);
 
             float GIGAWYNIK = max(ss1, ss2);
 
@@ -63,8 +63,8 @@ void main() {
             float m1 = max(s1, s2);
             float m2 = max(s3, s4);
 
-            float ss1 = smoothstep(0.1, 0.15, m1);
-            float ss2 = smoothstep(0.1, 0.15, m2);
+            float ss1 = smoothstep(0.12, 0.17, m1);
+            float ss2 = smoothstep(0.12, 0.17, m2);
 
             float GIGAWYNIK = max(ss1, ss2);
 
