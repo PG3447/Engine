@@ -937,6 +937,8 @@ int main(int, char**)
                         hintText = (slot.occupant == nullptr) ? "Put in" : "Slot occupied";
                     else if (slot.occupant != nullptr)
                         hintText = "Pull out";
+                    else
+                        hintText = "Requires puzzle piece";
                 }
                 else if (machineSlotsMap.count(hit.hitObject)) {
                     PuzzleSlot& slot = machineSlotsMap[hit.hitObject];
