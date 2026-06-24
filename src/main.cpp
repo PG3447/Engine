@@ -1,4 +1,4 @@
-// dear imgui: standalone example application for GLFW + OpenGL 3, using programmable pipeline
+﻿// dear imgui: standalone example application for GLFW + OpenGL 3, using programmable pipeline
 // If you are new to dear imgui, see examples/README.txt and documentation at the top of imgui.cpp.
 // (GLFW is a cross-platform general purpose library for handling windows, inputs, OpenGL/Vulkan graphics context creation, etc.)
 
@@ -356,8 +356,8 @@ int main(int, char**)
     sceneManager.UpdateChangeScene();
     //menu->GetECS().AddExistingSystem(scena1->GetECS().GetSystem<RenderSystem>());
 
-    postacGraczaCzerw = std::make_unique<Prefab>("res/models/postac_base_akcje_czerw.glb");
-    postacGraczaZiel = std::make_unique<Prefab>("res/models/postac_base_akcje_ziel.glb");
+    postacGraczaCzerw = std::make_unique<Prefab>("res/models/postac_akcje_czerw.glb");
+    postacGraczaZiel = std::make_unique<Prefab>("res/models/postac_akcje_ziel.glb");
     groundModel = std::make_unique<Prefab>("res/models/podloze.glb");
     //sunModel    = std::make_unique<Prefab>("res/models/Sun.glb");
 
@@ -1472,19 +1472,17 @@ void end_frame()
 //}
 
 void LoadPlayerAnimations(Prefab* postacGracza) {
-    spdlog::info("Mapowanie animacji z pliku .glb gracza...");
 
     if (!postacGracza || !postacGracza->rootModel) return;
 
     std::vector<AnimationClip> rawAnimations = postacGracza->rootModel->animations;
     postacGracza->rootModel->animations.clear();
-    postacGracza->rootModel->animations.resize(8);
+    postacGracza->rootModel->animations.resize(9);
 
-    auto findAndMap = [&](const std::string& exactName, int targetIdx) {
+    auto findAndMap = [&](const std::string& exactName, int targetIdx, const std::string& fallbackName = "") {
         for (auto& anim : rawAnimations) {
             if (anim.name == exactName) {
                 postacGracza->rootModel->animations[targetIdx] = anim;
-                spdlog::info("Zmapowano animacje '{}' pod indeks [{}]", anim.name, targetIdx);
                 return true;
             }
         }
@@ -1492,12 +1490,18 @@ void LoadPlayerAnimations(Prefab* postacGracza) {
         for (auto& anim : rawAnimations) {
             if (anim.name.find(exactName) != std::string::npos) {
                 postacGracza->rootModel->animations[targetIdx] = anim;
-                spdlog::info("Zmapowano (czesciowo) animacje '{}' pod indeks [{}]", anim.name, targetIdx);
                 return true;
             }
         }
 
-        spdlog::warn("Brak animacji '{}' dla indeksu [{}]", exactName, targetIdx);
+        if (!fallbackName.empty()) {
+            for (auto& anim : rawAnimations) {
+                if (anim.name.find(fallbackName) != std::string::npos) {
+                    postacGracza->rootModel->animations[targetIdx] = anim;
+                    return true;
+                }
+            }
+        }
         return false;
         };
 
@@ -1507,6 +1511,7 @@ void LoadPlayerAnimations(Prefab* postacGracza) {
     findAndMap("pick", PlayerAnimationHelper::PICKUP_ANIM_INDEX);
     findAndMap("throw_away", PlayerAnimationHelper::DROP_ANIM_INDEX);
     findAndMap("turn_around", PlayerAnimationHelper::TURN_AROUND_ANIM_INDEX);
+    findAndMap("turn_around_pick", PlayerAnimationHelper::TURN_AROUND_HOLD_INDEX);
     findAndMap("walk", PlayerAnimationHelper::WALK_ANIM_INDEX);
     findAndMap("walk_pick", PlayerAnimationHelper::WALK_HOLD_INDEX);
 }

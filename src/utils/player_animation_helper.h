@@ -13,15 +13,15 @@ public:
     static constexpr int PICKUP_ANIM_INDEX = 3;
     static constexpr int DROP_ANIM_INDEX = 4;
     static constexpr int TURN_AROUND_ANIM_INDEX = 5;
-    static constexpr int WALK_ANIM_INDEX = 6;
-    static constexpr int WALK_HOLD_INDEX = 7;
+    static constexpr int TURN_AROUND_HOLD_INDEX = 6;
+    static constexpr int WALK_ANIM_INDEX = 7;
+    static constexpr int WALK_HOLD_INDEX = 8;
 
     static void TriggerAction(AnimatorComponent* animator, Prefab* playerPrefab, int actionIndex) {
         if (!animator || !playerPrefab || !playerPrefab->rootModel) return;
         auto& animations = playerPrefab->rootModel->animations;
 
         if (animations.size() <= actionIndex) {
-            spdlog::warn("Brak animacji o indeksie {} w modelu gracza!", actionIndex);
             return;
         }
 
@@ -51,7 +51,10 @@ public:
             }
         }
         else if (isTurning) {
-            if (animations.size() > TURN_AROUND_ANIM_INDEX) {
+            if (isHoldingObject && animations.size() > TURN_AROUND_HOLD_INDEX) {
+                targetClip = &animations[TURN_AROUND_HOLD_INDEX];
+            }
+            else if (animations.size() > TURN_AROUND_ANIM_INDEX) {
                 targetClip = &animations[TURN_AROUND_ANIM_INDEX];
             }
             else {
