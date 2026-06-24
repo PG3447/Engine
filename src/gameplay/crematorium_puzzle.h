@@ -140,4 +140,5 @@ public:
     void SetupAudio(AudioSystem* audioSys, FMOD::Sound* slideOut, FMOD::Sound* slideIn, FMOD::Sound* collide, FMOD::Sound* close, FMOD::Sound* puzzleSolved = nullptr);
     void Update(float deltaTime);
     void ToggleCoffin(GameObject* clickedObject);
+    void Reset();
 };

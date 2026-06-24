@@ -600,3 +600,47 @@ void CrematoriumPuzzle::SetupAudio(AudioSystem* audioSys, FMOD::Sound* slideOut,
     soundClose = close;
     soundPuzzleSolved = puzzleSolved;
 }
+void CrematoriumPuzzle::Reset()
+{
+    for (auto& coffin : coffins)
+    {
+        if (coffin.slidingChannel) {
+            coffin.slidingChannel->stop();
+            coffin.slidingChannel = nullptr;
+        }
+
+        coffin.isActivated       = false;
+        coffin.isBouncingBack    = false;
+        coffin.currentTargetLevel = 0;
+        coffin.currentExtensionAnim = 0.0f;
+
+        if (coffin.transform) {
+            coffin.transform->position = coffin.basePosition;
+            coffin.transform->isDirty  = true;
+        }
+    }
+
+    isLeftSolved  = false;
+    isRightSolved = false;
+    isPuzzleSolved = false;
+
+    auto resetPanel = [&](GameObject* panel) {
+        if (!panel) return;
+        panel->TraverseChildren([&](GameObject* child) {
+            auto* render = child->GetComponent<RenderComponent>();
+            if (!render) return;
+            if (inactiveMaterials.count(child)) {
+                for (auto& mesh : render->meshes) {
+                    std::string objName = child->name;
+                    std::string parentName = child->GetParent() ? child->GetParent()->name : "";
+                    bool isEndObject = (objName.find("End") != std::string::npos) || (parentName.find("End") != std::string::npos);
+                    if (!isEndObject && activeMaterials.count(child))
+                        mesh.material = inactiveMaterials[child];
+                }
+                child->NotifyChanged();
+            }
+        });
+    };
+    resetPanel(leftPanelObj);
+    resetPanel(rightPanelObj);
+}

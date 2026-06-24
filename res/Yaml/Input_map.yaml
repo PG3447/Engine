@@ -21,6 +21,7 @@ input:
     interact_p1: [GLFW_KEY_E]
     alt_interact_p1: [GLFW_KEY_Q]
     ui_menu: [GLFW_KEY_F1]
+    reset_level: [GLFW_KEY_F9]
   mouse:
     ui_click: [GLFW_MOUSE_BUTTON_LEFT]
     interact_p1: [GLFW_MOUSE_BUTTON_LEFT]
