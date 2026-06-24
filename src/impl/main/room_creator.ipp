@@ -934,7 +934,7 @@ void createRentgenRoom(Scene* scena) {
             LightComponent* lc = go->AddComponent<LightComponent>();
             lc->type = Point;
             lc->ambient = glm::vec3(0.1f, 0.05f, 0.0f);
-            lc->diffuse = glm::vec3(0.0f, 0.0f, 1.0f);
+            lc->diffuse = glm::vec3(0.4f, 0.4f, 1.0f);
             lc->specular = glm::vec3(1.0f, 0.4f, 0.0f);
             lc->constant = 1.0f;
             lc->linear = 0.22f;
