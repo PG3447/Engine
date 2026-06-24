@@ -800,9 +800,9 @@ int main(int, char**)
     availablePrefabs,
     *scena1,
     nullptr);*/
-    sceneManager.Update(0.16f);
-    sceneManager.ChangeScene("Scena 1");
+    sceneManager.ChangeScene("menu");
     sceneManager.UpdateChangeScene();
+    sceneManager.Update(0.16f);
     while (!glfwWindowShouldClose(window))
     {
         float currentFrame = static_cast<float>(glfwGetTime());
