@@ -49,50 +49,71 @@ void processCameraMouse(ECS& ecs, CameraComponent& cam, TransformComponent& tran
     CameraHelper::ProcessMouseMovement(cam, transformCamera, 0.0f, dy);
 }
 
-float lookDeadzone = 0.0f;
+
+
+const float MOVE_DEADZONE = 0.0015f;
+const float lookDeadzone = 0.0015f;
+const float smoothing = 0.4f; // ni¿sza = bardziej leniwa kamera
+const float smoothingLook = 0.4f; // ni¿sza = bardziej leniwa kamera
+
+struct GamepadSmoothState {
+    glm::vec2 smoothedLook{ 0.0f };
+    glm::vec2 smoothedMove{ 0.0f };
+};
+
+static GamepadSmoothState gamepadStates[GLFW_JOYSTICK_LAST + 1];
+
+
+static glm::vec2 applyDeadzone(float x, float y, float dz)
+{
+    glm::vec2 v(x, y);
+    float len = glm::length(v);
+    if (len < dz) return glm::vec2(0.0f);
+    float remapped = (len - dz) / (1.0f - dz); // [dz..1] -> [0..1]
+    return glm::normalize(v) * glm::clamp(remapped, 0.0f, 1.0f);
+}
+
+//float lookDeadzone = 0.0f;
 
 bool processCameraGamepad(ECS& ecs, CameraComponent& cam, TransformComponent& transformCamera, TransformComponent& playerTransform, int gamepad_id)
 {
+    GamepadSmoothState& gs = gamepadStates[gamepad_id];
     const auto& hid = ecs.GetSystem<HID>();
 
-    float lx = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_LEFT_X, gamepad_id);
-    float ly = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_LEFT_Y, gamepad_id);
-
-    glm::vec3 dir(0.0f);
-
-    glm::vec3 camFront = cam.state.Front;
-    camFront.y = 0.0f;
-    camFront = glm::normalize(camFront);
-
-    glm::vec3 camRight = cam.state.Right;
-    camRight.y = 0.0f;
-    camRight = glm::normalize(camRight);
-
-    dir += camFront * (-ly);
-    dir += camRight * lx;
+    glm::vec2 rawMove(hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_LEFT_X, gamepad_id), hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_LEFT_Y, gamepad_id));
+    glm::vec2 move = applyDeadzone(rawMove.x, rawMove.y, MOVE_DEADZONE);
+    gs.smoothedMove = glm::mix(gs.smoothedMove, move, smoothing);
 
     bool isMoving = false;
-    if (glm::length(dir) > 0.0f) {
-        dir = glm::normalize(dir);
+    if (glm::length(gs.smoothedMove) > 0.001f) {
+        glm::vec3 camFront = glm::normalize(glm::vec3(cam.state.Front.x, 0.f, cam.state.Front.z));
+        glm::vec3 camRight = glm::normalize(glm::vec3(cam.state.Right.x, 0.f, cam.state.Right.z));
+        glm::vec3 dir = camFront * (-gs.smoothedMove.y) + camRight * gs.smoothedMove.x;
         playerTransform.position += dir * MovementSpeed * 0.04f;// deltaTime; aktualnie fixedDeltaTime
         playerTransform.isDirty = true;
         cam.dirty = true;
         isMoving = true;
     }
 
-    float rx = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_RIGHT_X, gamepad_id);
-    float ry = hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_RIGHT_Y, gamepad_id);
+    glm::vec2 rawLook(hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_RIGHT_X, gamepad_id), hid->get_gamepad_axis(GLFW_GAMEPAD_AXIS_RIGHT_Y, gamepad_id));
+    glm::vec2 look = applyDeadzone(rawLook.x, rawLook.y, lookDeadzone);
+    gs.smoothedLook = glm::mix(gs.smoothedLook, look, smoothingLook);
 
 
-    if (lookDeadzone <= 0.01f)
-        lookDeadzone += 0.0005f;
-    else if (glm::abs(rx) < lookDeadzone && glm::abs(ry) < lookDeadzone)
-        return isMoving;
+    if (glm::length(gs.smoothedLook) > 0.001f)
+    {
+        playerTransform.rotation.y -= gs.smoothedLook.x * sensitivityCamera / 11.0f * deltaTime;
+        playerTransform.isDirty = true;
+        CameraHelper::ProcessMouseMovement(cam, transformCamera, 0.0f, gs.smoothedLook.y * sensitivityCamera * deltaTime);
+    }
 
-    playerTransform.rotation.y -= rx * sensitivityCamera / 10.0f * deltaTime;// deltaTime; aktualnie fixedDeltaTime
-    playerTransform.isDirty = true;
+    //else if (glm::abs(rx) < lookDeadzone && glm::abs(ry) < lookDeadzone)
+    //    return isMoving;
 
-    CameraHelper::ProcessMouseMovement(cam, transformCamera, 0.0f, ry * sensitivityCamera * deltaTime);
+    //playerTransform.rotation.y -= rx * sensitivityCamera / 10.0f * deltaTime;// deltaTime; aktualnie fixedDeltaTime
+    //playerTransform.isDirty = true;
+
+    //CameraHelper::ProcessMouseMovement(cam, transformCamera, 0.0f, ry * sensitivityCamera * deltaTime);
     return isMoving;
 }
 
