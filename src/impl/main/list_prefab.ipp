@@ -114,6 +114,7 @@ std::unique_ptr<Prefab> wallMainRoomModel;
 std::unique_ptr<Prefab> wallBathroomModel;
 std::unique_ptr<Prefab> wallCrematoriumModel;
 std::unique_ptr<Prefab> doorsToiletModel;
+std::unique_ptr<Prefab> wallCialaModel;
 //std::unique_ptr<Prefab> koparkaModel;
 
 std::unique_ptr<Prefab> coffinRedEmptyModel;
@@ -230,4 +231,5 @@ void connectAllModels() {
     coffinRedCorpseModel = std::make_unique<Prefab>("res/models/szuflada_cz.glb");
     coffinGreenEmptyModel = std::make_unique<Prefab>("res/models/szuflada_ziel_pusta.glb");
     coffinGreenCorpseModel = std::make_unique<Prefab>("res/models/szuflada_ziel.glb");
+    wallCialaModel = std::make_unique<Prefab>("res/models/wallCiala.glb");
 }

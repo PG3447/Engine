@@ -586,58 +586,7 @@ int main(int, char**)
     createCrematoriumCorridor(scena1);
     createTrigger(scena1);
 
-    NavMeshBenchmarkSystem* benchSys =
-            ecs.GetSystem<NavMeshBenchmarkSystem>();
-
-    {
-        auto* benchSys    = ecs.GetSystem<NavMeshBenchmarkSystem>();
-        auto* navPathSys  = ecs.GetSystem<NavPathSystem>();
-
-        const std::string outputFile = "navmesh_benchmark.txt";
-
-        const std::vector<NavMeshMethod> methods = {
-            NavMeshMethod::Delaunay,
-            NavMeshMethod::Recast,
-            NavMeshMethod::Voronoi,
-            NavMeshMethod::Grid,
-        };
-
-        std::vector<NavAgentBenchmarkStats> allNavStats;
-
-        for (NavMeshMethod method : methods) {
-            // 1. Bake siatki i zmierz geometrię
-            NavMeshStats geomStats = benchSys->BakeWithMethod(*scena1, method);
-
-            // 2. Pobierz NavMeshData do benchmarku nawigacyjnego
-            NavMeshComponent* nm = benchSys->GetNavMesh();
-            if (nm && nm->data.isBaked && navPathSys) {
-
-                // 3. Benchmark nawigacyjny na tej samej siatce
-                NavAgentBenchmarkStats navStats = navPathSys->RunNavigationBenchmark(
-                    nm->data,
-                    geomStats.methodName,
-                    200,   // liczba zapytań A*
-                    500    // liczba punktów do testu coverage
-                );
-                allNavStats.push_back(navStats);
-
-                // 4. Dopisz do pliku statystyki nawigacyjne tej metody
-                NavPathSystem::AppendBenchmarkToFile(navStats, outputFile);
-            }
-
-            // 5. Wyczyść siatkę przed następną metodą
-            benchSys->ClearNavMesh(*scena1);
-        }
-
-        // 6. Zestawienie porównawcze wszystkich metod na końcu pliku
-        NavPathSystem::AppendAllNavigationStatsToFile(allNavStats, outputFile);
-
-        // 7. Zostaw aktywną siatkę do gry
-        benchSys->BakeWithMethod(*scena1, NavMeshMethod::Voronoi);
-
-        spdlog::info("[Main] Benchmark zakończony. Wyniki: {}", outputFile);
-    }
-
+    scena1->GetECS().GetSystem<NavMeshSystem>()->BakeRecast(*scena1);
     //dyingModelPrefab   = std::make_unique<Prefab>("res/models/Dying.fbx");
     //jumpSkeletonPrefab = std::make_unique<Prefab>("res/models/Jump.fbx");
 
@@ -750,21 +699,45 @@ int main(int, char**)
     };
 
     // Karaluch center
-    glm::vec3 nestPos = glm::vec3(0.0f, 1.0f, -80.0f);
+    glm::vec3 nestPos = glm::vec3(0.0f, 1.5f, -80.0f);
 
     //I LOVE THE TASTE OF IRON
     GameObject* Kurorushi = CreateCockroachLeader(*scena1, *cockroachModel, nullptr, nestPos, 4.0f);
+    GameObject* KurorushiM = CreateCockroachLeader(*scena1, *cockroachModel, nullptr, glm::vec3(5.607, 1.5f, -30.864), 4.0f);
+    GameObject* KurorushiM2 = CreateCockroachLeader(*scena1, *cockroachModel, nullptr, glm::vec3(20.499, 1.5, -50.071), 4.0f);
+
+    GameObject* KurorushiMR1 = CreateCockroachLeader(*scena1, *cockroachModel, nullptr, glm::vec3(7.070, 1.5f, -125.580), 4.0f);
+    GameObject* KurorushiMR2 = CreateCockroachLeader(*scena1, *cockroachModel, nullptr, glm::vec3(8.502, 1.5f, -168.933), 4.0f);
+    GameObject* KurorushiMR3 = CreateCockroachLeader(*scena1, *cockroachModel, nullptr, glm::vec3(38.413, 1.5f, -115.418), 4.0f);
+
+    GameObject* KurorushiR1 = CreateCockroachLeader(*scena1, *cockroachModel, nullptr, glm::vec3(-82.576, 1.5f, -185.547), 4.0f);
+    GameObject* KurorushiR2 = CreateCockroachLeader(*scena1, *cockroachModel, nullptr, glm::vec3(-52.370, 1.5f, -157.365), 4.0f);
+
+    GameObject* KurorushiC1 = CreateCockroachLeader(*scena1, *cockroachModel, nullptr, glm::vec3(150.490, 1.5f, -169.563), 4.0f);
+    GameObject* KurorushiC2 = CreateCockroachLeader(*scena1, *cockroachModel, nullptr, glm::vec3(135.006, 1.5f, -140.760), 4.0f);
     //I LOVE THE TASTE OF IRON
 
-    for (int i = 0; i < 3; i++) {
-        glm::vec3 offset = glm::vec3(
-            (float)(rand() % 6) - 3.0f, 0,
-            (float)(rand() % 6) - 3.0f
-        );
-        CreateCockroachFollower(
-            *scena1, *cockroachModel, nullptr,
-            Kurorushi, nestPos + offset, 4.5f); // I LOVE THE TASE OF IRON
-    }
+    auto spawnFollowers = [&](GameObject* leader, const glm::vec3& pos, int count = 20) {
+        for (int i = 0; i < count; i++) {
+            glm::vec3 offset = glm::vec3(
+                (float)(rand() % 6) - 3.0f, 0,
+                (float)(rand() % 6) - 3.0f
+            );
+            CreateCockroachFollower(
+                *scena1, *cockroachModel, nullptr,
+                leader, pos + offset, 4.5f);
+        }
+    };
+    spawnFollowers(Kurorushi,   nestPos);
+    spawnFollowers(KurorushiM,  glm::vec3(5.607f,  1.5f, -30.864f));
+    spawnFollowers(KurorushiM2, glm::vec3(20.499f, 1.5f, -50.071f));
+    spawnFollowers(KurorushiMR1, glm::vec3(7.070f,  1.5f, -125.580f));
+    spawnFollowers(KurorushiMR2, glm::vec3(8.502f,  1.5f, -168.933f));
+    spawnFollowers(KurorushiMR3, glm::vec3(38.413f, 1.5f, -115.418f));
+    spawnFollowers(KurorushiR1,  glm::vec3(-82.576f, 1.5f, -185.547f));
+    spawnFollowers(KurorushiR2,  glm::vec3(-52.370f, 1.5f, -157.365f));
+    spawnFollowers(KurorushiC1,  glm::vec3(150.490f, 1.5f, -169.563f));
+    spawnFollowers(KurorushiC2,  glm::vec3(135.006f, 1.5f, -140.760f));
 
     //interfejs sprite'y
     // Crosshair P1
