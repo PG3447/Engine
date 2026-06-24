@@ -169,29 +169,47 @@ void createFirstRoom(Scene* scena1) {
     lustra->name = "Lustra";
     // Lustra 1-3
     GameObject* lustro1 = mirrorModel1->Instantiate(*scena1, lustra, nullptr);
-    lustro1->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1, 2, 8 };
-    lustro1->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 0, 0 };
-    lustro1->AddComponent<ColliderComponent>();
-    lustro1->GetComponent<TransformComponent>()->position   = glm::vec3{ -9.25, 12.0, -25 + (-20 * 0) };
+    lustro1->GetComponent<TransformComponent>()->scale    = glm::vec3{ 2.5, 2.5, 2.5 };
+    lustro1->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, -180, 0 };
+    lustro1->GetComponent<TransformComponent>()->position   = glm::vec3{ -9.25, 12.6, -20.7 };
 
     GameObject* lustro2 = mirrorModel2->Instantiate(*scena1, lustra, nullptr);
-    lustro2->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1, 2, 8 };
+    lustro2->GetComponent<TransformComponent>()->scale    = glm::vec3{ 2.5, 2.5, 2.5 };
     lustro2->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, -180, 0 };
-    lustro2->AddComponent<ColliderComponent>();
-    lustro2->GetComponent<TransformComponent>()->position   = glm::vec3{ -9.25, 12.0, -25 + (-20 * 1) };
+    lustro2->GetComponent<TransformComponent>()->position   = glm::vec3{ -9.25, 12.6, -29.7 };
 
     GameObject* lustro3 = mirrorModel3->Instantiate(*scena1, lustra, nullptr);
-    lustro3->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1, 2, 8 };
+    lustro3->GetComponent<TransformComponent>()->scale    = glm::vec3{ 2.5, 2.5, 2.5 };
     lustro3->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, -180, 0 };
-    lustro3->AddComponent<ColliderComponent>();
-    lustro3->GetComponent<TransformComponent>()->position   = glm::vec3{ -9.25, 12.0, -25 + (-20 * 2) };
+    lustro3->GetComponent<TransformComponent>()->position   = glm::vec3{ -9.25, 12.6, -40.7 };
 
     // Lustro 4 - dodane z mirrorModel4 (lustro_puste.glb)
-    GameObject* lustro4 = mirrorModel4->Instantiate(*scena1, lustra, nullptr);
-    lustro4->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1, 2, 8 };
+    GameObject* lustro4 = mirrorModel3->Instantiate(*scena1, lustra, nullptr);
+    lustro4->GetComponent<TransformComponent>()->scale    = glm::vec3{ 2.5, 2.5, 2.5 };
     lustro4->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, -180, 0 };
-    lustro4->AddComponent<ColliderComponent>();
-    lustro4->GetComponent<TransformComponent>()->position   = glm::vec3{ -9.25, 12.0, -25 + (-20 * 3) };
+    lustro4->GetComponent<TransformComponent>()->position   = glm::vec3{ -9.25, 12.6, -49.7f };
+
+    GameObject* lustro5 = mirrorModel3->Instantiate(*scena1, lustra, nullptr);
+    lustro5->GetComponent<TransformComponent>()->scale = glm::vec3{ 2.5, 2.5, 2.5 };
+    lustro5->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, -180, 0 };
+    lustro5->GetComponent<TransformComponent>()->position = glm::vec3{ -9.25, 12.6, -60.7f };
+
+    GameObject* lustro6 = mirrorModel4->Instantiate(*scena1, lustra, nullptr);
+    lustro6->GetComponent<TransformComponent>()->scale = glm::vec3{ 2.5, 2.5, 2.5 };
+    lustro6->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, -180, 0 };
+    lustro6->GetComponent<TransformComponent>()->position = glm::vec3{ -9.25, 12.6, -69.7f };
+
+
+    GameObject* lustro7 = mirrorModel5->Instantiate(*scena1, lustra, nullptr);
+    lustro7->GetComponent<TransformComponent>()->scale = glm::vec3{ 2.5, 2.5, 2.5 };
+    lustro7->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, -180, 0 };
+    lustro7->GetComponent<TransformComponent>()->position = glm::vec3{ -9.25, 12.6, -80.7f };
+
+
+    GameObject* lustro8 = mirrorModel6->Instantiate(*scena1, lustra, nullptr);
+    lustro8->GetComponent<TransformComponent>()->scale = glm::vec3{ 2.5, 2.5, 2.5 };
+    lustro8->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, -180, 0 };
+    lustro8->GetComponent<TransformComponent>()->position = glm::vec3{ -9.25, 12.6, -89.7f };
 
     // Drzwi wyjsciowe z lazienki (washroomExit)
     GameObject* hingeWashroomExit = CreateInteractableDoor(
