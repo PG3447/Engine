@@ -1,0 +1,23 @@
+Placements:
+  - modelPath: res/models/wallCiala.glb
+    name: wallCiala
+    position: [142.875916, 11, -177.509995]
+    rotation: [0, 0, 0]
+    scale: [1.73000002, 2, 3]
+    hasCollider: true
+    colliderHalfSize: [17.2999992, 10, 0.600000024]
+    colliderOffset: [0, 0, 0]
+    colliderIsTrigger: false
+    colliderAffectsNavMesh: true
+    colliderIsWalkable: false
+  - modelPath: res/models/wallCiala.glb
+    name: wallCiala
+    position: [160.249741, 11, -161.35704]
+    rotation: [0, 90, 0]
+    scale: [1.74000001, 2, 3]
+    hasCollider: true
+    colliderHalfSize: [0.600000799, 10, 17.3999996]
+    colliderOffset: [0, 0, 0]
+    colliderIsTrigger: false
+    colliderAffectsNavMesh: true
+    colliderIsWalkable: false

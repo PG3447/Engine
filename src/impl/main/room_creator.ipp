@@ -27,24 +27,26 @@ void createFirstRoom(Scene* scena1) {
     lazienka.halfSize = glm::vec3(40.0, 30.0, 46.5);
     roomsLights[lazienka.id] = lazienka;
     // Podloga i sufit
-   // GameObject* floor = CreateStaticObject(scena1, floorModel.get(), nullptr,"PodlogawLazience", glm::vec3(25, 0, -60), glm::vec3(50, 1, 50));
     GameObject* floor = CreateStaticObject(scena1, floorModelB.get(), nullptr,"PodlogawLazience", glm::vec3(12.440, 1.170, -53.770), glm::vec3(2.270, 1, 4.430));
     floor->GetComponent<ColliderComponent>()->isWalkable = true;
-    //CreateStaticObject(scena1, floorModel.get(), nullptr, "SufitWKiblu",       glm::vec3(0, 20, 0),  glm::vec3(100, 1, 100), glm::vec3(0)); //glm::vec3(100, 1, 100)
     CreateStaticObject(scena1, ceilingModelB.get(), nullptr, "SufitWKiblu",       glm::vec3(11.200, 20.120, -55.330),  glm::vec3(2.400, 1, 4.540)); //glm::vec3(100, 1, 100)
 
     // Sciany
-    //CreateStaticObject(scena1, wallModel.get(),  nullptr, "ScianaTylnaKibel",           glm::vec3(0, 0, -10),    glm::vec3(50, 50, 1),  glm::vec3(0)); // glm::vec3(50, 50, 1)
-    CreateStaticObject(scena1, wallBathroomModel.get(),  nullptr, "ScianaTylnaKibel",           glm::vec3(11.950, 12.680, -10),    glm::vec3(2.330, 2.280, 3.000)); // glm::vec3(50, 50, 1)
-    //CreateStaticObject(scena1, wallModel2.get(), nullptr, "ScianaKiblowa",              glm::vec3(35, 0, 0),     glm::vec3(100, 50, 1), glm::vec3(0,90,0)); // glm::vec3(1, 50, 100)
-    CreateStaticObject(scena1, wallBathroomModel.get(), nullptr, "ScianaKiblowa",              glm::vec3(35.000, 12.680, -53.510),     glm::vec3(4.920, 2.280, 3.000), glm::vec3(0,90,0)); // glm::vec3(1, 50, 100)
-    //CreateStaticObject(scena1, wallModel2.get(), nullptr, "ScianaSinkowa",              glm::vec3(-10, 0, 0),    glm::vec3(100, 50, 1), glm::vec3(0,90,0)); // glm::vec3(1, 50, 100)
-    CreateStaticObject(scena1, wallBathroomModel.get(), nullptr, "ScianaSinkowa",              glm::vec3(-10, 11.080, -51.790),    glm::vec3(4.920, 2.280, 3.000), glm::vec3(0,90,0)); // glm::vec3(1, 50, 100)
-    //CreateStaticObject(scena1, wallModel.get(),  nullptr, "ScianaDrzwiDoMainRoomPrawa", glm::vec3(110, 0, -100), glm::vec3(100, 50, 1), glm::vec3(0), glm::vec3(100,50,1), true);
-    CreateStaticObject(scena1, wallBathroomModel.get(),  nullptr, "ScianaDrzwiDoMainRoomPrawa", glm::vec3(23.770, 11, -100), glm::vec3(1.38, 2.28, 2.82));
-    //CreateStaticObject(scena1, wallModel.get(),  nullptr, "ScianaDrzwiDoMainRoomLewa",  glm::vec3(-110, 0, -100),glm::vec3(110, 50, 1), glm::vec3(0), glm::vec3(110,50,1), true);
-    CreateStaticObject(scena1, wallBathroomModel.get(),  nullptr, "ScianaDrzwiDoMainRoomLewa",  glm::vec3(-5.050, 11.080, -100),glm::vec3(0.500, 2.280, 1));
-    //CreateStaticObject(scena1, wallModel.get(),  nullptr, "GoraPrzejscieDoMainRoom",    glm::vec3(0, 70, -100),  glm::vec3(100, 50, 1), glm::vec3(0), glm::vec3(100,50,1), true);
+    GameObject * ScianaTylnaKibel = CreateStaticObject(scena1, wallBathroomModel.get(),  nullptr, "ScianaTylnaKibel",           glm::vec3(11.950, 12.680, -10),    glm::vec3(2.330, 2.280, 3.000)); // glm::vec3(50, 50, 1)
+    ScianaTylnaKibel->GetComponent< ColliderComponent>()->isWalkable = false;
+    ScianaTylnaKibel->GetComponent< ColliderComponent>()->affectsNavMesh = true;
+    GameObject * ScianaKiblowa = CreateStaticObject(scena1, wallBathroomModel.get(), nullptr, "ScianaKiblowa",              glm::vec3(35.000, 12.680, -53.510),     glm::vec3(4.920, 2.280, 3.000), glm::vec3(0,90,0)); // glm::vec3(1, 50, 100)
+    ScianaKiblowa->GetComponent< ColliderComponent>()->isWalkable = false;
+    ScianaKiblowa->GetComponent< ColliderComponent>()->affectsNavMesh = true;
+    GameObject * ScianaSinkowa = CreateStaticObject(scena1, wallBathroomModel.get(), nullptr, "ScianaSinkowa",              glm::vec3(-10, 11.080, -51.790),    glm::vec3(4.920, 2.280, 3.000), glm::vec3(0,90,0)); // glm::vec3(1, 50, 100)
+    ScianaSinkowa->GetComponent< ColliderComponent>()->isWalkable = false;
+    ScianaSinkowa->GetComponent< ColliderComponent>()->affectsNavMesh = true;
+    GameObject * ScianaDoMainRoomPrawa = CreateStaticObject(scena1, wallBathroomModel.get(),  nullptr, "ScianaDrzwiDoMainRoomPrawa", glm::vec3(23.770, 11, -100), glm::vec3(1.38, 2.28, 2.82));
+    ScianaDoMainRoomPrawa->GetComponent< ColliderComponent>()->isWalkable = false;
+    ScianaDoMainRoomPrawa->GetComponent< ColliderComponent>()->affectsNavMesh = true;
+    GameObject * ScianaDoMainRoomLewa = CreateStaticObject(scena1, wallBathroomModel.get(),  nullptr, "ScianaDrzwiDoMainRoomLewa",  glm::vec3(-5.050, 11.080, -100),glm::vec3(0.500, 2.280, 1));
+    ScianaDoMainRoomLewa->GetComponent< ColliderComponent>()->isWalkable = false;
+    ScianaDoMainRoomLewa->GetComponent< ColliderComponent>()->affectsNavMesh = true;
     CreateStaticObject(scena1, wallBathroomModel.get(),  nullptr, "GoraPrzejscieDoMainRoom",    glm::vec3(5.090, 32.070, -99.960),  glm::vec3(0.550, 2.630, 0.500));
 
     // Kibel
@@ -156,21 +158,6 @@ void createFirstRoom(Scene* scena1) {
         tablicaSink[i]->AddComponent<ColliderComponent>();
     }
 
-    /*
-    // Urinary - 7 sztuk, uklad z mastera (poziomy, skala 12,12,12, obrot 180)
-    GameObject* tablicaurin[7];
-    for (int i = 0; i < 7; i++) {
-        tablicaurin[i] = urinModel->Instantiate(*scena1, nullptr, nullptr);
-        tablicaurin[i]->GetComponent<TransformComponent>()->scale    = glm::vec3{ 12, 12, 12 };
-        tablicaurin[i]->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, 180, 0 };
-        tablicaurin[i]->AddComponent<RigidbodyComponent>();
-        tablicaurin[i]->AddComponent<ColliderComponent>();
-        tablicaurin[i]->GetComponent<RigidbodyComponent>()->useGravity = false;
-        tablicaurin[i]->GetComponent<RigidbodyComponent>()->isStatic   = true;
-        tablicaurin[i]->GetComponent<ColliderComponent>()->halfSize     = glm::vec3{ 3, 20, 3 };
-        tablicaurin[i]->GetComponent<TransformComponent>()->position    = glm::vec3{ -17.5 + (10 * i), 2.0, -12.5 };
-    }*/
-
     GameObject* lustra = scena1->CreateGameObject(nullptr);
     lustra->name = "Lustra";
     // Lustra 1-3
@@ -205,7 +192,7 @@ void createFirstRoom(Scene* scena1) {
     glm::vec3(5.0f, 0.0f, -100.0f),
     glm::vec3{ 10, 11, 10 },
     glm::vec3(5.0f, 0.0f, 0.0f),
-    glm::vec3{ 5, 22, 1 },
+    glm::vec3{ 5, 22, 0.5 },
     -90.0f,
     180.0f,
     glm::vec3{ 1, 22, 5 },
@@ -224,29 +211,38 @@ void createMainRooom(Scene* scena) {
     mainRoom.halfSize = glm::vec3(38.0, 30.0, 46.5);
     roomsLights[mainRoom.id] = mainRoom;
     // Podloga i sufit
-    //CreateStaticObject(scena, floorModel.get(), nullptr, "PodlogaMainRoom", glm::vec3(23.300, 0, -146.390),  glm::vec3(37.070, 1, 43.540));
-    CreateStaticObject(scena, floorModelB.get(), nullptr, "PodlogaMainRoom", glm::vec3(24.870, 1.170, -143.820),  glm::vec3(3.560, 1, 4.570));
-    //CreateStaticObject(scena, floorModel.get(), nullptr, "SufitMainRoom",   glm::vec3(23.300, 22, -144.490), glm::vec3(37.070, 1, 43.820));
+    GameObject * podlogaMainRomm = CreateStaticObject(scena, floorModelB.get(), nullptr, "PodlogaMainRoom", glm::vec3(24.870, 1.170, -143.820),  glm::vec3(3.560, 1, 4.570));
+    podlogaMainRomm->GetComponent<ColliderComponent>()->isWalkable = true;
     CreateStaticObject(scena, ceilingModelB.get(), nullptr, "SufitMainRoom",   glm::vec3(24.980, 20.100, -144.870), glm::vec3(3.450, 1, 4.460));
 
     // Sciany
-    //CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaDoRentgenaPrawa",        glm::vec3(35, 0, -203+14),   glm::vec3(25, 50, 1));
-    CreateStaticObject(scena, wallMainRoomModel.get(),  nullptr, "ScianaDoRentgenaPrawa",        glm::vec3(36.120, 11.000, -188.720),   glm::vec3(2.540, 2.190, 3.000));
-    //CreateStaticObject(scena, wallModel.get(),  nullptr, "Zauek",        glm::vec3(35, 0, -102.220),   glm::vec3(23.000, 50, 4.270));
-    CreateStaticObject(scena, wallMainRoomModel.get(),  nullptr, "Zauek",        glm::vec3(37.230, 11.000, -102.700),   glm::vec3(2.240, 2.190, 9.940));
-    //CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaDoRentgenaLewa",         glm::vec3(-10, 0, -203+14),  glm::vec3(10, 50, 1));
-    CreateStaticObject(scena, wallMainRoomModel.get(),  nullptr, "ScianaDoRentgenaLewa",         glm::vec3(-6.810, 11.000, -188.720),  glm::vec3(0.600, 2.190, 3.000));
-    //CreateStaticObject(scena, wallModel2.get(), nullptr, "ScianaPrawaDoKrematorium",     glm::vec3(60, 0, -105.440),   glm::vec3(4.660, 50, 1), std::nullopt, glm::vec3(1, 50, 4.660));
-    CreateStaticObject(scena, wallMainRoomModel.get(), nullptr, "ScianaPrawaDoKrematorium",     glm::vec3(60, 11, -104.890),   glm::vec3(0.400, 2.190, 3.000), glm::vec3(0,90,0));
-    //CreateStaticObject(scena, wallModel2.get(), nullptr, "ScianaLewaDoKrematorium",      glm::vec3(60, 0, -169.010),   glm::vec3(48.650, 50, 1), std::nullopt, glm::vec3(1, 50, 48.650));
-    CreateStaticObject(scena, wallMainRoomModel.get(), nullptr, "ScianaLewaDoKrematorium",      glm::vec3(60, 11.000, -155.000),   glm::vec3(3.480, 2.190, 3.000),glm::vec3(0,90,0));
-    //CreateStaticObject(scena, wallModel2.get(), nullptr, "ScianaPrawaDoATOMU",           glm::vec3(-17.000+7, 0, -120.810),  glm::vec3(20.090, 50, 1), std::nullopt, glm::vec3(1, 50, 20.090));
-    CreateStaticObject(scena, wallMainRoomModel.get(), nullptr, "ScianaPrawaDoATOMU",           glm::vec3(-10.000, 11.000, -120.360),  glm::vec3(1.980, 2.190, 3.000), glm::vec3(0,90,0));
-    //CreateStaticObject(scena, wallModel2.get(), nullptr, "ScianaLewaDoATOMU",            glm::vec3(-17.000+7, 0,  -169.580),  glm::vec3(18.900, 50, 1), std::nullopt, glm::vec3(1, 50, 18.900));
-    CreateStaticObject(scena, wallMainRoomModel.get(), nullptr, "ScianaLewaDoATOMU",            glm::vec3(-10.000, 11,  -169.580),  glm::vec3(1.920, 2.190, 3.000), glm::vec3(0,90,0));
-    CreateStaticObject(scena, wallMainRoomModel.get(),  nullptr, "ScianaDoLazienkiPrawa",        glm::vec3(35.400, 11.000, -100.720),   glm::vec3(2.540, 2.190, 3.000));
-    CreateStaticObject(scena, wallMainRoomModel.get(),  nullptr, "ScianaDoLazienkiLewa",         glm::vec3(-5.990, 11.000, -100.720),  glm::vec3(0.600, 2.190, 3.000));
-
+    GameObject * ScianaDoRentgenaPrawa = CreateStaticObject(scena, wallMainRoomModel.get(),  nullptr, "ScianaDoRentgenaPrawa",        glm::vec3(36.120, 11.000, -188.720),   glm::vec3(2.540, 2.190, 3.000));
+    ScianaDoRentgenaPrawa->GetComponent<ColliderComponent>()->isWalkable = false;
+    ScianaDoRentgenaPrawa->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+    GameObject * Zauek = CreateStaticObject(scena, wallMainRoomModel.get(),  nullptr, "Zauek",        glm::vec3(37.230, 11.000, -102.700),   glm::vec3(2.240, 2.190, 9.940));
+    Zauek->GetComponent<ColliderComponent>()->isWalkable = false;
+    Zauek->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+    GameObject * ScianaDoRentgenaLewa = CreateStaticObject(scena, wallMainRoomModel.get(),  nullptr, "ScianaDoRentgenaLewa",         glm::vec3(-6.810, 11.000, -188.720),  glm::vec3(0.600, 2.190, 3.000));
+    ScianaDoRentgenaLewa->GetComponent<ColliderComponent>()->isWalkable = false;
+    ScianaDoRentgenaLewa->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+    GameObject * ScianaPrawaDoKrematorium = CreateStaticObject(scena, wallMainRoomModel.get(), nullptr, "ScianaPrawaDoKrematorium",     glm::vec3(60, 11, -104.890),   glm::vec3(0.400, 2.190, 3.000), glm::vec3(0,90,0));
+    ScianaPrawaDoKrematorium->GetComponent<ColliderComponent>()->isWalkable = false;
+    ScianaPrawaDoKrematorium->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+    GameObject * ScianaLewaDoKrematorium = CreateStaticObject(scena, wallMainRoomModel.get(), nullptr, "ScianaLewaDoKrematorium",      glm::vec3(60, 11.000, -155.000),   glm::vec3(3.480, 2.190, 3.000),glm::vec3(0,90,0));
+    ScianaLewaDoKrematorium->GetComponent<ColliderComponent>()->isWalkable = false;
+    ScianaLewaDoKrematorium->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+    GameObject * ScianaPrawaDoATOMU = CreateStaticObject(scena, wallMainRoomModel.get(), nullptr, "ScianaPrawaDoATOMU",           glm::vec3(-10.000, 11.000, -120.360),  glm::vec3(1.980, 2.190, 3.000), glm::vec3(0,90,0));
+    ScianaPrawaDoATOMU->GetComponent<ColliderComponent>()->isWalkable = false;
+    ScianaPrawaDoATOMU->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+    GameObject * ScianaLewaDoATOMU = CreateStaticObject(scena, wallMainRoomModel.get(), nullptr, "ScianaLewaDoATOMU",            glm::vec3(-10.000, 11,  -169.580),  glm::vec3(1.920, 2.190, 3.000), glm::vec3(0,90,0));
+    ScianaLewaDoATOMU->GetComponent<ColliderComponent>()->isWalkable = false;
+    ScianaLewaDoATOMU->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+    GameObject * ScianaDoLazienkiPrawa = CreateStaticObject(scena, wallMainRoomModel.get(),  nullptr, "ScianaDoLazienkiPrawa",        glm::vec3(35.400, 11.000, -100.720),   glm::vec3(2.540, 2.190, 3.000));
+    ScianaDoLazienkiPrawa->GetComponent<ColliderComponent>()->isWalkable = false;
+    ScianaDoLazienkiPrawa->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+    GameObject * ScianaDoLazienkiLewa = CreateStaticObject(scena, wallMainRoomModel.get(),  nullptr, "ScianaDoLazienkiLewa",         glm::vec3(-5.990, 11.000, -100.720),  glm::vec3(0.600, 2.190, 3.000));
+    ScianaDoLazienkiLewa->GetComponent<ColliderComponent>()->isWalkable = false;
+    ScianaDoLazienkiLewa->GetComponent<ColliderComponent>()->affectsNavMesh = true;
     // Gora przejscia-169.010
     //CreateStaticObject(scena, wallModel.get(), nullptr, "GoraPrzejscieDoRentgena",              glm::vec3(0, 66, -189.000),   glm::vec3(10.000, 50, 1));
     CreateStaticObject(scena, wallMainRoomModel.get(), nullptr, "GoraPrzejscieDoRentgena",              glm::vec3(4.990, 20.890, -188.710),   glm::vec3(0.760, 1, 3.000));
@@ -357,17 +353,33 @@ void createMainRooom(Scene* scena) {
     bossCapsule->name = "BossCapsule";
     bossCapsule->GetComponent<TransformComponent>()->scale    = glm::vec3{ 2, 2, 2 };
     bossCapsule->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -45.0f, 0.0f };
-    bossCapsule->GetComponent<TransformComponent>()->position = glm::vec3{51.58 ,5, -180.960}; //194
+    bossCapsule->GetComponent<TransformComponent>()->position = glm::vec3{51.58 ,5.229, -180.960}; //194
     bossCapsule->AddComponent<ColliderComponent>();
-    bossCapsule->GetComponent<ColliderComponent>()->halfSize    = glm::vec3{ 5.34, 5.34f, 5.34f };
+    bossCapsule->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+    bossCapsule->GetComponent<ColliderComponent>()->isWalkable = false;
+    bossCapsule->GetComponent<ColliderComponent>()->halfSize    = glm::vec3{ 5.34, 10.0f, 5.34f };
 
-    CreateStaticObject(scena, kredensModel.get(), nullptr, "kredens1",     glm::vec3(56, 4.8, -176+15), glm::vec3(8, 8, 8), glm::vec3(0, -90, 0)); // glm::vec3(2, 5, 13)
-    CreateStaticObject(scena, kredensModel.get(), nullptr, "kredens2",     glm::vec3(56, 4.8, -152+15), glm::vec3(8, 8, 8), glm::vec3(0, -90, 0)); // glm::vec3(2, 5, 13)
-    CreateStaticObject(scena, kredensModel.get(), nullptr, "kredens3",     glm::vec3(20+7, 4.8, -176+15), glm::vec3(8, 8, 8), glm::vec3(0, -90, 0)); // glm::vec3(2, 5, 13)
-    CreateStaticObject(scena, kredensModel.get(), nullptr, "kredens4",     glm::vec3(20+7, 4.8, -152+15), glm::vec3(8, 8, 8), glm::vec3(0, -90, 0)); // glm::vec3(2, 5, 13)
+    GameObject * kredens1 = CreateStaticObject(scena, kredensModel.get(), nullptr, "kredens1",     glm::vec3(56, 4.8, -176+15), glm::vec3(8, 8, 8), glm::vec3(0, -90, 0)); // glm::vec3(2, 5, 13)
+    kredens1->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+    kredens1->GetComponent<ColliderComponent>()->isWalkable = false;
+    GameObject * kredens2 = CreateStaticObject(scena, kredensModel.get(), nullptr, "kredens2",     glm::vec3(56, 4.8, -152+15), glm::vec3(8, 8, 8), glm::vec3(0, -90, 0)); // glm::vec3(2, 5, 13)
+    kredens2->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+    kredens2->GetComponent<ColliderComponent>()->isWalkable = false;
+    GameObject * kredens3 = CreateStaticObject(scena, kredensModel.get(), nullptr, "kredens3",     glm::vec3(20+7, 4.8, -176+15), glm::vec3(8, 8, 8), glm::vec3(0, -90, 0)); // glm::vec3(2, 5, 13)
+    kredens3->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+    kredens3->GetComponent<ColliderComponent>()->isWalkable = false;
+    GameObject * kredens4 = CreateStaticObject(scena, kredensModel.get(), nullptr, "kredens4",     glm::vec3(20+7, 4.8, -152+15), glm::vec3(8, 8, 8), glm::vec3(0, -90, 0)); // glm::vec3(2, 5, 13)
+    kredens4->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+    kredens4->GetComponent<ColliderComponent>()->isWalkable = false;
     GameObject * kredens5 = CreateStaticObject(scena, kredensModel.get(), nullptr, "kredens5",     glm::vec3(27.7+7, 4.8, -177+15), glm::vec3(8, 8, 8), glm::vec3(0, -270, 0)); //glm::vec3(4, 5, 13)
+    kredens5->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+    kredens5->GetComponent<ColliderComponent>()->isWalkable = false;
     GameObject * kredens6 = CreateStaticObject(scena, kredensModel.get(), nullptr, "kredens6",     glm::vec3(27.7+7, 4.8, -153+15), glm::vec3(8, 8, 8), glm::vec3(0, -270, 0)); //glm::vec3(4, 5, 13)
+    kredens6->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+    kredens6->GetComponent<ColliderComponent>()->isWalkable = false;
     GameObject * kredens7 = CreateStaticObject(scena, kredensModel.get(), nullptr, "kredens7",     glm::vec3(-12.230+7, 4.8, -122.540), glm::vec3(8, 8, 8), glm::vec3(0, -270, 0)); //glm::vec3(4, 5, 13)
+    kredens7->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+    kredens7->GetComponent<ColliderComponent>()->isWalkable = false;
     //kredens5->GetComponent<ColliderComponent>()->offset = glm::vec3{ -2.0f, 0.0f, 0.0f };
     //kredens6->GetComponent<ColliderComponent>()->offset = glm::vec3{ -2.0f, 0.0f, 0.0f };
     //kredens7->GetComponent<ColliderComponent>()->offset = glm::vec3{ -2.0f, 0.0f, 0.0f };
@@ -582,6 +594,8 @@ void createMainRooom(Scene* scena) {
     Szafka_lab1->GetComponent<TransformComponent>()->position = glm::vec3{ -13.160+7 ,6.680, -190.470+14};
     Szafka_lab1->AddComponent<ColliderComponent>();
     Szafka_lab1->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 5.0f, 5, 10.0f };
+    Szafka_lab1->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+    Szafka_lab1->GetComponent<ColliderComponent>()->isWalkable = false;
     GameObject * Szafka_lab2 = szafka_labModel->Instantiate(*scena, nullptr, nullptr);
     Szafka_lab2->name = "Szafka_lab2";
     Szafka_lab2->GetComponent<TransformComponent>()->scale    = glm::vec3{ 10 };
@@ -589,6 +603,8 @@ void createMainRooom(Scene* scena) {
     Szafka_lab2->GetComponent<TransformComponent>()->position = glm::vec3{ -13.160+7 ,6.680, -176.930+14};
     Szafka_lab2->AddComponent<ColliderComponent>();
     Szafka_lab2->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 5.0f, 5, 10.0f };
+    Szafka_lab2->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+    Szafka_lab2->GetComponent<ColliderComponent>()->isWalkable = false;
     if (cabState.button) {
         ColliderComponent* btnCol = cabState.button->AddComponent<ColliderComponent>();
         btnCol->halfSize = glm::vec3{ 1.0f, 1.0f, 1.0f };
@@ -599,21 +615,6 @@ void createMainRooom(Scene* scena) {
 
         cabinetsMap[cabState.button] = cabState;
     }
-
-
-    // kapsuła
-
-    //GameObject* capsuleObj = CreateStaticObject(
-    //    scena,
-    //    bossCapsuleModel.get(),
-    //    nullptr,
-    //    "BossCapsule",
-    //    bossRoomCenter,
-    //    glm::vec3(3.0f),
-    //    std::nullopt,
-    //    glm::vec3(3.0f, 8.0f, 3.0f),
-    //    true
-    //);
 
     GameObject* bossObj = bossModel->Instantiate(*scena, nullptr, nullptr);
     bossObj->name = "DemonBoss";
@@ -632,14 +633,6 @@ void createMainRooom(Scene* scena) {
         AnimationHelper::Play(bossAnimator, defaultBossClip, true, 1.0f);
     }
 
-    /*GameObject * szafka_inna1 = szafka_inna1Model->Instantiate(*scena, nullptr, nullptr);
-    szafka_inna1->name = "szafka_inna1a";
-    szafka_inna1->GetComponent<TransformComponent>()->scale    = glm::vec3{ 6 };
-    szafka_inna1->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, 0, 0.0f };
-    szafka_inna1->GetComponent<TransformComponent>()->position = glm::vec3{ 53.500 ,4.120, -103.230};
-    szafka_inna1->AddComponent<ColliderComponent>();
-    szafka_inna1->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 4.520, 5, 2.420f };
-    szafka_inna1->GetComponent<ColliderComponent>()->offset = glm::vec3{ 3.210, 0, 0 };*/
     GameObject * szafka_inna1b = szafka_inna1Model->Instantiate(*scena, nullptr, nullptr);
     szafka_inna1b->name = "szafka_inna1b";
     szafka_inna1b->GetComponent<TransformComponent>()->scale    = glm::vec3{ 7 };
@@ -648,6 +641,8 @@ void createMainRooom(Scene* scena) {
     szafka_inna1b->AddComponent<ColliderComponent>();
     szafka_inna1b->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 4.520, 5, 2.420f };
     szafka_inna1b->GetComponent<ColliderComponent>()->offset = glm::vec3{ -3.430, 0, 0 };
+    szafka_inna1b->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+    szafka_inna1b->GetComponent<ColliderComponent>()->isWalkable = false;
     GameObject * szafka_inna2 = szafka_inna2Model->Instantiate(*scena, nullptr, nullptr);
     szafka_inna2->name = "szafka_inna2";
     szafka_inna2->GetComponent<TransformComponent>()->scale    = glm::vec3{ 7 };
@@ -656,6 +651,8 @@ void createMainRooom(Scene* scena) {
     szafka_inna2->AddComponent<ColliderComponent>();
     szafka_inna2->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 5.910, 4.100, 2.760 };
     szafka_inna2->GetComponent<ColliderComponent>()->offset = glm::vec3{ -3.470, 0, 0.0f };
+    szafka_inna2->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+    szafka_inna2->GetComponent<ColliderComponent>()->isWalkable = false;
     GameObject * wozek = wozekModel->Instantiate(*scena, nullptr, nullptr);
     wozek->name = "wozek";
     wozek->GetComponent<TransformComponent>()->scale    = glm::vec3{ 7 };
@@ -774,17 +771,25 @@ void createNuclearRooom(Scene* scena) {
 void createCrematorium(Scene* scena) {
 
 
-    CreateStaticObject(scena, floorModelB.get(), nullptr, "PodlogaKrematorium",   glm::vec3(125, 1.170, -150.000),  glm::vec3(3.490, 1, 2.870));
+    GameObject * PodlogaKrematorium = CreateStaticObject(scena, floorModelB.get(), nullptr, "PodlogaKrematorium",   glm::vec3(125, 1.170, -150.000),  glm::vec3(3.490, 1, 2.870));
+    PodlogaKrematorium->GetComponent< ColliderComponent>()->isWalkable = true;
     CreateStaticObject(scena, ceilingModelB.get(), nullptr, "SufitCrematorium",     glm::vec3(125.000, 19.160, -150.000), glm::vec3(3.490, 1, 2.870));
-    //CreateStaticObject(scena, wallModel2.get(), nullptr, "ScianaKoncowaKrematorium", glm::vec3(160.280, 0, -149.030), glm::vec3(32.000, 50, 1), std::nullopt, glm::vec3(1, 50, 32.000));
-    CreateStaticObject(scena, wallCrematoriumModel.get(), nullptr, "ScianaKoncowaKrematorium", glm::vec3(160.280, 11.000, -149.030), glm::vec3(2.880, 2, 3), glm::vec3(0,-90,0));
-    //CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaKremPrawa",       glm::vec3(124.600, 0, -178.010), glm::vec3(35.000, 50, 1), std::nullopt, glm::vec3(35.000, 100, 1));
-    CreateStaticObject(scena, wallCrematoriumModel.get(),  nullptr, "ScianaKremPrawa",       glm::vec3(124.600, 11.000, -178.010), glm::vec3(3.540, 2.000, 3.000));
-    //CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaKremLewa",       glm::vec3(91.190, 0, -153.760), glm::vec3(1, 50, 32.000), std::nullopt, glm::vec3(1, 100, 32.000));
-    CreateStaticObject(scena, wallCrematoriumModel.get(),  nullptr, "ScianaKremLewa",       glm::vec3(91.190, 11.000, -150.390), glm::vec3(2.870, 2.000, 3.000), glm::vec3(0,90,0));
-    //CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaKremLewa2",       glm::vec3(149.900, 0, -121.640), glm::vec3(10.040, 50, 1), std::nullopt, glm::vec3(10.040, 100,1 ));
-    CreateStaticObject(scena, wallCrematoriumModel.get(),  nullptr, "ScianaKremLewa2",       glm::vec3(106.000, 10.890, -121.890), glm::vec3(1.500, 2, 2));
-    CreateStaticObject(scena, wallCrematoriumModel.get(),  nullptr, "ScianaKremLewa3",       glm::vec3(147.180, 10.890, -121.890), glm::vec3(1.500, 2, 2));
+
+    GameObject * ScianaKoncowaKrematorium = CreateStaticObject(scena, wallCrematoriumModel.get(), nullptr, "ScianaKoncowaKrematorium", glm::vec3(160.280, 11.000, -149.030), glm::vec3(2.880, 2, 3), glm::vec3(0,-90,0));
+    ScianaKoncowaKrematorium->GetComponent< ColliderComponent>()->isWalkable = false;
+    ScianaKoncowaKrematorium->GetComponent< ColliderComponent>()->affectsNavMesh = true;
+    GameObject * ScianaKremPrawa = CreateStaticObject(scena, wallCrematoriumModel.get(),  nullptr, "ScianaKremPrawa",       glm::vec3(124.600, 11.000, -178.010), glm::vec3(3.540, 2.000, 3.000));
+    ScianaKremPrawa->GetComponent< ColliderComponent>()->isWalkable = false;
+    ScianaKremPrawa->GetComponent< ColliderComponent>()->affectsNavMesh = true;
+    GameObject * ScianaKremLewa = CreateStaticObject(scena, wallCrematoriumModel.get(),  nullptr, "ScianaKremLewa",       glm::vec3(91.190, 11.000, -150.390), glm::vec3(2.870, 2.000, 3.000), glm::vec3(0,90,0));
+    ScianaKremLewa->GetComponent< ColliderComponent>()->isWalkable = false;
+    ScianaKremLewa->GetComponent< ColliderComponent>()->affectsNavMesh = true;
+    GameObject * ScianaKremLewa2 = CreateStaticObject(scena, wallCrematoriumModel.get(),  nullptr, "ScianaKremLewa2",       glm::vec3(106.000, 10.890, -121.890), glm::vec3(1.500, 2, 2));
+    ScianaKremLewa2->GetComponent< ColliderComponent>()->isWalkable = false;
+    ScianaKremLewa2->GetComponent< ColliderComponent>()->affectsNavMesh = true;
+    GameObject * ScianaKremLewa3 = CreateStaticObject(scena, wallCrematoriumModel.get(),  nullptr, "ScianaKremLewa3",       glm::vec3(147.180, 10.890, -121.890), glm::vec3(1.500, 2, 2));
+    ScianaKremLewa3->GetComponent< ColliderComponent>()->isWalkable = false;
+    ScianaKremLewa3->GetComponent< ColliderComponent>()->affectsNavMesh = true;
     CreateStaticObject(scena, wallCrematoriumModel.get(),  nullptr, "ScianaKremLewaGora",       glm::vec3(127.290, 26.210, -122.070), glm::vec3(0.650, 2, 1));
 
 
@@ -814,16 +819,27 @@ void createCrematorium(Scene* scena) {
 }
 
 void createRentgenRoom(Scene* scena) {
-    //GameObject * podlogaRentgenRoom =CreateStaticObject(scena, floorModel.get(), nullptr, "PodlogaRentgenRoom",    glm::vec3(-84.700+10, 0, -183.720),  glm::vec3(30.000, 1, 30.000));
-    GameObject * podlogaRentgenRoom =CreateStaticObject(scena, floorModelB.get(), nullptr, "PodlogaRentgenRoom",    glm::vec3(-70.610, 1.170, -178.790),  glm::vec3(2.520, 1, 2.530));
-    //GameObject * sufitRentgen = CreateStaticObject(scena, floorModel.get(), nullptr, "SufitRentgen",          glm::vec3(-84.700+10, 17, -183.720), glm::vec3(30, 1, 30));
+    GameObject * podlogaRentgenRoom = CreateStaticObject(scena, floorModelB.get(), nullptr, "PodlogaRentgenRoom",    glm::vec3(-70.610, 1.170, -178.790),  glm::vec3(2.520, 1, 2.530));
+    podlogaRentgenRoom->GetComponent<ColliderComponent>()->isWalkable = true;
     GameObject * sufitRentgen = CreateStaticObject(scena, ceilingModelB.get(), nullptr, "SufitRentgen",          glm::vec3(-70.610, 17.000, -178.790), glm::vec3(2.520, 1, 2.600));
     GameObject * KoncowaScianaRentgen = CreateStaticObject(scena, wallRentgenModel.get(),  nullptr, "KoncowaScianaRentgen",  glm::vec3(-70.220, 9.020, -204.180),          glm::vec3(2.490, 1.780, 3));
+    KoncowaScianaRentgen->GetComponent<ColliderComponent>()->isWalkable = false;
+    KoncowaScianaRentgen->GetComponent<ColliderComponent>()->affectsNavMesh = true;
     GameObject* ScianaRentgen2 = CreateStaticObject(scena, wallRentgenModel.get(),  nullptr, "ScianaRentgen2",         glm::vec3(-91.770, 9.020, -152.920),  glm::vec3(1, 1.780, 1));
+    ScianaRentgen2->GetComponent<ColliderComponent>()->isWalkable = false;
+    ScianaRentgen2->GetComponent<ColliderComponent>()->affectsNavMesh = true;
     GameObject* ScianaRentgen3 = CreateStaticObject(scena, wallRentgenModel.get(),  nullptr, "ScianaRentgen3",         glm::vec3(-56.970, 9.020, -152.920),  glm::vec3(1.470, 1.780, 1));
+    ScianaRentgen3->GetComponent<ColliderComponent>()->isWalkable = false;
+    ScianaRentgen3->GetComponent<ColliderComponent>()->affectsNavMesh = true;
     GameObject * LewaScianaRentgen = CreateStaticObject(scena, wallRentgenModel.get(),  nullptr, "LewaScianaRentgen",    glm::vec3(-95.340, 9.020, -178.790),  glm::vec3(2.630, 1.780, 3), glm::vec3(180, 90, 180));
+    LewaScianaRentgen->GetComponent<ColliderComponent>()->isWalkable = false;
+    LewaScianaRentgen->GetComponent<ColliderComponent>()->affectsNavMesh = true;
     GameObject * PrawaScianaRentgen = CreateStaticObject(scena, wallRentgenModel.get(),  nullptr, "PrawaScianaRentgen",    glm::vec3(-54.970+10, 9.020, -178.790),  glm::vec3(2.630, 1.780, 3.000), glm::vec3(180, 90, 180));
+    PrawaScianaRentgen->GetComponent<ColliderComponent>()->isWalkable = false;
+    PrawaScianaRentgen->GetComponent<ColliderComponent>()->affectsNavMesh = true;
     GameObject * ScianaRentgenGora = CreateStaticObject(scena, wallRentgenModel.get(),  nullptr, "GoraPrzejscieRentgen",    glm::vec3(-76.660, 16.580, -152.920),  glm::vec3(0.530, 0.060, 0.960));
+    ScianaRentgenGora->GetComponent<ColliderComponent>()->isWalkable = false;
+    ScianaRentgenGora->GetComponent<ColliderComponent>()->affectsNavMesh = true;
     GameObject * objPuzel1 = puzel1->Instantiate(*scena, nullptr, nullptr);
     objPuzel1->name = "puzel1";
     objPuzel1->GetComponent<TransformComponent>()->position = glm::vec3(-55.527, 3.340,-166.800);
@@ -1019,6 +1035,8 @@ void createRentgenRoom(Scene* scena) {
     lampaOperacyjna->GetComponent<TransformComponent>()->rotation = glm::vec3(0, 361.400, 0);
     lampaOperacyjna->GetComponent<TransformComponent>()->scale = glm::vec3(7);
     lampaOperacyjna->AddComponent<ColliderComponent>();
+    lampaOperacyjna->GetComponent<ColliderComponent>()->isWalkable = false;
+    lampaOperacyjna->GetComponent<ColliderComponent>()->affectsNavMesh = true;
     GameObject * stolOperacyjny = stolOperacyjnyModel->Instantiate(*scena, nullptr, nullptr);
     stolOperacyjny->name = "stolOperacyjny";
     stolOperacyjny->GetComponent<TransformComponent>()->position =glm::vec3(-55.527, 3.340, -166.800);
@@ -1027,61 +1045,56 @@ void createRentgenRoom(Scene* scena) {
     stolOperacyjny->AddComponent<ColliderComponent>();
     stolOperacyjny->GetComponent<ColliderComponent>()->halfSize = glm::vec3(4.234, 2.535, 5.295);
     stolOperacyjny->GetComponent<ColliderComponent>()->offset = glm::vec3(0.385, -0.212, 0.256);
+    stolOperacyjny->GetComponent<ColliderComponent>()->isWalkable = false;
+    stolOperacyjny->GetComponent<ColliderComponent>()->affectsNavMesh = true;
     GameObject * szafka1Rentgen = SzafkaRentgen1Model->Instantiate(*scena, nullptr, nullptr);
     szafka1Rentgen->name = "szafka1Rentgen";
     szafka1Rentgen->GetComponent<TransformComponent>()->position =glm::vec3(-49.367, 8.240, -210.290+10);
     szafka1Rentgen->GetComponent<TransformComponent>()->rotation = glm::vec3(0, -43.900, 0);
     szafka1Rentgen->GetComponent<TransformComponent>()->scale = glm::vec3(7);
     szafka1Rentgen->AddComponent<ColliderComponent>();
+    szafka1Rentgen->GetComponent<ColliderComponent>()->isWalkable = false;
+    szafka1Rentgen->GetComponent<ColliderComponent>()->affectsNavMesh = true;
     GameObject * szafka1Rentgenb = SzafkaRentgen1Model->Instantiate(*scena, nullptr, nullptr);
     szafka1Rentgenb->name = "szafka1Rentgenb";
     szafka1Rentgenb->GetComponent<TransformComponent>()->position =glm::vec3(-47.327, 8.040, -197.000+10);
     szafka1Rentgenb->GetComponent<TransformComponent>()->rotation = glm::vec3(0, -89.000, 0);
     szafka1Rentgenb->GetComponent<TransformComponent>()->scale = glm::vec3(7);
-    szafka1Rentgenb->AddComponent<ColliderComponent>();/*
-    GameObject * szafka1Rentgenc = SzafkaRentgen1Model->Instantiate(*scena, nullptr, nullptr);
-    szafka1Rentgenc->name = "szafka1Rentgenc";
-    szafka1Rentgenc->GetComponent<TransformComponent>()->position =glm::vec3(-89.427, 4.890, -155.840);
-    szafka1Rentgenc->GetComponent<TransformComponent>()->rotation = glm::vec3(0, 180.000, 0);
-    szafka1Rentgenc->GetComponent<TransformComponent>()->scale = glm::vec3(12.000, 4, 8.500);
-    szafka1Rentgenc->AddComponent<ColliderComponent>();*/
+    szafka1Rentgenb->AddComponent<ColliderComponent>();
+    szafka1Rentgenb->GetComponent<ColliderComponent>()->isWalkable = false;
+    szafka1Rentgenb->GetComponent<ColliderComponent>()->affectsNavMesh = true;
     GameObject * szafka2Rentgen = SzafkaRentgen2Model->Instantiate(*scena, nullptr, nullptr);
     szafka2Rentgen->name = "szafka2Rentgen";
     szafka2Rentgen->GetComponent<TransformComponent>()->position =glm::vec3(-53.037, 7.900, -202.100+10);
     szafka2Rentgen->GetComponent<TransformComponent>()->rotation = glm::vec3(0, -90.000, 0);
     szafka2Rentgen->GetComponent<TransformComponent>()->scale = glm::vec3(7);
     szafka2Rentgen->AddComponent<ColliderComponent>();
-    /*GameObject * szafka2Rentgenb = SzafkaRentgen2Model->Instantiate(*scena, nullptr, nullptr);
-    szafka2Rentgenb->name = "szafka2Rentgenb";
-    szafka2Rentgenb->GetComponent<TransformComponent>()->position =glm::vec3(-97.477, 8.860, -165.050);
-    szafka2Rentgenb->GetComponent<TransformComponent>()->rotation = glm::vec3(0, 95.400, 0);
-    szafka2Rentgenb->GetComponent<TransformComponent>()->scale = glm::vec3(8);
-    szafka2Rentgenb->AddComponent<ColliderComponent>();
-    GameObject * szafka2Rentgenc = SzafkaRentgen2Model->Instantiate(*scena, nullptr, nullptr);
-    szafka2Rentgenc->name = "szafka2Rentgenc";
-    szafka2Rentgenc->GetComponent<TransformComponent>()->position =glm::vec3(-94.577, 7.990, -205.990);
-    szafka2Rentgenc->GetComponent<TransformComponent>()->rotation = glm::vec3(0,0 , 0);
-    szafka2Rentgenc->GetComponent<TransformComponent>()->scale = glm::vec3(7);
-    szafka2Rentgenc->AddComponent<ColliderComponent>();
-    */
+    szafka2Rentgen->GetComponent<ColliderComponent>()->isWalkable = false;
+    szafka2Rentgen->GetComponent<ColliderComponent>()->affectsNavMesh = true;
     GameObject * zaslona = zaslonaModel->Instantiate(*scena, nullptr, nullptr);
     zaslona->name = "zaslona";
     zaslona->GetComponent<TransformComponent>()->position =glm::vec3(-62.397, 7.860, -172.550);
     zaslona->GetComponent<TransformComponent>()->rotation = glm::vec3(0, 236.500, 0);
     zaslona->GetComponent<TransformComponent>()->scale = glm::vec3(7);
     zaslona->AddComponent<ColliderComponent>();
+    zaslona->GetComponent<ColliderComponent>()->isWalkable = false;
+    zaslona->GetComponent<ColliderComponent>()->affectsNavMesh = true;
     GameObject * zaslonab = zaslonaModel->Instantiate(*scena, nullptr, nullptr);
     zaslonab->name = "zaslonab";
     zaslonab->GetComponent<TransformComponent>()->position =glm::vec3(-58.437, 7.860, -175.840);
     zaslonab->GetComponent<TransformComponent>()->rotation = glm::vec3(0, 207.700, 0);
     zaslonab->GetComponent<TransformComponent>()->scale = glm::vec3(7);
     zaslonab->AddComponent<ColliderComponent>();
+    zaslonab->GetComponent<ColliderComponent>()->isWalkable = false;
+    zaslonab->GetComponent<ColliderComponent>()->affectsNavMesh = true;
     GameObject * zaslonac = zaslonaModel->Instantiate(*scena, nullptr, nullptr);
     zaslonac->name = "zaslonac";
     zaslonac->GetComponent<TransformComponent>()->position =glm::vec3(-64.907, 7.860, -167.890);
     zaslonac->GetComponent<TransformComponent>()->rotation = glm::vec3(0, 255.500, 0);
     zaslonac->GetComponent<TransformComponent>()->scale = glm::vec3(7);
     zaslonac->AddComponent<ColliderComponent>();
+    zaslonac->GetComponent<ColliderComponent>()->isWalkable = false;
+    zaslonac->GetComponent<ColliderComponent>()->affectsNavMesh = true;
     //-73.385, 6.250 -175.377
     GameObject * wozek = wozekModel->Instantiate(*scena, nullptr, nullptr);
     wozek->name = "wozek";
@@ -1165,6 +1178,8 @@ void createRentgenRoom(Scene* scena) {
     kredens->GetComponent<TransformComponent>()->rotation = glm::vec3(0, 90, 0);
     kredens->GetComponent<TransformComponent>()->scale = glm::vec3(6);
     kredens->AddComponent<ColliderComponent>();
+    kredens->GetComponent<ColliderComponent>()->isWalkable = false;
+    kredens->GetComponent<ColliderComponent>()->affectsNavMesh = true;
 
     GameObject * eksp1a = eksp1Model->Instantiate(*scena, kredens, nullptr);
     eksp1a->name = "eksp1a";
@@ -1231,22 +1246,32 @@ void createRentgenRoom(Scene* scena) {
     //SpawnLoreNote(scena, ksiazkaModel.get(), basePos + glm::vec3(4.5f, 0.0f, 0.0f), "res/lore/Kalfu_ch7.txt", glm::vec3(1.0), glm::vec3(10.0));
 }
 void createRentgenCorridor(Scene * scena){
-    //CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaLewaKorytarzRentgen",         glm::vec3(-50.470, 0, -137.540),  glm::vec3(41.440, 50, 1));
-    CreateStaticObject(scena, wallMainRoomModel.get(),  nullptr, "ScianaLewaKorytarzRentgen",         glm::vec3(-52.900, 10.780, -139.190),  glm::vec3(4.230, 1.930, 3.000));
-    //CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaPrawaKorytarzRentgen1",         glm::vec3(-86.440, 0, -152.410),  glm::vec3(4.630, 50, 0.5));
-    CreateStaticObject(scena, wallMainRoomModel.get(),  nullptr, "ScianaPrawaKorytarzRentgen1",         glm::vec3(-86.550, 10.780, -152.410),  glm::vec3(0.480, 1.930, 2.000));
-    //CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaPrawaKorytarzRentgen2",         glm::vec3(-41.200, 0, -152.410),  glm::vec3(30.460, 50, 0.500));
-    CreateStaticObject(scena, wallMainRoomModel.get(),  nullptr, "ScianaPrawaKorytarzRentgen2",         glm::vec3(-41.200, 10.780, -152.410),  glm::vec3(3.040, 1.930, 2));
-    //CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaKoncowaKorytarzRentgen",         glm::vec3(-91.890, 0, -144.780),  glm::vec3(1, 90, 7.870));
-    CreateStaticObject(scena, wallMainRoomModel.get(),  nullptr, "ScianaKoncowaKorytarzRentgen",         glm::vec3(-91.890, 10.780, -144.840),  glm::vec3(0.820, 1.930, 3),glm::vec3(0,90,0));
-    CreateStaticObject(scena, wallMainRoomModel.get(),  nullptr, "ScianaKoncowaKorytarzRentgen1",         glm::vec3(-10.830, 10.780, -140.320),  glm::vec3(0.060, 1.930, 1),glm::vec3(0,90,0));
-    CreateStaticObject(scena, wallMainRoomModel.get(),  nullptr, "ScianaKoncowaKorytarzRentgen2",         glm::vec3(-10.830, 10.780, -151.470),  glm::vec3(0.080, 1.930, 1),glm::vec3(0,90,0));
-    CreateStaticObject(scena, wallMainRoomModel.get(),  nullptr, "ScianaKoncowaKorytarzRentgen3",         glm::vec3(-10.830, 18.030, -145.760),  glm::vec3(0.510, 0.410, 1),glm::vec3(0,90,0));
-    //CreateStaticObject(scena, floorModel.get(), nullptr, "PodlogaKorytarzRentgen",    glm::vec3(-52.440, 0, -145.900),  glm::vec3(43.520, 1, 8.070));
-    CreateStaticObject(scena, floorModelB.get(), nullptr, "PodlogaKorytarzRentgen",    glm::vec3(-52.750, 1.170, -145.280),  glm::vec3(4.210, 1, 0.820));
-    //CreateStaticObject(scena, floorModel.get(), nullptr, "SufitKorytarzRentgen",    glm::vec3(-52.440, 20, -145.900),  glm::vec3(43.520, 1, 8.070));
-    //CreateStaticObject(scena, wallModel.get(), nullptr, "GoraPrzejscieDoRentgenaZKorytarza",              glm::vec3(-76.660, 18.500, -152.220),   glm::vec3(8.000, 2, 0.50));
+    GameObject * ScianaLewaKorytarzRentgen = CreateStaticObject(scena, wallMainRoomModel.get(),  nullptr, "ScianaLewaKorytarzRentgen",         glm::vec3(-52.900, 10.780, -139.190),  glm::vec3(4.230, 1.930, 3.000));
+    ScianaLewaKorytarzRentgen->GetComponent<ColliderComponent>()->isWalkable = false;
+    ScianaLewaKorytarzRentgen->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+    GameObject * ScianaPrawaKorytarzRentgen1 = CreateStaticObject(scena, wallMainRoomModel.get(),  nullptr, "ScianaPrawaKorytarzRentgen1",         glm::vec3(-86.550, 10.780, -152.410),  glm::vec3(0.480, 1.930, 2.000));
+    ScianaPrawaKorytarzRentgen1->GetComponent<ColliderComponent>()->isWalkable = false;
+    ScianaPrawaKorytarzRentgen1->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+    GameObject * ScianaPrawaKorytarzRentgen2 = CreateStaticObject(scena, wallMainRoomModel.get(),  nullptr, "ScianaPrawaKorytarzRentgen2",         glm::vec3(-41.200, 10.780, -152.410),  glm::vec3(3.040, 1.930, 2));
+    ScianaPrawaKorytarzRentgen2->GetComponent<ColliderComponent>()->isWalkable = false;
+    ScianaPrawaKorytarzRentgen2->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+    GameObject * ScianaKoncowaKorytarzRentgen = CreateStaticObject(scena, wallMainRoomModel.get(),  nullptr, "ScianaKoncowaKorytarzRentgen",         glm::vec3(-91.890, 10.780, -144.840),  glm::vec3(0.820, 1.930, 3),glm::vec3(0,90,0));
+    ScianaKoncowaKorytarzRentgen->GetComponent<ColliderComponent>()->isWalkable = false;
+    ScianaKoncowaKorytarzRentgen->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+    GameObject * ScianaKoncowaKorytarzRentgen1 = CreateStaticObject(scena, wallMainRoomModel.get(),  nullptr, "ScianaKoncowaKorytarzRentgen1",         glm::vec3(-10.830, 10.780, -140.320),  glm::vec3(0.060, 1.930, 1),glm::vec3(0,90,0));
+    ScianaKoncowaKorytarzRentgen1->GetComponent<ColliderComponent>()->isWalkable = false;
+    ScianaKoncowaKorytarzRentgen1->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+    GameObject * ScianaKoncowaKorytarzRentgen2 = CreateStaticObject(scena, wallMainRoomModel.get(),  nullptr, "ScianaKoncowaKorytarzRentgen2",         glm::vec3(-10.830, 10.780, -151.470),  glm::vec3(0.080, 1.930, 1),glm::vec3(0,90,0));
+    ScianaKoncowaKorytarzRentgen2->GetComponent<ColliderComponent>()->isWalkable = false;
+    ScianaKoncowaKorytarzRentgen2->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+    GameObject * ScianaKoncowaKorytarzRentgen3 = CreateStaticObject(scena, wallMainRoomModel.get(),  nullptr, "ScianaKoncowaKorytarzRentgen3",         glm::vec3(-10.830, 18.030, -145.760),  glm::vec3(0.510, 0.410, 1),glm::vec3(0,90,0));
+    ScianaKoncowaKorytarzRentgen3->GetComponent<ColliderComponent>()->isWalkable = false;
+    ScianaKoncowaKorytarzRentgen3->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+
     CreateStaticObject(scena, wallMainRoomModel.get(), nullptr, "GoraPrzejscieDoRentgenaZKorytarza",              glm::vec3(-76.660, 18.040, -152.220),   glm::vec3(1, 0.360, 1));
+
+    GameObject * PodlogaKorytarzRentgen = CreateStaticObject(scena, floorModelB.get(), nullptr, "PodlogaKorytarzRentgen",    glm::vec3(-52.750, 1.170, -145.280),  glm::vec3(4.210, 1, 0.820));
+    PodlogaKorytarzRentgen->GetComponent<ColliderComponent>()->isWalkable = true;
 
     CreateStaticObject(scena, ceilingModelB.get(), nullptr, "SufitKorytarzRentgen",    glm::vec3(-52.750, 20, -145.150),  glm::vec3(4.210, 1, 0.790));
     GameObject* hingeDrzwiDoRentgen = CreateInteractableDoor(
@@ -1259,20 +1284,24 @@ void createRentgenCorridor(Scene * scena){
 }
 
 void createCrematoriumCorridor(Scene * scena){
-    //CreateStaticObject(scena, wallModel.get(), nullptr, "GoraPrzejscieDoKrematoriumZKorytarza",              glm::vec3(132.090-5, 66, -121.670),   glm::vec3(10.000, 50, 0.580));
-    CreateStaticObject(scena, wallMainRoomModel.get(), nullptr, "GoraPrzejscieDoKrematoriumZKorytarza",              glm::vec3(127.090, 18.060, -121.260),   glm::vec3(1.000, 0.480, 1));
-    //CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaLewaKorytarzKrematorium",         glm::vec3(102.160, 0, -107.230),  glm::vec3(41.440, 50, 1));
-    CreateStaticObject(scena, wallMainRoomModel.get(),  nullptr, "ScianaLewaKorytarzKrematorium",         glm::vec3(100.920, 10.780, -107.230),  glm::vec3(4.080, 1.930, 3.000));
-    //CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaPrawaKorytarzKrematorium1",         glm::vec3(135.720, 0, -121.660),  glm::vec3(4.630, 50, 1));
-    CreateStaticObject(scena, wallMainRoomModel.get(),  nullptr, "ScianaPrawaKorytarzKrematorium1",         glm::vec3(137.490, 10.780, -121.430),  glm::vec3(0.520, 1.930, 2.000));
-    //CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaPrawaKorytarzKrematorium2",         glm::vec3(90.570, 0, -121.660),  glm::vec3(30.460, 50, 1));
-    CreateStaticObject(scena, wallMainRoomModel.get(),  nullptr, "ScianaPrawaKorytarzKrematorium2",         glm::vec3(90.490, 10.780, -121.660),  glm::vec3(3.050, 1.930, 3));
-    //CreateStaticObject(scena, wallModel.get(),  nullptr, "ScianaKoncowaKorytarzKrematorium",         glm::vec3(141.810, 0, -113.790),  glm::vec3(1, 90, 7.870));
-    CreateStaticObject(scena, wallMainRoomModel.get(),  nullptr, "ScianaKoncowaKorytarzKrematorium",         glm::vec3(141.810, 10.780, -113.790),  glm::vec3(0.760, 1.930, 3), glm::vec3(0,90,0));
-    //CreateStaticObject(scena, floorModel.get(), nullptr, "PodlogaKorytarzKrematorium",    glm::vec3(102.610, 0, -115.010),  glm::vec3(43.520, 1, 8.070));
-    CreateStaticObject(scena, floorModelB.get(), nullptr, "PodlogaKorytarzKrematorium",    glm::vec3(101.060, 1.170, -113.820),  glm::vec3(4.060, 1, 0.750));
-    //CreateStaticObject(scena, floorModel.get(), nullptr, "SufitKorytarzKrematorium",    glm::vec3(102.610, 20, -115.010),  glm::vec3(43.520, 1, 8.070));
+    GameObject * PodlogaKorytarzKrematorium = CreateStaticObject(scena, floorModelB.get(), nullptr, "PodlogaKorytarzKrematorium",    glm::vec3(101.060, 1.170, -113.820),  glm::vec3(4.060, 1, 0.750));
+    PodlogaKorytarzKrematorium->GetComponent<ColliderComponent>()->isWalkable = true;
     CreateStaticObject(scena, ceilingModelB.get(), nullptr, "SufitKorytarzKrematorium",    glm::vec3(101.180, 20, -114.550),  glm::vec3(4.060, 1, 0.750));
+
+    GameObject * ScianaLewaKorytarzKrematorium = CreateStaticObject(scena, wallMainRoomModel.get(),  nullptr, "ScianaLewaKorytarzKrematorium",         glm::vec3(100.920, 10.780, -107.230),  glm::vec3(4.080, 1.930, 3.000));
+    ScianaLewaKorytarzKrematorium->GetComponent<ColliderComponent>()->isWalkable = false;
+    ScianaLewaKorytarzKrematorium->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+    GameObject * ScianaPrawaKorytarzKrematorium1 = CreateStaticObject(scena, wallMainRoomModel.get(),  nullptr, "ScianaPrawaKorytarzKrematorium1",         glm::vec3(137.490, 10.780, -121.430),  glm::vec3(0.520, 1.930, 2.000));
+    ScianaPrawaKorytarzKrematorium1->GetComponent<ColliderComponent>()->isWalkable = false;
+    ScianaPrawaKorytarzKrematorium1->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+    GameObject * ScianaPrawaKorytarzKrematorium2 = CreateStaticObject(scena, wallMainRoomModel.get(),  nullptr, "ScianaPrawaKorytarzKrematorium2",         glm::vec3(90.490, 10.780, -121.660),  glm::vec3(3.050, 1.930, 3));
+    ScianaPrawaKorytarzKrematorium2->GetComponent<ColliderComponent>()->isWalkable = false;
+    ScianaPrawaKorytarzKrematorium2->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+    GameObject * ScianaKoncowaKorytarzKrematorium = CreateStaticObject(scena, wallMainRoomModel.get(),  nullptr, "ScianaKoncowaKorytarzKrematorium",         glm::vec3(141.810, 10.780, -113.790),  glm::vec3(0.760, 1.930, 3), glm::vec3(0,90,0));
+    ScianaKoncowaKorytarzKrematorium->GetComponent<ColliderComponent>()->isWalkable = false;
+    ScianaKoncowaKorytarzKrematorium->GetComponent<ColliderComponent>()->affectsNavMesh = true;
+
+    CreateStaticObject(scena, wallMainRoomModel.get(), nullptr, "GoraPrzejscieDoKrematoriumZKorytarza",              glm::vec3(127.090, 18.060, -121.260),   glm::vec3(1.000, 0.480, 1));
     GameObject* hingeDrzwiDoRentgen = CreateInteractableDoor(
         scena, NormalDoor.get(), nullptr, "DrzwiDoKrematorium",
         glm::vec3(131.390-5-2-0.3, 7.300f, -121.670), glm::vec3(3.600, 3.400, 1),

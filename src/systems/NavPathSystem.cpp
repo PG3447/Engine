@@ -221,10 +221,9 @@ std::vector<int> NavPathSystem::AStar(int startTri, int goalTri,
         }
     }
 
-    // Odtworz sciezke
     std::vector<int> path;
     if (g[goalTri] == std::numeric_limits<float>::max()) {
-        return path; // Nie znaleziono
+        return path;
     }
 
     for (int cur = goalTri; cur != -1; cur = parent[cur]) {
@@ -235,13 +234,10 @@ std::vector<int> NavPathSystem::AStar(int startTri, int goalTri,
     return path;
 }
 
-//  Funnel Algorithm
-
 float NavPathSystem::Cross2D(const glm::vec3& o,
                               const glm::vec3& a,
                               const glm::vec3& b) const
 {
-    // Cross product w plasczyznie XZ
     return (a.x - o.x) * (b.z - o.z) - (a.z - o.z) * (b.x - o.x);
 }
 
@@ -297,7 +293,7 @@ std::vector<glm::vec3> NavPathSystem::FunnelPath(
     }
 
     std::vector<Portal> portals;
-    portals.push_back({ startPos, startPos }); // Portal startowy (punkt)
+    portals.push_back({ startPos, startPos });
 
     for (int i = 0; i + 1 < (int)triPath.size(); i++) {
         Portal p;
@@ -305,9 +301,7 @@ std::vector<glm::vec3> NavPathSystem::FunnelPath(
             portals.push_back(p);
         }
     }
-    portals.push_back({ goalPos, goalPos }); // Portal koncowy (punkt)
-
-    // Simple Stupid Funnel Algorithm
+    portals.push_back({ goalPos, goalPos });
     result.push_back(startPos);
 
     glm::vec3 apex   = startPos;

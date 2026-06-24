@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <queue>
 #include <unordered_set>
 #include <random>
 
@@ -19,7 +20,6 @@ int NavMeshComponent::FindTriangle(const glm::vec3& worldPos) const {
         const glm::vec3& vB = data.vertices[tri.v[1]].position;
         const glm::vec3& vC = data.vertices[tri.v[2]].position;
 
-        // Test w plasczyznie XZ
         float d1 = (worldPos.x - vB.x) * (vA.z - vB.z) - (vA.x - vB.x) * (worldPos.z - vB.z);
         float d2 = (worldPos.x - vC.x) * (vB.z - vC.z) - (vB.x - vC.x) * (worldPos.z - vC.z);
         float d3 = (worldPos.x - vA.x) * (vC.z - vA.z) - (vC.x - vA.x) * (worldPos.z - vA.z);
@@ -36,7 +36,6 @@ bool NavMeshComponent::IsPointWalkable(const glm::vec3& worldPos) const {
     return FindTriangle(worldPos) >= 0;
 }
 
-//  NavMeshSystem
 
 NavMeshSystem::NavMeshSystem(ECS& ecs) {
     colliderQuery_ = ecs.CreateQuery<TransformComponent, ColliderComponent>();
@@ -77,8 +76,6 @@ NavMeshComponent* NavMeshSystem::GetNavMesh() const {
     if (!navMeshGO_) return nullptr;
     return navMeshGO_->GetComponent<NavMeshComponent>();
 }
-
-//  Bake - glowna sciezka
 
 void NavMeshSystem::Bake(Scene& scene) {
     spdlog::info("[NavMesh] Bake start...");
@@ -150,7 +147,7 @@ NavMeshSystem::CollectWalkableSurfaces(Scene& scene) {
         WalkableSurface surf;
         surf.min  = center - half;
         surf.max  = center + half;
-        surf.yTop = center.y + half.y; // Gorna powierzchnia
+        surf.yTop = center.y + half.y;
 
         surf.slopeY = 1.0f;
 
@@ -310,8 +307,6 @@ void NavMeshSystem::MarkBlockedTriangles(
     spdlog::info("[NavMesh] Oznaczono {} trojkatow jako niechodzalne", blockedCount);
 }
 
-//  Krok 4: Triangulacja Bowyer-Watson
-
 NavMeshSystem::Circumcircle
 NavMeshSystem::ComputeCircumcircle(
     const Point2D& p0,
@@ -365,7 +360,7 @@ void NavMeshSystem::CreateSuperTriangle(
 
     float dx = maxX - minX;
     float dz = maxZ - minZ;
-    float delta = std::max(dx, dz) * 10.0f; // 10x zapas
+    float delta = std::max(dx, dz) * 10.0f;
 
     float midX = (minX + maxX) * 0.5f;
     float midZ = (minZ + maxZ) * 0.5f;
@@ -467,7 +462,6 @@ NavMeshData NavMeshSystem::BowyerWatson(const std::vector<glm::vec3>& points3D) 
             pts[tri.c].idx3D
         );
 
-        // Centroid
         const glm::vec3& va = result.vertices[navTri.v[0]].position;
         const glm::vec3& vb = result.vertices[navTri.v[1]].position;
         const glm::vec3& vc = result.vertices[navTri.v[2]].position;
@@ -531,3 +525,208 @@ bool NavMeshSystem::PointInTriangle2D(
 
     return !(hasNeg && hasPos);
 }
+void NavMeshSystem::BakeRecast(Scene& scene) {
+    navMeshGO_ = scene.CreateGameObject(nullptr);
+    navMeshGO_->name = "__NavMesh_Recast__";
+    NavMeshComponent* nm = navMeshGO_->AddComponent<NavMeshComponent>();
+    nm->data.Clear();
+
+    auto surfaces  = CollectWalkableSurfaces(scene);
+    auto obstacles = CollectObstacles(scene);
+
+    if (surfaces.empty()) {
+        spdlog::warn("[Recast] Brak walkable surfaces.");
+        return;
+    }
+
+    RecastGrid grid = BuildVoxelGrid(surfaces, obstacles,
+        nm->voxelSize, nm->agentRadius, nm->agentHeight);
+
+    FloodFillRegions(grid);
+
+    nm->data = TriangulateRecastGrid(grid);
+    ComputeNeighbors(nm->data);
+    MarkBlockedTriangles(nm->data, obstacles, nm->agentRadius, nm->agentHeight);
+
+    for (auto& tri : nm->data.triangles) {
+        int c = (int)((tri.centroid.x - grid.originX) / grid.voxelSize);
+        int r = (int)((tri.centroid.z - grid.originZ) / grid.voxelSize);
+        if (grid.Valid(c, r))
+            tri.regionId = grid.At(c, r).regionId;
+    }
+
+    nm->data.isBaked = true;
+    spdlog::info("[Recast] Bake zakończony: {} wierzchołków, {} trójkątów",
+        nm->data.vertices.size(), nm->data.triangles.size());
+}
+NavMeshSystem::RecastGrid NavMeshSystem::BuildVoxelGrid(
+    const std::vector<NavMeshSystem::WalkableSurface>& surfaces,
+    const std::vector<NavMeshSystem::Obstacle>& obstacles,
+    float voxelSize, float agentRadius, float agentHeight)
+{
+    float minX =  FLT_MAX, minZ =  FLT_MAX;
+    float maxX = -FLT_MAX, maxZ = -FLT_MAX;
+
+    for (const auto& s : surfaces) {
+        minX = std::min(minX, s.min.x);
+        minZ = std::min(minZ, s.min.z);
+        maxX = std::max(maxX, s.max.x);
+        maxZ = std::max(maxZ, s.max.z);
+    }
+
+    RecastGrid grid;
+    grid.voxelSize = voxelSize;
+    grid.originX   = minX;
+    grid.originZ   = minZ;
+    grid.cols = (int)std::ceil((maxX - minX) / voxelSize) + 1;
+    grid.rows = (int)std::ceil((maxZ - minZ) / voxelSize) + 1;
+    grid.cells.resize(grid.cols * grid.rows);
+
+    for (const auto& surf : surfaces) {
+        int cMin = (int)((surf.min.x - minX) / voxelSize);
+        int cMax = (int)((surf.max.x - minX) / voxelSize);
+        int rMin = (int)((surf.min.z - minZ) / voxelSize);
+        int rMax = (int)((surf.max.z - minZ) / voxelSize);
+
+        for (int r = rMin; r <= rMax && r < grid.rows; r++) {
+            for (int c = cMin; c <= cMax && c < grid.cols; c++) {
+                if (c < 0 || r < 0) continue;
+                auto& cell = grid.At(c, r);
+                cell.walkable = true;
+                cell.y = surf.yTop;
+            }
+        }
+    }
+
+    for (const auto& obs : obstacles) {
+        glm::vec3 expMin = obs.min - glm::vec3(agentRadius, 0.0f, agentRadius);
+        glm::vec3 expMax = obs.max + glm::vec3(agentRadius, 0.0f, agentRadius);
+
+        int cMin = std::max(0, (int)((expMin.x - minX) / voxelSize));
+        int cMax = std::min(grid.cols - 1, (int)((expMax.x - minX) / voxelSize) + 1);
+        int rMin = std::max(0, (int)((expMin.z - minZ) / voxelSize));
+        int rMax = std::min(grid.rows - 1, (int)((expMax.z - minZ) / voxelSize) + 1);
+
+        for (int r = rMin; r <= rMax; r++) {
+            for (int c = cMin; c <= cMax; c++) {
+                auto& cell = grid.At(c, r);
+                float cellY = cell.y;
+                if (obs.max.y > cellY && obs.min.y < (cellY + agentHeight)) {
+                    cell.hasObstacle = true;
+                    cell.walkable = false;
+                }
+            }
+        }
+    }
+
+    return grid;
+}
+
+void NavMeshSystem::FloodFillRegions(RecastGrid& grid) {
+    int regionId = 0;
+
+    const int dx[4] = { 1, -1, 0, 0 };
+    const int dz[4] = { 0, 0, 1, -1 };
+
+    for (int r = 0; r < grid.rows; r++) {
+        for (int c = 0; c < grid.cols; c++) {
+            auto& cell = grid.At(c, r);
+            if (!cell.walkable || cell.regionId != -1) continue;
+
+            std::queue<std::pair<int,int>> q;
+            q.push({c, r});
+            cell.regionId = regionId;
+
+            while (!q.empty()) {
+                auto [cc, rc] = q.front();
+                q.pop();
+
+                for (int d = 0; d < 4; d++) {
+                    int nc = cc + dx[d];
+                    int nr = rc + dz[d];
+                    if (!grid.Valid(nc, nr)) continue;
+                    auto& neighbor = grid.At(nc, nr);
+                    if (!neighbor.walkable || neighbor.regionId != -1) continue;
+                    if (std::abs(neighbor.y - cell.y) > 0.5f) continue;
+                    neighbor.regionId = regionId;
+                    q.push({nc, nr});
+                }
+            }
+            regionId++;
+        }
+    }
+
+    spdlog::info("[Recast] FloodFill: {} regionów", regionId);
+}
+
+NavMeshData NavMeshSystem::TriangulateRecastGrid(const RecastGrid& grid) {
+    NavMeshData result;
+    std::map<std::pair<int,int>, int> vertexMap;
+
+    auto getVertex = [&](int c, int r) -> int {
+        auto key = std::make_pair(c, r);
+        auto it = vertexMap.find(key);
+        if (it != vertexMap.end()) return it->second;
+
+        float x = grid.originX + c * grid.voxelSize;
+        float z = grid.originZ + r * grid.voxelSize;
+
+        float y = 0.0f;
+        int count = 0;
+        for (int dc = -1; dc <= 0; dc++) {
+            for (int dr = -1; dr <= 0; dr++) {
+                int nc = c + dc, nr = r + dr;
+                if (grid.Valid(nc, nr) && grid.At(nc, nr).walkable) {
+                    y += grid.At(nc, nr).y;
+                    count++;
+                }
+            }
+        }
+        if (count > 0) y /= count;
+
+        NavVertex v;
+        v.position = glm::vec3(x, y, z);
+        int idx = (int)result.vertices.size();
+        result.vertices.push_back(v);
+        vertexMap[key] = idx;
+        return idx;
+    };
+
+    for (int r = 0; r < grid.rows; r++) {
+        for (int c = 0; c < grid.cols; c++) {
+            const auto& cell = grid.At(c, r);
+            if (!cell.walkable) continue;
+
+            int v00 = getVertex(c,   r);
+            int v10 = getVertex(c+1, r);
+            int v01 = getVertex(c,   r+1);
+            int v11 = getVertex(c+1, r+1);
+
+            {
+                NavTriangle tri(v00, v10, v11);
+                const glm::vec3& va = result.vertices[v00].position;
+                const glm::vec3& vb = result.vertices[v10].position;
+                const glm::vec3& vc = result.vertices[v11].position;
+                tri.centroid = (va + vb + vc) / 3.0f;
+                tri.walkable = true;
+                result.triangles.push_back(tri);
+            }
+
+            {
+                NavTriangle tri(v00, v11, v01);
+                const glm::vec3& va = result.vertices[v00].position;
+                const glm::vec3& vb = result.vertices[v11].position;
+                const glm::vec3& vc = result.vertices[v01].position;
+                tri.centroid = (va + vb + vc) / 3.0f;
+                tri.walkable = true;
+                result.triangles.push_back(tri);
+            }
+        }
+    }
+
+    spdlog::info("[Recast] Triangulacja siatki vokseli: {} wierzchołków, {} trójkątów",
+        result.vertices.size(), result.triangles.size());
+
+    return result;
+}
+

@@ -58,6 +58,7 @@
 #include "utils/render_helper.h"
 #include "utils/animation_helper.h"
 #include "utils/player_animation_helper.h"
+#include "systems/NavMeshBenchmark.h"
 
 #include "gameplay/crematorium_puzzle.h"
 #include "gameplay/menu.h"
@@ -379,6 +380,19 @@ int main(int, char**)
 
     //RenderHelper::SetMaterial(obb3, brickMat);
 
+    GameObject * lightComponent = scena1->CreateGameObject(nullptr);
+    lightComponent->name = "light";
+    lightComponent->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 20.0f, 0.0f);
+    lightComponent->GetComponent<TransformComponent>()->rotation = glm::vec3(-19.800, -7.300, 0.0f);
+    lightComponent->AddComponent<LightComponent>();
+    LightComponent * lc = lightComponent->GetComponent<LightComponent>();
+    lc->type = LightType::Directional;
+    lc->index     = 20;
+    lc->constant  = 1.0f;
+    lc->linear    = 0.10f;
+    lc->quadratic = 0.00001f;
+    lc->intensity = 2.000;
+
     //Tworzenie gracza nr.1
     GameObject* gracz1 = scena1->CreateGameObject(nullptr);
     gracz1->name = "Gracz1";
@@ -392,7 +406,7 @@ int main(int, char**)
     gracz1->GetComponent<RigidbodyComponent>()->useGravity = true;
     gracz1->GetComponent<ColliderComponent>()->halfSize = glm::vec3{ 1.2f, 5.25f, 1.2f };
 
-    
+
     GameObject* camera1 = scena1->CreateGameObject(nullptr);//groundModel->Instantiate(*scena1, nullptr, ourShader.get());
     camera1->name = "Kamera";
     gracz1->AddChild(camera1);
@@ -599,8 +613,7 @@ int main(int, char**)
     createCrematoriumCorridor(scena1);
     createTrigger(scena1);
 
-    ecs->GetSystem<NavMeshSystem>()->Bake(*scena1);
-
+    scena1->GetECS().GetSystem<NavMeshSystem>()->BakeRecast(*scena1);
     //dyingModelPrefab   = std::make_unique<Prefab>("res/models/Dying.fbx");
     //jumpSkeletonPrefab = std::make_unique<Prefab>("res/models/Jump.fbx");
 
@@ -713,31 +726,55 @@ int main(int, char**)
     };
 
     // Karaluch center
-    glm::vec3 nestPos = glm::vec3(0.0f, 0.5f, -80.0f);
+    glm::vec3 nestPos = glm::vec3(0.0f, 1.5f, -80.0f);
 
     //I LOVE THE TASTE OF IRON
     GameObject* Kurorushi = CreateCockroachLeader(*scena1, *cockroachModel, nullptr, nestPos, 4.0f);
+    GameObject* KurorushiM = CreateCockroachLeader(*scena1, *cockroachModel, nullptr, glm::vec3(5.607, 1.5f, -30.864), 4.0f);
+    GameObject* KurorushiM2 = CreateCockroachLeader(*scena1, *cockroachModel, nullptr, glm::vec3(20.499, 1.5, -50.071), 4.0f);
+
+    GameObject* KurorushiMR1 = CreateCockroachLeader(*scena1, *cockroachModel, nullptr, glm::vec3(7.070, 1.5f, -125.580), 4.0f);
+    GameObject* KurorushiMR2 = CreateCockroachLeader(*scena1, *cockroachModel, nullptr, glm::vec3(8.502, 1.5f, -168.933), 4.0f);
+    GameObject* KurorushiMR3 = CreateCockroachLeader(*scena1, *cockroachModel, nullptr, glm::vec3(38.413, 1.5f, -115.418), 4.0f);
+
+    GameObject* KurorushiR1 = CreateCockroachLeader(*scena1, *cockroachModel, nullptr, glm::vec3(-82.576, 1.5f, -185.547), 4.0f);
+    GameObject* KurorushiR2 = CreateCockroachLeader(*scena1, *cockroachModel, nullptr, glm::vec3(-52.370, 1.5f, -157.365), 4.0f);
+
+    GameObject* KurorushiC1 = CreateCockroachLeader(*scena1, *cockroachModel, nullptr, glm::vec3(150.490, 1.5f, -169.563), 4.0f);
+    GameObject* KurorushiC2 = CreateCockroachLeader(*scena1, *cockroachModel, nullptr, glm::vec3(135.006, 1.5f, -140.760), 4.0f);
     //I LOVE THE TASTE OF IRON
 
-    for (int i = 0; i < 3; i++) {
-        glm::vec3 offset = glm::vec3(
-            (float)(rand() % 6) - 3.0f, 0,
-            (float)(rand() % 6) - 3.0f
-        );
-        CreateCockroachFollower(
-            *scena1, *cockroachModel, nullptr,
-            Kurorushi, nestPos + offset, 4.5f); // I LOVE THE TASE OF IRON
-    }
+    auto spawnFollowers = [&](GameObject* leader, const glm::vec3& pos, int count = 20) {
+        for (int i = 0; i < count; i++) {
+            glm::vec3 offset = glm::vec3(
+                (float)(rand() % 6) - 3.0f, 0,
+                (float)(rand() % 6) - 3.0f
+            );
+            CreateCockroachFollower(
+                *scena1, *cockroachModel, nullptr,
+                leader, pos + offset, 4.5f);
+        }
+    };
+    spawnFollowers(Kurorushi,   nestPos);
+    spawnFollowers(KurorushiM,  glm::vec3(5.607f,  1.5f, -30.864f));
+    spawnFollowers(KurorushiM2, glm::vec3(20.499f, 1.5f, -50.071f));
+    spawnFollowers(KurorushiMR1, glm::vec3(7.070f,  1.5f, -125.580f));
+    spawnFollowers(KurorushiMR2, glm::vec3(8.502f,  1.5f, -168.933f));
+    spawnFollowers(KurorushiMR3, glm::vec3(38.413f, 1.5f, -115.418f));
+    spawnFollowers(KurorushiR1,  glm::vec3(-82.576f, 1.5f, -185.547f));
+    spawnFollowers(KurorushiR2,  glm::vec3(-52.370f, 1.5f, -157.365f));
+    spawnFollowers(KurorushiC1,  glm::vec3(150.490f, 1.5f, -169.563f));
+    spawnFollowers(KurorushiC2,  glm::vec3(135.006f, 1.5f, -140.760f));
 
     //interfejs sprite'y
     // Crosshair P1
-    GameObject* crosshair1_obj = scena1->CreateGameObject(nullptr);
+    /*GameObject* crosshair1_obj = scena1->CreateGameObject(nullptr);
     SpriteComponent* crosshair1 = crosshair1_obj->AddComponent<SpriteComponent>();
     crosshair1->sprites         = { ResourceManager::LoadTexture("crosshair.png", "res/sprites/").id };
     crosshair1->screenPosition  = glm::vec2(480.0f - 16.0f, 540.0f - 16.0f); // centrum - half size
     crosshair1->size            = glm::vec2(16.0f, 16.0f);
     crosshair1->layer           = 2; // nad napisami
-    crosshair1->isVisible       = true;
+    crosshair1->isVisible       = true;*/
 
     // Crosshair P2
     GameObject* crosshair2_obj = scena1->CreateGameObject(nullptr);
@@ -1210,10 +1247,10 @@ int main(int, char**)
         }
 
         float chLerpSpeed = 10.0f;
-        crosshair1->size = glm::mix(crosshair1->size, p1Int > 0.5f ? CH_SIZE_BIG : CH_SIZE_NORMAL, deltaTime * chLerpSpeed);
+        /*crosshair1->size = glm::mix(crosshair1->size, p1Int > 0.5f ? CH_SIZE_BIG : CH_SIZE_NORMAL, deltaTime * chLerpSpeed);
         crosshair2->size = glm::mix(crosshair2->size, p2Int > 0.5f ? CH_SIZE_BIG : CH_SIZE_NORMAL, deltaTime * chLerpSpeed);
 
-        crosshair1->screenPosition = CH1_CENTER - crosshair1->size * 0.5f;
+        crosshair1->screenPosition = CH1_CENTER - crosshair1->size * 0.5f;*/
         crosshair2->screenPosition = CH2_CENTER - crosshair2->size * 0.5f;
 
         auto inputEnd = std::chrono::high_resolution_clock::now();

@@ -745,11 +745,13 @@ GameObject* CreateCockroachLeader(
 
     auto* tr = go->GetComponent<TransformComponent>();
     tr->position = homePos;
-    tr->scale = glm::vec3(0.3f);
+    tr->scale = glm::vec3(0.5f);
     tr->isDirty = true;
 
+    /*
     auto* col = go->AddComponent<ColliderComponent>();
     col->halfSize = glm::vec3(0.3f, 0.2f, 0.3f);
+    */
 
     auto* nav = go->AddComponent<NavPathComponent>();
     nav->state = NavAgentState::ExternalControl;
@@ -783,12 +785,14 @@ GameObject* CreateCockroachFollower(
 
     auto* tr = go->GetComponent<TransformComponent>();
     tr->position = spawnPos;
-    tr->scale = glm::vec3(0.25f);
+    tr->scale = glm::vec3(0.5f);
     tr->isDirty = true;
 
 
+    /*
     auto* col = go->AddComponent<ColliderComponent>();
     col->halfSize = glm::vec3(0.25f, 0.15f, 0.25f);
+    */
 
     auto* nav = go->AddComponent<NavPathComponent>();
     nav->state = NavAgentState::ExternalControl;

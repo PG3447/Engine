@@ -37,6 +37,9 @@ add_executable(${PROJECT_NAME} ${HEADER_FILES} ${SOURCE_FILES} ${ASSETS_FILES} "
     "gameplay/crematorium_puzzle.cpp"
 		systems/NpcSystem.cpp
 		systems/NpcSystem.h
+		systems/NavMeshBenchmark.cpp
+		systems/NavMeshBenchmark.h
+		systems/NavPathSystembenchmark.cpp
 		systems/SurfaceDecorationSystem.cpp
 		systems/SurfaceDecorationSystem.h
 		utils/placement_editor.h
