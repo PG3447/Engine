@@ -43,6 +43,7 @@ std::unique_ptr<Prefab> mirrorModel3;
 std::unique_ptr<Prefab> mirrorModel4;
 std::unique_ptr<Prefab> mirrorModel5;
 std::unique_ptr<Prefab> mirrorModel6;
+std::unique_ptr<Prefab> mirrorBroken;
 std::unique_ptr<Prefab> washroomExit;
 std::unique_ptr<Prefab> urinModel;
 std::unique_ptr<Prefab> szafkaModel;
@@ -148,6 +149,7 @@ void connectAllModels() {
     mirrorModel4     = std::make_unique<Prefab>("res/models/lazienka/lustro4.glb");
     mirrorModel5     = std::make_unique<Prefab>("res/models/lazienka/lustro5.glb");
     mirrorModel6     = std::make_unique<Prefab>("res/models/lazienka/lustro6.glb");
+    mirrorBroken     = std::make_unique<Prefab>("res/models/lazienka/lustro_broken_final.glb");
     washroomExit     = std::make_unique<Prefab>("res/models/door_2.glb");
     urinModel        = std::make_unique<Prefab>("res/models/uniral_v2.glb");
     NormalDoor       = std::make_unique<Prefab>("res/models/doors_smaller.glb");

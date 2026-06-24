@@ -178,13 +178,13 @@ void createFirstRoom(Scene* scena1) {
     lustro2->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, -180, 0 };
     lustro2->GetComponent<TransformComponent>()->position   = glm::vec3{ -9.25, 12.6, -29.7 };
 
-    GameObject* lustro3 = mirrorModel3->Instantiate(*scena1, lustra, nullptr);
+    GameObject* lustro3 = mirrorBroken->Instantiate(*scena1, lustra, nullptr);
     lustro3->GetComponent<TransformComponent>()->scale    = glm::vec3{ 2.5, 2.5, 2.5 };
     lustro3->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, -180, 0 };
     lustro3->GetComponent<TransformComponent>()->position   = glm::vec3{ -9.25, 12.6, -40.7 };
 
     // Lustro 4 - dodane z mirrorModel4 (lustro_puste.glb)
-    GameObject* lustro4 = mirrorModel3->Instantiate(*scena1, lustra, nullptr);
+    GameObject* lustro4 = mirrorBroken->Instantiate(*scena1, lustra, nullptr);
     lustro4->GetComponent<TransformComponent>()->scale    = glm::vec3{ 2.5, 2.5, 2.5 };
     lustro4->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0, -180, 0 };
     lustro4->GetComponent<TransformComponent>()->position   = glm::vec3{ -9.25, 12.6, -49.7f };
