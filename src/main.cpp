@@ -744,7 +744,7 @@ int main(int, char**)
     GameObject* KurorushiC2 = CreateCockroachLeader(*scena1, *cockroachModel, nullptr, glm::vec3(135.006, 1.5f, -140.760), 4.0f);
     //I LOVE THE TASTE OF IRON
 
-    auto spawnFollowers = [&](GameObject* leader, const glm::vec3& pos, int count = 20) {
+    auto spawnFollowers = [&](GameObject* leader, const glm::vec3& pos, int count = 5git ) {
         for (int i = 0; i < count; i++) {
             glm::vec3 offset = glm::vec3(
                 (float)(rand() % 6) - 3.0f, 0,
