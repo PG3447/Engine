@@ -816,6 +816,9 @@ int main(int, char**)
         lastFrame = currentFrame;
         updateFPS(deltaTime);
 
+        CpuTimer cpuTimer;
+        cpuTimer.start();
+
         sceneManager.UpdateChangeScene();
 
         int display_w, display_h;
@@ -855,9 +858,15 @@ int main(int, char**)
             }
         }
 
-        CpuTimer cpuTimer;
-        cpuTimer.start();
-
+        //Zerowanie predkosc graczy
+        rigidBodyCamera1->velocity.x = 0.0f;
+        rigidBodyCamera1->velocity.z = 0.0f;
+        rigidBodyCamera1->acceleration.x = 0.0f;
+        rigidBodyCamera1->acceleration.z = 0.0f;
+        rigidBodyCamera2->velocity.x = 0.0f;
+        rigidBodyCamera2->velocity.z = 0.0f;
+        rigidBodyCamera2->acceleration.x = 0.0f;
+        rigidBodyCamera2->acceleration.z = 0.0f;
 
         bool allFilled = IsPuzzleSolved();
 
