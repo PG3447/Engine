@@ -297,28 +297,56 @@ bool NpcSystem::PlayersInRange(
 }
 
 glm::vec3 NpcSystem::RandomPointAround(const glm::vec3& center, float radius) const {
-    float angle = RandFloat(0.0f, 2.0f * 3.14159265f);
-    float dist  = RandFloat(0.0f, radius);
-    glm::vec3 candidate = center + glm::vec3(
-        std::cos(angle) * dist,
-        0.0f,
-        std::sin(angle) * dist
-    );
-    return ClampToNavMesh(candidate);
-}
+    if (!cachedNavMesh_) return center;
+    const NavMeshData& data = cachedNavMesh_->data;
 
+    int targetRegion = GetRegionAt(center);
+
+    std::vector<int> candidates;
+    for (int i = 0; i < (int)data.triangles.size(); i++) {
+        const auto& tri = data.triangles[i];
+        if (!tri.walkable) continue;
+        if (targetRegion != -1 && tri.regionId != targetRegion) continue;
+
+        float dx = tri.centroid.x - center.x;
+        float dz = tri.centroid.z - center.z;
+        if (dx*dx + dz*dz <= radius*radius)
+            candidates.push_back(i);
+    }
+
+    if (candidates.empty()) {
+        for (int i = 0; i < (int)data.triangles.size(); i++) {
+            const auto& tri = data.triangles[i];
+            if (tri.walkable && tri.regionId == targetRegion)
+                candidates.push_back(i);
+        }
+    }
+    if (candidates.empty()) return center;
+
+    std::uniform_int_distribution<int> d(0, (int)candidates.size() - 1);
+    const NavTriangle& tri = data.triangles[candidates[d(GetRng())]];
+
+    float r1 = RandFloat(0,1), r2 = RandFloat(0,1);
+    if (r1 + r2 > 1.0f) { r1 = 1-r1; r2 = 1-r2; }
+    float r3 = 1.0f - r1 - r2;
+
+    return r1 * data.vertices[tri.v[0]].position
+         + r2 * data.vertices[tri.v[1]].position
+         + r3 * data.vertices[tri.v[2]].position;
+}
 glm::vec3 NpcSystem::ClampToNavMesh(const glm::vec3& pos) const {
     if (!cachedNavMesh_) return pos;
     const NavMeshData& data = cachedNavMesh_->data;
 
-    // Jeśli punkt jest na navmeshu – zwróć go
     if (cachedNavMesh_->FindTriangle(pos) >= 0) return pos;
 
-    // Znajdź najbliższy centroid trójkąta
+    int targetRegion = GetRegionAt(pos);
+
     float bestDist = std::numeric_limits<float>::max();
     glm::vec3 best = pos;
     for (const auto& tri : data.triangles) {
         if (!tri.walkable) continue;
+        if (targetRegion != -1 && tri.regionId != targetRegion) continue;
         float dx = tri.centroid.x - pos.x;
         float dz = tri.centroid.z - pos.z;
         float d  = dx*dx + dz*dz;
@@ -344,4 +372,10 @@ glm::vec3 NpcSystem::RandomPointOnNavMesh(const NavMeshData& data) const {
     return r1 * data.vertices[tri.v[0]].position
          + r2 * data.vertices[tri.v[1]].position
          + r3 * data.vertices[tri.v[2]].position;
+}
+int NpcSystem::GetRegionAt(const glm::vec3& pos) const {
+    if (!cachedNavMesh_) return -1;
+    int triIdx = cachedNavMesh_->FindTriangle(pos);
+    if (triIdx < 0) return -1;
+    return cachedNavMesh_->data.triangles[triIdx].regionId;
 }

@@ -12,7 +12,6 @@
 #include "core/scene.h"
 #include "core/system.h"
 
-
 class NavMeshSystem : public System {
 public:
     explicit NavMeshSystem(ECS& ecs);
@@ -25,9 +24,6 @@ public:
     bool IsBaked() const { return navMeshGO_ != nullptr && GetNavMesh() != nullptr && GetNavMesh()->data.isBaked; }
 
     NavMeshComponent* GetNavMesh() const;
-
-private:
-
     struct WalkableSurface {
         glm::vec3 min;
         glm::vec3 max;
@@ -67,15 +63,15 @@ private:
 
     struct Point2D {
         float x, z;
-        int   idx3D; // Indeks w tablicy punktow 3D
+        int   idx3D;
     };
 
     struct Circumcircle {
-        float cx, cz, r2; // Srodek i kwadrat promienia
+        float cx, cz, r2;
     };
 
     struct Triangle2D {
-        int a, b, c;          // Indeksy w tablicy Point2D
+        int a, b, c;
         Circumcircle circle;
         bool bad = false;
 
@@ -119,6 +115,35 @@ private:
     GameObject* navMeshGO_ = nullptr;
 
     Query<TransformComponent, ColliderComponent>* colliderQuery_ = nullptr;
+
+    void BakeRecast(Scene& scene);
+
+    struct VoxelCell {
+        bool walkable   = false;
+        bool hasObstacle = false;
+        int  regionId   = -1;
+        float y         = 0.0f;
+    };
+
+    struct RecastGrid {
+        int cols = 0, rows = 0;
+        float voxelSize = 0.0f;
+        float originX = 0.0f, originZ = 0.0f;
+        std::vector<VoxelCell> cells;
+
+        VoxelCell& At(int c, int r)       { return cells[r * cols + c]; }
+        const VoxelCell& At(int c, int r) const { return cells[r * cols + c]; }
+        bool Valid(int c, int r) const { return c >= 0 && c < cols && r >= 0 && r < rows; }
+    };
+
+    RecastGrid BuildVoxelGrid(
+        const std::vector<NavMeshSystem::WalkableSurface>& surfaces,
+        const std::vector<NavMeshSystem::Obstacle>& obstacles,
+        float voxelSize, float agentRadius, float agentHeight);
+
+    void FloodFillRegions(RecastGrid& grid);
+
+    NavMeshData TriangulateRecastGrid(const RecastGrid& grid);
 };
 
 #endif //MIMICRY_EXPERIMENTS_NAVMESHSYSTEM_H

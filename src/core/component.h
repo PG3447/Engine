@@ -84,25 +84,6 @@ struct TransformComponent : Component {
     }
 };
 
-//struct ModelNode
-//{
-//    // ===== SCENE HIERARCHY =====
-//    std::string name;
-//
-//    Transform transform;
-//
-//    std::vector<std::unique_ptr<ModelNode>> children;
-//
-//    // ===== GEOMETRY =====
-//    std::vector<MeshNode> meshes;
-//};
-//
-//struct MeshNode
-//{
-//    std::shared_ptr<RenderMesh> mesh;     // GPU geometry
-//    std::shared_ptr<Material> material;   // shading data
-//};
-
 struct RenderComponent : Component {
     static constexpr uint64_t ComponentBit = 1ull << 1;
 
@@ -110,17 +91,6 @@ struct RenderComponent : Component {
     AnimatorComponent* animator;
     AABB localObjectAABB;
     bool rendererDirty = true;
-    //std::vector<std::shared_ptr<Material>> materials; Fajnie jak bedzie xD
-
-    //std::shared_ptr<Model> model;
-    //
-    //
-    //std::shared_ptr<ModelNode> node;
-    //Model* model = nullptr;
-    //Shader* shader = nullptr;
-    //std::shared_ptr<Material> materialOverride = nullptr;
-
-
     void Serialize(YAML::Node& node) override;
     void Deserialize(const YAML::Node& node) override;
 
@@ -166,15 +136,7 @@ struct CameraState {
 
 struct CameraComponent : Component {
     static constexpr uint64_t ComponentBit = 1ull << 3;
-
-    //Camera camera;
-
     CameraState state;
-
-    //TransformComponent transform;
-
-  /*  float yaw = -90.0f;
-    float pitch = 0.0f;*/
 
     float fov = 45.0f;
     float nearPlane = 1.4f;
@@ -430,10 +392,10 @@ struct AnimatorComponent : Component {
 
 struct RaycastHit {
     bool hit = false;
-    float distance = 0.0f; //odleglosc
-    glm::vec3 point = {}; //punkt trafienia
-    glm::vec3 normal = {}; //normalna od trafionej sciany AABB
-    size_t hitObjectID = SIZE_MAX; //id trafionego GameObjectu (Size max to brak)
+    float distance = 0.0f;
+    glm::vec3 point = {};
+    glm::vec3 normal = {};
+    size_t hitObjectID = SIZE_MAX;
     GameObject* hitObject = nullptr;
     std::string hitTag = "";
 };
@@ -441,15 +403,13 @@ struct RaycastHit {
 struct RaycastComponent : Component {
     static constexpr uint64_t ComponentBit = 1ull << 8;
 
-    //wartosci domyslne
-    float range = 50.0f; // zasieg widzenia
+    float range = 50.0f;
     int fovRayCount = 1;
-    float fovAngle = 90.0f; //kat luku w stopniach
-    glm::vec3 originOffset = glm::vec3(0.0f, 0.0f, 0.0f); //przesuniece od zrodla pozycji
+    float fovAngle = 90.0f;
+    glm::vec3 originOffset = glm::vec3(0.0f, 0.0f, 0.0f);
 
     std::vector<RaycastHit> raycastHits;
 
-    //Czy w klatce promien trafil w cokolwiek
     bool anyHit() const {
         for (const auto & h : raycastHits) {
             if (h.hit) {
@@ -470,23 +430,22 @@ struct RaycastComponent : Component {
         return (bestHit.distance < 1e30f) ? bestHit : RaycastHit{};
     }
 
-    //debug
     bool debugDraw = false;
-    glm::vec4 colorMiss = {0.0f, 1.0f, 0.0f, 1.0f}; // zielony  = brak trafienia
-    glm::vec4 colorHit  = {1.0f, 0.3f, 0.0f, 1.0f}; // pomarańczowy = trafienie
+    glm::vec4 colorMiss = {0.0f, 1.0f, 0.0f, 1.0f};
+    glm::vec4 colorHit  = {1.0f, 0.3f, 0.0f, 1.0f};
 
 };
 struct NavVertex {
     glm::vec3 position;
 };
 
-// Trojkat siatki nawigacyjnej
 struct NavTriangle {
     int v[3];
     int neighbors[3];
 
     glm::vec3 centroid;
     bool walkable = true;
+    int regionId = -1;
 
     NavTriangle() {
         v[0] = v[1] = v[2] = -1;
@@ -499,7 +458,6 @@ struct NavTriangle {
         centroid = glm::vec3(0.0f);
     }
 };
-// Zbior danych wynikowych po bake
 struct NavMeshData {
     std::vector<NavVertex>   vertices;
     std::vector<NavTriangle> triangles;
@@ -516,22 +474,19 @@ struct NavMeshComponent : Component {
 
     NavMeshData data;
 
-    // Parametry bake
-    float agentRadius   = 0.5f;   // Promien agenta (margines przy przeszkodach)
+    float agentRadius   = 0.5f;   // Promien agenta
     float agentHeight   = 2.0f;   // Wysokosc agenta
-    float voxelSize     = 5.0f;   // Rozmiar voksela dla siatki punktow probkowania
-    float maxSlopeAngle = 45.0f;  // Max kat nachylenia (w stopniach) - powyzej = niechodzalne
+    float voxelSize     = 1.0f;   // Rozmiar voksela
+    float maxSlopeAngle = 45.0f;  // Max kat nachylenia
 
     // Debug
     bool debugDraw = false;
     glm::vec4 colorWalkable    = glm::vec4(0.0f, 0.8f, 0.2f, 0.4f); // zielony
-    glm::vec4 colorUnwalkable  = glm::vec4(0.8f, 0.1f, 0.1f, 0.4f); // czerwony
+    glm::vec4 colorUnwalkable  = glm::vec4(0.0f, 0.0f, 0.0f, 0.4f); // czerwony
     glm::vec4 colorEdge        = glm::vec4(0.0f, 1.0f, 0.5f, 1.0f); // jasny zielony
 
-    // Znajdz trojkat zawierajacy punkt (XZ), zwraca indeks lub -1
     int FindTriangle(const glm::vec3& worldPos) const;
 
-    // Czy punkt jest na navmeshu
     bool IsPointWalkable(const glm::vec3& worldPos) const;
 };
 
@@ -652,7 +607,7 @@ struct UISliderComponent : Component
 {
     static constexpr uint64_t ComponentBit = 1ull << 15;
 
-    float value = 0.5f; // 0 - 1
+    float value = 0.5f;
 
     bool isDragging = false;
 

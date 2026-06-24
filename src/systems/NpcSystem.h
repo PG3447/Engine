@@ -42,4 +42,5 @@ private:
     glm::vec3 ClampToNavMesh(const glm::vec3& pos) const;
 
     bool HasArrived(const NavPathComponent& nav) const;
+    int GetRegionAt(const glm::vec3& pos) const;
 };

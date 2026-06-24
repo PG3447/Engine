@@ -11,6 +11,32 @@
 #include <vector>
 #include <queue>
 #include <unordered_map>
+#include <string>
+
+struct NavAgentBenchmarkStats {
+    std::string methodName;
+
+    int   totalQueries      = 0;
+    int   successfulQueries = 0;
+    float successRate       = 0.0f;
+
+    float avgPathStretch    = 0.0f;
+    float minPathStretch    = 0.0f;
+    float maxPathStretch    = 0.0f;
+
+    float avgPathLength     = 0.0f;
+    float avgPathWaypoints  = 0.0f;
+
+    float avgAStarTimeMs    = 0.0f;
+    float minAStarTimeMs    = 0.0f;
+    float maxAStarTimeMs    = 0.0f;
+
+    float coveragePercent   = 0.0f;
+    int   coveragePointsTested = 0;
+    int   coveragePointsWalkable = 0;
+
+    float avgTurningAngleDeg = 0.0f;
+};
 
 class NavPathSystem : public System {
 public:
@@ -25,6 +51,20 @@ public:
                      const NavMeshData& navData);
 
     glm::vec3 RandomPointOnNavMesh(const NavMeshData& navData);
+
+    NavAgentBenchmarkStats RunNavigationBenchmark(
+        const NavMeshData& navData,
+        const std::string& methodName,
+        int numQueries      = 200,
+        int coverageSamples = 500);
+
+    static void AppendBenchmarkToFile(
+        const NavAgentBenchmarkStats& stats,
+        const std::string& path);
+
+    static void AppendAllNavigationStatsToFile(
+        const std::vector<NavAgentBenchmarkStats>& allStats,
+        const std::string& path);
 
 private:
     struct AStarNode {
@@ -43,7 +83,6 @@ private:
 
     float Heuristic(int triA, int triB, const NavMeshData& navData) const;
 
-    // Portal = krawedz wspolna dwoch sasiadujacych trojkatow
     struct Portal {
         glm::vec3 left;
         glm::vec3 right;
@@ -71,7 +110,25 @@ private:
                    NavPathComponent& comp,
                    float dt);
 
-    //  Query
+
+    static float PathLength(const std::vector<glm::vec3>& path);
+
+    static float PathTurningAngle(const std::vector<glm::vec3>& path);
+
+    static float EuclideanDistXZ(const glm::vec3& a, const glm::vec3& b);
+
+    std::vector<glm::vec3> TimedPathQuery(
+        const glm::vec3& start,
+        const glm::vec3& goal,
+        const NavMeshData& navData,
+        float& outTimeMs);
+
+    float MeasureCoverage(
+        const NavMeshData& navData,
+        int numSamples,
+        int& outTested,
+        int& outWalkable);
+
     Query<TransformComponent, NavPathComponent>* agentQuery_ = nullptr;
 
     NavMeshComponent* cachedNavMesh_ = nullptr;
