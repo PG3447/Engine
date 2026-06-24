@@ -120,6 +120,8 @@ void createFirstRoom(Scene* scena1) {
     }
 
     // Papier toaletowy
+    GameObject* kabelDol[6];
+    GameObject* kabelSrodek[6];
     GameObject* tablicaPokrywek[6];
     for (int i = 0; i < 6; i++) {
         if (i == 0 || i == 3)
@@ -128,6 +130,8 @@ void createFirstRoom(Scene* scena1) {
             tablicaPapierowKibel[i] = toiletPaperRedModel->Instantiate(*scena1, nullptr, nullptr);
         if (i == 2 || i == 4)
             tablicaPapierowKibel[i] = toiletPaperBlueModel->Instantiate(*scena1, nullptr, nullptr);
+
+        tablicaPokrywek[i] = pokrywkaRolkiModel->Instantiate(*scena1, nullptr, nullptr);
 
         tablicaPokrywek[i] = pokrywkaRolkiModel->Instantiate(*scena1, nullptr, nullptr);
         tablicaPokrywek[i]->name = "pokrywkaKibel"+std::to_string(i);
