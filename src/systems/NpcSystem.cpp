@@ -200,6 +200,7 @@ void NpcSystem::UpdateLeader(
     }
 
     }
+    ApplySeparation(go, tr, nav, 1.0f, 0.02f);
 }
 
 void NpcSystem::UpdateFollower(
@@ -270,6 +271,7 @@ void NpcSystem::UpdateFollower(
     }
 
     }
+    ApplySeparation(go, tr, nav, 1.0f, 0.02f);
 }
 
 void NpcSystem::SendTo(NavPathComponent& nav, const glm::vec3& goal) {
@@ -378,4 +380,53 @@ int NpcSystem::GetRegionAt(const glm::vec3& pos) const {
     int triIdx = cachedNavMesh_->FindTriangle(pos);
     if (triIdx < 0) return -1;
     return cachedNavMesh_->data.triangles[triIdx].regionId;
+}
+void NpcSystem::ApplySeparation(
+    GameObject* go,
+    TransformComponent& tr,
+    NavPathComponent& nav,
+    float separationRadius,
+    float separationStrength)
+{
+    glm::vec3 separation(0.0f);
+    int count = 0;
+
+    auto& leaderGos = leaderQuery_->gameobjects;
+    auto& leaderTrs = std::get<0>(leaderQuery_->componentsVectors);
+    for (size_t i = 0; i < leaderGos.size(); i++) {
+        if (leaderGos[i] == go) continue;
+        glm::vec3 diff = tr.position - leaderTrs[i]->position;
+        diff.y = 0.0f;
+        float dist = glm::length(diff);
+        if (dist < separationRadius && dist > 0.001f) {
+            separation += (diff / dist) * (separationRadius - dist);
+            count++;
+        }
+    }
+
+    auto& followerGos = followerQuery_->gameobjects;
+    auto& followerTrs = std::get<0>(followerQuery_->componentsVectors);
+    for (size_t i = 0; i < followerGos.size(); i++) {
+        if (followerGos[i] == go) continue;
+        glm::vec3 diff = tr.position - followerTrs[i]->position;
+        diff.y = 0.0f;
+        float dist = glm::length(diff);
+        if (dist < separationRadius && dist > 0.001f) {
+            separation += (diff / dist) * (separationRadius - dist);
+            count++;
+        }
+    }
+
+    if (count == 0) return;
+
+    separation /= (float)count;
+
+    auto* rb = go->GetComponent<RigidbodyComponent>();
+    if (rb) {
+        rb->velocity.x += separation.x * separationStrength;
+        rb->velocity.z += separation.z * separationStrength;
+    } else {
+        tr.position += separation * separationStrength;
+        tr.isDirty = true;
+    }
 }

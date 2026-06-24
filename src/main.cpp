@@ -768,13 +768,13 @@ int main(int, char**)
 
     //interfejs sprite'y
     // Crosshair P1
-    /*GameObject* crosshair1_obj = scena1->CreateGameObject(nullptr);
+    GameObject* crosshair1_obj = scena1->CreateGameObject(nullptr);
     SpriteComponent* crosshair1 = crosshair1_obj->AddComponent<SpriteComponent>();
     crosshair1->sprites         = { ResourceManager::LoadTexture("crosshair.png", "res/sprites/").id };
     crosshair1->screenPosition  = glm::vec2(480.0f - 16.0f, 540.0f - 16.0f); // centrum - half size
     crosshair1->size            = glm::vec2(16.0f, 16.0f);
     crosshair1->layer           = 2; // nad napisami
-    crosshair1->isVisible       = true;*/
+    crosshair1->isVisible       = true;
 
     // Crosshair P2
     GameObject* crosshair2_obj = scena1->CreateGameObject(nullptr);
