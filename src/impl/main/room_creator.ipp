@@ -82,7 +82,7 @@ void createFirstRoom(Scene* scena1) {
     // Zaslony
     GameObject* zaslony = scena1->CreateGameObject(nullptr);
     zaslony->name = "Zasolony";
-    GameObject* tablicaZaslon[9];
+    GameObject* tablicaZaslon[12];
     for (int i = 0; i < 12; i++) {
 
         if (i == 3 || i == 4 || i == 5) {
