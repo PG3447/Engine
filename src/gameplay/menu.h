@@ -23,6 +23,7 @@ public:
 
 	void ShowOnly(std::vector<GameObject*>* group)
 	{
+		spdlog::critical("ShowOnly wywolane, grupa ma {} obiektow", group->size());
 		std::vector<std::vector<GameObject*>*> all = {
 			&grp_main, &grp_settings, &grp_credits, &grp_load, &grp_pause
 		};
@@ -325,8 +326,6 @@ public:
 		//load
 
 
-
-		spdlog::critical("credits_back utworzony: {}", (void*)credits_back);
 		//settings
 		GameObject* settings_back = scenaMenu->CreateGameObject(nullptr);
 		SpriteComponent* settings_back_sprite = settings_back->AddComponent<SpriteComponent>();
@@ -335,14 +334,16 @@ public:
 		settings_back_sprite->size = glm::vec2( 1920.0f, 1080.0f);
 		settings_back_sprite->layer = 0;
 		settings_back_sprite->isVisible = true;
-		UIButtonComponent* settings_button = credits_back->AddComponent<UIButtonComponent>();
+		UIButtonComponent* settings_button = settings_back->AddComponent<UIButtonComponent>();
 
 		settings_button->onClick = [&](GameObject* go)
 		{
+			spdlog::critical("settings_button onClick wywolany!");
 			ShowOnly(&grp_main);
 		};
 
 		grp_settings.push_back(settings_back);
+		spdlog::critical("grp_settings size: {}", grp_settings.size());
 
 		ShowOnly(&grp_main);
 	}
