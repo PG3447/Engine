@@ -380,18 +380,18 @@ int main(int, char**)
 
     //RenderHelper::SetMaterial(obb3, brickMat);
 
-    GameObject * lightComponent = scena1->CreateGameObject(nullptr);
-    lightComponent->name = "light";
-    lightComponent->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 20.0f, 0.0f);
-    lightComponent->GetComponent<TransformComponent>()->rotation = glm::vec3(-19.800, -7.300, 0.0f);
-    lightComponent->AddComponent<LightComponent>();
-    LightComponent * lc = lightComponent->GetComponent<LightComponent>();
-    lc->type = LightType::Directional;
-    lc->index     = 20;
-    lc->constant  = 1.0f;
-    lc->linear    = 0.10f;
-    lc->quadratic = 0.00001f;
-    lc->intensity = 2.000;
+    //GameObject * lightComponent = scena1->CreateGameObject(nullptr);
+    //lightComponent->name = "light";
+    //lightComponent->GetComponent<TransformComponent>()->position = glm::vec3(0.0f, 20.0f, 0.0f);
+    //lightComponent->GetComponent<TransformComponent>()->rotation = glm::vec3(-19.800, -7.300, 0.0f);
+    //lightComponent->AddComponent<LightComponent>();
+    //LightComponent * lc = lightComponent->GetComponent<LightComponent>();
+    //lc->type = LightType::Directional;
+    //lc->index     = 20;
+    //lc->constant  = 1.0f;
+    //lc->linear    = 0.10f;
+    //lc->quadratic = 0.00001f;
+    //lc->intensity = 2.000;
 
     //Tworzenie gracza nr.1
     GameObject* gracz1 = scena1->CreateGameObject(nullptr);
@@ -768,13 +768,13 @@ int main(int, char**)
 
     //interfejs sprite'y
     // Crosshair P1
-    /*GameObject* crosshair1_obj = scena1->CreateGameObject(nullptr);
+    GameObject* crosshair1_obj = scena1->CreateGameObject(nullptr);
     SpriteComponent* crosshair1 = crosshair1_obj->AddComponent<SpriteComponent>();
     crosshair1->sprites         = { ResourceManager::LoadTexture("crosshair.png", "res/sprites/").id };
     crosshair1->screenPosition  = glm::vec2(480.0f - 16.0f, 540.0f - 16.0f); // centrum - half size
     crosshair1->size            = glm::vec2(16.0f, 16.0f);
     crosshair1->layer           = 2; // nad napisami
-    crosshair1->isVisible       = true;*/
+    crosshair1->isVisible       = true;
 
     // Crosshair P2
     GameObject* crosshair2_obj = scena1->CreateGameObject(nullptr);
