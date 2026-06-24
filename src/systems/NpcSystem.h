@@ -43,4 +43,10 @@ private:
 
     bool HasArrived(const NavPathComponent& nav) const;
     int GetRegionAt(const glm::vec3& pos) const;
+    void ApplySeparation(
+       GameObject* go,
+       TransformComponent& tr,
+       NavPathComponent& nav,
+       float separationRadius,
+       float separationStrength);
 };
