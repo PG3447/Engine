@@ -76,6 +76,10 @@ public:
                 button->isPressed = true;
             }
 
+            if (!button->isEnabled) {
+                continue;
+            }
+
             if (button->isPressed && hidSystem.is_action_just_released("ui_click"))
             {
                 button->isPressed = false;

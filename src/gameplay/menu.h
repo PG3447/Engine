@@ -325,6 +325,181 @@ public:
 
 		//load
 
+		GameObject* Load_background_object = scenaMenu->CreateGameObject(nullptr);
+		SpriteComponent* Load_background_sprite = Load_background_object->AddComponent<SpriteComponent>();
+		Load_background_sprite->sprites = {ResourceManager::LoadTexture("tlo.png", "res/sprites/menu/load").id};
+		Load_background_sprite->screenPosition = glm::vec2(0.0f, 0.0f);
+		Load_background_sprite->size = glm::vec2( 1920.0f, 1080.0f);
+		Load_background_sprite->layer = 0;
+		Load_background_sprite->isVisible = true;
+
+		GameObject* Load_Slot_Object_1 = scenaMenu->CreateGameObject(nullptr);
+		SpriteComponent* Load_Slot_Sprite_1 = Load_Slot_Object_1->AddComponent<SpriteComponent>();
+		Load_Slot_Sprite_1->sprites = {ResourceManager::LoadTexture("slot.png", "res/sprites/menu/load").id, ResourceManager::LoadTexture("slot_hover.png", "res/sprites/menu/load").id};
+		Load_Slot_Sprite_1->screenPosition = glm::vec2(325.0f, 156.0f);
+		Load_Slot_Sprite_1->size = glm::vec2(1266.0f, 75.0f);
+		Load_Slot_Sprite_1->layer = 1;
+		Load_Slot_Sprite_1->isVisible = true;
+		UIButtonComponent* slot_button_1 = Load_Slot_Object_1->AddComponent<UIButtonComponent>();
+
+		GameObject* Load_Slot_Object_2 = scenaMenu->CreateGameObject(nullptr);
+		SpriteComponent* Load_Slot_Sprite_2 = Load_Slot_Object_2->AddComponent<SpriteComponent>();
+		Load_Slot_Sprite_2->sprites = {ResourceManager::LoadTexture("slot.png", "res/sprites/menu/load").id, ResourceManager::LoadTexture("slot_hover.png", "res/sprites/menu/load").id};
+		Load_Slot_Sprite_2->screenPosition = glm::vec2(325.0f, 292.3f);
+		Load_Slot_Sprite_2->size = glm::vec2(1266.0f, 75.0f);
+		Load_Slot_Sprite_2->layer = 1;
+		Load_Slot_Sprite_2->isVisible = true;
+		UIButtonComponent* slot_button_2 = Load_Slot_Object_2->AddComponent<UIButtonComponent>();
+
+		GameObject* Load_Slot_Object_3 = scenaMenu->CreateGameObject(nullptr);
+		SpriteComponent* Load_Slot_Sprite_3 = Load_Slot_Object_3->AddComponent<SpriteComponent>();
+		Load_Slot_Sprite_3->sprites = {ResourceManager::LoadTexture("slot.png", "res/sprites/menu/load").id, ResourceManager::LoadTexture("slot_hover.png", "res/sprites/menu/load").id};
+		Load_Slot_Sprite_3->screenPosition = glm::vec2(325.0f, 428.9f);
+		Load_Slot_Sprite_3->size = glm::vec2(1266.0f, 75.0f);
+		Load_Slot_Sprite_3->layer = 1;
+		Load_Slot_Sprite_3->isVisible = true;
+		UIButtonComponent* slot_button_3 = Load_Slot_Object_3->AddComponent<UIButtonComponent>();
+
+		GameObject* Load_Slot_Object_4 = scenaMenu->CreateGameObject(nullptr);
+		SpriteComponent* Load_Slot_Sprite_4 = Load_Slot_Object_4->AddComponent<SpriteComponent>();
+		Load_Slot_Sprite_4->sprites = {ResourceManager::LoadTexture("slot.png", "res/sprites/menu/load").id, ResourceManager::LoadTexture("slot_hover.png", "res/sprites/menu/load").id};
+		Load_Slot_Sprite_4->screenPosition = glm::vec2(325.0f, 569.8f);
+		Load_Slot_Sprite_4->size = glm::vec2(1266.0f, 75.0f);
+		Load_Slot_Sprite_4->layer = 1;
+		Load_Slot_Sprite_4->isVisible = true;
+		UIButtonComponent* slot_button_4 = Load_Slot_Object_4->AddComponent<UIButtonComponent>();
+
+		GameObject* Load_Slot_Object_5 = scenaMenu->CreateGameObject(nullptr);
+		SpriteComponent* Load_Slot_Sprite_5 = Load_Slot_Object_5->AddComponent<SpriteComponent>();
+		Load_Slot_Sprite_5->sprites = {ResourceManager::LoadTexture("slot.png", "res/sprites/menu/load").id, ResourceManager::LoadTexture("slot_hover.png", "res/sprites/menu/load").id};
+		Load_Slot_Sprite_5->screenPosition = glm::vec2(325.0f, 711.0f);
+		Load_Slot_Sprite_5->size = glm::vec2(1266.0f, 75.0f);
+		Load_Slot_Sprite_5->layer = 1;
+		Load_Slot_Sprite_5->isVisible = true;
+		UIButtonComponent* slot_button_5 = Load_Slot_Object_5->AddComponent<UIButtonComponent>();
+
+		GameObject* Load_Back_Object = scenaMenu->CreateGameObject(nullptr);
+		SpriteComponent* Load_Back_Button = Load_Back_Object->AddComponent<SpriteComponent>();
+		Load_Back_Button->sprites = {ResourceManager::LoadTexture("back_sprite.png", "res/sprites/menu/credits").id, ResourceManager::LoadTexture("back_sprite_hover.png", "res/sprites/menu/credits").id };
+		Load_Back_Button->screenPosition = glm::vec2(1375.0f, 922.6f);
+		Load_Back_Button->size = glm::vec2(471.0f, 106.0f);
+		Load_Back_Button->layer = 1;
+		Load_Back_Button->isVisible = true;
+		UIButtonComponent* Load_Back_Object_button = Load_Back_Object->AddComponent<UIButtonComponent>();
+
+		slot_button_1->onHoverEnter = [&](GameObject* go)
+		{
+			auto* sprite = go->GetComponent<SpriteComponent>();
+			if (!sprite) return;
+
+			sprite->currentSprite=1;
+		};
+
+		slot_button_1->onHoverExit = [&](GameObject* go)
+		{
+			auto* sprite = go->GetComponent<SpriteComponent>();
+			if (!sprite) return;
+
+			sprite->currentSprite=0;
+		};
+
+		slot_button_2->onHoverEnter = [&](GameObject* go)
+		{
+			auto* sprite = go->GetComponent<SpriteComponent>();
+			if (!sprite) return;
+
+			sprite->currentSprite=1;
+		};
+
+		slot_button_2->onHoverExit = [&](GameObject* go)
+		{
+			auto* sprite = go->GetComponent<SpriteComponent>();
+			if (!sprite) return;
+
+			sprite->currentSprite=0;
+		};
+
+		slot_button_3->onHoverEnter = [&](GameObject* go)
+		{
+			auto* sprite = go->GetComponent<SpriteComponent>();
+			if (!sprite) return;
+
+			sprite->currentSprite=1;
+		};
+
+		slot_button_3->onHoverExit = [&](GameObject* go)
+		{
+			auto* sprite = go->GetComponent<SpriteComponent>();
+			if (!sprite) return;
+
+			sprite->currentSprite=0;
+		};
+
+		slot_button_4->onHoverEnter = [&](GameObject* go)
+		{
+			auto* sprite = go->GetComponent<SpriteComponent>();
+			if (!sprite) return;
+
+			sprite->currentSprite=1;
+		};
+
+		slot_button_4->onHoverExit = [&](GameObject* go)
+		{
+			auto* sprite = go->GetComponent<SpriteComponent>();
+			if (!sprite) return;
+
+			sprite->currentSprite=0;
+		};
+
+		slot_button_5->onHoverEnter = [&](GameObject* go)
+		{
+			auto* sprite = go->GetComponent<SpriteComponent>();
+			if (!sprite) return;
+
+			sprite->currentSprite=1;
+		};
+
+		slot_button_5->onHoverExit = [&](GameObject* go)
+		{
+			auto* sprite = go->GetComponent<SpriteComponent>();
+			if (!sprite) return;
+
+			sprite->currentSprite=0;
+		};
+
+
+		Load_Back_Object_button->onHoverEnter = [&](GameObject* go)
+		{
+			auto* sprite = go->GetComponent<SpriteComponent>();
+			if (!sprite) return;
+
+			sprite->currentSprite=1;
+		};
+
+		Load_Back_Object_button->onHoverExit = [&](GameObject* go)
+		{
+			auto* sprite = go->GetComponent<SpriteComponent>();
+			if (!sprite) return;
+
+			sprite->currentSprite=0;
+		};
+
+
+		Load_Back_Object_button->onClick = [&](GameObject* go)
+		{
+			ShowOnly(&grp_main);
+		};
+
+
+
+		grp_load.push_back(Load_background_object);
+		grp_load.push_back(Load_Slot_Object_1);
+		grp_load.push_back(Load_Slot_Object_2);
+		grp_load.push_back(Load_Slot_Object_3);
+		grp_load.push_back(Load_Slot_Object_4);
+		grp_load.push_back(Load_Slot_Object_5);
+		grp_load.push_back(Load_Back_Object);
+
 
 		//settings
 		GameObject* settings_back = scenaMenu->CreateGameObject(nullptr);
@@ -334,16 +509,139 @@ public:
 		settings_back_sprite->size = glm::vec2( 1920.0f, 1080.0f);
 		settings_back_sprite->layer = 0;
 		settings_back_sprite->isVisible = true;
-		UIButtonComponent* settings_button = settings_back->AddComponent<UIButtonComponent>();
+		
+		GameObject* placeholder_exit_object = scenaMenu->CreateGameObject(nullptr);
+		SpriteComponent* niewiemkurwa = placeholder_exit_object->AddComponent<SpriteComponent>();
+		niewiemkurwa->sprites = {ResourceManager::LoadTexture("back_sprite.png", "res/sprites/menu/credits").id, ResourceManager::LoadTexture("back_sprite_hover.png", "res/sprites/menu/credits").id };
+		niewiemkurwa->screenPosition = glm::vec2(1375.0f, 922.6f);
+		niewiemkurwa->size = glm::vec2(471.0f, 106.0f);
+		niewiemkurwa->layer = 1;
+		niewiemkurwa->isVisible = true;
+		UIButtonComponent* placeholder_exit_object_button = placeholder_exit_object->AddComponent<UIButtonComponent>();
 
-		settings_button->onClick = [&](GameObject* go)
+		placeholder_exit_object_button->onClick = [&](GameObject* go)
 		{
-			spdlog::critical("settings_button onClick wywolany!");
 			ShowOnly(&grp_main);
 		};
 
 		grp_settings.push_back(settings_back);
-		spdlog::critical("grp_settings size: {}", grp_settings.size());
+		grp_settings.push_back(placeholder_exit_object);
+
+		//pause
+
+		GameObject* pause_back = scenaMenu->CreateGameObject(nullptr);
+		SpriteComponent* pause_background_sprite = pause_back->AddComponent<SpriteComponent>();
+		pause_background_sprite->sprites = {ResourceManager::LoadTexture("menu_poboczne_tlo.png", "res/sprites/menu/pause").id};
+		pause_background_sprite->screenPosition = glm::vec2(0.0f, 0.0f);
+		pause_background_sprite->size = glm::vec2( 1920.0f, 1080.0f);
+		pause_background_sprite->layer = 0;
+		pause_background_sprite->isVisible = true;
+
+		GameObject* Pause_Logo_Object_1 = scenaMenu->CreateGameObject(nullptr);
+		SpriteComponent* Pause_Logo_Sprite_1 = Pause_Logo_Object_1->AddComponent<SpriteComponent>();
+		Pause_Logo_Sprite_1->sprites = {ResourceManager::LoadTexture("logo_menu poboczne.png", "res/sprites/menu/pause").id};
+		Pause_Logo_Sprite_1->screenPosition = glm::vec2(730.5f, 151.6f);
+		Pause_Logo_Sprite_1->size = glm::vec2(460.0f, 315.0f);
+		Pause_Logo_Sprite_1->layer = 1;
+		Pause_Logo_Sprite_1->isVisible = true;
+
+		GameObject* Pause_Button_Object_1 = scenaMenu->CreateGameObject(nullptr);
+		SpriteComponent* Pause_Button_Sprite_1 = Pause_Button_Object_1->AddComponent<SpriteComponent>();
+		Pause_Button_Sprite_1->sprites = {ResourceManager::LoadTexture("resume_sprite.png", "res/sprites/menu/pause").id, ResourceManager::LoadTexture("resume_sprite_hover.png", "res/sprites/menu/pause").id};
+		Pause_Button_Sprite_1->screenPosition = glm::vec2(725.0f, 522.1f);
+		Pause_Button_Sprite_1->size = glm::vec2(470.0f, 106.0f);
+		Pause_Button_Sprite_1->layer = 1;
+		Pause_Button_Sprite_1->isVisible = true;
+		UIButtonComponent* button_p_1 = Pause_Button_Object_1->AddComponent<UIButtonComponent>();
+
+		GameObject* Pause_Button_Object_2 = scenaMenu->CreateGameObject(nullptr);
+		SpriteComponent* Pause_Button_Sprite_2 = Pause_Button_Object_2->AddComponent<SpriteComponent>();
+		Pause_Button_Sprite_2->sprites = {ResourceManager::LoadTexture("settings_sprite.png", "res/sprites/menu/pause").id, ResourceManager::LoadTexture("settings_sprite_hover.png", "res/sprites/menu/pause").id };
+		Pause_Button_Sprite_2->screenPosition = glm::vec2(725.0f, 649.9f);
+		Pause_Button_Sprite_2->size = glm::vec2(470.0f, 106.0f);
+		Pause_Button_Sprite_2->layer = 1;
+		Pause_Button_Sprite_2->isVisible = true;
+		UIButtonComponent* button_p_2 = Pause_Button_Object_2->AddComponent<UIButtonComponent>();
+
+		GameObject* Pause_Button_Object_3 = scenaMenu->CreateGameObject(nullptr);
+		SpriteComponent* Pause_Button_Sprite_3 = Pause_Button_Object_3->AddComponent<SpriteComponent>();
+		Pause_Button_Sprite_3->sprites = {ResourceManager::LoadTexture("exit_sprite.png", "res/sprites/menu/pause").id, ResourceManager::LoadTexture("exit_sprite_hover.png", "res/sprites/menu/pause").id };
+		Pause_Button_Sprite_3->screenPosition = glm::vec2(725.0f, 786.7f);
+		Pause_Button_Sprite_3->size = glm::vec2(470.0f, 106.0f);
+		Pause_Button_Sprite_3->layer = 1;
+		Pause_Button_Sprite_3->isVisible = true;
+		UIButtonComponent* button_p_3 = Pause_Button_Object_3->AddComponent<UIButtonComponent>();
+
+		button_p_1->onHoverEnter = [&](GameObject* go)
+		{
+			auto* sprite = go->GetComponent<SpriteComponent>();
+			if (!sprite) return;
+
+			sprite->currentSprite=1;
+		};
+
+		button_p_1->onHoverExit = [&](GameObject* go)
+		{
+			auto* sprite = go->GetComponent<SpriteComponent>();
+			if (!sprite) return;
+
+			sprite->currentSprite=0;
+		};
+
+		button_p_2->onHoverEnter = [&](GameObject* go)
+		{
+			auto* sprite = go->GetComponent<SpriteComponent>();
+			if (!sprite) return;
+
+			sprite->currentSprite=1;
+		};
+
+		button_p_2->onHoverExit = [&](GameObject* go)
+		{
+			auto* sprite = go->GetComponent<SpriteComponent>();
+			if (!sprite) return;
+
+			sprite->currentSprite=0;
+		};
+
+		button_p_3->onHoverEnter = [&](GameObject* go)
+		{
+			auto* sprite = go->GetComponent<SpriteComponent>();
+			if (!sprite) return;
+
+			sprite->currentSprite=1;
+		};
+
+		button_p_3->onHoverExit = [&](GameObject* go)
+		{
+			auto* sprite = go->GetComponent<SpriteComponent>();
+			if (!sprite) return;
+
+			sprite->currentSprite=0;
+		};
+
+		button_p_1->onClick = [&](GameObject* go)
+		{
+			sceneManager->ChangeScene("Scena 1");
+			//ShowOnly(&grp_main); //change
+		};
+
+		button_p_2->onClick = [&](GameObject* go)
+		{
+			ShowOnly(&grp_settings);
+		};
+
+		button_p_3->onClick = [&](GameObject* go)
+		{
+			ShowOnly(&grp_main);
+		};
+
+
+		grp_pause.push_back(pause_back);
+		grp_pause.push_back(Pause_Logo_Object_1);
+		grp_pause.push_back(Pause_Button_Object_1);
+		grp_pause.push_back(Pause_Button_Object_2);
+		grp_pause.push_back(Pause_Button_Object_3);
 
 		ShowOnly(&grp_main);
 	}
