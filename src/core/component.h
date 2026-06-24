@@ -49,6 +49,8 @@ struct TransformComponent : Component {
     static constexpr uint64_t ComponentBit = 1ull << 0;
     static constexpr bool Unique = true;
 
+    TransformComponent* parent = nullptr;
+
     glm::vec3 position{ 0.0f, 0.0f, 0.0f };
     glm::vec3 rotation{ 0.0f, 0.0f, 0.0f };
     glm::vec3 scale{ 1.0f, 1.0f, 1.0f };

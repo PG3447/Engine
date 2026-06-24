@@ -71,7 +71,7 @@ public:
 
 	static void setGlobalPosition(TransformComponent& comp, const glm::vec3& worldPos, const TransformComponent* parent = nullptr)
 	{
-		if (parent)
+		if (parent && parent->modelMatrix != glm::mat4(1.0f))
 		{
 			// world -> local
 			glm::mat4 parentWorld = parent->modelMatrix;

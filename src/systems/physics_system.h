@@ -3,6 +3,7 @@
 
 #include "core/ecs.h"
 
+
 struct CollisionPoints {
     glm::vec3 A; // Furthest point of A into B
     glm::vec3 B; // Furthest point of B into A

@@ -329,7 +329,7 @@ void imgui_render(SceneManager& sceneManager)
     }
 
     if (ImGui::Button("Load asset")) {
-        std::string path = "assets.yaml";
+        std::string path = "res/Yaml/assets.yaml";
         ResourceManager::LoadAssets(path);
     }
 

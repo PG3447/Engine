@@ -279,7 +279,7 @@ void ResourceManager::SaveAsset()
     }
 
     cfg.getRoot() = assetsNode;
-    cfg.save("assets.yaml");
+    cfg.save("res/Yaml/assets.yaml");
 }
 
 void ResourceManager::LoadAssets(std::string& path)

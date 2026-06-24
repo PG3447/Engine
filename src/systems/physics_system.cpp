@@ -1,5 +1,6 @@
 #include "physics_system.h"
 #include "transform.h"
+#include "utils/transform_helper.h"
 #include <spdlog/spdlog.h>
 
 
@@ -20,8 +21,12 @@ void PhysicsSystem::Init() {
     for (size_t i = 0; i < query->gameobjects.size(); i++) {
         auto* tr = transforms[i];
         auto* rb = rigidbodies[i];
-        rb->physicsPosition = tr->position;
-        rb->previousPosition = tr->position;
+        if (tr->parent)
+            TransformHelper::computeModelMatrix(tr->parent->modelMatrix, *tr);
+        else
+            TransformHelper::computeModelMatrix(*tr);
+        rb->physicsPosition = TransformHelper::getGlobalPosition(*tr);
+        rb->previousPosition = TransformHelper::getGlobalPosition(*tr);
     }
 }
 
@@ -50,7 +55,8 @@ void PhysicsSystem::Interpolate(float alpha)
         auto* rb = rigidbodies[i];
         if (rb->isStatic) continue;
 
-        tr->position = glm::mix(rb->previousPosition, rb->physicsPosition, alpha);
+        TransformHelper::setGlobalPosition(*tr, glm::mix(rb->previousPosition, rb->physicsPosition, alpha), tr->parent);
+        //tr->position = glm::mix(rb->previousPosition, rb->physicsPosition, alpha);
         tr->isDirty = true;
     }
 
@@ -74,7 +80,11 @@ void PhysicsSystem::FixedUpdate(float fixedDeltaTime)
 
         if (tr->isDirty)
         {
-            rb->physicsPosition = tr->position;
+            if (tr->parent)
+                TransformHelper::computeModelMatrix(tr->parent->modelMatrix, *tr);
+            else
+                TransformHelper::computeModelMatrix(*tr);
+            rb->physicsPosition = TransformHelper::getGlobalPosition(*tr);
             //rb->previousPosition = tr->position;
         }
 
@@ -261,7 +271,7 @@ void PhysicsSystem::FixedUpdate(float fixedDeltaTime)
                 continue;
 
             glm::vec3 posA = rb->physicsPosition + cA->offset;
-            glm::vec3 posB = tB->position + cB->offset;
+            glm::vec3 posB = TransformHelper::getGlobalPosition(*tB) + cB->offset;
 
             if (!AABB(posA, cA->halfSize, posB, cB->halfSize))
                 continue;
