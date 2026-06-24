@@ -84,6 +84,48 @@ public:
                     button->onClick(gameObjectButtons[i]);
             }
         }
+
+
+        auto& gameObjectSliders = slidersQuery->gameobjects;
+
+        auto& sliderSprites = std::get<1>(slidersQuery->componentsVectors);
+        auto& sliders = std::get<2>(slidersQuery->componentsVectors);
+
+        for (size_t i = 0; i < gameObjectSliders.size(); i++)
+        {
+            auto* sprite = sliderSprites[i];
+            auto* slider = sliders[i];
+
+            glm::vec2 pos = { sprite->screenPosition.x, sprite->screenPosition.y };
+            glm::vec2 size = { sprite->size.x, sprite->size.y };
+
+            bool inside = mouseX >= pos.x &&
+                          mouseX <= pos.x + size.x &&
+                          mouseY >= pos.y &&
+                          mouseY <= pos.y + size.y;
+
+            if (inside && hidSystem.is_action_just_pressed("ui_click"))
+                slider->isDragging = true;
+
+            if (hidSystem.is_action_just_released("ui_click"))
+                slider->isDragging = false;
+
+
+            if (slider->isDragging)
+            {
+                float t = (mouseX - pos.x) / size.x;
+                t = glm::clamp(t, 0.0f, 1.0f);
+
+                float newValue = slider->minValue + t * (slider->maxValue - slider->minValue);
+
+                if (newValue != slider->value)
+                {
+                    slider->value = newValue;
+                    if (slider->onValueChanged)
+                        slider->onValueChanged(slider->value);
+                }
+            }
+        }
     };
 };
 
