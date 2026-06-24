@@ -243,3 +243,322 @@ Placements:
     rotation: [0, 41.9000015, 0]
     scale: [7, 7, 7]
     hasCollider: false
+  - modelPath: res/models/probowka3.glb
+    name: probowka3
+    position: [-6.1935091, 3.9959178, -171.445221]
+    rotation: [0, 0, 0]
+    scale: [3, 3, 3]
+    hasCollider: false
+  - modelPath: res/models/probowka3.glb
+    name: probowka3
+    position: [-6.1935091, 3.9959178, -174.009689]
+    rotation: [0, 0, 0]
+    scale: [3, 3, 3]
+    hasCollider: false
+  - modelPath: res/models/probowka3.glb
+    name: probowka3
+    position: [-6.1935091, 3.9959178, -176.589371]
+    rotation: [0, 0, 0]
+    scale: [3, 3, 3]
+    hasCollider: false
+  - modelPath: res/models/probowka3.glb
+    name: probowka3
+    position: [-6.1935091, 3.9959178, -176.589371]
+    rotation: [0, 0, 0]
+    scale: [3, 3, 3]
+    hasCollider: false
+  - modelPath: res/models/probowka3.glb
+    name: probowka3
+    position: [-6.1935091, 3.9959178, -178.86261]
+    rotation: [0, 0, 0]
+    scale: [3, 3, 3]
+    hasCollider: false
+  - modelPath: res/models/probowka3.glb
+    name: probowka3
+    position: [-6.1935091, 3.9959178, -181.220703]
+    rotation: [0, 0, 0]
+    scale: [3, 3, 3]
+    hasCollider: false
+  - modelPath: res/models/probowka7.glb
+    name: probowka7
+    position: [-5.1513133, 11.0950565, -157.412796]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+    hasCollider: false
+  - modelPath: res/models/probowka7.glb
+    name: probowka7
+    position: [-5.921, 11.0950565, -157.662994]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+    hasCollider: false
+  - modelPath: res/models/probowka7.glb
+    name: probowka7
+    position: [-7.13100004, 11.0950565, -157.662994]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+    hasCollider: false
+  - modelPath: res/models/probowka7.glb
+    name: probowka7
+    position: [-7.13100004, 11.0950565, -157.822998]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+    hasCollider: false
+  - modelPath: res/models/probowka7.glb
+    name: probowka7
+    position: [-5.84563494, 11.0950565, -157.822998]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+    hasCollider: false
+  - modelPath: res/models/probowka7.glb
+    name: probowka7
+    position: [-5.04599428, 11.0950565, -157.822998]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+    hasCollider: false
+  - modelPath: res/models/salaOperacyjna/fiolka1.glb
+    name: fiolka1
+    position: [-6.046, 11.0246086, -159.917267]
+    rotation: [0, 0, 0]
+    scale: [7, 7, 7]
+    hasCollider: false
+  - modelPath: res/models/salaOperacyjna/fiolka1.glb
+    name: fiolka1
+    position: [-5.25198412, 11.0246086, -159.917267]
+    rotation: [0, 23.2000008, 0]
+    scale: [7, 7, 7]
+    hasCollider: false
+  - modelPath: res/models/salaOperacyjna/fiolka1.glb
+    name: fiolka1
+    position: [-5.2520237, 11.0246086, -160.703659]
+    rotation: [0, 23.2000008, 0]
+    scale: [7, 7, 7]
+    hasCollider: false
+  - modelPath: res/models/salaOperacyjna/fiolka2.glb
+    name: fiolka2
+    position: [-6.046, 11.0866747, -165.746002]
+    rotation: [0, 0, 0]
+    scale: [7, 7, 7]
+    hasCollider: false
+  - modelPath: res/models/salaOperacyjna/fiolka2.glb
+    name: fiolka2
+    position: [-6.046, 11.0866747, -167.368179]
+    rotation: [0, 0, 0]
+    scale: [7, 7, 7]
+    hasCollider: false
+  - modelPath: res/models/salaOperacyjna/fiolka2.glb
+    name: fiolka2
+    position: [-4.31527948, 11.0866747, -168.02449]
+    rotation: [0, 0, 0]
+    scale: [7, 7, 7]
+    hasCollider: false
+  - modelPath: res/models/salaOperacyjna/fiolka2.glb
+    name: fiolka2
+    position: [-4.31527948, 11.0866747, -171.200897]
+    rotation: [0, 0, 0]
+    scale: [7, 7, 7]
+    hasCollider: false
+  - modelPath: res/models/salaOperacyjna/fiolka2.glb
+    name: fiolka2
+    position: [-4.31527948, 11.0866747, -172.725861]
+    rotation: [0, 0, 0]
+    scale: [7, 7, 7]
+    hasCollider: false
+  - modelPath: res/models/salaOperacyjna/fiolka2.glb
+    name: fiolka2
+    position: [-7.48191929, 11.0866747, -172.725861]
+    rotation: [0, 0, 0]
+    scale: [7, 7, 7]
+    hasCollider: false
+  - modelPath: res/models/salaOperacyjna/fiolka1.glb
+    name: fiolka1
+    position: [-5.2520237, 11.0246086, -175.987228]
+    rotation: [0, 23.2000008, 0]
+    scale: [7, 7, 7]
+    hasCollider: false
+  - modelPath: res/models/salaOperacyjna/fiolka1.glb
+    name: fiolka1
+    position: [-6.76802254, 11.0246086, -175.987228]
+    rotation: [0, 23.2000008, 0]
+    scale: [7, 7, 7]
+    hasCollider: false
+  - modelPath: res/models/salaOperacyjna/fiolka1.glb
+    name: fiolka1
+    position: [-6.76802254, 11.0246086, -177.547501]
+    rotation: [0, 23.2000008, 0]
+    scale: [7, 7, 7]
+    hasCollider: false
+  - modelPath: res/models/salaOperacyjna/fiolka1.glb
+    name: fiolka1
+    position: [-4.73484898, 11.0246086, -178.756302]
+    rotation: [0, 23.2000008, 0]
+    scale: [7, 7, 7]
+    hasCollider: false
+  - modelPath: res/models/salaOperacyjna/fiolka1.glb
+    name: fiolka1
+    position: [-5.99872541, 11.0246086, -180.030945]
+    rotation: [0, 23.2000008, 0]
+    scale: [7, 7, 7]
+    hasCollider: false
+  - modelPath: res/models/salaOperacyjna/fiolka1.glb
+    name: fiolka1
+    position: [-5.99872541, 11.0246086, -180.030945]
+    rotation: [0, 23.2000008, 0]
+    scale: [7, 7, 7]
+    hasCollider: false
+  - modelPath: res/models/salaOperacyjna/fiolka1.glb
+    name: fiolka1
+    position: [-5.99872541, 11.0246086, -181.357697]
+    rotation: [0, 23.2000008, 0]
+    scale: [7, 7, 7]
+    hasCollider: false
+  - modelPath: res/models/salaOperacyjna/fiolka1.glb
+    name: fiolka1
+    position: [-5.99872541, 11.0246086, -181.357697]
+    rotation: [0, 23.2000008, 0]
+    scale: [7, 7, 7]
+    hasCollider: false
+  - modelPath: res/models/papers.glb
+    name: papers
+    position: [-4.3105011, 6.01125288, -104.244415]
+    rotation: [0, 90, 90]
+    scale: [1.19000006, 7.65999985, 7.13000011]
+    hasCollider: false
+  - modelPath: res/models/papers.glb
+    name: papers
+    position: [-4.021945, 2.25247145, -104.244415]
+    rotation: [0, 90, 90]
+    scale: [1.19000006, 7.65999985, 7.13000011]
+    hasCollider: false
+  - modelPath: res/models/salaOperacyjna/fiolka1.glb
+    name: fiolka1
+    position: [-60.2559967, 4.83897638, -185.933853]
+    rotation: [0, 0, 0]
+    scale: [7, 7, 7]
+    hasCollider: false
+  - modelPath: res/models/salaOperacyjna/fiolka1.glb
+    name: fiolka1
+    position: [-61.1650009, 4.75774574, -184.916565]
+    rotation: [0, 0, 0]
+    scale: [7, 7, 7]
+    hasCollider: false
+  - modelPath: res/models/salaOperacyjna/fiolka1.glb
+    name: fiolka1
+    position: [-61.6289787, 4.79882908, -186.534729]
+    rotation: [0, 0, 0]
+    scale: [7, 7, 7]
+    hasCollider: false
+  - modelPath: res/models/fiolka_nast.glb
+    name: fiolka_nast
+    position: [-62.0178947, 4.82061863, -156.411041]
+    rotation: [0, 0, 0]
+    scale: [7, 7, 7]
+    hasCollider: false
+  - modelPath: res/models/fiolka_nast.glb
+    name: fiolka_nast
+    position: [-65.226387, 4.82061863, -156.411041]
+    rotation: [0, 78, 0]
+    scale: [7, 7, 7]
+    hasCollider: false
+  - modelPath: res/models/stol_kostnica.glb
+    name: stol_kostnica
+    position: [145.619995, 4.99259472, -129.570999]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+    hasCollider: true
+    colliderHalfSize: [5.76915264, 2.94640398, 3]
+    colliderOffset: [-0.0203008652, -0.740375042, 0]
+    colliderIsTrigger: false
+    colliderAffectsNavMesh: true
+    colliderIsWalkable: false
+  - modelPath: res/models/stol_inny_kostnica.glb
+    name: stol_inny_kostnica
+    position: [104.332207, 5.73118591, -171.554306]
+    rotation: [0, -14.6000004, 0]
+    scale: [1, 1, 1]
+    hasCollider: true
+    colliderHalfSize: [7.67186928, 4.7485857, 4.46295691]
+    colliderOffset: [0.405480057, 0.362854719, 0.0829502493]
+    colliderIsTrigger: false
+    colliderAffectsNavMesh: false
+    colliderIsWalkable: false
+  - modelPath: res/models/stol_inny_kostnica.glb
+    name: stol_inny_kostnica
+    position: [97.771, 5.73118591, -159.478]
+    rotation: [0, 71.100, 0]
+    scale: [1, 1, 1]
+    hasCollider: true
+    colliderHalfSize: [2.7322042, 4.7485857, 7.2161808]
+    colliderOffset: [-0.0219373889, 0.362854719, -0.413295984]
+    colliderIsTrigger: false
+    colliderAffectsNavMesh: false
+    colliderIsWalkable: false
+  - modelPath: res/models/stol.glb
+    name: stol
+    position: [96.2099915, 3.5325942, -129.585114]
+    rotation: [0, 0, 0]
+    scale: [7, 7, 7]
+    hasCollider: true
+    colliderHalfSize: [3.62673855, 2.98933935, 7.33390284]
+    colliderOffset: [-0.0453748703, -0.0814373195, -0.00515699387]
+    colliderIsTrigger: false
+    colliderAffectsNavMesh: false
+    colliderIsWalkable: false
+  - modelPath: res/models/stol.glb
+    name: stol
+    position: [96.2099915, 3.53306913, -143.224625]
+    rotation: [0, 0, 0]
+    scale: [7, 7, 7]
+    hasCollider: true
+    colliderHalfSize: [3.62673855, 2.98933935, 7.33390284]
+    colliderOffset: [-0.0453748703, -0.0814373195, -0.00515699387]
+    colliderIsTrigger: false
+    colliderAffectsNavMesh: false
+    colliderIsWalkable: false
+  - modelPath: res/models/laboratory_stuff_1.glb
+    name: laboratory_stuff_1
+    position: [96.2099991, 9.10415459, -143.225006]
+    rotation: [0, 67.1999969, 0]
+    scale: [3, 3, 3]
+    hasCollider: false
+  - modelPath: res/models/laboratory_stuff_2.glb
+    name: laboratory_stuff_2
+    position: [96.2099991, 7.0663662, -146.994553]
+    rotation: [-4.5999999, 9.60000038, 88.0999985]
+    scale: [2, 2, 2]
+    hasCollider: false
+  - modelPath: res/models/lab_ola_1.glb
+    name: lab_ola_1
+    position: [94.8077545, 8.58786201, -127.412857]
+    rotation: [0, 0, 0]
+    scale: [2, 2, 2]
+    hasCollider: false
+  - modelPath: res/models/needle.glb
+    name: needle
+    position: [99.0022888, 6.526, -135.606201]
+    rotation: [0, 101.199997, 0]
+    scale: [2.5, 2.5, 2.5]
+    hasCollider: false
+  - modelPath: res/models/needle.glb
+    name: needle
+    position: [99.0019989, 6.52582407, -136.661774]
+    rotation: [0, -52.7999992, 0]
+    scale: [2.5, 2.5, 2.5]
+    hasCollider: false
+  - modelPath: res/models/needle.glb
+    name: needle
+    position: [97.7088394, 6.52600002, -136.21463]
+    rotation: [0, -26.5, 0]
+    scale: [2.5, 2.5, 2.5]
+    hasCollider: false
+  - modelPath: res/models/fiolka_nast.glb
+    name: fiolka_nast
+    position: [94.5971298, 7.47566795, -138.483063]
+    rotation: [0, -75.5999985, 0]
+    scale: [10, 10, 10]
+    hasCollider: false
+  - modelPath: res/models/salaOperacyjna/fiolka1.glb
+    name: fiolka1
+    position: [94.9299316, 6.94080114, -140.285873]
+    rotation: [0, 0, 0]
+    scale: [10, 10, 10]
+    hasCollider: false
