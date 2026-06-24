@@ -239,6 +239,11 @@ public:
         child->parent = this;
         children.push_back(child);
 
+        if (auto* tr = child->GetComponent<TransformComponent>()) {
+            tr->parent = GetComponent<TransformComponent>();
+            tr->isDirty = true;
+        }
+
         child->NotifyChanged();
     }
 
@@ -269,6 +274,11 @@ public:
 
         if (newParent) {
             newParent->children.push_back(this);
+        }
+
+        if (auto* tr = GetComponent<TransformComponent>()) {
+            tr->parent = newParent ? newParent->GetComponent<TransformComponent>() : nullptr;
+            tr->isDirty = true;
         }
 
         NotifyChanged();
