@@ -851,10 +851,7 @@ int main(int, char**)
         cpuTimer.start();
 
 
-        bool allFilled = !puzzleSlotsMap.empty() && std::all_of(
-            puzzleSlotsMap.begin(), puzzleSlotsMap.end(),
-            [](const auto& pair) { return pair.second.occupant != nullptr; }
-        );
+        bool allFilled = IsPuzzleSolved();
 
         for (auto& [slotGO, slot] : puzzleSlotsMap) {
             if (slot.lightObject == nullptr) continue;
