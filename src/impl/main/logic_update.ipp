@@ -192,7 +192,7 @@ void OnPuzzleSolved(Scene* scene, AudioSystem* audioSystem = nullptr, FMOD::Soun
 
     if (puzzleRewardObject != nullptr) return;
 
-    puzzleRewardObject = SpawnGearReward(scene, glm::vec3(-100.0f, 11.0f, -176.0f), "Gear_Rentgen");
+    puzzleRewardObject = SpawnGearReward(scene, glm::vec3(-73.721, 8.0f, -200.833), "Gear_Rentgen");
 
     if (audioSystem && sndGear) {
         audioSystem->playSound(sndGear);

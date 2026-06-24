@@ -254,6 +254,8 @@ void createMainRooom(Scene* scena) {
     //CreateStaticObject(scena, wallModel.get(), nullptr, "GoraPrzejscieDoREAKTORAATOMOWEGO",     glm::vec3(-17.000+7, 66, -209.590), glm::vec3(100, 50, 1), glm::vec3(0, 90, 0));
     CreateStaticObject(scena, wallMainRoomModel.get(), nullptr, "GoraPrzejscieDoREAKTORAATOMOWEGO",     glm::vec3(-9.970, 21.060, -145.270), glm::vec3(0.540, 1, 3.000), glm::vec3(0, 90, 0));
 
+    puzzleRewardObject = SpawnGearReward(scena, glm::vec3(27.956, 19.0f, -153.894), "Gear_Tutorial");
+
     glm::vec3 scaleDoors = glm::vec3(2.25, 2.2, 1);
 
     GameObject* hingeKrematorium = CreateInteractableDoor(
@@ -814,6 +816,8 @@ void createCrematorium(Scene* scena) {
     crematoriumPuzzle.w2_buildDirZ  =  1.0f;
     crematoriumPuzzle.w2_extendDirX = -1.0f;
 
+    SpawnLoreNote(scena, folderModel.get(), glm::vec3(98.510, 6.526, -139.837), "res/lore/PLACEHOLDER.txt", glm::vec3(0, -90.300, 0), glm::vec3(4), nullptr);
+
     glm::vec3 cornerPosition(159.0f, 4.1f, -176.65f);
 
     if (coffinRedEmptyModel && panelModel) {
@@ -876,7 +880,7 @@ void createRentgenRoom(Scene* scena) {
 
     GameObject * objPuzel3 = puzel3->Instantiate(*scena, nullptr, nullptr);
     objPuzel3->name = "puzel3";
-    objPuzel3->GetComponent<TransformComponent>()->position = glm::vec3(-88.680, 6.523, -168.894);
+    objPuzel3->GetComponent<TransformComponent>()->position = glm::vec3(-87.134, 6.523, -168.894);
     objPuzel3->GetComponent<TransformComponent>()->rotation = glm::vec3(0, -90, 90);
     objPuzel3->AddComponent<RigidbodyComponent>();
     objPuzel3->GetComponent<RigidbodyComponent>()->useGravity = true;
