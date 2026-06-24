@@ -882,7 +882,7 @@ int main(int, char**)
 
         UpdateDoors(deltaTime, audioSys, sndDoorClosed);
         UpdateCabinets(deltaTime);
-        CheckFallenPickupObjects();
+   
 
 
         auto inputStart = std::chrono::high_resolution_clock::now();
@@ -1166,6 +1166,7 @@ int main(int, char**)
         //}
 
         input();
+        CheckFallenPickupObjects();
 
         bool p1IsMoving = false;
         bool p2IsMoving = false;

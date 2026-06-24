@@ -290,20 +290,21 @@ void HandlePlayerInteraction(
         }
         else {
             heldTr->position = TransformHelper::getGlobalPosition(*camTr) + (camComp->state.Front * 5.0f);
-            heldTr->rotation = objectOriginalRotations.count(myHeldObject)
-                ? objectOriginalRotations[myHeldObject]
-                : glm::vec3(0.0f);
+            heldTr->rotation = objectOriginalRotations.count(myHeldObject) ? objectOriginalRotations[myHeldObject] : glm::vec3(0.0f);
 
             if (myHeldObject->name.find("Gear") != std::string::npos) {
                 heldTr->scale = glm::vec3(2.0f);
             }
 
             heldTr->isDirty = true;
+
             if (auto rb = myHeldObject->GetComponent<RigidbodyComponent>()) {
+                TransformHelper::computeModelMatrix(*heldTr);
+                glm::vec3 globalPos = TransformHelper::getGlobalPosition(*heldTr);
                 rb->useGravity = true;
                 rb->isStatic = false;
-                rb->previousPosition = heldTr->position;
-                rb->physicsPosition = heldTr->position;
+                rb->previousPosition = globalPos;
+                rb->physicsPosition = globalPos;
                 rb->velocity = glm::vec3(0.0f);
                 rb->acceleration = glm::vec3(0.0f);
             }
@@ -816,7 +817,7 @@ void CheckFallenPickupObjects()
         TransformComponent* tr = obj->GetComponent<TransformComponent>();
         if (tr == nullptr) continue;
 
-        if (tr->position.y < -1.0f)
+        if (TransformHelper::getGlobalPosition(*tr).y < -1.0f)
         {
             auto posIt = objectOriginalPositions.find(obj);
             if (posIt == objectOriginalPositions.end()) continue;
