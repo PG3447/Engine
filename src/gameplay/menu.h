@@ -13,6 +13,7 @@ private:
 	std::vector<GameObject*> grp_settings;
 	std::vector<GameObject*> grp_credits;
 	std::vector<GameObject*> grp_load;
+	std::vector<GameObject*> grp_cutscene_1;
 
 public:
 
@@ -84,6 +85,35 @@ public:
 
 		modelTest = std::make_unique<Prefab>("res/models/podloze.glb");
 		GameObject* menuPodloze = modelTest->Instantiate(*scenaMenu, nullptr, nullptr);
+
+
+		//cutscene
+		GameObject* Cutscene_1_Object = scenaMenu->CreateGameObject(nullptr);
+		SpriteComponent* Cutscene_1_sprite = Cutscene_1_Object->AddComponent<SpriteComponent>();
+		for (int i = 1; i <= 17; i++)
+		{
+			char filename[64];
+			sprintf(filename, "%02d.jpg", i);
+			auto tex = ResourceManager::LoadTexture(filename, "res/sprites/cutscenes/intro");
+			Cutscene_1_sprite->sprites.push_back(tex.id);
+		}
+		Cutscene_1_sprite->screenPosition = glm::vec2(0.0f, 0.0f);
+		Cutscene_1_sprite->size = glm::vec2(1920.0f, 1080.0f);
+		Cutscene_1_sprite->layer = 0;
+		Cutscene_1_sprite->isVisible = true;
+		Cutscene_1_sprite->isAnimating = true;
+		Cutscene_1_sprite->loop = false;
+		Cutscene_1_sprite->frameDuration = 3.0f;
+		UIButtonComponent* Cutscene_1_button = Cutscene_1_Object->AddComponent<UIButtonComponent>();
+
+		Cutscene_1_button->onClick = [&](GameObject* go)
+		{
+				//ShowOnly(&grp_pause);
+				//sceneManager->ChangeScene("Scena 1");
+		};
+
+		grp_cutscene_1.push_back(Cutscene_1_Object);
+
 
 
 		//MAIN
@@ -244,10 +274,12 @@ public:
 		//AMON GUS
 
 
-		button3->onClick = [&](GameObject* go)
+		button3->onClick = [this, Cutscene_1_sprite](GameObject* go)
 		{
 			//sceneManager->ChangeScene("Scena 1"); //change
-			ShowOnly(&grp_pause); //for testing only
+			Cutscene_1_sprite->currentSprite = 0;
+			ShowOnly(&grp_cutscene_1); //for testing only
+
 		};
 
 		button4->onClick = [&](GameObject* go)
@@ -642,6 +674,7 @@ public:
 		grp_pause.push_back(Pause_Button_Object_1);
 		grp_pause.push_back(Pause_Button_Object_2);
 		grp_pause.push_back(Pause_Button_Object_3);
+
 
 		ShowOnly(&grp_main);
 	}
