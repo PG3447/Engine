@@ -6,7 +6,8 @@ struct PuzzleSlot {
     GameObject* lightObject = nullptr;
 };
 
-GameObject* puzzleRewardObject = nullptr;
+GameObject* tutorialGearObject = nullptr;
+GameObject* rentgenRewardObject = nullptr;
 
 std::unordered_map<GameObject*, PuzzleSlot> machineSlotsMap;
 bool isMachineFixed = false;
@@ -190,9 +191,9 @@ GameObject* SpawnLoreNote(Scene* scene, Prefab* paperPrefab, const glm::vec3& po
 void OnPuzzleSolved(Scene* scene, AudioSystem* audioSystem = nullptr, FMOD::Sound* sndGear = nullptr) {
     spdlog::info("Puzzle rozwiazany!");
 
-    if (puzzleRewardObject != nullptr) return;
+    if (rentgenRewardObject != nullptr) return;
 
-    puzzleRewardObject = SpawnGearReward(scene, glm::vec3(-73.721, 8.0f, -200.833), "Gear_Rentgen");
+    rentgenRewardObject = SpawnGearReward(scene, glm::vec3(-73.721, 8.0f, -200.833), "Gear_Rentgen");
 
     if (audioSystem && sndGear) {
         audioSystem->playSound(sndGear);
@@ -274,7 +275,12 @@ void HandlePlayerInteraction(
 
         if (targetSlot != nullptr) {
             TransformComponent* slotTr = targetSlot->slotObject->GetComponent<TransformComponent>();
-            TransformHelper::computeModelMatrix(*slotTr);
+
+            if (slotTr->parent) {
+                TransformHelper::computeModelMatrix(slotTr->parent->modelMatrix, *slotTr);
+            } else {
+                TransformHelper::computeModelMatrix(*slotTr);
+            }
 
             myHeldObject->SetParent(targetSlot->slotObject);
 
@@ -290,6 +296,19 @@ void HandlePlayerInteraction(
             }
 
             TransformHelper::computeModelMatrix(slotTr->modelMatrix, *heldTr);
+
+            glm::vec3 slotGlobalPos = TransformHelper::getGlobalPosition(*slotTr);
+            glm::vec3 gearGlobalPos = TransformHelper::getGlobalPosition(*heldTr);
+            spdlog::info("=== GEAR SLOT DEBUG ===");
+            spdlog::info("Slot '{}' globalna pozycja: ({:.3f}, {:.3f}, {:.3f})",
+                targetSlot->slotObject->name, slotGlobalPos.x, slotGlobalPos.y, slotGlobalPos.z);
+            spdlog::info("Gear '{}' globalna pozycja: ({:.3f}, {:.3f}, {:.3f}), scale: {:.4f}",
+                myHeldObject->name, gearGlobalPos.x, gearGlobalPos.y, gearGlobalPos.z, heldTr->scale.x);
+            spdlog::info("Slot parent: {}", slotTr->parent ? "ISTNIEJE" : "NULLPTR");
+            if (slotTr->parent) {
+                glm::vec3 parentGlobalPos = TransformHelper::getGlobalPosition(*slotTr->parent);
+                spdlog::info("Parent globalna pozycja: ({:.2f}, {:.2f}, {:.2f})", parentGlobalPos.x, parentGlobalPos.y, parentGlobalPos.z);
+            }
 
             if (auto rb = myHeldObject->GetComponent<RigidbodyComponent>()) {
                 glm::vec3 globalPos = TransformHelper::getGlobalPosition(*heldTr);

@@ -1273,7 +1273,7 @@ int main(int, char**)
         crematoriumPuzzle.Update(deltaTime);
 
         if (crematoriumPuzzle.isPuzzleSolved && !isCrematoriumGearSpawned) {
-            SpawnGearReward(scena1, glm::vec3(175.0f, 8.0f, -255.0f), "Gear_Crematorium");
+            SpawnGearReward(scena1, glm::vec3(145.984f, 7.309, -129.553), "Gear_Crematorium");
 
             if (audioSys && sndGear) {
                 audioSys->playSound(sndGear);
