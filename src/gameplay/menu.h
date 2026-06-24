@@ -335,7 +335,7 @@ public:
 		settings_back_sprite->size = glm::vec2( 1920.0f, 1080.0f);
 		settings_back_sprite->layer = 0;
 		settings_back_sprite->isVisible = true;
-		UIButtonComponent* settings_button = credits_back->GetComponent<UIButtonComponent>();
+		UIButtonComponent* settings_button = credits_back->AddComponent<UIButtonComponent>();
 
 		settings_button->onClick = [&](GameObject* go)
 		{
