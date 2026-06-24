@@ -123,18 +123,24 @@ void CrematoriumPuzzle::Init(Scene* scene, Prefab* redEmpty, Prefab* redCorpse, 
     leftPanelObj = panelPrefab->Instantiate(*scene, puzzleRoot, shader);
     leftPanelObj->name = "Panel_Left";
     auto* tLeft = leftPanelObj->GetComponent<TransformComponent>();
-    tLeft->position = cornerPosition + glm::vec3(-35.0f, -0.1f, 1.0f);
-    tLeft->scale = glm::vec3(1.0f);
+    tLeft->position = cornerPosition + glm::vec3(-37.0f, 4.0f, 2.0f);
+    tLeft->scale = glm::vec3(2.0f);
     tLeft->rotation = glm::vec3(0.0f, 0.0f, 0.0f);
     tLeft->isDirty = true;
+
+    leftPanelObj->AddComponent<ColliderComponent>();
+	leftPanelObj->GetComponent<ColliderComponent>()->halfSize = glm::vec3(4.0f, 5.0f, 4.0f);
 
     rightPanelObj = panelPrefab->Instantiate(*scene, puzzleRoot, shader);
     rightPanelObj->name = "Panel_Right";
     auto* tRight = rightPanelObj->GetComponent<TransformComponent>();
-    tRight->position = cornerPosition + glm::vec3(-1.0f, -0.1f, 35.0f);
-    tRight->scale = glm::vec3(1.0f);
+    tRight->position = cornerPosition + glm::vec3(-2.0f, 4.0f, 37.0f);
+    tRight->scale = glm::vec3(2.0f);
     tRight->rotation = glm::vec3(0.0f, -90.0f, 0.0f);
     tRight->isDirty = true;
+
+    rightPanelObj->AddComponent<ColliderComponent>();
+    rightPanelObj->GetComponent<ColliderComponent>()->halfSize = glm::vec3(4.0f, 5.0f, 4.0f);
 
     auto setupPanelMaterials = [&](GameObject* panelObj, glm::vec3 activeColor) {
         if (!panelObj) return;
