@@ -292,6 +292,11 @@ void createTrigger(Scene* scena);
 void CheckFallenPickupObjects();
 
 
+void loadGame()
+{
+    
+}
+
 int main(int, char**)
 {
     if (!init())
@@ -309,25 +314,45 @@ int main(int, char**)
 
     sceneManager.CreateScene("Scena 1");
     sceneManager.CreateScene("menu");
+    sceneManager.CreateScene("loading");
 
     Scene* scena1 = sceneManager.GetActiveScene();
     Scene* scenaMenu = sceneManager.GetScene("menu");
+    Scene* scenaLoading = sceneManager.GetScene("loading");
     ecs = &scena1->GetECS();
 
+    scenaLoading->GetECS().AddSystem<TransformSystem>(scenaLoading->GetECS());
+    scenaLoading->GetECS().AddSystem<SpriteSystem>(scenaLoading->GetECS(), window);
     scenaMenu->GetECS().AddSystem<HID>(scenaMenu->GetECS(), window);
     scenaMenu->GetECS().AddSystem<UISystem>(scenaMenu->GetECS(), *scenaMenu->GetECS().GetSystem<HID>());
     scenaMenu->GetECS().AddSystem<TransformSystem>(scenaMenu->GetECS());
     scenaMenu->GetECS().AddSystem<RenderSystem>(scenaMenu->GetECS(), window);
     scenaMenu->GetECS().AddSystem<SpriteSystem>(scenaMenu->GetECS(), window);
     scenaMenu->GetECS().AddSystem<PostProcessingSystem>(scenaMenu->GetECS(), window);
+    scenaMenu->GetECS().GetSystem<PostProcessingSystem>()->SetActive(false);
     scena1->addAllSystems(window);
     
-    scenaMenu->GetECS().GetSystem<PostProcessingSystem>()->SetActive(false);
 
-    sceneManager.ChangeScene("Scena 1");
-    Menu menu(&sceneManager, scenaMenu);
+    GameObject* loadingObject = scenaLoading->CreateGameObject(nullptr);
+    SpriteComponent* loadingSprite = loadingObject->AddComponent<SpriteComponent>();
+    loadingSprite->sprites = { ResourceManager::LoadTexture("LOADING.png", "res/sprites/").id };
+    loadingSprite->screenPosition = glm::vec2(0.0f, 0.0f);
+    loadingSprite->size = glm::vec2(1920.0f, 1080.0f);
+    loadingSprite->layer = 1;
+    loadingSprite->isVisible = true;
+
+
+    sceneManager.ChangeScene("loading");
+    sceneManager.UpdateChangeScene();
+    sceneManager.Update(0.16f);
+    end_frame();
+
+
+    Menu menu(&sceneManager, scenaMenu, window);
     menu.Init();
 
+    sceneManager.ChangeScene("Scena 1");
+    sceneManager.UpdateChangeScene();
     //menu->GetECS().AddExistingSystem(scena1->GetECS().GetSystem<RenderSystem>());
 
     postacGracza = std::make_unique<Prefab>("res/models/postac_test.glb");
@@ -736,6 +761,9 @@ int main(int, char**)
     availablePrefabs,
     *scena1,
     nullptr);*/
+    sceneManager.Update(0.16f);
+    sceneManager.ChangeScene("menu");
+    sceneManager.UpdateChangeScene();
     while (!glfwWindowShouldClose(window))
     {
         float currentFrame = static_cast<float>(glfwGetTime());
