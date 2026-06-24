@@ -243,8 +243,9 @@ void HandlePlayerInteraction(
 
                 heldTr->scale = glm::vec3(0.4375f);
             }
-            else {
-                heldTr->position = TransformHelper::getGlobalPosition(*slotTr);
+            else
+            {
+                TransformHelper::setGlobalPosition(*heldTr, TransformHelper::getGlobalPosition(*slotTr), heldTr->parent);
                 heldTr->rotation = targetSlot->targetRotation;
             }
 
