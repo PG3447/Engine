@@ -274,7 +274,43 @@ void LampCreator(Scene* scena)
     swiatloLazienka->isOn = true;
     swiatloLazienka->diffuse =  glm::vec3(1.0f, 1.0f, 0.0f);
     swiatloLazienka->intensity = 15.0f;
+
+
+    GameObject* lampaFinal3Lazienka = lampa3Final->Instantiate(*scena, nullptr, nullptr);
+    lampaFinal3Lazienka->name = "lampionSpot";
+    lampaFinal3Lazienka->GetComponent<TransformComponent>()->position = glm::vec3{ 30.0f, 17.5f, -145.0f };
+    lampaFinal3Lazienka->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, 0.0f, 0.0f };
+    lampaFinal3Lazienka->GetComponent<TransformComponent>()->scale = glm::vec3(1.0f);
+    LightComponent* swiatloLazienka3 = lampaFinal3Lazienka->AddComponent<LightComponent>();
+    swiatloLazienka3->type = Spot;
+    swiatloLazienka3->isOn = true;
+    swiatloLazienka3->diffuse = glm::vec3(1.0f, 1.0f, 0.0f);
+    swiatloLazienka3->intensity = 55.0f;
+
+    GameObject* lampaFinal11Lazienka = lampa1Final->Instantiate(*scena, nullptr, nullptr);
+    lampaFinal11Lazienka->name = "lampion1";
+    lampaFinal11Lazienka->GetComponent<TransformComponent>()->position = glm::vec3{ 106.0f, 12.6f, -108.9f };
+    lampaFinal11Lazienka->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -90.0f, 0.0f };
+    lampaFinal11Lazienka->GetComponent<TransformComponent>()->scale = glm::vec3(1.0f);
+    LightComponent* swiatloLazienka11 = lampaFinal11Lazienka->AddComponent<LightComponent>();
+    swiatloLazienka11->type = Point;
+    swiatloLazienka11->isOn = true;
+    swiatloLazienka11->diffuse = glm::vec3(1.0f, 1.0f, 1.0f);
+    swiatloLazienka11->intensity = 18.0f;
+
+    GameObject* lampaFinal12Lazienka = lampa1Final->Instantiate(*scena, nullptr, nullptr);
+    lampaFinal12Lazienka->name = "lampion1";
+    lampaFinal12Lazienka->GetComponent<TransformComponent>()->position = glm::vec3{ -67.0f, 12.6f, -140.725f };
+    lampaFinal12Lazienka->GetComponent<TransformComponent>()->rotation = glm::vec3{ 0.0f, -90.0f, 0.0f };
+    lampaFinal12Lazienka->GetComponent<TransformComponent>()->scale = glm::vec3(1.0f);
+    LightComponent* swiatloLazienka12 = lampaFinal12Lazienka->AddComponent<LightComponent>();
+    swiatloLazienka12->type = Point;
+    swiatloLazienka12->isOn = true;
+    swiatloLazienka12->diffuse = glm::vec3(1.0f, 1.0f, 1.0f);
+    swiatloLazienka12->intensity = 18.0f;
+
 }
+
 void createMainRooom(Scene* scena, Menu& menu) {
 
     LampCreator(scena);

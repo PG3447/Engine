@@ -228,7 +228,7 @@ void connectAllModels() {
 
     bossModel = std::make_unique<Prefab>("res/models/demon_animations_with_textures.glb");
     bossCapsuleModel = std::make_unique<Prefab>("res/models/boss_capsule.glb");
-    pokrywkaRolkiModel = std::make_unique<Prefab>("res/models/do_rolki.glb");
+    pokrywkaRolkiModel = std::make_unique<Prefab>("res/models/lazienka/ROLKA.glb");
 
     krzesloModel = std::make_unique<Prefab>("res/models/krzeslo.glb");
     wozekModel = std::make_unique<Prefab>("res/models/wozek_t.glb");
