@@ -188,8 +188,8 @@ public:
 			auto tex = ResourceManager::LoadTexture(filename, "res/sprites/menu/BG/");
 			BG_SPRITE->sprites.push_back(tex.id);
 		}
-		BG_SPRITE->screenPosition = glm::vec2(0.0f, 0.0f);
-		BG_SPRITE->size = glm::vec2(1920.0f, 1080.0f);
+		BG_SPRITE->screenPosition = glm::vec2(-10.0f, -10.0f);
+		BG_SPRITE->size = glm::vec2(1940.0f, 1100.0f);
 		BG_SPRITE->layer = 0;
 		BG_SPRITE->isVisible = true;
 		BG_SPRITE->isAnimating = true;
@@ -378,8 +378,8 @@ public:
 		GameObject* BG_Object_2 = scenaMenu->CreateGameObject(nullptr);
 		SpriteComponent* BG_sprite_credits = BG_Object_2->AddComponent<SpriteComponent>();
 		BG_sprite_credits->sprites = {ResourceManager::LoadTexture("credits.png", "res/sprites/menu/credits").id };
-		BG_sprite_credits->screenPosition = glm::vec2(0.0f, 0.0f);
-		BG_sprite_credits->size = glm::vec2(1920.0f, 1080.0f);
+		BG_sprite_credits->screenPosition = glm::vec2(-10.0f, -10.0f);
+		BG_sprite_credits->size = glm::vec2(1940.0f, 1100.0f);
 		BG_sprite_credits->layer = 0;
 		BG_sprite_credits->isVisible = true;
 		UIButtonComponent* bg_button_2 = BG_Object_2->AddComponent<UIButtonComponent>();
@@ -601,7 +601,7 @@ public:
 		SpriteComponent* settings_back_sprite = settings_back->AddComponent<SpriteComponent>();
 		settings_back_sprite->sprites = {ResourceManager::LoadTexture("settings.png", "res/sprites/menu/settings").id};
 		settings_back_sprite->screenPosition = glm::vec2(-10.0f, -10.0f);
-		settings_back_sprite->size = glm::vec2( 1920.0f, 1080.0f);
+		settings_back_sprite->size = glm::vec2( 1940.0f, 1100.0f);
 		settings_back_sprite->layer = 0;
 		settings_back_sprite->isVisible = true;
 		
