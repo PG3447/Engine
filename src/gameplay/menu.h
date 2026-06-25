@@ -26,7 +26,7 @@ public:
 	{
 		spdlog::critical("ShowOnly wywolane, grupa ma {} obiektow", group->size());
 		std::vector<std::vector<GameObject*>*> all = {
-			&grp_main, &grp_settings, &grp_credits, &grp_load, &grp_pause
+			&grp_main, &grp_settings, &grp_credits, &grp_load, &grp_pause, &grp_cutscene_1
 		};
 		for (auto* g : all)
 		{
@@ -104,15 +104,29 @@ public:
 		Cutscene_1_sprite->isAnimating = true;
 		Cutscene_1_sprite->loop = false;
 		Cutscene_1_sprite->frameDuration = 3.0f;
-		UIButtonComponent* Cutscene_1_button = Cutscene_1_Object->AddComponent<UIButtonComponent>();
+
+
+		GameObject* cutscene_1_object_procceed = scenaMenu->CreateGameObject(nullptr);
+		SpriteComponent* cutscene_procced_sprite = cutscene_1_object_procceed->AddComponent<SpriteComponent>();
+		cutscene_procced_sprite->sprites = {ResourceManager::LoadTexture("nothing.png", "res/sprites/cutscenes/intro").id, ResourceManager::LoadTexture("press_t_c.png", "res/sprites/cutscenes/intro").id};
+		cutscene_procced_sprite->screenPosition = glm::vec2(1375.7f, 850.0f);
+		cutscene_procced_sprite->size = glm::vec2(471.0f, 106.0f);
+		cutscene_procced_sprite->layer = 1;
+		cutscene_procced_sprite->isVisible = true;
+		cutscene_procced_sprite->currentSprite = 0;
+		cutscene_procced_sprite->isAnimating = true;
+		cutscene_procced_sprite->loop = false;
+		cutscene_procced_sprite->frameDuration = 51.0f;
+		UIButtonComponent* Cutscene_1_button = cutscene_1_object_procceed->AddComponent<UIButtonComponent>();
 
 		Cutscene_1_button->onClick = [&](GameObject* go)
 		{
-				//ShowOnly(&grp_pause);
-				//sceneManager->ChangeScene("Scena 1");
+				ShowOnly(&grp_pause);
+				sceneManager->ChangeScene("Scena 1");
 		};
 
 		grp_cutscene_1.push_back(Cutscene_1_Object);
+		grp_cutscene_1.push_back(cutscene_1_object_procceed);
 
 
 
@@ -274,9 +288,10 @@ public:
 		//AMON GUS
 
 
-		button3->onClick = [this, Cutscene_1_sprite](GameObject* go)
+		button3->onClick = [this, Cutscene_1_sprite, cutscene_procced_sprite](GameObject* go)
 		{
 			//sceneManager->ChangeScene("Scena 1"); //change
+			cutscene_procced_sprite->currentSprite = 0;
 			Cutscene_1_sprite->currentSprite = 0;
 			ShowOnly(&grp_cutscene_1); //for testing only
 
