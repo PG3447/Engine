@@ -166,7 +166,10 @@ void connectAllModels() {
     toiletPaperRedModel = std::make_unique<Prefab>("res/models/papier_czerwony.glb");
     toiletPaperGreenModel = std::make_unique<Prefab>("res/models/papier_zielony.glb");
     toiletPaperBlueModel = std::make_unique<Prefab>("res/models/papier_niebieski.glb");
-    //lampa1Final = std::make_unique<Prefab>("res/models/lampy/papier_niebieski.glb");
+    lampa1Final = std::make_unique<Prefab>("res/models/lampy/lampa1_final.glb");
+    lampa2Final = std::make_unique<Prefab>("res/models/lampy/lampa2_final.glb");
+    lampa3Final = std::make_unique<Prefab>("res/models/lampy/lampa3_final.glb");
+    lampa4Final = std::make_unique<Prefab>("res/models/lampy/lampa4_final.glb"); 
     mirrorModel1     = std::make_unique<Prefab>("res/models/lazienka/lustro1.glb");
     mirrorModel2     = std::make_unique<Prefab>("res/models/lazienka/lustro2.glb");
     mirrorModel3     = std::make_unique<Prefab>("res/models/lazienka/lustro3.glb");
