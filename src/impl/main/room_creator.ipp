@@ -262,7 +262,22 @@ void createFirstRoom(Scene* scena1) {
     toiletDoorsMap[hingeWashroomExit].requiresUnlock = true;
 }
 
+
+void LampCreator(Scene* scena)
+{
+    lampaFinal4Lazienka = lampa4Final->Instantiate(*scena, nullptr, nullptr);
+    lampaFinal4Lazienka->GetComponent<TransformComponent>()->position = glm::vec3{ 5.8f, 18.7f, -99.6f };
+    lampaFinal4Lazienka->GetComponent<TransformComponent>()->rotation = glm::vec3{ -90.0f, 0.0f, 0.0f };
+    lampaFinal4Lazienka->GetComponent<TransformComponent>()->scale = glm::vec3(3.0f);
+    LightComponent* swiatloLazienka = lampaFinal4Lazienka->AddComponent<LightComponent>();
+    swiatloLazienka->type = Point;
+    swiatloLazienka->isOn = true;
+    swiatloLazienka->diffuse =  glm::vec3(1.0f, 1.0f, 0.0f);
+    swiatloLazienka->intensity = 15.0f;
+}
 void createMainRooom(Scene* scena, Menu& menu) {
+
+    LampCreator(scena);
 
     Room mainRoom;
     mainRoom.id = 1;

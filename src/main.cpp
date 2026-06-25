@@ -169,6 +169,7 @@ RenderSystem*          renderSystem          = nullptr;
 PostProcessingSystem*  postProcessingSystem  = nullptr;
 
 // needed for interaction
+GameObject* lampaFinal4Lazienka;
 GameObject* tablicaPapierowKibel[6];
 std::unordered_set<GameObject*> rotatableObjects;
 std::unordered_set<GameObject*> unlockedDoors;
@@ -187,6 +188,7 @@ struct CabinetState {
     glm::vec3 buttonStartPos;
     glm::vec3 buttonTargetPos;
 };
+
 
 struct DoorState {
     bool  isOpen       = false;
@@ -723,7 +725,12 @@ int main(int, char**)
             if (!correct) allCorrect = false;
         }
 
-        if (allCorrect == true) {
+        if (allCorrect == true)
+        {
+            if (lampaFinal4Lazienka != nullptr)
+            {
+                lampaFinal4Lazienka->GetComponent<LightComponent>()->diffuse = glm::vec3(1.0f);
+            }
             ecs->GetSystem<AudioSystem>()->playSound(sound);
         }
 
