@@ -279,16 +279,17 @@ void LampCreator(Scene* scena)
     GameObject* lampaFinal3Lazienka = lampa3Final->Instantiate(*scena, nullptr, nullptr);
     lampaFinal3Lazienka->name = "lampionSpot";
     lampaFinal3Lazienka->GetComponent<TransformComponent>()->position = glm::vec3{ 30.0f, 17.5f, -145.0f };
-    lampaFinal3Lazienka->GetComponent<TransformComponent>()->rotation = glm::vec3{ -90.0f, 0.0f, 0.0f };
+    lampaFinal3Lazienka->GetComponent<TransformComponent>()->rotation = glm::vec3{ -89.2f, 0.0f, 0.0f };
     lampaFinal3Lazienka->GetComponent<TransformComponent>()->scale = glm::vec3(1.0f);
+    lampaFinal3Lazienka->GetComponent<TransformComponent>()->isDirty = true;
     LightComponent* swiatloLazienka3 = lampaFinal3Lazienka->AddComponent<LightComponent>();
     swiatloLazienka3->type = Spot;
     swiatloLazienka3->isOn = true;
     swiatloLazienka3->diffuse = glm::vec3(1.0f, 1.0f, 1.0f);
-    swiatloLazienka3->intensity = 350.0f;
-    swiatloLazienka3->cutOff = 45.0f;
-    swiatloLazienka3->outerCutOff = 66.0f;
-
+    swiatloLazienka3->intensity = 150.0f;
+    swiatloLazienka3->cutOff = glm::cos(glm::radians(10.0f));
+    swiatloLazienka3->outerCutOff = glm::cos(glm::radians(38.0f));
+    
     GameObject* lampaFinal11Lazienka = lampa1Final->Instantiate(*scena, nullptr, nullptr);
     lampaFinal11Lazienka->name = "lampion1";
     lampaFinal11Lazienka->GetComponent<TransformComponent>()->position = glm::vec3{ 106.0f, 12.6f, -108.9f };
