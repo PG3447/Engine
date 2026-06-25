@@ -423,8 +423,8 @@ public:
 		GameObject* Load_background_object = scenaMenu->CreateGameObject(nullptr);
 		SpriteComponent* Load_background_sprite = Load_background_object->AddComponent<SpriteComponent>();
 		Load_background_sprite->sprites = {ResourceManager::LoadTexture("tlo.png", "res/sprites/menu/load").id};
-		Load_background_sprite->screenPosition = glm::vec2(0.0f, 0.0f);
-		Load_background_sprite->size = glm::vec2( 1920.0f, 1080.0f);
+		Load_background_sprite->screenPosition = glm::vec2(-10.0f, -10.0f);
+		Load_background_sprite->size = glm::vec2( 1940.0f, 1100.0f);
 		Load_background_sprite->layer = 0;
 		Load_background_sprite->isVisible = true;
 
@@ -627,8 +627,8 @@ public:
 		GameObject* pause_back = scenaMenu->CreateGameObject(nullptr);
 		SpriteComponent* pause_background_sprite = pause_back->AddComponent<SpriteComponent>();
 		pause_background_sprite->sprites = {ResourceManager::LoadTexture("menu_poboczne_tlo.png", "res/sprites/menu/pause").id};
-		pause_background_sprite->screenPosition = glm::vec2(0.0f, 0.0f);
-		pause_background_sprite->size = glm::vec2( 1920.0f, 1080.0f);
+		pause_background_sprite->screenPosition = glm::vec2(-10.0f, -10.0f);
+		pause_background_sprite->size = glm::vec2( 1940.0f, 1100.0f);
 		pause_background_sprite->layer = 0;
 		pause_background_sprite->isVisible = true;
 

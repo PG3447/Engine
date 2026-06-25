@@ -94,13 +94,13 @@ std::shared_ptr<Model> ResourceManager::LoadModel(const std::string& path)
 
     if (!model->rootNode)
     {
-        spdlog::error("Model load failed (rootNode null): {}", path);
+        //spdlog::error("Model load failed (rootNode null): {}", path);
         return nullptr;
     }
 
     Models[path] = model;
     RegisterMeshNodes(model->rootNode.get(), path);
-    spdlog::info("ResourceManager: Zaladowano model {}", path);
+    //spdlog::info("ResourceManager: Zaladowano model {}", path);
     return model;
 }
 
@@ -182,13 +182,13 @@ TextureData ResourceManager::loadTextureFromFile(const std::string& path, const 
         else
             stbi_image_free(data);
 
-        spdlog::info("ResourceManager: Zaladowano teksture {}", path);
+        //spdlog::info("ResourceManager: Zaladowano teksture {}", path);
 
         size_t textureBytes = width * height * nrComponents;
         size_t textureBytesWithMipmaps =
             static_cast<size_t>(textureBytes * 1.333333f);
 
-        spdlog::info(
+        /*spdlog::info(
             "Texture {}: {}x{} {}ch -> {:.2f} MB ({:.2f} MB with mipmaps)",
             path,
             width,
@@ -196,18 +196,18 @@ TextureData ResourceManager::loadTextureFromFile(const std::string& path, const 
             nrComponents,
             textureBytes / (1024.0 * 1024.0),
             textureBytesWithMipmaps / (1024.0 * 1024.0)
-        );
+        );*/
 
         TotalTextureMemory += textureBytesWithMipmaps;
 
-        spdlog::info(
+        /*spdlog::info(
             "Total texture memory: {:.2f} MB",
             TotalTextureMemory / (1024.0 * 1024.0)
-        );
+        );*/
     }
     else
     {
-        spdlog::error("ResourceManager: BLAD ladowania tekstury {}", path);
+        //spdlog::error("ResourceManager: BLAD ladowania tekstury {}", path);
         if (data) stbi_image_free(data);
         return dataTexture;
     }
@@ -247,7 +247,7 @@ TextureData ResourceManager::CreateTextureFromColor(const std::string& name, con
     TextureData texture{ tex, false };
     Textures[name] = texture;
 
-    spdlog::info("ResourceManager: Created color texture {}", name);
+    //::info("ResourceManager: Created color texture {}", name);
 
     return texture;
 }
@@ -306,5 +306,5 @@ void ResourceManager::Clear()
     Textures.clear();
     Models.clear();
     MeshNodeToModelPath.clear();
-    spdlog::info("ResourceManager: Wyczyszczono pamiec tekstur.");
+    //spdlog::info("ResourceManager: Wyczyszczono pamiec tekstur.");
 }

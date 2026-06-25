@@ -1,5 +1,5 @@
 #include "scene.h"
-#include <spdlog/spdlog.h>
+//#include <spdlog/spdlog.h>
 
 #include "systems/PostProcessingSystem.h"
 #include "systems/NavMeshSystem.h"
@@ -19,7 +19,7 @@ GameObject* Scene::CreateGameObject(GameObject* parent) {
     // Dodanie TransformComponent, jeśli brak
     auto* t = e->GetComponent<TransformComponent>();
     if (!t) {
-        spdlog::info("dodano transform");
+        //spdlog::info("dodano transform");
         t = e->AddComponent<TransformComponent>();
     } 
 
@@ -102,14 +102,14 @@ void Scene::DebugHierarchy(GameObject* obj, int depth)
 
     std::string indent(depth * 2, ' ');
 
-    spdlog::info("{}GameObject: {}", indent, (void*)obj);
-    spdlog::info("GameObject: {}", obj->name);
+    //spdlog::info("{}GameObject: {}", indent, (void*)obj);
+    //spdlog::info("GameObject: {}", obj->name);
 
     auto* t = obj->GetComponent<TransformComponent>();
     if (t)
     {
-        spdlog::info("{}  pos: {:.2f}, {:.2f}, {:.2f}",
-            indent, t->position.x, t->position.y, t->position.z);
+      //  spdlog::info("{}  pos: {:.2f}, {:.2f}, {:.2f}",
+     //       indent, t->position.x, t->position.y, t->position.z);
     }
 
     for (auto* child : obj->GetChildren())

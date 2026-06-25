@@ -1,11 +1,11 @@
 #include "HID.h"
-#include <spdlog/spdlog.h>
+//#include <spdlog/spdlog.h>
 
 
 void HID::init(GLFWwindow *_window) {
     window = _window;
     if (!window) {
-        spdlog::error("Window is null.");
+        //spdlog::error("Window is null.");
         return;
     }
     load_inputs_from_yaml("res/yaml/input_map.yaml");
@@ -30,7 +30,7 @@ void HID::name_action_gamepad(const std::string action_name, int glfw_key, int g
 void HID::load_inputs_from_yaml(const std::string& path) {
     YamlConfig config;
     if (!config.load(path)) {
-        spdlog::error("HID: can't load inputs from: {}", path);
+       // ::error("HID: can't load inputs from: {}", path);
         return;
     }
 
@@ -101,7 +101,7 @@ void HID::load_inputs_from_yaml(const std::string& path) {
     auto resolve_key = [&](const std::string& name) -> std::optional<int> {
         auto it = key_map.find(name);
         if (it == key_map.end()) {
-            spdlog::warn("HID: unknown button '{}'", name);
+            //spdlog::warn("HID: unknown button '{}'", name);
             return std::nullopt;
         }
         return it->second;
@@ -111,7 +111,7 @@ void HID::load_inputs_from_yaml(const std::string& path) {
     YAML::Node inputs = root["input"];
 
     if (!inputs) {
-        spdlog::warn("HID: file {} has no 'input' sction", path);
+        //spdlog::warn("HID: file {} has no 'input' sction", path);
         return;
     }
 
@@ -140,7 +140,7 @@ void HID::load_inputs_from_yaml(const std::string& path) {
             std::string action = action_node.first.as<std::string>();
             for (auto entry : action_node.second) {
                 if (!entry["button"] || !entry["id"]) {
-                    spdlog::warn("HID: gamepad action {} cannot be loaded (no id or button section in yaml)", action);
+                    //spdlog::warn("HID: gamepad action {} cannot be loaded (no id or button section in yaml)", action);
                     continue;
                 }
                 auto btn = resolve_key(entry["button"].as<std::string>());
@@ -150,7 +150,7 @@ void HID::load_inputs_from_yaml(const std::string& path) {
         }
     }
 
-    spdlog::info("HID: input map loaded from {}", path);
+    //spdlog::info("HID: input map loaded from {}", path);
 }
 
 void HID::Update(ECS& ecs, float dt) {
