@@ -28,7 +28,7 @@ public:
 
 	void ShowOnly(std::vector<GameObject*>* group)
 	{
-		spdlog::critical("ShowOnly wywolane, grupa ma {} obiektow", group->size());
+		//spdlog::critical("ShowOnly wywolane, grupa ma {} obiektow", group->size());
 		std::vector<std::vector<GameObject*>*> all = {
 			&grp_main, &grp_settings, &grp_credits, &grp_load, &grp_pause, &grp_cutscene_1, &grp_cutscene_2
 		};
