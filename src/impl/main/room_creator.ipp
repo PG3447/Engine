@@ -335,7 +335,7 @@ void createMainRooom(Scene* scena, Menu& menu) {
             if (other->name == "Gracz1" || other->name == "Gracz2")
             {
                 menu.ShowOutro();
-                spdlog::info("Koniec gry");
+                //spdlog::info("Koniec gry");
             }
         };
 
@@ -482,7 +482,7 @@ void createMainRooom(Scene* scena, Menu& menu) {
             slot.targetRotation = glm::vec3(90.0f, 0.0f, 0.0f);
 
             machineSlotsMap[go] = slot;
-            spdlog::info("Skonfigurowano slot maszyny: {}", go->name);
+            //spdlog::info("Skonfigurowano slot maszyny: {}", go->name);
         }
     });
 
@@ -958,7 +958,7 @@ void createCrematorium(Scene* scena) {
         crematoriumPuzzle.Init(scena, coffinRedEmptyModel.get(), coffinRedCorpseModel.get(), coffinGreenEmptyModel.get(), coffinGreenCorpseModel.get(), coffinBaseEmptyModel.get(), coffinBaseCorpseModel.get(), panelModel.get(), nullptr, cornerPosition);
     }
     else {
-        spdlog::error("Modele kostnicy lub panelu niepoprawnie zaladowane");
+        //spdlog::error("Modele kostnicy lub panelu niepoprawnie zaladowane");
     }
 }
 
@@ -1518,7 +1518,7 @@ void createTriggerRoom(Scene* scena, int roomId, std::string name, glm::vec3 pos
     {
         if (other->name == "Gracz1" || other->name == "Gracz2")
         {
-            spdlog::info("{} wszed� do pomieszczenia {}", other->name, roomId);
+            //spdlog::info("{} wszed� do pomieszczenia {}", other->name, roomId);
             RoomPlayerEntered(roomId, other);
         }
 
@@ -1528,7 +1528,7 @@ void createTriggerRoom(Scene* scena, int roomId, std::string name, glm::vec3 pos
     {
         if (other->name == "Gracz1" || other->name == "Gracz2")
         {
-            spdlog::info("{} wyszed� z pomieszczenia {}", other->name, roomId);
+            //spdlog::info("{} wyszed� z pomieszczenia {}", other->name, roomId);
             RoomPlayerExited(roomId, other);
         }
 

@@ -1,5 +1,5 @@
 #include "NpcSystem.h"
-#include <spdlog/spdlog.h>
+//#include <spdlog/spdlog.h>
 #include <algorithm>
 #include <cmath>
 #include <random>
@@ -103,7 +103,7 @@ void NpcSystem::UpdateLeader(
             leader.hasActiveNavGoal = false;
             nav.path.clear();
             SendTo(nav, escapeGoal);
-            spdlog::info("[Leader] player is here", escapeGoal.x, escapeGoal.z);
+           // spdlog::info("[Leader] player is here", escapeGoal.x, escapeGoal.z);
             return;
         }
     }
@@ -123,7 +123,7 @@ void NpcSystem::UpdateLeader(
                 leader.state = LeaderState::Explore;
                 nav.path.clear();
                 leader.hasActiveNavGoal = false;
-                spdlog::debug("[Leader] im goin explorin");
+               // spdlog::debug("[Leader] im goin explorin");
                 break;
             }
         } else {
@@ -148,7 +148,7 @@ void NpcSystem::UpdateLeader(
             nav.path.clear();
             leader.hasActiveNavGoal = false;
             SendTo(nav, leader.homePosition);
-            spdlog::info("[Leader] im goin home");
+          //  spdlog::info("[Leader] im goin home");
             break;
         }
 
@@ -156,7 +156,7 @@ void NpcSystem::UpdateLeader(
             glm::vec3 exploreGoal = RandomPointAround(leader.homePosition, leader.exploreRadius);
             SendTo(nav, exploreGoal);
             leader.hasActiveNavGoal = true;
-            spdlog::info("[Leader] im explorin again", exploreGoal.x, exploreGoal.z);
+           // spdlog::info("[Leader] im explorin again", exploreGoal.x, exploreGoal.z);
         }
         break;
     }
@@ -170,7 +170,7 @@ void NpcSystem::UpdateLeader(
             leader.state = LeaderState::Idle;
             nav.path.clear();
             leader.hasActiveNavGoal = false;
-            spdlog::info("[Leader] im back home");
+          //  spdlog::info("[Leader] im back home");
         } else if (!leader.hasActiveNavGoal || HasArrived(nav)) {
             SendTo(nav, leader.homePosition);
             leader.hasActiveNavGoal = true;
@@ -187,7 +187,7 @@ void NpcSystem::UpdateLeader(
             nav.path.clear();
             leader.hasActiveNavGoal = false;
             leader.idleWaitTimer = RandFloat(leader.idleWaitMin, leader.idleWaitMax);
-            spdlog::info("[Leader] i escaped");
+           // spdlog::info("[Leader] i escaped");
             break;
         }
 

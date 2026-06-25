@@ -28,7 +28,7 @@ public:
 
 	void ShowOnly(std::vector<GameObject*>* group)
 	{
-		spdlog::critical("ShowOnly wywolane, grupa ma {} obiektow", group->size());
+		//spdlog::critical("ShowOnly wywolane, grupa ma {} obiektow", group->size());
 		std::vector<std::vector<GameObject*>*> all = {
 			&grp_main, &grp_settings, &grp_credits, &grp_load, &grp_pause, &grp_cutscene_1, &grp_cutscene_2
 		};
@@ -108,7 +108,7 @@ public:
 			Cutscene_1_sprite->sprites.push_back(tex.id);
 		}
 		Cutscene_1_sprite->screenPosition = glm::vec2(0.0f, 0.0f);
-		Cutscene_1_sprite->size = glm::vec2(1920.0f, 1080.0f);
+		Cutscene_1_sprite->size = glm::vec2(1940.0f, 1100.0f);;
 		Cutscene_1_sprite->layer = 0;
 		Cutscene_1_sprite->isVisible = true;
 		Cutscene_1_sprite->isAnimating = true;
@@ -149,8 +149,8 @@ public:
 			auto tex = ResourceManager::LoadTexture(filename, "res/sprites/cutscenes/outro");
 			Cutscene_2_sprite->sprites.push_back(tex.id);
 		}
-		Cutscene_2_sprite->screenPosition = glm::vec2(0.0f, 0.0f);
-		Cutscene_2_sprite->size = glm::vec2(1920.0f, 1080.0f);
+		Cutscene_2_sprite->screenPosition = glm::vec2(-10.0f, -10.0f);
+		Cutscene_2_sprite->size = glm::vec2( 1940.0f, 1100.0f);
 		Cutscene_2_sprite->layer = 0;
 		Cutscene_2_sprite->isVisible = true;
 		Cutscene_2_sprite->isAnimating = true;
@@ -162,7 +162,7 @@ public:
 		SpriteComponent* cutscene_2_procced_sprite = cutscene_2_object_procceed->AddComponent<SpriteComponent>();
 		cutscene_2_procced_sprite->sprites = {ResourceManager::LoadTexture("nothing.png", "res/sprites/cutscenes/intro").id};
 		cutscene_2_procced_sprite->screenPosition = glm::vec2(960.0f, 0.0f);
-		cutscene_2_procced_sprite->size = glm::vec2(1920.0f, 1080.0f);
+		cutscene_2_procced_sprite->size = glm::vec2( 1940.0f, 1100.0f);
 		cutscene_2_procced_sprite->layer = 1;
 		cutscene_2_procced_sprite->isVisible = true;
 		UIButtonComponent* Cutscene_2_button = cutscene_2_object_procceed->AddComponent<UIButtonComponent>();
@@ -188,8 +188,8 @@ public:
 			auto tex = ResourceManager::LoadTexture(filename, "res/sprites/menu/BG/");
 			BG_SPRITE->sprites.push_back(tex.id);
 		}
-		BG_SPRITE->screenPosition = glm::vec2(0.0f, 0.0f);
-		BG_SPRITE->size = glm::vec2(1920.0f, 1080.0f);
+		BG_SPRITE->screenPosition = glm::vec2(-10.0f, -10.0f);
+		BG_SPRITE->size = glm::vec2(1940.0f, 1100.0f);
 		BG_SPRITE->layer = 0;
 		BG_SPRITE->isVisible = true;
 		BG_SPRITE->isAnimating = true;
@@ -378,8 +378,8 @@ public:
 		GameObject* BG_Object_2 = scenaMenu->CreateGameObject(nullptr);
 		SpriteComponent* BG_sprite_credits = BG_Object_2->AddComponent<SpriteComponent>();
 		BG_sprite_credits->sprites = {ResourceManager::LoadTexture("credits.png", "res/sprites/menu/credits").id };
-		BG_sprite_credits->screenPosition = glm::vec2(0.0f, 0.0f);
-		BG_sprite_credits->size = glm::vec2(1920.0f, 1080.0f);
+		BG_sprite_credits->screenPosition = glm::vec2(-10.0f, -10.0f);
+		BG_sprite_credits->size = glm::vec2(1940.0f, 1100.0f);
 		BG_sprite_credits->layer = 0;
 		BG_sprite_credits->isVisible = true;
 		UIButtonComponent* bg_button_2 = BG_Object_2->AddComponent<UIButtonComponent>();
@@ -600,8 +600,8 @@ public:
 		GameObject* settings_back = scenaMenu->CreateGameObject(nullptr);
 		SpriteComponent* settings_back_sprite = settings_back->AddComponent<SpriteComponent>();
 		settings_back_sprite->sprites = {ResourceManager::LoadTexture("settings.png", "res/sprites/menu/settings").id};
-		settings_back_sprite->screenPosition = glm::vec2(0.0f, 0.0f);
-		settings_back_sprite->size = glm::vec2( 1920.0f, 1080.0f);
+		settings_back_sprite->screenPosition = glm::vec2(-10.0f, -10.0f);
+		settings_back_sprite->size = glm::vec2( 1940.0f, 1100.0f);
 		settings_back_sprite->layer = 0;
 		settings_back_sprite->isVisible = true;
 		
