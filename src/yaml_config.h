@@ -2,7 +2,7 @@
 #define YAML_CONFIG_H
 
 #include <yaml-cpp/yaml.h>
-#include <spdlog/spdlog.h>
+//#include <spdlog/spdlog.h>
 #include <string>
 #include <fstream>
 #include <vector>
@@ -80,11 +80,11 @@ public:
                 rootNode = YAML::Node(YAML::NodeType::Map);
             }
 
-            spdlog::info("YAML zaladowany: {}", filepath);
+            //::info("YAML zaladowany: {}", filepath);
             return true;
         }
         catch (const YAML::Exception& e) {
-            spdlog::error("Blad zaladowywania YAML ({}): {}", filepath, e.what());
+            //spdlog::error("Blad zaladowywania YAML ({}): {}", filepath, e.what());
             return false;
         }
     }
@@ -92,13 +92,13 @@ public:
     bool save(const std::string& path = "") {
         std::string savePath = path.empty() ? filepath : path;
         if (savePath.empty()) {
-            spdlog::error("Brak sciezki do YAML");
+            //spdlog::error("Brak sciezki do YAML");
             return false;
         }
 
         std::ofstream fout(savePath);
         if (!fout.is_open()) {
-            spdlog::error("Nie mozna otworzyc pliku do zapisu: {}", savePath);
+          //  spdlog::error("Nie mozna otworzyc pliku do zapisu: {}", savePath);
             return false;
         }
 
@@ -106,7 +106,7 @@ public:
         emitter << rootNode;
         fout << emitter.c_str();
 
-        spdlog::info("Zapisano YAML: {}", savePath);
+        //spdlog::info("Zapisano YAML: {}", savePath);
         return true;
     }
 

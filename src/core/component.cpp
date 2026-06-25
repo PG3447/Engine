@@ -16,7 +16,7 @@ void AnimatorComponent::OnEnable(GameObject* owner) {
         if (render) {
             render->animator = this;
             render->rendererDirty = true;
-            spdlog::info("animator przypisany do: {}", go->name);
+            //spdlog::info("animator przypisany do: {}", go->name);
         }
         });
 }
@@ -134,7 +134,7 @@ void RenderComponent::Deserialize(const YAML::Node& node)
     //    //mesh.material->surfaceType =
     //    //    static_cast<SurfaceType>(meshNode["surfaceType"].as<int>());
 
-    //    //// diffuseColor (vec4 -> dziêki YAML convert)
+    //    //// diffuseColor (vec4 -> dziï¿½ki YAML convert)
     //    //if (meshNode["diffuseColor"])
     //    //    mesh.material->diffuseColor =
     //    //    meshNode["diffuseColor"].as<glm::vec4>();
@@ -156,8 +156,8 @@ void RenderComponent::Deserialize(const YAML::Node& node)
     //    //    mesh.material->normalMap =
     //    //    ResourceManager::LoadTexture(meshNode["normal"].as<std::string>());
 
-    //    //// UWAGA: masz duplikat "ao" w serialize — to nadpisuje poprzedni
-    //    //// mesh.material->specularMap i aoMap s¹ w konflikcie
+    //    //// UWAGA: masz duplikat "ao" w serialize ï¿½ to nadpisuje poprzedni
+    //    //// mesh.material->specularMap i aoMap sï¿½ w konflikcie
 
     //    //mesh.material->aoInMetallicRoughness =
     //    //    meshNode["aoInMetallicRoughness"].as<bool>();

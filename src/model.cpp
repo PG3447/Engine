@@ -50,7 +50,7 @@ void Model::loadModel(string const& path)
     ); 
     if (!scene || !scene->mRootNode || ((scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) && !scene->HasAnimations()))
     {
-        spdlog::error("ERROR::ASSIMP:: {}", importer.GetErrorString());
+        //spdlog::error("ERROR::ASSIMP:: {}", importer.GetErrorString());
         return;
     }
 
@@ -87,7 +87,7 @@ std::shared_ptr<ModelNode> Model::processNode(aiNode* node, const aiScene* scene
     node->mTransformation.Decompose(scale, rot, pos);
 
     model->name = node->mName.C_Str();
-    spdlog::warn(model->name);
+    //spdlog::warn(model->name);
     //model->directory = this->directory;
 
     model->transform.setLocalPosition({ pos.x, pos.y, pos.z });
@@ -178,7 +178,7 @@ MeshNode Model::processMesh(aiMesh* mesh, const aiScene* scene)
         for (unsigned int j = 0; j < face.mNumIndices; j++)
             indices.push_back(face.mIndices[j]);
     }
-    /spdlog::warn("ekstracja kosc licze aabb");
+    //spdlog::warn("ekstracja kosc licze aabb");
     ExtractBoneWeightForVertices(vertices, mesh, scene);
 
     // process materials
@@ -280,7 +280,7 @@ MeshNode Model::processMesh(aiMesh* mesh, const aiScene* scene)
     node.cpuData = cpuData;
     node.gpuMesh = gpuMesh;
     node.material = myMaterial;
-    spdlog::warn("uwaga licze aabb");
+    //spdlog::warn("uwaga licze aabb");
     AABB aabb;
     aabb.min = glm::vec3(FLT_MAX);
     aabb.max = glm::vec3(-FLT_MAX);

@@ -158,7 +158,7 @@ private:
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
         glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
 
-        spdlog::info("GPUDrivenRenderer: resize → {} obiektów", maxRenderObjects);
+        //spdlog::info("GPUDrivenRenderer: resize → {} obiektów", maxRenderObjects);
     }
 
     // Zmień rozmiar instanceSSBO jeśli potrzeba więcej miejsca
@@ -264,7 +264,7 @@ public:
         if (required > current)
         {
             glBufferData(GL_SHADER_STORAGE_BUFFER, required, nullptr, GL_DYNAMIC_DRAW);
-            spdlog::info("BoneMatricesSSBO resize: {} szkieletów", skeletonCount);
+           // spdlog::info("BoneMatricesSSBO resize: {} szkieletów", skeletonCount);
         }
 
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
@@ -329,7 +329,7 @@ public:
         glBufferStorage(GL_SHADER_STORAGE_BUFFER, sizeof(uint32_t), nullptr, GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
         totalVisibleMapped = (uint32_t*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(uint32_t), GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
 
-        spdlog::warn("inicjalizacja renderData");
+       // spdlog::warn("inicjalizacja renderData");
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, renderDataSSBO);
         glBufferData(GL_SHADER_STORAGE_BUFFER, maxRenderObjects * sizeof(RenderData), nullptr, GL_DYNAMIC_DRAW);
 
@@ -439,8 +439,8 @@ public:
         data->setMeshId(passID, id);
         rc->rendererDirty = true;
         
-        spdlog::error("Zarejestrowano mesh");
-        spdlog::info(allVertices.size());
+   //     spdlog::error("Zarejestrowano mesh");
+   //     spdlog::info(allVertices.size());
         return (GLuint)id; //meshID
     }
 
@@ -478,8 +478,8 @@ public:
         mat->setMaterialId(passID, id);
         rc->rendererDirty = true;
 
-        spdlog::error("Zarejestrowano material");
-        spdlog::info(materialRegistry.size());
+   //     spdlog::error("Zarejestrowano material");
+//spdlog::info(materialRegistry.size());
         return id; //materialID
     }
 
@@ -536,7 +536,7 @@ public:
         glBufferData(GL_SHADER_STORAGE_BUFFER, meshCount * sizeof(DrawElementsIndirectCommand), nullptr, GL_DYNAMIC_DRAW);
 
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-        spdlog::warn("Dane sie wysylaja");
+      //  spdlog::warn("Dane sie wysylaja");
     }
 
     void UploadMaterials()

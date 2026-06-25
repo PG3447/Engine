@@ -1,6 +1,7 @@
 #ifndef COMPONENT_H
 #define COMPONENT_H
 
+#include <functional>
 #include <glm/glm.hpp>
 #include <memory>
 #include <string>

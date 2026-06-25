@@ -4,7 +4,7 @@
 #include <glad/glad.h>
 #include <string>
 #include <unordered_map>
-#include <spdlog/spdlog.h>
+//#include <spdlog/spdlog.h>
 #include <assimp/texture.h>
 #include <memory>
 #include "model.h"

@@ -1,6 +1,8 @@
 #ifndef RENDER_SYSTEM_H
 #define RENDER_SYSTEM_H
 
+#include <chrono>
+
 #include "core/ecs.h"
 
 #include <model.h>
@@ -52,7 +54,7 @@ struct PerCameraHiZ
 
         glBindTexture(GL_TEXTURE_2D, 0);
 
-        spdlog::info("PerCameraHiZ::Init {}x{} mips={}", w, h, hizMipLevels);
+        //spdlog::info("PerCameraHiZ::Init {}x{} mips={}", w, h, hizMipLevels);
     }
 
     // Wywoływane tylko przy resize okna — glTexStorage2D jest immutable
@@ -949,7 +951,7 @@ public:
         if (fboWidth == w && fboHeight == h && !openGL) return; // bez zmian
         fboWidth = w; fboHeight = h;
 
-        spdlog::warn("FBO sie ustawia");
+        //spdlog::warn("FBO sie ustawia");
         if (sceneFBO) {
             glDeleteFramebuffers(1, &sceneFBO);
             glDeleteTextures(1, &sceneColorTexture);
@@ -984,8 +986,8 @@ public:
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, sceneDepthTexture, 0);
 
-        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-            spdlog::error("SceneFBO incomplete!");
+        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE){}
+            //spdlog::error("SceneFBO incomplete!");
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         glBindTexture(GL_TEXTURE_2D, 0);
