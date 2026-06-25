@@ -1,0 +1,47 @@
+input:
+  keyboard:
+    move_right: [GLFW_KEY_D]
+    move_left: [GLFW_KEY_A]
+    move_up: [GLFW_KEY_W]
+    move_down: [GLFW_KEY_S]
+    move_right1: [GLFW_KEY_RIGHT]
+    move_left1: [GLFW_KEY_LEFT]
+    move_up1: [GLFW_KEY_UP]
+    move_down1: [GLFW_KEY_DOWN]
+    toggle_frustum_culling: [GLFW_KEY_F]
+    toggle_oclussion_culling: [GLFW_KEY_O]
+    raycast_debug: [GLFW_KEY_R]
+    anim_play_dying: [GLFW_KEY_1]
+    anim_play_jump: [GLFW_KEY_2]
+    anim_slow_mo: [GLFW_KEY_3]
+    anim_fast_forward: [GLFW_KEY_4]
+    gamma_up: [GLFW_KEY_0]
+    gamma_down: [GLFW_KEY_9]
+    play_sound: [GLFW_KEY_H]
+    interact_p1: [GLFW_KEY_E]
+    alt_interact_p1: [GLFW_KEY_Q]
+    ui_menu: [GLFW_KEY_ESCAPE]
+    reset_level: [GLFW_KEY_F9]
+  mouse:
+    ui_click: [GLFW_MOUSE_BUTTON_LEFT]
+    interact_p1: [GLFW_MOUSE_BUTTON_LEFT]
+    right_click: [GLFW_MOUSE_BUTTON_RIGHT]
+  gamepad:
+    ui_click:
+      - {button: GLFW_GAMEPAD_BUTTON_CROSS, id: 0}
+      - {button: GLFW_GAMEPAD_BUTTON_CROSS, id: 1}
+      - {button: GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER, id: 0}
+      - {button: GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER, id: 1}
+    interact_p1:
+      - {button: GLFW_GAMEPAD_BUTTON_CROSS, id: 0}
+      - {button: GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER, id: 0}
+    interact_p2:
+      - {button: GLFW_GAMEPAD_BUTTON_CROSS, id: 1}
+      - {button: GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER, id: 1}
+    alt_interact_p1:
+      - {button: GLFW_GAMEPAD_BUTTON_TRIANGLE, id: 0}
+    alt_interact_p2:
+      - {button: GLFW_GAMEPAD_BUTTON_TRIANGLE, id: 1}
+    ui_menu:
+      - {button: GLFW_GAMEPAD_BUTTON_START, id: 0}
+      - {button: GLFW_GAMEPAD_BUTTON_START, id: 1}
