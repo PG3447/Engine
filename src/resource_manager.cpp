@@ -155,7 +155,7 @@ TextureData ResourceManager::loadTextureFromFile(const std::string& path, const 
         else if (nrComponents == 3)
         {
             format = GL_RGB;
-            internalFormat = GL_RGB;// GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
+            internalFormat = GL_RGB; //GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
         }
         else if (nrComponents == 4) {
             hasAlpha = true;
