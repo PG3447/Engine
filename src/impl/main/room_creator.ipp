@@ -1556,11 +1556,12 @@ void InitializeRoomLights(int startingRoomId)
 void createTrigger(Scene* scena)
 {
 
-    for (auto& room : roomsLights)
-    {
-        createTriggerRoom(scena, room.id, room.name, room.position, room.halfSize);
-    }
+    //for (auto& room : roomsLights)
+    //{
+    //    createTriggerRoom(scena, room.id, room.name, room.position, room.halfSize);
+    //}
 
-    InitializeRoomLights(0);
+    //InitializeRoomLights(0);
+    //InitializeRoomLights(1);
 }
 
