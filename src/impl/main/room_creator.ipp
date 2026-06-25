@@ -58,7 +58,7 @@ void createFirstRoom(Scene* scena1) {
         if (i == 2 || i == 3) {
             tablicaKibli[i] = urinModel->Instantiate(*scena1, kible, nullptr);
             tablicaKibli[i]->name = "Kibel" + std::to_string(i);
-            tablicaKibli[i]->GetComponent<TransformComponent>()->scale    = glm::vec3{ 12, 12, 12 };
+            tablicaKibli[i]->GetComponent<TransformComponent>()->scale    = glm::vec3{ 1.7, 1.7, 1.7 };
             tablicaKibli[i]->AddComponent<ColliderComponent>();
             tablicaKibli[i]->GetComponent<ColliderComponent>()->halfSize     = glm::vec3{ 2.5, 4, 2.5 };
             tablicaKibli[i]->GetComponent<ColliderComponent>()->offset       = glm::vec3{ 0, 4, 0 };
