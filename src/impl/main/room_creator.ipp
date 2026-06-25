@@ -1,7 +1,5 @@
 #pragma once
-#include "room.h"
 
-std::vector<Room> roomsLights;
 
 void createFirstRoom(Scene* scena1) {
     floorModel = std::make_unique<Prefab>("res/models/number_floor.glb");
@@ -370,8 +368,9 @@ void createMainRooom(Scene* scena) {
         }
 
         if (go->name.find("lights_") != std::string::npos) {
-            machineLights[go->name] = go;
-
+            if (go->name != "lights_6") {
+                machineLights[go->name] = go;
+            }
             LightComponent* lc = go->AddComponent<LightComponent>();
             lc->type = Point;
             lc->ambient = glm::vec3(0.1f, 0.05f, 0.0f);
@@ -381,13 +380,18 @@ void createMainRooom(Scene* scena) {
             lc->linear = 0.22f;
             lc->quadratic = 0.20f;
             roomsLights[mainRoom.id].lights.push_back(lc);
-           
 
-            if (go->name == "lights_2" || go->name == "lights_5") {
+            if (go->name == "lights_6")
+            {
+                lc->intensity = 5.0f;
+            }
+
+            if (go->name == "lights_2" || go->name == "lights_5" || go->name == "lights_6") {
                 lc->isOn = true;
                 roomsLights[mainRoom.id].savedStates.push_back(true);
             }
-            else {
+            else
+            {
                 lc->isOn = false;
                 roomsLights[mainRoom.id].savedStates.push_back(false);
             }
@@ -406,6 +410,8 @@ void createMainRooom(Scene* scena) {
             spdlog::info("Skonfigurowano slot maszyny: {}", go->name);
         }
     });
+
+
 
     GameObject * bossCapsule = bossCapsuleModel->Instantiate(*scena, nullptr, nullptr);
     bossCapsule->name = "BossCapsule";
@@ -995,8 +1001,6 @@ void createRentgenRoom(Scene* scena) {
 
     rentgen->TraverseChildren([&](GameObject* go) {
         if (go->name.find("lights_") != std::string::npos) {
-            machineLights[go->name] = go;
-
             LightComponent* lc = go->AddComponent<LightComponent>();
             lc->type = Point;
             lc->ambient = glm::vec3(0.1f, 0.05f, 0.0f);

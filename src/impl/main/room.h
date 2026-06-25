@@ -14,15 +14,4 @@
 #include "core/gameobject.h"
 #include "core/component.h"
 
-struct Room
-{
-    uint16_t id;
-    std::string name;
-    glm::vec3 position = glm::vec3(0.0);
-    glm::vec3 halfSize = glm::vec3(1.0);
-    std::vector<LightComponent*> lights;
-    std::vector<bool> savedStates;
-    std::set<GameObject*> occupants;
-};
-
 #endif //MIMICRY_EXPERIMENTS_ROOM_H
