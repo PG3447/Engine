@@ -286,7 +286,7 @@ void createCrematoriumCorridor(Scene * scena);
 #include "impl/main/logic_update.ipp"
 
 void createFirstRoom(Scene* scena1);
-void createMainRooom(Scene* scena);
+void createMainRooom(Scene* scena, Menu& menu);
 void createNuclearRooom(Scene* scena);
 void createCrematorium(Scene* scena);
 void createRentgenRoom(Scene* scena);
@@ -610,7 +610,7 @@ int main(int, char**)
     postProcessingSystem = ecs->GetSystem<PostProcessingSystem>();
 
     createFirstRoom(scena1);
-    createMainRooom(scena1);
+    createMainRooom(scena1, menu);
     createNuclearRooom(scena1);
     createCrematorium(scena1);
     createRentgenRoom(scena1);

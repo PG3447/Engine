@@ -8,6 +8,10 @@ std::unique_ptr<Prefab> bed3Model;
 std::unique_ptr<Prefab> deskModel;
 std::unique_ptr<Prefab> doorsModel;
 std::unique_ptr<Prefab> krzesloModel;
+std::unique_ptr<Prefab> lampa1Final;
+std::unique_ptr<Prefab> lampa2Final;
+std::unique_ptr<Prefab> lampa3Final;
+std::unique_ptr<Prefab> lampa4Final;
 std::unique_ptr<Prefab> lampa1Model;
 std::unique_ptr<Prefab> lampa2Model;
 std::unique_ptr<Prefab> lampa3Model;
@@ -162,6 +166,7 @@ void connectAllModels() {
     toiletPaperRedModel = std::make_unique<Prefab>("res/models/papier_czerwony.glb");
     toiletPaperGreenModel = std::make_unique<Prefab>("res/models/papier_zielony.glb");
     toiletPaperBlueModel = std::make_unique<Prefab>("res/models/papier_niebieski.glb");
+    //lampa1Final = std::make_unique<Prefab>("res/models/lampy/papier_niebieski.glb");
     mirrorModel1     = std::make_unique<Prefab>("res/models/lazienka/lustro1.glb");
     mirrorModel2     = std::make_unique<Prefab>("res/models/lazienka/lustro2.glb");
     mirrorModel3     = std::make_unique<Prefab>("res/models/lazienka/lustro3.glb");

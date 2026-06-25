@@ -262,7 +262,7 @@ void createFirstRoom(Scene* scena1) {
     toiletDoorsMap[hingeWashroomExit].requiresUnlock = true;
 }
 
-void createMainRooom(Scene* scena) {
+void createMainRooom(Scene* scena, Menu& menu) {
 
     Room mainRoom;
     mainRoom.id = 1;
