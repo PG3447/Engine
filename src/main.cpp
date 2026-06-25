@@ -16,7 +16,6 @@
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include <spdlog/spdlog.h>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -73,7 +72,7 @@ static void glfw_error_callback(int error, const char* description)
 }
 
 bool init();
-void init_imgui();
+//void init_imgui();
 
 void compileShader();
 
@@ -91,10 +90,10 @@ bool processCameraInput(ECS& ecs, CameraComponent& cam, TransformComponent& play
 
 bool processCameraGamepad(ECS& ecs, CameraComponent& cam, TransformComponent& transformCamera, TransformComponent& playerTransform, int gamepad_id, bool& outIsTurning);
 void connectAllModels();
-
-void imgui_begin();
-void imgui_render(SceneManager& sceneManager);
-void imgui_end();
+//
+//void imgui_begin();
+//void imgui_render(SceneManager& sceneManager);
+//void imgui_end();
 
 void end_frame();
 
