@@ -130,11 +130,11 @@ NavAgentBenchmarkStats NavPathSystem::RunNavigationBenchmark(
     stats.methodName   = methodName;
     stats.totalQueries = numQueries;
 
-    spdlog::info("[NavBenchmark] Rozpoczynam benchmark nawigacji: {} ({} zapytań)",
-        methodName, numQueries);
+    //spdlog::info("[NavBenchmark] Rozpoczynam benchmark nawigacji: {} ({} zapytań)",
+    //    methodName, numQueries);
 
     if (navData.triangles.empty()) {
-        spdlog::warn("[NavBenchmark] NavMesh jest pusty, pomijam.");
+        //spdlog::warn("[NavBenchmark] NavMesh jest pusty, pomijam.");
         return stats;
     }
 
@@ -149,7 +149,7 @@ NavAgentBenchmarkStats NavPathSystem::RunNavigationBenchmark(
     }
 
     if (walkableTris.size() < 2) {
-        spdlog::warn("[NavBenchmark] Za mało walkable trójkątów do testu.");
+        //spdlog::warn("[NavBenchmark] Za mało walkable trójkątów do testu.");
         cachedNavMesh_ = prevCached;
         return stats;
     }
@@ -247,12 +247,12 @@ NavAgentBenchmarkStats NavPathSystem::RunNavigationBenchmark(
 
     cachedNavMesh_ = prevCached;
 
-    spdlog::info("[NavBenchmark] {} — success: {:.1f}%, stretch: {:.3f}, A*: {:.3f}ms, coverage: {:.1f}%",
-        methodName,
-        stats.successRate * 100.0f,
-        stats.avgPathStretch,
-        stats.avgAStarTimeMs,
-        stats.coveragePercent);
+    //spdlog::info("[NavBenchmark] {} — success: {:.1f}%, stretch: {:.3f}, A*: {:.3f}ms, coverage: {:.1f}%",
+    //    methodName,
+    //    stats.successRate * 100.0f,
+    //    stats.avgPathStretch,
+    //    stats.avgAStarTimeMs,
+    //    stats.coveragePercent);
 
     return stats;
 }
@@ -262,7 +262,7 @@ void NavPathSystem::AppendBenchmarkToFile(
 {
     std::ofstream f(path, std::ios::app);
     if (!f.is_open()) {
-        spdlog::error("[NavBenchmark] Nie można otworzyć: {}", path);
+        //spdlog::error("[NavBenchmark] Nie można otworzyć: {}", path);
         return;
     }
 

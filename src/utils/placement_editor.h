@@ -149,14 +149,14 @@ inline GameObject* SpawnAtCursor(Scene& scene, Prefab& prefab, const std::string
     {
         if (!std::filesystem::exists(Get().yamlPath))
         {
-            spdlog::info("PlacementEditor: {} nie istnieje jeszcze - nic do wczytania.", Get().yamlPath);
+            //spdlog::info("PlacementEditor: {} nie istnieje jeszcze - nic do wczytania.", Get().yamlPath);
             return 0;
         }
 
         YamlConfig cfg;
         if (!cfg.load(Get().yamlPath))
         {
-            spdlog::warn("PlacementEditor: nie udalo sie wczytac {}", Get().yamlPath);
+            //spdlog::warn("PlacementEditor: nie udalo sie wczytac {}", Get().yamlPath);
             return 0;
         }
 
@@ -164,7 +164,7 @@ inline GameObject* SpawnAtCursor(Scene& scene, Prefab& prefab, const std::string
         YAML::Node list = root["Placements"];
         if (!list || !list.IsSequence())
         {
-            spdlog::info("PlacementEditor: plik {} nie zawiera listy 'Placements'.", Get().yamlPath);
+            //spdlog::info("PlacementEditor: plik {} nie zawiera listy 'Placements'.", Get().yamlPath);
             return 0;
         }
 
@@ -219,7 +219,7 @@ inline GameObject* SpawnAtCursor(Scene& scene, Prefab& prefab, const std::string
             spawned++;
         }
 
-        spdlog::info("PlacementEditor: wczytano {} obiektow z {}.", spawned, Get().yamlPath);
+        //spdlog::info("PlacementEditor: wczytano {} obiektow z {}.", spawned, Get().yamlPath);
         return spawned;
     }
 

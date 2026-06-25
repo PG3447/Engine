@@ -205,7 +205,7 @@ int SurfaceDecorationSystem::SpawnConfig(
     if (cfg.candidates.empty())   return 0;
     if (!cfg.targetObject)
     {
-        spdlog::warn("[SurfaceDecoration] Config '{}': brak targetObject.", cfg.name);
+        //spdlog::warn("[SurfaceDecoration] Config '{}': brak targetObject.", cfg.name);
         return 0;
     }
 
@@ -214,7 +214,7 @@ int SurfaceDecorationSystem::SpawnConfig(
 
     if (!tr || !col)
     {
-        spdlog::warn("[SurfaceDecoration] Config '{}': targetObject nie ma Transform/Collider.", cfg.name);
+        //spdlog::warn("[SurfaceDecoration] Config '{}': targetObject nie ma Transform/Collider.", cfg.name);
         return 0;
     }
 
@@ -228,7 +228,7 @@ int SurfaceDecorationSystem::SpawnConfig(
 
     if (width <= 0.0f || depth <= 0.0f)
     {
-        spdlog::warn("[SurfaceDecoration] Config '{}': collider ma zerowy rozmiar.", cfg.name);
+        //spdlog::warn("[SurfaceDecoration] Config '{}': collider ma zerowy rozmiar.", cfg.name);
         return 0;
     }
 
@@ -253,8 +253,8 @@ int SurfaceDecorationSystem::SpawnConfig(
 
         if (!point.has_value())
         {
-            spdlog::warn("[SurfaceDecoration] Config '{}': nie można umieścić obiektu {} (brak miejsca).",
-                cfg.name, i);
+     /*       spdlog::warn("[SurfaceDecoration] Config '{}': nie można umieścić obiektu {} (brak miejsca).",
+                cfg.name, i);*/
             continue;
         }
 
@@ -266,7 +266,7 @@ int SurfaceDecorationSystem::SpawnConfig(
         GameObject* go = chosen->prefab->Instantiate(scene, nullptr, shader);
         if (!go)
         {
-            spdlog::error("[SurfaceDecoration] Instantiate zwrócił null dla '{}'.", chosen->label);
+            //spdlog::error("[SurfaceDecoration] Instantiate zwrócił null dla '{}'.", chosen->label);
             continue;
         }
 
@@ -289,8 +289,8 @@ int SurfaceDecorationSystem::SpawnConfig(
         ++created;
     }
 
-    spdlog::info("[SurfaceDecoration] Config '{}': {} / {} obiektów umieszczonych.",
-        cfg.name, created, cfg.totalCount);
+  /*  spdlog::info("[SurfaceDecoration] Config '{}': {} / {} obiektów umieszczonych.",
+        cfg.name, created, cfg.totalCount);*/
     return created;
 }
 
@@ -300,7 +300,7 @@ int SurfaceDecorationSystem::SpawnAll(Scene& scene, Shader* shader)
     for (const auto& cfg : m_configs)
         total += SpawnConfig(cfg, scene, shader);
 
-    spdlog::info("[SurfaceDecoration] SpawnAll(): łącznie {} obiektów.", total);
+    //spdlog::info("[SurfaceDecoration] SpawnAll(): łącznie {} obiektów.", total);
     return total;
 }
 
@@ -326,346 +326,346 @@ void SurfaceDecorationSystem::DespawnAll(Scene& scene)
         }
     }
     m_spawned.clear();
-    spdlog::info("[SurfaceDecoration] DespawnAll(): ukryto {} dekoracji.", count);
+    //spdlog::info("[SurfaceDecoration] DespawnAll(): ukryto {} dekoracji.", count);
 }
-
-bool SurfaceDecorationSystem::DrawConfigEditor(
-    SurfaceDecorationConfig&                            cfg,
-    const std::vector<std::pair<std::string, Prefab*>>& availablePrefabs,
-    const std::vector<GameObject*>&                     sceneObjects,
-    int                                                 cfgIndex)
-{
-    bool changed = false;
-    ImGui::PushID(cfgIndex);
-
-    changed |= ImGui::InputText("Nazwa##cfgname", cfg.name, sizeof(cfg.name));
-    changed |= ImGui::Checkbox("Aktywna", &cfg.enabled);
-
-    ImGui::Separator();
-
-    ImGui::Text("Obiekt źródłowy (kolider)");
-
-    int curObjIdx = -1;
-    for (int i = 0; i < (int)sceneObjects.size(); ++i)
-        if (sceneObjects[i] == cfg.targetObject) { curObjIdx = i; break; }
-
-    std::vector<const char*> objNames;
-    objNames.reserve(sceneObjects.size());
-    for (auto* go : sceneObjects)
-        objNames.push_back(go ? go->name.c_str() : "(null)");
-
-    if (!objNames.empty())
-    {
-        if (ImGui::Combo("Obiekt##src", &curObjIdx, objNames.data(), (int)objNames.size()))
-        {
-            cfg.targetObject = sceneObjects[curObjIdx];
-            strncpy(cfg.targetName,
-                cfg.targetObject->name.c_str(),
-                sizeof(cfg.targetName) - 1);
-            changed = true;
-        }
-
-        if (cfg.targetObject)
-        {
-            auto* col = cfg.targetObject->GetComponent<ColliderComponent>();
-            auto* tr  = cfg.targetObject->GetComponent<TransformComponent>();
-            if (col && tr)
-            {
-                float surfY  = tr->position.y + col->offset.y + col->halfSize.y;
-                float surfW  = col->halfSize.x * 2.0f;
-                float surfD  = col->halfSize.z * 2.0f;
-                ImGui::TextDisabled("Powierzchnia: %.1f x %.1f  Y=%.2f", surfW, surfD, surfY);
-            }
-            else
-            {
-                ImGui::TextColored(ImVec4(1,0.4f,0.4f,1), "Brak Collider / Transform!");
-            }
-        }
-    }
-    else
-    {
-        ImGui::TextDisabled("(brak obiektów w scenie)");
-    }
-
-    ImGui::Separator();
-
-    ImGui::Text("Generowanie");
-    changed |= ImGui::DragInt  ("Liczba obiektów",   &cfg.totalCount,  1, 0, 2000);
-    changed |= ImGui::DragFloat("Min. dystans",      &cfg.minDistance, 0.01f, 0.0f, 50.0f);
-    changed |= ImGui::DragFloat("Padding",           &cfg.padding,     0.01f, 0.0f, 50.0f);
-
-    ImGui::Separator();
-
-    ImGui::Text("Voronoi density");
-    ImGui::SameLine();
-    ImGui::TextDisabled("(?)");
-    if (ImGui::IsItemHovered())
-        ImGui::SetTooltip(
-            "Voronoi dzieli powierzchnię na komórki.\n"
-            "Obiekty częściej pojawiają się blisko centroidów komórek\n"
-            "(lub daleko — zależnie od trybu).\n"
-            "Falloff kontroluje jak stromo opada gęstość.");
-
-    changed |= ImGui::DragInt("Punkty Voronoi",    &cfg.voronoiPoints,  1, 1, 64);
-    changed |= ImGui::SliderFloat("Falloff gęstości", &cfg.densityFalloff, 0.0f, 1.0f);
-    changed |= ImGui::Checkbox("Gęsto w centrum komórki", &cfg.denseCenter);
-
-    {
-        ImGui::Text("Podgląd gęstości (1D cross-section):");
-        const int BARS = 40;
-        float barVals[BARS];
-        std::vector<glm::vec2> mockCentroids = {{ 0.5f, 0.5f }};
-        for (int b = 0; b < BARS; ++b)
-        {
-            float px = (b + 0.5f) / (float)BARS;
-            barVals[b] = VoronoiDensityWeight(
-                px, 0.5f,
-                0.0f, 0.0f, 1.0f, 1.0f,
-                mockCentroids,
-                cfg.densityFalloff,
-                cfg.denseCenter);
-        }
-        ImGui::PlotHistogram("##density", barVals, BARS, 0,
-            nullptr, 0.0f, 1.0f, ImVec2(0, 40));
-        ImGui::TextDisabled("lewa = brzeg komórki  |  środek = centrum  |  prawa = brzeg");
-    }
-
-    ImGui::Separator();
-
-    ImGui::Text("Bazowa skala");
-    changed |= ImGui::DragFloat3("Skala##bs",
-        reinterpret_cast<float*>(&cfg.baseScale), 0.01f, 0.001f, 100.0f);
-
-    ImGui::Separator();
-
-    ImGui::Text("Kandydaci (%d)", (int)cfg.candidates.size());
-
-    int toRemove = -1;
-    for (int ci = 0; ci < (int)cfg.candidates.size(); ++ci)
-    {
-        ImGui::PushID(ci);
-        auto& c = cfg.candidates[ci];
-
-        ImGui::Separator();
-
-        // Nagłówek kandydata z wagą
-        float totalWeight = 0.0f;
-        for (auto& cc : cfg.candidates) totalWeight += cc.weight;
-        float pct = (totalWeight > 0.0f) ? (c.weight / totalWeight * 100.0f) : 0.0f;
-
-        ImGui::Text("#%d  %s  (%.0f%%)", ci,
-            c.label[0] ? c.label : "(brak prefabu)", pct);
-
-        // Wybór prefabu
-        if (!availablePrefabs.empty())
-        {
-            int curIdx = -1;
-            for (int pi = 0; pi < (int)availablePrefabs.size(); ++pi)
-                if (availablePrefabs[pi].second == c.prefab) { curIdx = pi; break; }
-
-            std::vector<const char*> names;
-            names.reserve(availablePrefabs.size());
-            for (auto& [n, _] : availablePrefabs) names.push_back(n.c_str());
-
-            if (ImGui::Combo("Prefab##p", &curIdx, names.data(), (int)names.size()))
-            {
-                c.prefab = availablePrefabs[curIdx].second;
-                strncpy(c.label,
-                    availablePrefabs[curIdx].first.c_str(),
-                    sizeof(c.label) - 1);
-                changed = true;
-            }
-        }
-        else
-        {
-            ImGui::TextDisabled("(podaj availablePrefabs)");
-        }
-
-        changed |= ImGui::DragFloat("Waga##w",        &c.weight,   0.1f, 0.0f, 1000.0f);
-        changed |= ImGui::DragFloat("Skala min##smin", &c.scaleMin, 0.01f, 0.001f, 100.0f);
-        changed |= ImGui::DragFloat("Skala max##smax", &c.scaleMax, 0.01f, 0.001f, 100.0f);
-
-        if (c.scaleMin > c.scaleMax) c.scaleMin = c.scaleMax;
-
-        // Rotacje — zwinięte żeby nie zajmowały dużo miejsca
-        if (ImGui::TreeNode("Rotacje"))
-        {
-            changed |= ImGui::DragFloat2("Rot Y min/max",
-                reinterpret_cast<float*>(&c.rotYMin), 0.5f, -360.0f, 360.0f);
-            changed |= ImGui::DragFloat2("Rot X min/max",
-                reinterpret_cast<float*>(&c.rotXMin), 0.5f, -180.0f, 180.0f);
-            changed |= ImGui::DragFloat2("Rot Z min/max",
-                reinterpret_cast<float*>(&c.rotZMin), 0.5f, -180.0f, 180.0f);
-            ImGui::TreePop();
-        }
-
-        if (ImGui::TreeNode("Offset lokalny"))
-        {
-            changed |= ImGui::DragFloat3("Offset##off",
-                reinterpret_cast<float*>(&c.localOffset), 0.01f);
-            ImGui::TreePop();
-        }
-
-        if (ImGui::Button("Usuń kandydata##rm")) toRemove = ci;
-
-        ImGui::PopID();
-    }
-
-    if (toRemove >= 0)
-    {
-        cfg.candidates.erase(cfg.candidates.begin() + toRemove);
-        changed = true;
-    }
-
-    if (ImGui::Button("+ Dodaj kandydata"))
-    {
-        cfg.candidates.push_back(SurfaceDecorationCandidate{});
-        changed = true;
-    }
-
-    ImGui::PopID();
-    return changed;
-}
-
-bool SurfaceDecorationSystem::DrawImGui(
-    const std::vector<std::pair<std::string, Prefab*>>& availablePrefabs,
-    const std::vector<GameObject*>&                     sceneObjects,
-    Scene&                                              scene,
-    Shader*                                             shader)
-{
-    bool changed = false;
-
-    ImGui::Begin("Surface Decoration System");
-
-    if (ImGui::Button("Generuj wszystkie"))
-    {
-        DespawnAll(scene);
-        SpawnAll(scene, shader);
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("Usuń dekoracje"))
-        DespawnAll(scene);
-
-    ImGui::SameLine();
-    ImGui::TextDisabled("(%d obiektów)", (int)m_spawned.size());
-
-    ImGui::Separator();
-
-
-    ImGui::InputText("Plik YAML##yaml", m_yamlPath, sizeof(m_yamlPath));
-    if (ImGui::Button("Zapisz##save"))
-    {
-        if (SaveToYaml(m_yamlPath))
-            spdlog::info("[SurfaceDecoration] Zapisano do {}", m_yamlPath);
-        else
-            spdlog::error("[SurfaceDecoration] Błąd zapisu do {}", m_yamlPath);
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("Wczytaj##load"))
-    {
-        if (LoadFromYaml(m_yamlPath, availablePrefabs, sceneObjects))
-        {
-            spdlog::info("[SurfaceDecoration] Wczytano z {}", m_yamlPath);
-            changed = true;
-        }
-        else
-            spdlog::error("[SurfaceDecoration] Błąd wczytu z {}", m_yamlPath);
-    }
-
-    ImGui::Separator();
-    ImGui::TextDisabled("Zapis dokładnego układu (pozycje/rotacje/skale) — do wczytania w runtime:");
-    ImGui::InputText("Plik instancji##instyaml", m_instancesYamlPath, sizeof(m_instancesYamlPath));
-    if (ImGui::Button("Zapisz układ instancji"))
-    {
-        if (SaveInstancesToYaml(m_instancesYamlPath))
-            spdlog::info("[SurfaceDecoration] Zapisano układ instancji do {}", m_instancesYamlPath);
-        else
-            spdlog::error("[SurfaceDecoration] Błąd zapisu instancji do {}", m_instancesYamlPath);
-    }
-
-    ImGui::Separator();
-
-    ImGui::Text("Konfiguracje (%d)", (int)m_configs.size());
-
-    ImGui::BeginChild("##cfglist", ImVec2(200, 300), true);
-    for (int i = 0; i < (int)m_configs.size(); ++i)
-    {
-        ImGui::PushID(i);
-        bool selected = (m_selectedConfig == i);
-
-        // Kolorek jeśli nieaktywna
-        if (!m_configs[i].enabled)
-            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
-
-        if (ImGui::Selectable(m_configs[i].name, selected))
-            m_selectedConfig = i;
-
-        if (!m_configs[i].enabled)
-            ImGui::PopStyleColor();
-
-        ImGui::PopID();
-    }
-    ImGui::EndChild();
-
-    ImGui::SameLine();
-
-    ImGui::BeginGroup();
-
-    if (m_selectedConfig >= 0 && m_selectedConfig < (int)m_configs.size())
-    {
-        ImGui::BeginChild("##cfgedit", ImVec2(0, 300), true);
-        changed |= DrawConfigEditor(
-            m_configs[m_selectedConfig],
-            availablePrefabs,
-            sceneObjects,
-            m_selectedConfig);
-        ImGui::EndChild();
-
-        if (ImGui::Button("Generuj tę konfigurację"))
-        {
-            std::string cfgName = m_configs[m_selectedConfig].name;
-            for (auto it = m_spawned.begin(); it != m_spawned.end(); )
-            {
-                if (it->configName == cfgName)
-                {
-                    if (it->gameObject) scene.DestroyGameObject(it->gameObject);
-                    it = m_spawned.erase(it);
-                }
-                else ++it;
-            }
-            SpawnConfig(m_configs[m_selectedConfig], scene, shader);
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Usuń konfigurację"))
-        {
-            RemoveConfig(m_selectedConfig);
-            m_selectedConfig = std::min(m_selectedConfig, (int)m_configs.size() - 1);
-            changed = true;
-        }
-    }
-    else
-    {
-        ImGui::BeginChild("##cfgedit", ImVec2(0, 300), true);
-        ImGui::TextDisabled("Wybierz konfigurację z listy po lewej.");
-        ImGui::EndChild();
-    }
-
-    ImGui::EndGroup();
-
-    ImGui::Separator();
-
-    if (ImGui::Button("+ Nowa konfiguracja"))
-    {
-        SurfaceDecorationConfig newCfg;
-        snprintf(newCfg.name, sizeof(newCfg.name), "Config_%d", (int)m_configs.size());
-        AddConfig(std::move(newCfg));
-        m_selectedConfig = (int)m_configs.size() - 1;
-        changed = true;
-    }
-
-    ImGui::End();
-    return changed;
-}
+//
+//bool SurfaceDecorationSystem::DrawConfigEditor(
+//    SurfaceDecorationConfig&                            cfg,
+//    const std::vector<std::pair<std::string, Prefab*>>& availablePrefabs,
+//    const std::vector<GameObject*>&                     sceneObjects,
+//    int                                                 cfgIndex)
+//{
+//    bool changed = false;
+//    ImGui::PushID(cfgIndex);
+//
+//    changed |= ImGui::InputText("Nazwa##cfgname", cfg.name, sizeof(cfg.name));
+//    changed |= ImGui::Checkbox("Aktywna", &cfg.enabled);
+//
+//    ImGui::Separator();
+//
+//    ImGui::Text("Obiekt źródłowy (kolider)");
+//
+//    int curObjIdx = -1;
+//    for (int i = 0; i < (int)sceneObjects.size(); ++i)
+//        if (sceneObjects[i] == cfg.targetObject) { curObjIdx = i; break; }
+//
+//    std::vector<const char*> objNames;
+//    objNames.reserve(sceneObjects.size());
+//    for (auto* go : sceneObjects)
+//        objNames.push_back(go ? go->name.c_str() : "(null)");
+//
+//    if (!objNames.empty())
+//    {
+//        if (ImGui::Combo("Obiekt##src", &curObjIdx, objNames.data(), (int)objNames.size()))
+//        {
+//            cfg.targetObject = sceneObjects[curObjIdx];
+//            strncpy(cfg.targetName,
+//                cfg.targetObject->name.c_str(),
+//                sizeof(cfg.targetName) - 1);
+//            changed = true;
+//        }
+//
+//        if (cfg.targetObject)
+//        {
+//            auto* col = cfg.targetObject->GetComponent<ColliderComponent>();
+//            auto* tr  = cfg.targetObject->GetComponent<TransformComponent>();
+//            if (col && tr)
+//            {
+//                float surfY  = tr->position.y + col->offset.y + col->halfSize.y;
+//                float surfW  = col->halfSize.x * 2.0f;
+//                float surfD  = col->halfSize.z * 2.0f;
+//                ImGui::TextDisabled("Powierzchnia: %.1f x %.1f  Y=%.2f", surfW, surfD, surfY);
+//            }
+//            else
+//            {
+//                ImGui::TextColored(ImVec4(1,0.4f,0.4f,1), "Brak Collider / Transform!");
+//            }
+//        }
+//    }
+//    else
+//    {
+//        ImGui::TextDisabled("(brak obiektów w scenie)");
+//    }
+//
+//    ImGui::Separator();
+//
+//    ImGui::Text("Generowanie");
+//    changed |= ImGui::DragInt  ("Liczba obiektów",   &cfg.totalCount,  1, 0, 2000);
+//    changed |= ImGui::DragFloat("Min. dystans",      &cfg.minDistance, 0.01f, 0.0f, 50.0f);
+//    changed |= ImGui::DragFloat("Padding",           &cfg.padding,     0.01f, 0.0f, 50.0f);
+//
+//    ImGui::Separator();
+//
+//    ImGui::Text("Voronoi density");
+//    ImGui::SameLine();
+//    ImGui::TextDisabled("(?)");
+//    if (ImGui::IsItemHovered())
+//        ImGui::SetTooltip(
+//            "Voronoi dzieli powierzchnię na komórki.\n"
+//            "Obiekty częściej pojawiają się blisko centroidów komórek\n"
+//            "(lub daleko — zależnie od trybu).\n"
+//            "Falloff kontroluje jak stromo opada gęstość.");
+//
+//    changed |= ImGui::DragInt("Punkty Voronoi",    &cfg.voronoiPoints,  1, 1, 64);
+//    changed |= ImGui::SliderFloat("Falloff gęstości", &cfg.densityFalloff, 0.0f, 1.0f);
+//    changed |= ImGui::Checkbox("Gęsto w centrum komórki", &cfg.denseCenter);
+//
+//    {
+//        ImGui::Text("Podgląd gęstości (1D cross-section):");
+//        const int BARS = 40;
+//        float barVals[BARS];
+//        std::vector<glm::vec2> mockCentroids = {{ 0.5f, 0.5f }};
+//        for (int b = 0; b < BARS; ++b)
+//        {
+//            float px = (b + 0.5f) / (float)BARS;
+//            barVals[b] = VoronoiDensityWeight(
+//                px, 0.5f,
+//                0.0f, 0.0f, 1.0f, 1.0f,
+//                mockCentroids,
+//                cfg.densityFalloff,
+//                cfg.denseCenter);
+//        }
+//        ImGui::PlotHistogram("##density", barVals, BARS, 0,
+//            nullptr, 0.0f, 1.0f, ImVec2(0, 40));
+//        ImGui::TextDisabled("lewa = brzeg komórki  |  środek = centrum  |  prawa = brzeg");
+//    }
+//
+//    ImGui::Separator();
+//
+//    ImGui::Text("Bazowa skala");
+//    changed |= ImGui::DragFloat3("Skala##bs",
+//        reinterpret_cast<float*>(&cfg.baseScale), 0.01f, 0.001f, 100.0f);
+//
+//    ImGui::Separator();
+//
+//    ImGui::Text("Kandydaci (%d)", (int)cfg.candidates.size());
+//
+//    int toRemove = -1;
+//    for (int ci = 0; ci < (int)cfg.candidates.size(); ++ci)
+//    {
+//        ImGui::PushID(ci);
+//        auto& c = cfg.candidates[ci];
+//
+//        ImGui::Separator();
+//
+//        // Nagłówek kandydata z wagą
+//        float totalWeight = 0.0f;
+//        for (auto& cc : cfg.candidates) totalWeight += cc.weight;
+//        float pct = (totalWeight > 0.0f) ? (c.weight / totalWeight * 100.0f) : 0.0f;
+//
+//        ImGui::Text("#%d  %s  (%.0f%%)", ci,
+//            c.label[0] ? c.label : "(brak prefabu)", pct);
+//
+//        // Wybór prefabu
+//        if (!availablePrefabs.empty())
+//        {
+//            int curIdx = -1;
+//            for (int pi = 0; pi < (int)availablePrefabs.size(); ++pi)
+//                if (availablePrefabs[pi].second == c.prefab) { curIdx = pi; break; }
+//
+//            std::vector<const char*> names;
+//            names.reserve(availablePrefabs.size());
+//            for (auto& [n, _] : availablePrefabs) names.push_back(n.c_str());
+//
+//            if (ImGui::Combo("Prefab##p", &curIdx, names.data(), (int)names.size()))
+//            {
+//                c.prefab = availablePrefabs[curIdx].second;
+//                strncpy(c.label,
+//                    availablePrefabs[curIdx].first.c_str(),
+//                    sizeof(c.label) - 1);
+//                changed = true;
+//            }
+//        }
+//        else
+//        {
+//            ImGui::TextDisabled("(podaj availablePrefabs)");
+//        }
+//
+//        changed |= ImGui::DragFloat("Waga##w",        &c.weight,   0.1f, 0.0f, 1000.0f);
+//        changed |= ImGui::DragFloat("Skala min##smin", &c.scaleMin, 0.01f, 0.001f, 100.0f);
+//        changed |= ImGui::DragFloat("Skala max##smax", &c.scaleMax, 0.01f, 0.001f, 100.0f);
+//
+//        if (c.scaleMin > c.scaleMax) c.scaleMin = c.scaleMax;
+//
+//        // Rotacje — zwinięte żeby nie zajmowały dużo miejsca
+//        if (ImGui::TreeNode("Rotacje"))
+//        {
+//            changed |= ImGui::DragFloat2("Rot Y min/max",
+//                reinterpret_cast<float*>(&c.rotYMin), 0.5f, -360.0f, 360.0f);
+//            changed |= ImGui::DragFloat2("Rot X min/max",
+//                reinterpret_cast<float*>(&c.rotXMin), 0.5f, -180.0f, 180.0f);
+//            changed |= ImGui::DragFloat2("Rot Z min/max",
+//                reinterpret_cast<float*>(&c.rotZMin), 0.5f, -180.0f, 180.0f);
+//            ImGui::TreePop();
+//        }
+//
+//        if (ImGui::TreeNode("Offset lokalny"))
+//        {
+//            changed |= ImGui::DragFloat3("Offset##off",
+//                reinterpret_cast<float*>(&c.localOffset), 0.01f);
+//            ImGui::TreePop();
+//        }
+//
+//        if (ImGui::Button("Usuń kandydata##rm")) toRemove = ci;
+//
+//        ImGui::PopID();
+//    }
+//
+//    if (toRemove >= 0)
+//    {
+//        cfg.candidates.erase(cfg.candidates.begin() + toRemove);
+//        changed = true;
+//    }
+//
+//    if (ImGui::Button("+ Dodaj kandydata"))
+//    {
+//        cfg.candidates.push_back(SurfaceDecorationCandidate{});
+//        changed = true;
+//    }
+//
+//    ImGui::PopID();
+//    return changed;
+//}
+//
+//bool SurfaceDecorationSystem::DrawImGui(
+//    const std::vector<std::pair<std::string, Prefab*>>& availablePrefabs,
+//    const std::vector<GameObject*>&                     sceneObjects,
+//    Scene&                                              scene,
+//    Shader*                                             shader)
+//{
+//    bool changed = false;
+//
+//    ImGui::Begin("Surface Decoration System");
+//
+//    if (ImGui::Button("Generuj wszystkie"))
+//    {
+//        DespawnAll(scene);
+//        SpawnAll(scene, shader);
+//    }
+//    ImGui::SameLine();
+//    if (ImGui::Button("Usuń dekoracje"))
+//        DespawnAll(scene);
+//
+//    ImGui::SameLine();
+//    ImGui::TextDisabled("(%d obiektów)", (int)m_spawned.size());
+//
+//    ImGui::Separator();
+//
+//
+//    ImGui::InputText("Plik YAML##yaml", m_yamlPath, sizeof(m_yamlPath));
+//    if (ImGui::Button("Zapisz##save"))
+//    {
+//        if (SaveToYaml(m_yamlPath))
+//            spdlog::info("[SurfaceDecoration] Zapisano do {}", m_yamlPath);
+//        else
+//            spdlog::error("[SurfaceDecoration] Błąd zapisu do {}", m_yamlPath);
+//    }
+//    ImGui::SameLine();
+//    if (ImGui::Button("Wczytaj##load"))
+//    {
+//        if (LoadFromYaml(m_yamlPath, availablePrefabs, sceneObjects))
+//        {
+//            spdlog::info("[SurfaceDecoration] Wczytano z {}", m_yamlPath);
+//            changed = true;
+//        }
+//        else
+//            spdlog::error("[SurfaceDecoration] Błąd wczytu z {}", m_yamlPath);
+//    }
+//
+//    ImGui::Separator();
+//    ImGui::TextDisabled("Zapis dokładnego układu (pozycje/rotacje/skale) — do wczytania w runtime:");
+//    ImGui::InputText("Plik instancji##instyaml", m_instancesYamlPath, sizeof(m_instancesYamlPath));
+//    if (ImGui::Button("Zapisz układ instancji"))
+//    {
+//        if (SaveInstancesToYaml(m_instancesYamlPath))
+//            spdlog::info("[SurfaceDecoration] Zapisano układ instancji do {}", m_instancesYamlPath);
+//        else
+//            spdlog::error("[SurfaceDecoration] Błąd zapisu instancji do {}", m_instancesYamlPath);
+//    }
+//
+//    ImGui::Separator();
+//
+//    ImGui::Text("Konfiguracje (%d)", (int)m_configs.size());
+//
+//    ImGui::BeginChild("##cfglist", ImVec2(200, 300), true);
+//    for (int i = 0; i < (int)m_configs.size(); ++i)
+//    {
+//        ImGui::PushID(i);
+//        bool selected = (m_selectedConfig == i);
+//
+//        // Kolorek jeśli nieaktywna
+//        if (!m_configs[i].enabled)
+//            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+//
+//        if (ImGui::Selectable(m_configs[i].name, selected))
+//            m_selectedConfig = i;
+//
+//        if (!m_configs[i].enabled)
+//            ImGui::PopStyleColor();
+//
+//        ImGui::PopID();
+//    }
+//    ImGui::EndChild();
+//
+//    ImGui::SameLine();
+//
+//    ImGui::BeginGroup();
+//
+//    if (m_selectedConfig >= 0 && m_selectedConfig < (int)m_configs.size())
+//    {
+//        ImGui::BeginChild("##cfgedit", ImVec2(0, 300), true);
+//        changed |= DrawConfigEditor(
+//            m_configs[m_selectedConfig],
+//            availablePrefabs,
+//            sceneObjects,
+//            m_selectedConfig);
+//        ImGui::EndChild();
+//
+//        if (ImGui::Button("Generuj tę konfigurację"))
+//        {
+//            std::string cfgName = m_configs[m_selectedConfig].name;
+//            for (auto it = m_spawned.begin(); it != m_spawned.end(); )
+//            {
+//                if (it->configName == cfgName)
+//                {
+//                    if (it->gameObject) scene.DestroyGameObject(it->gameObject);
+//                    it = m_spawned.erase(it);
+//                }
+//                else ++it;
+//            }
+//            SpawnConfig(m_configs[m_selectedConfig], scene, shader);
+//        }
+//        ImGui::SameLine();
+//        if (ImGui::Button("Usuń konfigurację"))
+//        {
+//            RemoveConfig(m_selectedConfig);
+//            m_selectedConfig = std::min(m_selectedConfig, (int)m_configs.size() - 1);
+//            changed = true;
+//        }
+//    }
+//    else
+//    {
+//        ImGui::BeginChild("##cfgedit", ImVec2(0, 300), true);
+//        ImGui::TextDisabled("Wybierz konfigurację z listy po lewej.");
+//        ImGui::EndChild();
+//    }
+//
+//    ImGui::EndGroup();
+//
+//    ImGui::Separator();
+//
+//    if (ImGui::Button("+ Nowa konfiguracja"))
+//    {
+//        SurfaceDecorationConfig newCfg;
+//        snprintf(newCfg.name, sizeof(newCfg.name), "Config_%d", (int)m_configs.size());
+//        AddConfig(std::move(newCfg));
+//        m_selectedConfig = (int)m_configs.size() - 1;
+//        changed = true;
+//    }
+//
+//    ImGui::End();
+//    return changed;
+//}
 
 bool SurfaceDecorationSystem::SaveToYaml(const std::string& path) const
 {
@@ -732,7 +732,7 @@ bool SurfaceDecorationSystem::LoadFromYaml(
         root = YAML::LoadFile(path);
     }
     catch (const YAML::Exception& e) {
-        spdlog::error("[SurfaceDecoration] YAML parse error: {}", e.what());
+        //spdlog::error("[SurfaceDecoration] YAML parse error: {}", e.what());
         return false;
     }
 
@@ -865,7 +865,7 @@ bool SurfaceDecorationSystem::SaveInstancesToYaml(const std::string& path) const
     if (!fs.is_open()) return false;
     fs << out.c_str();
 
-    spdlog::info("[SurfaceDecoration] Zapisano {} instancji do {}", (int)m_spawned.size(), path);
+    //spdlog::info("[SurfaceDecoration] Zapisano {} instancji do {}", (int)m_spawned.size(), path);
     return fs.good();
 }
 
@@ -879,13 +879,13 @@ int SurfaceDecorationSystem::LoadInstancesFromYaml(
         root = YAML::LoadFile(path);
     }
     catch (const YAML::Exception& e) {
-        spdlog::error("[SurfaceDecoration] LoadInstancesFromYaml: {}", e.what());
+        //spdlog::error("[SurfaceDecoration] LoadInstancesFromYaml: {}", e.what());
         return 0;
     }
 
     if (!root["instances"])
     {
-        spdlog::warn("[SurfaceDecoration] Brak sekcji 'instances' w {}", path);
+        //spdlog::warn("[SurfaceDecoration] Brak sekcji 'instances' w {}", path);
         return 0;
     }
 
@@ -909,8 +909,8 @@ int SurfaceDecorationSystem::LoadInstancesFromYaml(
 
         if (!prefab)
         {
-            spdlog::warn("[SurfaceDecoration] Nie znaleziono prefabu '{}' przy wczytywaniu instancji.",
-                prefabLabel);
+            /*spdlog::warn("[SurfaceDecoration] Nie znaleziono prefabu '{}' przy wczytywaniu instancji.",
+                prefabLabel);*/
             continue;
         }
 
@@ -941,6 +941,6 @@ int SurfaceDecorationSystem::LoadInstancesFromYaml(
         ++created;
     }
 
-    spdlog::info("[SurfaceDecoration] Wczytano {} instancji z {}", created, path);
+    //spdlog::info("[SurfaceDecoration] Wczytano {} instancji z {}", created, path);
     return created;
 }
