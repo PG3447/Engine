@@ -1107,7 +1107,8 @@ int main(int, char**)
         if (focused) {
             static bool rentgenPuzzleSolvedPlayed = false;
 
-            if (ecs->GetSystem<HID>()->is_action_just_pressed("reset_level")) {
+            if (ecs->GetSystem<HID>()->is_action_just_pressed("reset_level") || menu.reset == true) {
+                menu.reset = false;
                 rentgenPuzzleSolvedPlayed = false;
 
                 ResetLevel(
