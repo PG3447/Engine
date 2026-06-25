@@ -45,6 +45,7 @@ public:
 	}
 
 	void ShowOutro() {
+		sceneManager->ChangeScene("menu");
 		Cutscene_2_sprite->currentSprite = 0;
 		ShowOnly(&grp_cutscene_2);
 	}
@@ -138,7 +139,7 @@ public:
 
 		//Outro
 		GameObject* Cutscene_2_Object = scenaMenu->CreateGameObject(nullptr);
-		SpriteComponent* Cutscene_2_sprite = Cutscene_2_Object->AddComponent<SpriteComponent>();
+		Cutscene_2_sprite = Cutscene_2_Object->AddComponent<SpriteComponent>();
 		for (int i = 1; i <= 7; i++)
 		{
 			char filename[64];
