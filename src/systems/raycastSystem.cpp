@@ -22,13 +22,13 @@ void RaycastSystem::Update(ECS&, float)
         targets.push_back({ tObjs[i], pos + tCols[i]->offset - half, pos + tCols[i]->offset + half });
     }
 
-    if (colliderDebug)
-    {
-        for (const auto& tgt : targets) {
-            glm::vec4 color = (tgt.go == selectedObject) ? glm::vec4(0, 1, 1, 1) : glm::vec4(0.1);
-            DebugDrawSystem::AddAABB(tgt.min, tgt.max, color);
-        }
-    }
+    //if (colliderDebug)
+    //{
+    //    for (const auto& tgt : targets) {
+    //        glm::vec4 color = (tgt.go == selectedObject) ? glm::vec4(0, 1, 1, 1) : glm::vec4(0.1);
+    //        DebugDrawSystem::AddAABB(tgt.min, tgt.max, color);
+    //    }
+    //}
 
     auto& sObjs = shooterQuery_->gameobjects;
     auto& sTrs  = std::get<0>(shooterQuery_->componentsVectors);

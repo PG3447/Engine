@@ -144,7 +144,7 @@ GLuint VBO;
 GLuint VAO;
 GLuint texture;
 std::unique_ptr<Shader> skyboxShader;
-extern GameObject * selectedGameObject;
+//extern GameObject * selectedGameObject;
 //std::unique_ptr<Shader> reflectShader;
 //std::unique_ptr<Shader> refractShader;
 
@@ -1350,12 +1350,12 @@ int main(int, char**)
             }
         }
 
-        TransformGizmo::UpdateAndDraw(
+        /*TransformGizmo::UpdateAndDraw(
     selectedGameObject,
     *camCompLeft, *camTransform1,
     window, focused,
     display_w, display_h
-);
+);*/
         sceneManager.Update(deltaTime);
 
         if (audioSys) {

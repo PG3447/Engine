@@ -203,7 +203,7 @@
 //    return "";
 //}
 
-static std::unordered_map<std::string, Prefab> prefabs;
+//static std::unordered_map<std::string, Prefab> prefabs;
 //
 //void imgui_render(SceneManager& sceneManager)
 //{

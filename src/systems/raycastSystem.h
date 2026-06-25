@@ -22,7 +22,7 @@
 
 class RaycastSystem : public System {
 public:
-    GameObject* selectedObject = nullptr;
+    //GameObject* selectedObject = nullptr;
     bool colliderDebug = false;
 
     RaycastSystem(ECS& ecs)
