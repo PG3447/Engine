@@ -295,6 +295,7 @@ void createMainRooom(Scene* scena, Menu& menu) {
         {
             if (other->name == "Gracz1" || other->name == "Gracz2")
             {
+                menu.ShowOutro();
                 spdlog::info("Koniec gry");
             }
         };
