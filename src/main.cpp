@@ -1291,10 +1291,10 @@ int main(int, char**)
         }
 
         float chLerpSpeed = 10.0f;
-        /*crosshair1->size = glm::mix(crosshair1->size, p1Int > 0.5f ? CH_SIZE_BIG : CH_SIZE_NORMAL, deltaTime * chLerpSpeed);
+        crosshair1->size = glm::mix(crosshair1->size, p1Int > 0.5f ? CH_SIZE_BIG : CH_SIZE_NORMAL, deltaTime * chLerpSpeed);
         crosshair2->size = glm::mix(crosshair2->size, p2Int > 0.5f ? CH_SIZE_BIG : CH_SIZE_NORMAL, deltaTime * chLerpSpeed);
 
-        crosshair1->screenPosition = CH1_CENTER - crosshair1->size * 0.5f;*/
+        crosshair1->screenPosition = CH1_CENTER - crosshair1->size * 0.5f;
         crosshair2->screenPosition = CH2_CENTER - crosshair2->size * 0.5f;
 
         auto inputEnd = std::chrono::high_resolution_clock::now();
@@ -1303,7 +1303,7 @@ int main(int, char**)
         crematoriumPuzzle.Update(deltaTime);
 
         if (crematoriumPuzzle.isPuzzleSolved && !isCrematoriumGearSpawned) {
-            SpawnGearReward(scena1, glm::vec3(145.984f, 7.309, -129.553), "Gear_Crematorium");
+            SpawnGearReward(scena1, glm::vec3(94.987, 10, -135.457), "Gear_Crematorium");
 
             if (audioSys && sndGear) {
                 audioSys->playSound(sndGear);

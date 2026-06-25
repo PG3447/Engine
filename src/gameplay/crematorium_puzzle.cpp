@@ -586,8 +586,23 @@ void CrematoriumPuzzle::Update(float deltaTime)
 
         if (isLeftSolved && isRightSolved && !isPuzzleSolved) {
             spdlog::warn("ZAGADKA KREMATORIUM ZOSTALA ROZWIAZANA W PELNI WOOOOOOOOOOOW");
-
             isPuzzleSolved = true;
+
+            for (auto& coffin : coffins) {
+                if (coffin.isActivated) {
+                    coffin.isActivated = false;
+                    coffin.isBouncingBack = false;
+                    coffin.currentTargetLevel = 0;
+
+                    if (coffin.slidingChannel) {
+                        coffin.slidingChannel->stop();
+                        coffin.slidingChannel = nullptr;
+                    }
+                    if (audioSystem && soundSlideIn) {
+                        coffin.slidingChannel = audioSystem->playSoundEx(soundSlideIn);
+                    }
+                }
+            }
         }
     }
 }
