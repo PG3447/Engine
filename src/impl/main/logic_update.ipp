@@ -1151,6 +1151,7 @@ void ResetLevel(
         }
     }
     InitializeRoomLights(0);
+    InitializeRoomLights(1);
 
     spdlog::info("Poziom zresetowany.");
 }
