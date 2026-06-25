@@ -18,6 +18,7 @@ private:
 
 public:
 	SpriteComponent* Cutscene_2_sprite = nullptr;
+	bool reset = false;
 
 
 	Menu(SceneManager* manager, Scene* menu, GLFWwindow* windoww) : sceneManager(manager), scenaMenu(menu), window(windoww)
@@ -131,6 +132,7 @@ public:
 		Cutscene_1_button->onClick = [&](GameObject* go)
 		{
 				ShowOnly(&grp_pause);
+				reset = true;
 				sceneManager->ChangeScene("Scena 1");
 		};
 
