@@ -28,16 +28,20 @@ input:
     right_click: [GLFW_MOUSE_BUTTON_RIGHT]
   gamepad:
     ui_click:
-      - {button: GLFW_GAMEPAD_BUTTON_TRIANGLE, id: 0}
-      - {button: GLFW_GAMEPAD_BUTTON_TRIANGLE, id: 1}
+      - {button: GLFW_GAMEPAD_BUTTON_CROSS, id: 0}
+      - {button: GLFW_GAMEPAD_BUTTON_CROSS, id: 1}
+      - {button: GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER, id: 0}
+      - {button: GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER, id: 1}
     interact_p1:
-      - {button: GLFW_GAMEPAD_BUTTON_TRIANGLE, id: 0}
+      - {button: GLFW_GAMEPAD_BUTTON_CROSS, id: 0}
+      - {button: GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER, id: 0}
     interact_p2:
-      - {button: GLFW_GAMEPAD_BUTTON_TRIANGLE, id: 1}
+      - {button: GLFW_GAMEPAD_BUTTON_CROSS, id: 1}
+      - {button: GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER, id: 1}
     alt_interact_p1:
-      - {button: GLFW_GAMEPAD_BUTTON_SQUARE, id: 0}
+      - {button: GLFW_GAMEPAD_BUTTON_TRIANGLE, id: 0}
     alt_interact_p2:
-      - {button: GLFW_GAMEPAD_BUTTON_SQUARE, id: 1}
+      - {button: GLFW_GAMEPAD_BUTTON_TRIANGLE, id: 1}
     ui_menu:
       - {button: GLFW_GAMEPAD_BUTTON_START, id: 0}
       - {button: GLFW_GAMEPAD_BUTTON_START, id: 1}
