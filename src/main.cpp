@@ -1107,7 +1107,8 @@ int main(int, char**)
         if (focused) {
             static bool rentgenPuzzleSolvedPlayed = false;
 
-            if (ecs->GetSystem<HID>()->is_action_just_pressed("reset_level")) {
+            if (ecs->GetSystem<HID>()->is_action_just_pressed("reset_level") || menu.reset == true) {
+                menu.reset = false;
                 rentgenPuzzleSolvedPlayed = false;
 
                 ResetLevel(
@@ -1415,10 +1416,32 @@ bool init()
     glfwWindowHint(GLFW_OPENGL_PROFILE,        GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
-    window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "MimiCry", NULL, NULL);
+    GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+    const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+
+    glfwWindowHint(GLFW_RED_BITS,     mode->redBits);
+    glfwWindowHint(GLFW_GREEN_BITS,   mode->greenBits);
+    glfwWindowHint(GLFW_BLUE_BITS,    mode->blueBits);
+    glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
+
+    window = glfwCreateWindow(mode->width, mode->height, "MimiCry", monitor, NULL);
     if (window == NULL) {
         spdlog::error("Failed to create GLFW Window!");
         return false;
+    }
+    
+    //window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "MimiCry", NULL, NULL);
+
+
+    int iconW, iconH, iconChannels;
+    unsigned char* iconPixels = stbi_load("res/sprites/menu/logo_bez_napisu.png", &iconW, &iconH, &iconChannels, 4);
+    if (iconPixels) {
+        GLFWimage icon;
+        icon.width  = iconW;
+        icon.height = iconH;
+        icon.pixels = iconPixels;
+        glfwSetWindowIcon(window, 1, &icon);
+        stbi_image_free(iconPixels);
     }
 
     glfwMakeContextCurrent(window);
