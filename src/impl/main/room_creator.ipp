@@ -109,6 +109,12 @@ void createFirstRoom(Scene* scena1) {
         }
     }
 
+    GameObject* kabelDoDrzwi = kabel->Instantiate(*scena1, nullptr, nullptr);
+    kabelDoDrzwi->name = "kabelDoDrzwi";
+    kabelDoDrzwi->GetComponent<TransformComponent>()->scale = glm::vec3{ 1, 1, 1.05 };
+    kabelDoDrzwi->GetComponent<TransformComponent>()->rotation = glm::vec3{ -180, 90, -79.2 };
+    kabelDoDrzwi->GetComponent<TransformComponent>()->position = glm::vec3{ 22.3, 18.8, -98.950 };
+
     // Papier toaletowy
     GameObject* kabelDol[6];
     GameObject* kabelSrodek[6];
