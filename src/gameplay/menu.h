@@ -19,9 +19,6 @@ private:
 public:
 	SpriteComponent* Cutscene_2_sprite = nullptr;
 
-	[[nodiscard]] std::vector<GameObject *> grp_cutscene_3() const {
-		return grp_cutscene_2;
-	}
 
 	Menu(SceneManager* manager, Scene* menu, GLFWwindow* windoww) : sceneManager(manager), scenaMenu(menu), window(windoww)
 	{
@@ -45,6 +42,11 @@ public:
 					b->isEnabled = visible;
 			}
 		}
+	}
+
+	void ShowOutro() {
+		Cutscene_2_sprite->currentSprite = 0;
+		ShowOnly(&grp_cutscene_2);
 	}
 
 	void Init() {
@@ -736,6 +738,7 @@ public:
 
 		ShowOnly(&grp_main);
 	}
+
 
 
 };
