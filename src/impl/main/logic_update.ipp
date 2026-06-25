@@ -1035,7 +1035,7 @@ void ResetLevel(
     isMachineFixed = false;
 
     for (auto& [name, go] : machineLights) {
-        if (name == "lights_2" || name == "lights_5") continue;
+        if (name == "lights_2" || name == "lights_5" || name == "lights_6") continue;
         if (auto* lc = go->GetComponent<LightComponent>())
             lc->isOn = false;
     }
@@ -1146,12 +1146,10 @@ void ResetLevel(
 
     for (auto& room : roomsLights) {
         room.occupants.clear();
-        for (size_t j = 0; j < room.lights.size(); j++) {
-            room.lights[j]->isOn = (j < room.savedStates.size()) ? room.savedStates[j] : false;
+        for (size_t j = 0; j < room.savedStates.size(); j++) {
+            room.savedStates[j] = room.lights[j]->isOn;
         }
     }
-    InitializeRoomLights(0);
-    InitializeRoomLights(1);
 
     spdlog::info("Poziom zresetowany.");
 }
