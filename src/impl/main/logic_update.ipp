@@ -1144,12 +1144,12 @@ void ResetLevel(
         pickupObjects.insert(tutorialGearObject);
     }
 
-    for (auto& room : roomsLights) {
+   /* for (auto& room : roomsLights) {
         room.occupants.clear();
         for (size_t j = 0; j < room.savedStates.size(); j++) {
             room.savedStates[j] = room.lights[j]->isOn;
         }
-    }
+    }*/
 
     spdlog::info("Poziom zresetowany.");
 }
