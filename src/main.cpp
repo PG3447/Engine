@@ -301,6 +301,7 @@ void loadGame()
 
 int main(int, char**)
 {
+
     if (!init())
     {
         spdlog::error("Failed to initialize project!");

@@ -123,6 +123,13 @@ std::unique_ptr<Prefab> wallCrematoriumModel;
 std::unique_ptr<Prefab> doorsToiletModel;
 std::unique_ptr<Prefab> wallCialaModel;
 
+std::unique_ptr<Prefab> plakat1Model;
+std::unique_ptr<Prefab> plakat2Model;
+std::unique_ptr<Prefab> plakat3Model;
+std::unique_ptr<Prefab> plakat4Model;
+std::unique_ptr<Prefab> plakat5Model;
+std::unique_ptr<Prefab> plakat6Model;
+
 std::unique_ptr<Prefab> coffinRedEmptyModel;
 std::unique_ptr<Prefab> coffinRedCorpseModel;
 std::unique_ptr<Prefab> coffinGreenEmptyModel;
@@ -135,6 +142,15 @@ std::unique_ptr<Prefab> stolInnyKostnicaModel;
 std::unique_ptr<Prefab> stolKostnicaModel;
 
 void connectAllModels() {
+
+    plakat1Model = std::make_unique<Prefab>("res/models/plakat1.glb");
+    plakat2Model = std::make_unique<Prefab>("res/models/plakat2.glb");
+    plakat3Model = std::make_unique<Prefab>("res/models/plakat3.glb");
+    plakat4Model = std::make_unique<Prefab>("res/models/plakat4.glb");
+    plakat5Model = std::make_unique<Prefab>("res/models/plakat5.glb");
+    plakat6Model = std::make_unique<Prefab>("res/models/plakat6.glb");
+
+
     bed1Model        = std::make_unique<Prefab>("res/models/bed.glb");
     bed2Model        = std::make_unique<Prefab>("res/models/bed2.glb");
     bed3Model        = std::make_unique<Prefab>("res/models/bed3.glb");
@@ -244,4 +260,5 @@ void connectAllModels() {
     coffinBaseCorpseModel = std::make_unique<Prefab>("res/models/szuflada_base.glb");
     stolInnyKostnicaModel = std::make_unique<Prefab>("res/models/stol_inny_kostnica.glb");
     stolKostnicaModel = std::make_unique<Prefab>("res/models/stol_kostnica.glb");
+
 }

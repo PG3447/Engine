@@ -562,3 +562,39 @@ Placements:
     rotation: [0, 0, 0]
     scale: [10, 10, 10]
     hasCollider: false
+  - modelPath: res/models/plakat1.glb
+    name: plakat1
+    position: [-56.0937004, 10.1380415, -153.232056]
+    rotation: [90.0999985, 181.699997, 0]
+    scale: [1.5, 1.5, 1.5]
+    hasCollider: false
+  - modelPath: res/models/plakat2.glb
+    name: plakat2
+    position: [23.368433, 12.2998018, -104.855148]
+    rotation: [90, 180, 0]
+    scale: [1.5, 1.5, 1.5]
+    hasCollider: false
+  - modelPath: res/models/plakat3.glb
+    name: plakat3
+    position: [-94.6981583, 12.2634954, -173.136292]
+    rotation: [90, 90, 0]
+    scale: [1, 1, 1]
+    hasCollider: false
+  - modelPath: res/models/plakat4.glb
+    name: plakat4
+    position: [-3.95947552, 12.9723063, -99.7204437]
+    rotation: [90, 0, 0]
+    scale: [1, 1, 1]
+    hasCollider: false
+  - modelPath: res/models/plakat6.glb
+    name: plakat6
+    position: [159.71138, 9.93929863, -128.922775]
+    rotation: [90, -90, 0]
+    scale: [2, 2, 2]
+    hasCollider: false
+  - modelPath: res/models/plakat5.glb
+    name: plakat5
+    position: [91.8225327, 12.7731981, -135.278702]
+    rotation: [90, 90, 0]
+    scale: [1.5, 1.5, 1.5]
+    hasCollider: false
