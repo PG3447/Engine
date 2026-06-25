@@ -14,8 +14,14 @@ private:
 	std::vector<GameObject*> grp_credits;
 	std::vector<GameObject*> grp_load;
 	std::vector<GameObject*> grp_cutscene_1;
+	std::vector<GameObject*> grp_cutscene_2;
 
 public:
+	SpriteComponent* Cutscene_2_sprite = nullptr;
+
+	[[nodiscard]] std::vector<GameObject *> grp_cutscene_3() const {
+		return grp_cutscene_2;
+	}
 
 	Menu(SceneManager* manager, Scene* menu, GLFWwindow* windoww) : sceneManager(manager), scenaMenu(menu), window(windoww)
 	{
@@ -26,7 +32,7 @@ public:
 	{
 		spdlog::critical("ShowOnly wywolane, grupa ma {} obiektow", group->size());
 		std::vector<std::vector<GameObject*>*> all = {
-			&grp_main, &grp_settings, &grp_credits, &grp_load, &grp_pause, &grp_cutscene_1
+			&grp_main, &grp_settings, &grp_credits, &grp_load, &grp_pause, &grp_cutscene_1, &grp_cutscene_2
 		};
 		for (auto* g : all)
 		{
@@ -127,6 +133,43 @@ public:
 
 		grp_cutscene_1.push_back(Cutscene_1_Object);
 		grp_cutscene_1.push_back(cutscene_1_object_procceed);
+
+		//Outro
+		GameObject* Cutscene_2_Object = scenaMenu->CreateGameObject(nullptr);
+		SpriteComponent* Cutscene_2_sprite = Cutscene_2_Object->AddComponent<SpriteComponent>();
+		for (int i = 1; i <= 7; i++)
+		{
+			char filename[64];
+			sprintf(filename, "%01d.png", i);
+			auto tex = ResourceManager::LoadTexture(filename, "res/sprites/cutscenes/outro");
+			Cutscene_2_sprite->sprites.push_back(tex.id);
+		}
+		Cutscene_2_sprite->screenPosition = glm::vec2(0.0f, 0.0f);
+		Cutscene_2_sprite->size = glm::vec2(1920.0f, 1080.0f);
+		Cutscene_2_sprite->layer = 0;
+		Cutscene_2_sprite->isVisible = true;
+		Cutscene_2_sprite->isAnimating = true;
+		Cutscene_2_sprite->loop = false;
+		Cutscene_2_sprite->frameDuration = 3.0f;
+
+
+		GameObject* cutscene_2_object_procceed = scenaMenu->CreateGameObject(nullptr);
+		SpriteComponent* cutscene_2_procced_sprite = cutscene_2_object_procceed->AddComponent<SpriteComponent>();
+		cutscene_2_procced_sprite->sprites = {ResourceManager::LoadTexture("nothing.png", "res/sprites/cutscenes/intro").id};
+		cutscene_2_procced_sprite->screenPosition = glm::vec2(960.0f, 0.0f);
+		cutscene_2_procced_sprite->size = glm::vec2(1920.0f, 1080.0f);
+		cutscene_2_procced_sprite->layer = 1;
+		cutscene_2_procced_sprite->isVisible = true;
+		UIButtonComponent* Cutscene_2_button = cutscene_2_object_procceed->AddComponent<UIButtonComponent>();
+
+		Cutscene_2_button->onClick = [&](GameObject* go)
+		{
+			ShowOnly(&grp_main);
+		};
+
+
+		grp_cutscene_2.push_back(Cutscene_2_Object);
+		grp_cutscene_2.push_back(cutscene_2_object_procceed);
 
 
 
@@ -304,7 +347,7 @@ public:
 
 		button5->onClick = [&](GameObject* go)
 		{
-			ShowOnly(&grp_settings); //change
+			//ShowOnly(&grp_settings); //jebac
 		};
 
 		button6->onClick = [&](GameObject* go)
@@ -675,7 +718,7 @@ public:
 
 		button_p_2->onClick = [&](GameObject* go)
 		{
-			ShowOnly(&grp_settings);
+			//ShowOnly(&grp_settings); jebac
 		};
 
 		button_p_3->onClick = [&](GameObject* go)
