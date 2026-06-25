@@ -32,39 +32,6 @@ Placements:
     colliderIsTrigger: false
     colliderAffectsNavMesh: false
     colliderIsWalkable: false
-  - modelPath: res/models/wall1_main_room.glb
-    name: wall1_main_room
-    position: [29.2274742, 10.8831396, -228.340866]
-    rotation: [0, 0, 0]
-    scale: [3.5999999, 2, 3]
-    hasCollider: true
-    colliderHalfSize: [36, 10, 0.200000003]
-    colliderOffset: [0, 0, 0]
-    colliderIsTrigger: false
-    colliderAffectsNavMesh: false
-    colliderIsWalkable: false
-  - modelPath: res/models/wall1_main_room.glb
-    name: wall1_main_room
-    position: [-1.98363972, 10.4050674, -209.085388]
-    rotation: [0, 90, 0]
-    scale: [2, 2, 3]
-    hasCollider: true
-    colliderHalfSize: [0.600000918, 10, 20]
-    colliderOffset: [0, 0, 0]
-    colliderIsTrigger: false
-    colliderAffectsNavMesh: false
-    colliderIsWalkable: false
-  - modelPath: res/models/wall1_main_room.glb
-    name: wall1_main_room
-    position: [58.9789162, 11.0263376, -208.717636]
-    rotation: [0, 90, 0]
-    scale: [1.99000001, 2, 3]
-    hasCollider: true
-    colliderHalfSize: [0.600000918, 10, 19.8999996]
-    colliderOffset: [0, 0, 0]
-    colliderIsTrigger: false
-    colliderAffectsNavMesh: false
-    colliderIsWalkable: false
   - modelPath: res/models/ceiling.glb
     name: ceiling
     position: [29.9430008, 18.9834862, -208.516006]
@@ -598,3 +565,135 @@ Placements:
     rotation: [90, 90, 0]
     scale: [1.5, 1.5, 1.5]
     hasCollider: false
+  - modelPath: res/models/floor.glb
+    name: floor
+    position: [5.63735199, 0.991297603, -209.434769]
+    rotation: [0, 0, 0]
+    scale: [2, 2, 2]
+    hasCollider: true
+    colliderHalfSize: [20, 0.400000006, 20]
+    colliderOffset: [0, 0, 0]
+    colliderIsTrigger: false
+    colliderAffectsNavMesh: false
+    colliderIsWalkable: false
+  - modelPath: res/models/floor.glb
+    name: floor
+    position: [5.63735199, 0.991297603, -250.023]
+    rotation: [0, 0, 0]
+    scale: [2, 2, 2]
+    hasCollider: true
+    colliderHalfSize: [20, 0.400000006, 20]
+    colliderOffset: [0, 0, 0]
+    colliderIsTrigger: false
+    colliderAffectsNavMesh: false
+    colliderIsWalkable: false
+  - modelPath: res/models/floor.glb
+    name: floor
+    position: [29.9431648, 1.17151594, -529.374268]
+    rotation: [0, 0, 0]
+    scale: [3, 1, 30]
+    hasCollider: true
+    colliderHalfSize: [30, 0.200000003, 300]
+    colliderOffset: [0, 0, 0]
+    colliderIsTrigger: false
+    colliderAffectsNavMesh: false
+    colliderIsWalkable: false
+  - modelPath: res/models/ceiling.glb
+    name: ceiling
+    position: [6.91249275, 18.9897671, -208.226807]
+    rotation: [0, 0, 0]
+    scale: [2, 2, 2]
+    hasCollider: true
+    colliderHalfSize: [20, 0.400000006, 20]
+    colliderOffset: [0, 0, 0]
+    colliderIsTrigger: false
+    colliderAffectsNavMesh: false
+    colliderIsWalkable: false
+  - modelPath: res/models/ceiling.glb
+    name: ceiling
+    position: [29.9430008, 18.9834862, -512.353149]
+    rotation: [0, 0, 0]
+    scale: [3.3499999, 1, 30]
+    hasCollider: true
+    colliderHalfSize: [33.5, 0.200000003, 300]
+    colliderOffset: [0, 0, 0]
+    colliderIsTrigger: false
+    colliderAffectsNavMesh: false
+    colliderIsWalkable: false
+  - modelPath: res/models/wall1_main_room.glb
+    name: wall1_main_room
+    position: [18.3856678, 10.8831396, -650]
+    rotation: [0, 0, 0]
+    scale: [3.5999999, 2, 3]
+    hasCollider: true
+    colliderHalfSize: [36, 10, 0.600000024]
+    colliderOffset: [0, 0, 0]
+    colliderIsTrigger: false
+    colliderAffectsNavMesh: false
+    colliderIsWalkable: false
+  - modelPath: res/models/wall1_main_room.glb
+    name: wall1_main_room
+    position: [-0.318314552, 11.0661631, -556.505981]
+    rotation: [0, 90, 0]
+    scale: [30, 2, 3]
+    hasCollider: true
+    colliderHalfSize: [0.600013137, 10, 300]
+    colliderOffset: [0, 0, 0]
+    colliderIsTrigger: false
+    colliderAffectsNavMesh: false
+    colliderIsWalkable: false
+  - modelPath: res/models/wall1_main_room.glb
+    name: wall1_main_room
+    position: [14.7148438, 11.0263376, -650]
+    rotation: [0, 90, 0]
+    scale: [30, 2, 3]
+    hasCollider: true
+    colliderHalfSize: [0.600013137, 10, 300]
+    colliderOffset: [0, 0, 0]
+    colliderIsTrigger: false
+    colliderAffectsNavMesh: false
+    colliderIsWalkable: false
+  - modelPath: res/models/wall1_main_room.glb
+    name: wall1_main_room
+    position: [0.850928307, 8.57274628, -209.036987]
+    rotation: [0, 90, 0]
+    scale: [2, 2, 2]
+    hasCollider: true
+    colliderHalfSize: [0.40000087, 10, 20]
+    colliderOffset: [0, 0, 0]
+    colliderIsTrigger: false
+    colliderAffectsNavMesh: false
+    colliderIsWalkable: false
+  - modelPath: res/models/wall1_main_room.glb
+    name: wall1_main_room
+    position: [0.539674044, 8.57299995, -290.760101]
+    rotation: [0, 90, 0]
+    scale: [6, 5, 2]
+    hasCollider: true
+    colliderHalfSize: [0.400002629, 25, 60]
+    colliderOffset: [0, 0, 0]
+    colliderIsTrigger: false
+    colliderAffectsNavMesh: false
+    colliderIsWalkable: false
+  - modelPath: res/models/wall1_main_room.glb
+    name: wall1_main_room
+    position: [14.4150963, 8.57299995, -290.760101]
+    rotation: [0, 90, 0]
+    scale: [6, 5, 2]
+    hasCollider: true
+    colliderHalfSize: [0.400002629, 25, 60]
+    colliderOffset: [0, 0, 0]
+    colliderIsTrigger: false
+    colliderAffectsNavMesh: false
+    colliderIsWalkable: false
+  - modelPath: res/models/wall1_main_room.glb
+    name: wall1_main_room
+    position: [14.0498524, 8.57274628, -209.036987]
+    rotation: [0, 90, 0]
+    scale: [2, 2, 2]
+    hasCollider: true
+    colliderHalfSize: [0.40000087, 10, 20]
+    colliderOffset: [0, 0, 0]
+    colliderIsTrigger: false
+    colliderAffectsNavMesh: false
+    colliderIsWalkable: false
