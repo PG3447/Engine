@@ -270,6 +270,20 @@ void createMainRooom(Scene* scena) {
     mainRoom.position = glm::vec3(26.0, 0.0, -147.0);
     mainRoom.halfSize = glm::vec3(38.0, 30.0, 46.5);
     roomsLights[mainRoom.id] = mainRoom;
+
+    GameObject* trrigerEndGame = scena->CreateGameObject(nullptr);
+    trrigerEndGame->GetComponent<TransformComponent>()->position = glm::vec3{ 8.0f, 6.0f, -230.0f };
+    ColliderComponent* colliderTriggerEndGame = trrigerEndGame->AddComponent<ColliderComponent>();
+    colliderTriggerEndGame->halfSize = glm::vec3(10.0);
+    colliderTriggerEndGame->isTrigger = true;
+    colliderTriggerEndGame->onTriggerEnter = [&](GameObject* other)
+        {
+            if (other->name == "Gracz1" || other->name == "Gracz2")
+            {
+                spdlog::info("Koniec gry");
+            }
+        };
+
     // Podloga i sufit
     GameObject * podlogaMainRomm = CreateStaticObject(scena, floorModelB.get(), nullptr, "PodlogaMainRoom", glm::vec3(24.870, 1.170, -143.820),  glm::vec3(3.560, 1, 4.570));
     podlogaMainRomm->GetComponent<ColliderComponent>()->isWalkable = true;
