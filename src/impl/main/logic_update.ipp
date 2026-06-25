@@ -86,7 +86,7 @@ static void RestoreColliderSize(GameObject* obj) {
 
 GameObject* SpawnGearReward(Scene* scene, const glm::vec3& position, const std::string& name) {
     if (!gearModel) {
-        spdlog::error("gearModel nie jest zaladowany!");
+        //spdlog::error("gearModel nie jest zaladowany!");
         return nullptr;
     }
 
@@ -129,7 +129,7 @@ void ReplaceAll(std::string& str, const std::string& from, const std::string& to
 std::string LoadLoreFromFile(const std::string& filepath) {
     std::ifstream file(filepath);
     if (!file.is_open()) {
-        spdlog::error("Nie mozna otworzyc pliku z notatka: {}", filepath);
+        //spdlog::error("Nie mozna otworzyc pliku z notatka: {}", filepath);
         return "Brak pliku " + filepath;
     }
 
@@ -186,7 +186,7 @@ std::string LoadLoreFromFile(const std::string& filepath) {
 
 GameObject* SpawnLoreNote(Scene* scene, Prefab* paperPrefab, const glm::vec3& position, const std::string& filepath, const glm::vec3& rotation = glm::vec3(0.0f), const glm::vec3& scale = glm::vec3(1.0f), GameObject* parent = nullptr) {
     if (!paperPrefab) {
-        spdlog::error("Prefab kartki nie zostal zaladowany!");
+        //spdlog::error("Prefab kartki nie zostal zaladowany!");
         return nullptr;
     }
 
@@ -208,7 +208,7 @@ GameObject* SpawnLoreNote(Scene* scene, Prefab* paperPrefab, const glm::vec3& po
 }
 
 void OnPuzzleSolved(Scene* scene, AudioSystem* audioSystem = nullptr, FMOD::Sound* sndGear = nullptr) {
-    spdlog::info("Puzzle rozwiazany!");
+    //spdlog::info("Puzzle rozwiazany!");
 
     if (rentgenRewardObject != nullptr) return;
 
@@ -318,15 +318,15 @@ void HandlePlayerInteraction(
 
             glm::vec3 slotGlobalPos = TransformHelper::getGlobalPosition(*slotTr);
             glm::vec3 gearGlobalPos = TransformHelper::getGlobalPosition(*heldTr);
-            spdlog::info("=== GEAR SLOT DEBUG ===");
+    /*        spdlog::info("=== GEAR SLOT DEBUG ===");
             spdlog::info("Slot '{}' globalna pozycja: ({:.3f}, {:.3f}, {:.3f})",
                 targetSlot->slotObject->name, slotGlobalPos.x, slotGlobalPos.y, slotGlobalPos.z);
             spdlog::info("Gear '{}' globalna pozycja: ({:.3f}, {:.3f}, {:.3f}), scale: {:.4f}",
                 myHeldObject->name, gearGlobalPos.x, gearGlobalPos.y, gearGlobalPos.z, heldTr->scale.x);
-            spdlog::info("Slot parent: {}", slotTr->parent ? "ISTNIEJE" : "NULLPTR");
+            spdlog::info("Slot parent: {}", slotTr->parent ? "ISTNIEJE" : "NULLPTR");*/
             if (slotTr->parent) {
                 glm::vec3 parentGlobalPos = TransformHelper::getGlobalPosition(*slotTr->parent);
-                spdlog::info("Parent globalna pozycja: ({:.2f}, {:.2f}, {:.2f})", parentGlobalPos.x, parentGlobalPos.y, parentGlobalPos.z);
+              /*  spdlog::info("Parent globalna pozycja: ({:.2f}, {:.2f}, {:.2f})", parentGlobalPos.x, parentGlobalPos.y, parentGlobalPos.z);*/
             }
 
             if (auto rb = myHeldObject->GetComponent<RigidbodyComponent>()) {
@@ -433,7 +433,7 @@ void HandlePlayerInteraction(
                         isMachineFixed = true; // Maszyna rusza!
                         outShakeTimer = SHAKE_DURATION; // Mocne trzesienie kamery z impaktem
 
-                        spdlog::info("Guzik START wcisniety! Maszyna ruszyla, otwieranie drzwi.");
+                        //spdlog::info("Guzik START wcisniety! Maszyna ruszyla, otwieranie drzwi.");
 
                         if (audioSystem && soundUnlock) audioSystem->playSound(soundUnlock);
 
@@ -630,7 +630,7 @@ void HandlePlayerInteraction(
                     isMachineFixed = true;
                     outShakeTimer = SHAKE_DURATION;
 
-                    spdlog::info("Maszyna ruszyla - otwieranie drzwi.");
+                    //spdlog::info("Maszyna ruszyla - otwieranie drzwi.");
 
                     if (audioSystem && soundUnlock) audioSystem->playSound(soundUnlock);
 
@@ -929,7 +929,7 @@ void CheckFallenPickupObjects()
             if (RigidbodyComponent* rb = obj->GetComponent<RigidbodyComponent>())
                 rb->velocity = glm::vec3(0.0f);
 
-            spdlog::info("Obiekt '{}' spadl poza mape - reset na pozycje startowa", obj->name);
+            //spdlog::info("Obiekt '{}' spadl poza mape - reset na pozycje startowa", obj->name);
         }
     }
 }
@@ -1151,5 +1151,5 @@ void ResetLevel(
         }
     }*/
 
-    spdlog::info("Poziom zresetowany.");
+    //spdlog::info("Poziom zresetowany.");
 }

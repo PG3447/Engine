@@ -6,7 +6,7 @@
 #include "core/ecs.h"
 
 #include <model.h>
-#include <imgui.h>
+//#include <imgui.h>
 #include <GLFW/glfw3.h>
 
 #include "DebugDrawSystem.h"
@@ -125,7 +125,7 @@ private:
     bool groupsDirty = true;
     ECS& rendECS;
     GLFWwindow* window = nullptr;
-    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+    //ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
     GLuint texture;
 
     SkyboxRenderer skybox;
@@ -429,7 +429,7 @@ public:
         {
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, sceneDepthTexture, 0);
         }
-        glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
+        glClearColor(0.45f, 0.55f, 0.60f, 1.00f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         if (groupsDirty)
@@ -582,7 +582,7 @@ public:
         glBindTexture(GL_TEXTURE_2D, debugTex);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, rgb.data());
 
-        ImGui::Image((ImTextureID)(intptr_t)debugTex, ImVec2(320, 180), ImVec2(0, 1), ImVec2(1, 0));
+        //ImGui::Image((ImTextureID)(intptr_t)debugTex, ImVec2(320, 180), ImVec2(0, 1), ImVec2(1, 0));
     }
     void ShowR32FTextureImGui(GLuint tex, int mip = 0)
     {
@@ -641,9 +641,9 @@ public:
         // Skaluj podgląd do 320px szerokości zachowując proporcje
         float dispW = 320.0f;
         float dispH = dispW * ((float)mipH / (float)mipW);
-        ImGui::Text("mip%d: %dx%d", mip, mipW, mipH);
-        ImGui::Image((ImTextureID)(intptr_t)debugTex,
-            ImVec2(dispW, dispH), ImVec2(0, 1), ImVec2(1, 0));
+        //ImGui::Text("mip%d: %dx%d", mip, mipW, mipH);
+        //ImGui::Image((ImTextureID)(intptr_t)debugTex,
+        //    ImVec2(dispW, dispH), ImVec2(0, 1), ImVec2(1, 0));
     }
 
     void RenderCamera(CameraComponent& cam, TransformComponent& transform, int width, int height) {

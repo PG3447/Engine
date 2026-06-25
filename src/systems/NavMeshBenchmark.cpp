@@ -1,6 +1,6 @@
 #include "NavMeshBenchmark.h"
 #include "core/scene.h"
-#include <spdlog/spdlog.h>
+//#include <spdlog/spdlog.h>
 #include <algorithm>
 #include <numeric>
 #include <cmath>
@@ -34,7 +34,7 @@ void NavMeshBenchmarkSystem::ClearNavMesh(Scene& /*scene*/) {
         nm->data.isBaked = false;
     }
     navMeshGO_ = nullptr;
-    spdlog::info("[NavMeshBenchmark] Wyczyszczono dane NavMesh.");
+    //spdlog::info("[NavMeshBenchmark] Wyczyszczono dane NavMesh.");
 }
 
 void NavMeshBenchmarkSystem::RunFullBenchmark(Scene& scene, const std::string& outputPath) {
@@ -50,17 +50,17 @@ void NavMeshBenchmarkSystem::RunFullBenchmark(Scene& scene, const std::string& o
     };
 
     for (NavMeshMethod method : methods) {
-        spdlog::info("[NavMeshBenchmark] === Metoda: {} ===", MethodName(method));
+        //spdlog::info("[NavMeshBenchmark] === Metoda: {} ===", MethodName(method));
 
         NavMeshStats stats = BakeWithMethod(scene, method);
         allStats.push_back(stats);
 
-        spdlog::info("[NavMeshBenchmark] Czas: {:.2f} ms | Trójkąty: {} (walk: {}, unwalk: {}) | Pamięć: {} KB",
-            stats.bakeTimeMs,
-            stats.totalTriangles,
-            stats.walkableTriangles,
-            stats.unwalkableTriangles,
-            stats.memoryEstimateKB);
+        //spdlog::info("[NavMeshBenchmark] Czas: {:.2f} ms | Trójkąty: {} (walk: {}, unwalk: {}) | Pamięć: {} KB",
+        //    stats.bakeTimeMs,
+        //    stats.totalTriangles,
+        //    stats.walkableTriangles,
+        //    stats.unwalkableTriangles,
+        //    stats.memoryEstimateKB);
 
         ClearNavMesh(scene);
     }

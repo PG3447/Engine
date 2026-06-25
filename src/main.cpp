@@ -2,9 +2,9 @@
 // If you are new to dear imgui, see examples/README.txt and documentation at the top of imgui.cpp.
 // (GLFW is a cross-platform general purpose library for handling windows, inputs, OpenGL/Vulkan graphics context creation, etc.)
 
-#include "imgui.h"
-#include "imgui_impl/imgui_impl_glfw.h"
-#include "imgui_impl/imgui_impl_opengl3.h"
+//#include "imgui.h"
+//#include "imgui_impl/imgui_impl_glfw.h"
+//#include "imgui_impl/imgui_impl_opengl3.h"
 #include <stdio.h>
 #include <windows.h>
 #include <commdlg.h>
@@ -129,8 +129,8 @@ float  sphereRadius        = 1.0f;
 float  cameraDistance = 50.0f;
 float  rotationX      = 0.0f;
 float  rotationY      = 0.0f;
-
-ImVec4 clear_color   = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+//
+//ImVec4 clear_color   = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 bool   autoRotation  = false;
 
 
@@ -305,13 +305,13 @@ int main(int, char**)
 
     if (!init())
     {
-        spdlog::error("Failed to initialize project!");
+        //spdlog::error("Failed to initialize project!");
         return EXIT_FAILURE;
     }
-    spdlog::info("Initialized project.");
+    //spdlog::info("Initialized project.");
 
-    init_imgui();
-    spdlog::info("Initialized ImGui.");
+    //init_imgui();
+    //spdlog::info("Initialized ImGui.");
 
     ECS* ecs;
     SceneManager sceneManager(ecs, renderSystem, postProcessingSystem, window);
@@ -718,8 +718,8 @@ int main(int, char**)
             float expected = normalizeAngle(expectedAngles[i]);
 
             bool correct = fabs(current - expected) < 1.0f;
-            spdlog::info("Kibel[{}] rotacja Z: {:.2f} (oczekiwana: {:.2f}) - {}",
-                i, current, expected, correct ? "OK" : "ZLE");
+ /*           spdlog::info("Kibel[{}] rotacja Z: {:.2f} (oczekiwana: {:.2f}) - {}",
+                i, current, expected, correct ? "OK" : "ZLE");*/
 
             if (!correct) allCorrect = false;
         }
@@ -916,13 +916,13 @@ int main(int, char**)
         }
         if (ecs->GetSystem<HID>()->is_action_just_pressed("toggle_frustum_culling")) {
             renderSystem->frustumCullingEnabled = !renderSystem->frustumCullingEnabled;
-            spdlog::info("Frustum culling: {}",
-                renderSystem->frustumCullingEnabled ? "ON" : "OFF");
+            //spdlog::info("Frustum culling: {}",
+            //    renderSystem->frustumCullingEnabled ? "ON" : "OFF");
         }
         if (ecs->GetSystem<HID>()->is_action_just_pressed("toggle_oclussion_culling")) {
             renderSystem->occlusionCullingEnabled = !renderSystem->occlusionCullingEnabled;
-            spdlog::info("Oclussion culling: {}",
-                renderSystem->frustumCullingEnabled ? "ON" : "OFF");
+     /*       spdlog::info("Oclussion culling: {}",
+                renderSystem->frustumCullingEnabled ? "ON" : "OFF");*/
         }
 
         if (ecs->GetSystem<HID>()->is_action_just_pressed("ui_menu")) {
@@ -1094,7 +1094,7 @@ int main(int, char**)
             it->second = (it->second > 0.0f) ? it->second - step : it->second + step;
 
             if (std::abs(it->second) <= 0.0f) {
-                spdlog::info("Rotated to: {:.2f}", transform->rotation.z);
+                //spdlog::info("Rotated to: {:.2f}", transform->rotation.z);
                 transform->isDirty = false;
                 rotatingInProgress.erase(it->first);
                 it = rotatingObjects.erase(it);
@@ -1365,9 +1365,9 @@ int main(int, char**)
         update();
         auto logicEnd = std::chrono::high_resolution_clock::now();
 
-        imgui_begin();
-        imgui_render(sceneManager);
-        imgui_end();
+        //imgui_begin();
+        //imgui_render(sceneManager);
+        //imgui_end();
 
 
         cpuTimer.stop();
@@ -1386,9 +1386,9 @@ int main(int, char**)
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
 
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
+    //ImGui_ImplOpenGL3_Shutdown();
+    //ImGui_ImplGlfw_Shutdown();
+    //ImGui::DestroyContext();
 
     glfwDestroyWindow(window);
 
@@ -1406,7 +1406,7 @@ bool init()
 {
     glfwSetErrorCallback(glfw_error_callback);
     if (!glfwInit()) {
-        spdlog::error("Failed to initalize GLFW!");
+        //spdlog::error("Failed to initalize GLFW!");
         return false;
     }
 
@@ -1419,7 +1419,7 @@ bool init()
     const GLFWvidmode* mode = glfwGetVideoMode(monitor);
     window = glfwCreateWindow(mode->width, mode->height, "MimiCry", monitor, NULL);
     if (window == NULL) {
-        spdlog::error("Failed to create GLFW Window!");
+        //spdlog::error("Failed to create GLFW Window!");
         return false;
     }
     
@@ -1445,27 +1445,27 @@ bool init()
 
     bool err = !gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
     if (err) {
-        spdlog::error("Failed to initialize OpenGL loader!");
+        //spdlog::error("Failed to initialize OpenGL loader!");
         return false;
     }
     return true;
 }
 
-void init_imgui()
-{
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
-
-    ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init(glsl_version);
-
-    ImGui::StyleColorsDark();
-}
+//void init_imgui()
+//{
+//    IMGUI_CHECKVERSION();
+//    ImGui::CreateContext();
+//    ImGuiIO& io = ImGui::GetIO(); (void)io;
+//
+//    ImGui_ImplGlfw_InitForOpenGL(window, true);
+//    ImGui_ImplOpenGL3_Init(glsl_version);
+//
+//    ImGui::StyleColorsDark();
+//}
 
 void compileShader()
 {
-    spdlog::info("Success");
+    //spdlog::info("Success");
 }
 
 void input()
