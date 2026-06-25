@@ -1014,184 +1014,184 @@ public:
         return pid;
     }
 
-
-    void DebugShadowMapImGui()
-    {
-        // ── Shadery (inline, kompilowane raz) ────────────────────────────────────
-        static const char* kVert = R"glsl(
-#version 430 core
-out vec2 vUV;
-void main() {
-    vec2 p  = vec2((gl_VertexID & 1) << 2, (gl_VertexID & 2) << 1) - 1.0;
-    vUV     = p * 0.5 + 0.5;
-    gl_Position = vec4(p, 0.0, 1.0);
-})glsl";
-
-        static const char* kFrag = R"glsl(
-#version 430 core
-in  vec2 vUV;
-out vec4 fragColor;
-uniform sampler2DArray uDepthArray;
-uniform int   uLayer;
-uniform float uNear;
-uniform float uFar;
-void main() {
-    float d   = texture(uDepthArray, vec3(vUV, float(uLayer))).r;
-    float lin = (2.0 * uNear) / (uFar + uNear - d * (uFar - uNear));
-    fragColor = vec4(vec3(lin), 1.0);
-})glsl";
-
-        // ── Zasoby GL (lazy init, niszczone przy zamknięciu okna) ───────────────
-        static GLuint prog = 0;
-        static GLuint vao = 0;
-        static GLuint tex = 0;
-        static GLuint fbo = 0;
-        static int    texRes = 0;
-
-        // ── ImGui okno ──────────────────────────────────────────────────────────
-        if (!ImGui::Begin("Shadow Debug")) { ImGui::End(); return; }
-
-        const int usedLayers = (int)gpuLights.size();
-        const int maxLayers = shadowMapArray.maxLayers;
-
-        ImGui::Text("Lights: %d", usedLayers);
-        ImGui::Text("Shadow layers: %d / %d", usedLayers, maxLayers);
-        ImGui::Text("Resolution: %dx%d", shadowMapArray.resolution, shadowMapArray.resolution);
-        ImGui::Text("FBO: %u  DepthArray: %u", shadowMapArray.fboShadow, shadowMapArray.depthArray);
-        ImGui::Separator();
-
-        static int   layer = 0;
-        static float previewSize = 256.f;
-        static float near_z = 1.f;
-        static float far_z = 1000.f;
-
-        if (usedLayers <= 0 || shadowMapArray.depthArray == 0)
-        {
-            ImGui::TextColored(ImVec4(1.f, 0.4f, 0.4f, 1.f),
-                "Brak swiatel lub depth array nie zainicjalizowane");
-            ImGui::End();
-            return;
-        }
-
-        ImGui::SliderInt("Layer", &layer, 0, usedLayers - 1);
-        ImGui::SliderFloat("Preview size", &previewSize, 128.f, 512.f);
-        ImGui::SliderFloat("Near", &near_z, 0.01f, 10.f);
-        ImGui::SliderFloat("Far", &far_z, 10.f, 2000.f);
-
-        // ── Lazy init shadera + VAO ──────────────────────────────────────────────
-        if (prog == 0)
-        {
-            auto compile = [](GLenum type, const char* src) -> GLuint {
-                GLuint s = glCreateShader(type);
-                glShaderSource(s, 1, &src, nullptr);
-                glCompileShader(s);
-                GLint ok = 0; glGetShaderiv(s, GL_COMPILE_STATUS, &ok);
-                if (!ok) {
-                    char b[512]; glGetShaderInfoLog(s, 512, nullptr, b);
-                   // spdlog::error("ShadowDebug shader: {}", b);
-                }
-                return s;
-                };
-            GLuint vs = compile(GL_VERTEX_SHADER, kVert);
-            GLuint fs = compile(GL_FRAGMENT_SHADER, kFrag);
-            prog = glCreateProgram();
-            glAttachShader(prog, vs); glAttachShader(prog, fs);
-            glLinkProgram(prog);
-            glDeleteShader(vs); glDeleteShader(fs);
-            glGenVertexArrays(1, &vao);
-        }
-
-        // ── Lazy init / przebudowa tekstury i FBO ───────────────────────────────
-        const int res = shadowMapArray.resolution;
-        if (tex == 0 || texRes != res)
-        {
-            if (tex) glDeleteTextures(1, &tex);
-            if (fbo) glDeleteFramebuffers(1, &fbo);
-
-            glGenTextures(1, &tex);
-            glBindTexture(GL_TEXTURE_2D, tex);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, res, res, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glBindTexture(GL_TEXTURE_2D, 0);
-
-            glGenFramebuffers(1, &fbo);
-            glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex, 0);
-            if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE){}
-                //spdlog::error("ShadowDebug: FBO niekompletne");
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-            texRes = res;
-        }
-
-        // ── Zapis stanu GL ───────────────────────────────────────────────────────
-        GLint prevFBO = 0;      glGetIntegerv(GL_FRAMEBUFFER_BINDING, &prevFBO);
-        GLint prevVP[4];        glGetIntegerv(GL_VIEWPORT, prevVP);
-        GLint prevProg = 0;     glGetIntegerv(GL_CURRENT_PROGRAM, &prevProg);
-        GLint prevVAO = 0;      glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &prevVAO);
-        GLboolean prevDepth = glIsEnabled(GL_DEPTH_TEST);
-        GLboolean prevBlend = glIsEnabled(GL_BLEND);
-
-        // ── Render depth array → tex ─────────────────────────────────────────────
-        glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-        glViewport(0, 0, res, res);
-        glDisable(GL_DEPTH_TEST);
-        glDisable(GL_BLEND);
-
-        glUseProgram(prog);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D_ARRAY, shadowMapArray.depthArray);
-        glUniform1i(glGetUniformLocation(prog, "uDepthArray"), 0);
-        glUniform1i(glGetUniformLocation(prog, "uLayer"), layer);
-        glUniform1f(glGetUniformLocation(prog, "uNear"), near_z);
-        glUniform1f(glGetUniformLocation(prog, "uFar"), far_z);
-
-        glBindVertexArray(vao);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-
-        // ── Przywróć stan GL ─────────────────────────────────────────────────────
-        glBindVertexArray(prevVAO);
-        glUseProgram(prevProg);
-        glBindFramebuffer(GL_FRAMEBUFFER, prevFBO);
-        glViewport(prevVP[0], prevVP[1], prevVP[2], prevVP[3]);
-        if (prevDepth) glEnable(GL_DEPTH_TEST);  else glDisable(GL_DEPTH_TEST);
-        if (prevBlend) glEnable(GL_BLEND);       else glDisable(GL_BLEND);
-
-        // ── Podgląd ──────────────────────────────────────────────────────────────
-        ImGui::Text("Layer %d  (near=%.2f  far=%.2f)", layer, near_z, far_z);
-        ImGui::Image(
-            reinterpret_cast<ImTextureID>(static_cast<intptr_t>(tex)),
-            ImVec2(previewSize, previewSize),
-            ImVec2(0, 1), ImVec2(1, 0));   // flip Y (OpenGL vs ImGui)
-        ImGui::TextDisabled("Jasny = blisko, ciemny = daleko (zlinearyzowany)");
-
-        ImGui::Separator();
-
-        // ── Lista swiatel ─────────────────────────────────────────────────────────
-        if (ImGui::CollapsingHeader("GPULights"))
-        {
-            for (int i = 0; i < usedLayers; i++)
-            {
-                const GPULight& g = gpuLights[i];
-                ImGui::PushID(i);
-                char label[32]; snprintf(label, sizeof(label), "Light %d", i);
-                if (ImGui::TreeNode(label))
-                {
-                    ImGui::Text("pos   (%.2f, %.2f, %.2f)  type=%.0f",
-                        g.position.x, g.position.y, g.position.z, g.position.w);
-                    ImGui::Text("dir   (%.2f, %.2f, %.2f)",
-                        g.direction.x, g.direction.y, g.direction.z);
-                    ImGui::Text("on=%.0f  intensity=%.2f  range=%.2f",
-                        g.params2.z, g.params1.w, g.params2.w);
-                    ImGui::TreePop();
-                }
-                ImGui::PopID();
-            }
-        }
-
-        ImGui::End();
-    }
+//
+//    void DebugShadowMapImGui()
+//    {
+//        // ── Shadery (inline, kompilowane raz) ────────────────────────────────────
+//        static const char* kVert = R"glsl(
+//#version 430 core
+//out vec2 vUV;
+//void main() {
+//    vec2 p  = vec2((gl_VertexID & 1) << 2, (gl_VertexID & 2) << 1) - 1.0;
+//    vUV     = p * 0.5 + 0.5;
+//    gl_Position = vec4(p, 0.0, 1.0);
+//})glsl";
+//
+//        static const char* kFrag = R"glsl(
+//#version 430 core
+//in  vec2 vUV;
+//out vec4 fragColor;
+//uniform sampler2DArray uDepthArray;
+//uniform int   uLayer;
+//uniform float uNear;
+//uniform float uFar;
+//void main() {
+//    float d   = texture(uDepthArray, vec3(vUV, float(uLayer))).r;
+//    float lin = (2.0 * uNear) / (uFar + uNear - d * (uFar - uNear));
+//    fragColor = vec4(vec3(lin), 1.0);
+//})glsl";
+//
+//        // ── Zasoby GL (lazy init, niszczone przy zamknięciu okna) ───────────────
+//        static GLuint prog = 0;
+//        static GLuint vao = 0;
+//        static GLuint tex = 0;
+//        static GLuint fbo = 0;
+//        static int    texRes = 0;
+//
+//        // ── ImGui okno ──────────────────────────────────────────────────────────
+//        if (!ImGui::Begin("Shadow Debug")) { ImGui::End(); return; }
+//
+//        const int usedLayers = (int)gpuLights.size();
+//        const int maxLayers = shadowMapArray.maxLayers;
+//
+//        ImGui::Text("Lights: %d", usedLayers);
+//        ImGui::Text("Shadow layers: %d / %d", usedLayers, maxLayers);
+//        ImGui::Text("Resolution: %dx%d", shadowMapArray.resolution, shadowMapArray.resolution);
+//        ImGui::Text("FBO: %u  DepthArray: %u", shadowMapArray.fboShadow, shadowMapArray.depthArray);
+//        ImGui::Separator();
+//
+//        static int   layer = 0;
+//        static float previewSize = 256.f;
+//        static float near_z = 1.f;
+//        static float far_z = 1000.f;
+//
+//        if (usedLayers <= 0 || shadowMapArray.depthArray == 0)
+//        {
+//            ImGui::TextColored(ImVec4(1.f, 0.4f, 0.4f, 1.f),
+//                "Brak swiatel lub depth array nie zainicjalizowane");
+//            ImGui::End();
+//            return;
+//        }
+//
+//        ImGui::SliderInt("Layer", &layer, 0, usedLayers - 1);
+//        ImGui::SliderFloat("Preview size", &previewSize, 128.f, 512.f);
+//        ImGui::SliderFloat("Near", &near_z, 0.01f, 10.f);
+//        ImGui::SliderFloat("Far", &far_z, 10.f, 2000.f);
+//
+//        // ── Lazy init shadera + VAO ──────────────────────────────────────────────
+//        if (prog == 0)
+//        {
+//            auto compile = [](GLenum type, const char* src) -> GLuint {
+//                GLuint s = glCreateShader(type);
+//                glShaderSource(s, 1, &src, nullptr);
+//                glCompileShader(s);
+//                GLint ok = 0; glGetShaderiv(s, GL_COMPILE_STATUS, &ok);
+//                if (!ok) {
+//                    char b[512]; glGetShaderInfoLog(s, 512, nullptr, b);
+//                   // spdlog::error("ShadowDebug shader: {}", b);
+//                }
+//                return s;
+//                };
+//            GLuint vs = compile(GL_VERTEX_SHADER, kVert);
+//            GLuint fs = compile(GL_FRAGMENT_SHADER, kFrag);
+//            prog = glCreateProgram();
+//            glAttachShader(prog, vs); glAttachShader(prog, fs);
+//            glLinkProgram(prog);
+//            glDeleteShader(vs); glDeleteShader(fs);
+//            glGenVertexArrays(1, &vao);
+//        }
+//
+//        // ── Lazy init / przebudowa tekstury i FBO ───────────────────────────────
+//        const int res = shadowMapArray.resolution;
+//        if (tex == 0 || texRes != res)
+//        {
+//            if (tex) glDeleteTextures(1, &tex);
+//            if (fbo) glDeleteFramebuffers(1, &fbo);
+//
+//            glGenTextures(1, &tex);
+//            glBindTexture(GL_TEXTURE_2D, tex);
+//            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, res, res, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+//            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+//            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+//            glBindTexture(GL_TEXTURE_2D, 0);
+//
+//            glGenFramebuffers(1, &fbo);
+//            glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+//            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex, 0);
+//            if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE){}
+//                //spdlog::error("ShadowDebug: FBO niekompletne");
+//            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+//
+//            texRes = res;
+//        }
+//
+//        // ── Zapis stanu GL ───────────────────────────────────────────────────────
+//        GLint prevFBO = 0;      glGetIntegerv(GL_FRAMEBUFFER_BINDING, &prevFBO);
+//        GLint prevVP[4];        glGetIntegerv(GL_VIEWPORT, prevVP);
+//        GLint prevProg = 0;     glGetIntegerv(GL_CURRENT_PROGRAM, &prevProg);
+//        GLint prevVAO = 0;      glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &prevVAO);
+//        GLboolean prevDepth = glIsEnabled(GL_DEPTH_TEST);
+//        GLboolean prevBlend = glIsEnabled(GL_BLEND);
+//
+//        // ── Render depth array → tex ─────────────────────────────────────────────
+//        glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+//        glViewport(0, 0, res, res);
+//        glDisable(GL_DEPTH_TEST);
+//        glDisable(GL_BLEND);
+//
+//        glUseProgram(prog);
+//        glActiveTexture(GL_TEXTURE0);
+//        glBindTexture(GL_TEXTURE_2D_ARRAY, shadowMapArray.depthArray);
+//        glUniform1i(glGetUniformLocation(prog, "uDepthArray"), 0);
+//        glUniform1i(glGetUniformLocation(prog, "uLayer"), layer);
+//        glUniform1f(glGetUniformLocation(prog, "uNear"), near_z);
+//        glUniform1f(glGetUniformLocation(prog, "uFar"), far_z);
+//
+//        glBindVertexArray(vao);
+//        glDrawArrays(GL_TRIANGLES, 0, 3);
+//
+//        // ── Przywróć stan GL ─────────────────────────────────────────────────────
+//        glBindVertexArray(prevVAO);
+//        glUseProgram(prevProg);
+//        glBindFramebuffer(GL_FRAMEBUFFER, prevFBO);
+//        glViewport(prevVP[0], prevVP[1], prevVP[2], prevVP[3]);
+//        if (prevDepth) glEnable(GL_DEPTH_TEST);  else glDisable(GL_DEPTH_TEST);
+//        if (prevBlend) glEnable(GL_BLEND);       else glDisable(GL_BLEND);
+//
+//        // ── Podgląd ──────────────────────────────────────────────────────────────
+//        ImGui::Text("Layer %d  (near=%.2f  far=%.2f)", layer, near_z, far_z);
+//        ImGui::Image(
+//            reinterpret_cast<ImTextureID>(static_cast<intptr_t>(tex)),
+//            ImVec2(previewSize, previewSize),
+//            ImVec2(0, 1), ImVec2(1, 0));   // flip Y (OpenGL vs ImGui)
+//        ImGui::TextDisabled("Jasny = blisko, ciemny = daleko (zlinearyzowany)");
+//
+//        ImGui::Separator();
+//
+//        // ── Lista swiatel ─────────────────────────────────────────────────────────
+//        if (ImGui::CollapsingHeader("GPULights"))
+//        {
+//            for (int i = 0; i < usedLayers; i++)
+//            {
+//                const GPULight& g = gpuLights[i];
+//                ImGui::PushID(i);
+//                char label[32]; snprintf(label, sizeof(label), "Light %d", i);
+//                if (ImGui::TreeNode(label))
+//                {
+//                    ImGui::Text("pos   (%.2f, %.2f, %.2f)  type=%.0f",
+//                        g.position.x, g.position.y, g.position.z, g.position.w);
+//                    ImGui::Text("dir   (%.2f, %.2f, %.2f)",
+//                        g.direction.x, g.direction.y, g.direction.z);
+//                    ImGui::Text("on=%.0f  intensity=%.2f  range=%.2f",
+//                        g.params2.z, g.params1.w, g.params2.w);
+//                    ImGui::TreePop();
+//                }
+//                ImGui::PopID();
+//            }
+//        }
+//
+//        ImGui::End();
+//    }
 
 
 

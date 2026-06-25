@@ -3,7 +3,6 @@
 #include "core/component.h"
 #include "utils/animation_helper.h"
 #include "prefab.h"
-#include <spdlog/spdlog.h>
 
 class PlayerAnimationHelper {
 public:

@@ -6,7 +6,6 @@
 #include <filesystem>
 
 #include <glm/glm.hpp>
-#include <imgui.h>
 
 #include "core/gameobject.h"
 #include "core/scene.h"
@@ -180,14 +179,14 @@ inline GameObject* SpawnAtCursor(Scene& scene, Prefab& prefab, const std::string
             Prefab* prefab = prefabLookup(modelPath);
             if (!prefab)
             {
-                spdlog::warn("PlacementEditor: nie znaleziono prefaba dla '{}', pomijam wpis '{}'.", modelPath, name);
+                //spdlog::warn("PlacementEditor: nie znaleziono prefaba dla '{}', pomijam wpis '{}'.", modelPath, name);
                 continue;
             }
 
             GameObject* go = prefab->Instantiate(scene, nullptr, shader);
             if (!go)
             {
-                spdlog::warn("PlacementEditor: Instantiate() zwrocilo nullptr dla '{}'.", modelPath);
+                //spdlog::warn("PlacementEditor: Instantiate() zwrocilo nullptr dla '{}'.", modelPath);
                 continue;
             }
 
@@ -231,9 +230,9 @@ inline GameObject* SpawnAtCursor(Scene& scene, Prefab& prefab, const std::string
         auto modelIt = ResourceManager::Models.find(modelPath);
         if (modelIt == ResourceManager::Models.end() || !modelIt->second)
         {
-            spdlog::warn("PlacementEditor::DefaultPrefabLookup: model '{}' nie jest zaladowany "
-                         "w ResourceManager::Models. Wczytaj go najpierw (LoadModel/connectAllModels).",
-                         modelPath);
+            //spdlog::warn("PlacementEditor::DefaultPrefabLookup: model '{}' nie jest zaladowany "
+            //             "w ResourceManager::Models. Wczytaj go najpierw (LoadModel/connectAllModels).",
+            //             modelPath);
             return nullptr;
         }
 
@@ -245,7 +244,7 @@ inline GameObject* SpawnAtCursor(Scene& scene, Prefab& prefab, const std::string
         return &cacheIt->second;
     }
 
-    inline void DrawImGui(Scene& scene, std::vector<std::pair<std::string, Prefab*>>& availablePrefabs,
+   /* inline void DrawImGui(Scene& scene, std::vector<std::pair<std::string, Prefab*>>& availablePrefabs,
         GameObject* selectedGameObject)
     {
         State& st = Get();
@@ -331,5 +330,5 @@ inline GameObject* SpawnAtCursor(Scene& scene, Prefab& prefab, const std::string
         }
 
         ImGui::End();
-    }
+    }*/
 }

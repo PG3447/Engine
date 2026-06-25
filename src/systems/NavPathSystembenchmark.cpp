@@ -1,6 +1,6 @@
 #include "NavPathSystem.h"
 #include "NavMeshSystem.h"
-#include <spdlog/spdlog.h>
+//#include <spdlog/spdlog.h>
 #include <chrono>
 #include <fstream>
 #include <iomanip>

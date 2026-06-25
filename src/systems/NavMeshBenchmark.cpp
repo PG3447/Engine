@@ -38,7 +38,7 @@ void NavMeshBenchmarkSystem::ClearNavMesh(Scene& /*scene*/) {
 }
 
 void NavMeshBenchmarkSystem::RunFullBenchmark(Scene& scene, const std::string& outputPath) {
-    spdlog::info("[NavMeshBenchmark] Rozpoczynam pełny benchmark...");
+    //spdlog::info("[NavMeshBenchmark] Rozpoczynam pełny benchmark...");
 
     std::vector<NavMeshStats> allStats;
 
@@ -66,7 +66,7 @@ void NavMeshBenchmarkSystem::RunFullBenchmark(Scene& scene, const std::string& o
     }
 
     SaveStatsToFile(allStats, outputPath);
-    spdlog::info("[NavMeshBenchmark] Wyniki zapisano do: {}", outputPath);
+    //spdlog::info("[NavMeshBenchmark] Wyniki zapisano do: {}", outputPath);
 }
 
 void NavMeshBenchmarkSystem::BakeDelaunay(Scene& scene) {
@@ -82,7 +82,7 @@ void NavMeshBenchmarkSystem::BakeVoronoi(Scene& scene) {
     auto obstacles = CollectObstacles(scene);
 
     if (surfaces.empty()) {
-        spdlog::warn("[Voronoi] Brak walkable surfaces.");
+        //spdlog::warn("[Voronoi] Brak walkable surfaces.");
         return;
     }
 
@@ -91,7 +91,7 @@ void NavMeshBenchmarkSystem::BakeVoronoi(Scene& scene) {
     auto filteredPoints = FilterBlockedPoints(rawPoints, obstacles, nm->agentRadius, nm->agentHeight);
 
     if (filteredPoints.size() < 3) {
-        spdlog::warn("[Voronoi] Za mało punktów.");
+        //spdlog::warn("[Voronoi] Za mało punktów.");
         return;
     }
 
@@ -100,8 +100,8 @@ void NavMeshBenchmarkSystem::BakeVoronoi(Scene& scene) {
     MarkBlockedTriangles(nm->data, obstacles, nm->agentRadius, nm->agentHeight);
 
     nm->data.isBaked = true;
-    spdlog::info("[Voronoi] Bake zakończony: {} wierzchołków, {} trójkątów",
-        nm->data.vertices.size(), nm->data.triangles.size());
+    //spdlog::info("[Voronoi] Bake zakończony: {} wierzchołków, {} trójkątów",
+    //    nm->data.vertices.size(), nm->data.triangles.size());
 }
 
 NavMeshData NavMeshBenchmarkSystem::BuildVoronoiNavMesh(
@@ -187,8 +187,8 @@ NavMeshData NavMeshBenchmarkSystem::BuildVoronoiNavMesh(
         }
     }
 
-    spdlog::info("[Voronoi] Dual Delaunay: {} wierzchołków, {} trójkątów",
-        result.vertices.size(), result.triangles.size());
+  /*  spdlog::info("[Voronoi] Dual Delaunay: {} wierzchołków, {} trójkątów",
+        result.vertices.size(), result.triangles.size());*/
 
     return result;
 }
@@ -203,7 +203,7 @@ void NavMeshBenchmarkSystem::BakeGrid(Scene& scene) {
     auto obstacles = CollectObstacles(scene);
 
     if (surfaces.empty()) {
-        spdlog::warn("[Grid] Brak walkable surfaces.");
+        //spdlog::warn("[Grid] Brak walkable surfaces.");
         return;
     }
 
@@ -212,8 +212,8 @@ void NavMeshBenchmarkSystem::BakeGrid(Scene& scene) {
     ComputeNeighbors(nm->data);
 
     nm->data.isBaked = true;
-    spdlog::info("[Grid] Bake zakończony: {} wierzchołków, {} trójkątów",
-        nm->data.vertices.size(), nm->data.triangles.size());
+    //spdlog::info("[Grid] Bake zakończony: {} wierzchołków, {} trójkątów",
+    //    nm->data.vertices.size(), nm->data.triangles.size());
 }
 
 NavMeshData NavMeshBenchmarkSystem::BuildGridNavMesh(
@@ -298,8 +298,8 @@ NavMeshData NavMeshBenchmarkSystem::BuildGridNavMesh(
         }
     }
 
-    spdlog::info("[Grid] Siatka: {} wierzchołków, {} trójkątów",
-        result.vertices.size(), result.triangles.size());
+    //spdlog::info("[Grid] Siatka: {} wierzchołków, {} trójkątów",
+    //    result.vertices.size(), result.triangles.size());
 
     return result;
 }
@@ -376,7 +376,7 @@ void NavMeshBenchmarkSystem::SaveStatsToFile(
 {
     std::ofstream f(path);
     if (!f.is_open()) {
-        spdlog::error("[NavMeshBenchmark] Nie można otworzyć pliku: {}", path);
+        //spdlog::error("[NavMeshBenchmark] Nie można otworzyć pliku: {}", path);
         return;
     }
 

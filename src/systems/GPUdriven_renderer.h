@@ -815,94 +815,94 @@ public:
         firstFrame = true;
     }
 
-    void DebugShowHiZ(int mipLevel = 0)
-    {
-        if (!hizTexture) return;
+    //void DebugShowHiZ(int mipLevel = 0)
+    //{
+    //    if (!hizTexture) return;
 
-        static int    selectedMip = 0;
-        static GLuint debugTex = 0;
-        static int    debugW = 0;
-        static int    debugH = 0;
+    //    static int    selectedMip = 0;
+    //    static GLuint debugTex = 0;
+    //    static int    debugW = 0;
+    //    static int    debugH = 0;
 
-        ImGui::Begin("HiZ Debug");
+    //    ImGui::Begin("HiZ Debug");
 
-        if (ImGui::SliderInt("Mip Level", &selectedMip, 0, hizMipLevels - 1))
-            debugW = debugH = 0;
+    //    if (ImGui::SliderInt("Mip Level", &selectedMip, 0, hizMipLevels - 1))
+    //        debugW = debugH = 0;
 
-        mipLevel = selectedMip;
+    //    mipLevel = selectedMip;
 
-        GLint mipW = 0, mipH = 0;
-        glGetTextureLevelParameteriv(hizTexture, mipLevel, GL_TEXTURE_WIDTH, &mipW);
-        glGetTextureLevelParameteriv(hizTexture, mipLevel, GL_TEXTURE_HEIGHT, &mipH);
-        if (mipW == 0 || mipH == 0) { ImGui::End(); return; }
-        // Sprawdź też czy tekstura w ogóle ma ten mip
-        GLint compressed = 0, internalFmt = 0;
-        glGetTextureLevelParameteriv(hizTexture, mipLevel, GL_TEXTURE_COMPRESSED, &compressed);
-        glGetTextureLevelParameteriv(hizTexture, mipLevel, GL_TEXTURE_INTERNAL_FORMAT, &internalFmt);
+    //    GLint mipW = 0, mipH = 0;
+    //    glGetTextureLevelParameteriv(hizTexture, mipLevel, GL_TEXTURE_WIDTH, &mipW);
+    //    glGetTextureLevelParameteriv(hizTexture, mipLevel, GL_TEXTURE_HEIGHT, &mipH);
+    //    if (mipW == 0 || mipH == 0) { ImGui::End(); return; }
+    //    // Sprawdź też czy tekstura w ogóle ma ten mip
+    //    GLint compressed = 0, internalFmt = 0;
+    //    glGetTextureLevelParameteriv(hizTexture, mipLevel, GL_TEXTURE_COMPRESSED, &compressed);
+    //    glGetTextureLevelParameteriv(hizTexture, mipLevel, GL_TEXTURE_INTERNAL_FORMAT, &internalFmt);
 
-        //spdlog::warn("HiZ mip{}: {}x{}  fmt=0x{:X}  compressed={}", mipLevel, mipW, mipH, internalFmt, compressed);
-        // Bufor z zapasem + GL_PACK_ALIGNMENT 1 żeby uniknąć out-of-bounds przy małych mipach
-        glPixelStorei(GL_PACK_ALIGNMENT, 1);
-        size_t bufSize = std::max((size_t)(mipW * mipH), (size_t)64);
-        std::vector<float> pixels(bufSize, 0.0f);
-        glGetTextureImage(hizTexture, mipLevel,
-            GL_RED, GL_FLOAT,
-            (GLsizei)(bufSize * sizeof(float)),
-            pixels.data());
-        glPixelStorei(GL_PACK_ALIGNMENT, 4);
+    //    //spdlog::warn("HiZ mip{}: {}x{}  fmt=0x{:X}  compressed={}", mipLevel, mipW, mipH, internalFmt, compressed);
+    //    // Bufor z zapasem + GL_PACK_ALIGNMENT 1 żeby uniknąć out-of-bounds przy małych mipach
+    //    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    //    size_t bufSize = std::max((size_t)(mipW * mipH), (size_t)64);
+    //    std::vector<float> pixels(bufSize, 0.0f);
+    //    glGetTextureImage(hizTexture, mipLevel,
+    //        GL_RED, GL_FLOAT,
+    //        (GLsizei)(bufSize * sizeof(float)),
+    //        pixels.data());
+    //    glPixelStorei(GL_PACK_ALIGNMENT, 4);
 
-        int   pixelCount = mipW * mipH;
-        float dMin = *std::min_element(pixels.begin(), pixels.begin() + pixelCount);
-        float dMax = *std::max_element(pixels.begin(), pixels.begin() + pixelCount);
-        float range = (dMax - dMin) > 0.0001f ? (dMax - dMin) : 1.0f;
+    //    int   pixelCount = mipW * mipH;
+    //    float dMin = *std::min_element(pixels.begin(), pixels.begin() + pixelCount);
+    //    float dMax = *std::max_element(pixels.begin(), pixels.begin() + pixelCount);
+    //    float range = (dMax - dMin) > 0.0001f ? (dMax - dMin) : 1.0f;
 
-        std::vector<uint8_t> rgba(pixelCount * 4);
-        for (int i = 0; i < pixelCount; i++) {
-            float   n = 1.0f - ((pixels[i] - dMin) / range);
-            uint8_t v = (uint8_t)(glm::clamp(n, 0.0f, 1.0f) * 255.0f);
-            rgba[i * 4 + 0] = v;
-            rgba[i * 4 + 1] = v;
-            rgba[i * 4 + 2] = v;
-            rgba[i * 4 + 3] = 255;
-        }
+    //    std::vector<uint8_t> rgba(pixelCount * 4);
+    //    for (int i = 0; i < pixelCount; i++) {
+    //        float   n = 1.0f - ((pixels[i] - dMin) / range);
+    //        uint8_t v = (uint8_t)(glm::clamp(n, 0.0f, 1.0f) * 255.0f);
+    //        rgba[i * 4 + 0] = v;
+    //        rgba[i * 4 + 1] = v;
+    //        rgba[i * 4 + 2] = v;
+    //        rgba[i * 4 + 3] = 255;
+    //    }
 
-        if (!debugTex) {
-            glGenTextures(1, &debugTex);
-            glBindTexture(GL_TEXTURE_2D, debugTex);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glBindTexture(GL_TEXTURE_2D, 0);
-        }
+    //    if (!debugTex) {
+    //        glGenTextures(1, &debugTex);
+    //        glBindTexture(GL_TEXTURE_2D, debugTex);
+    //        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    //        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    //        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    //        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    //        glBindTexture(GL_TEXTURE_2D, 0);
+    //    }
 
-        glBindTexture(GL_TEXTURE_2D, debugTex);
-        if (debugW != (int)mipW || debugH != (int)mipH) {
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, mipW, mipH, 0,
-                GL_RGBA, GL_UNSIGNED_BYTE, rgba.data());
-            debugW = (int)mipW;
-            debugH = (int)mipH;
-        }
-        else {
-            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, mipW, mipH,
-                GL_RGBA, GL_UNSIGNED_BYTE, rgba.data());
-        }
-        glBindTexture(GL_TEXTURE_2D, 0);
+    //    glBindTexture(GL_TEXTURE_2D, debugTex);
+    //    if (debugW != (int)mipW || debugH != (int)mipH) {
+    //        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, mipW, mipH, 0,
+    //            GL_RGBA, GL_UNSIGNED_BYTE, rgba.data());
+    //        debugW = (int)mipW;
+    //        debugH = (int)mipH;
+    //    }
+    //    else {
+    //        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, mipW, mipH,
+    //            GL_RGBA, GL_UNSIGNED_BYTE, rgba.data());
+    //    }
+    //    glBindTexture(GL_TEXTURE_2D, 0);
 
-        ImGui::Text("Mip %d: %dx%d  depth [%.4f, %.4f]",
-            mipLevel, mipW, mipH, dMin, dMax);
+    //    ImGui::Text("Mip %d: %dx%d  depth [%.4f, %.4f]",
+    //        mipLevel, mipW, mipH, dMin, dMax);
 
-        float dispW = std::min((float)mipW * 2.0f, 512.0f);
-        float dispH = dispW * ((float)mipH / (float)mipW);
-        ImGui::Image(
-            (ImTextureID)(intptr_t)debugTex,
-            ImVec2(dispW, dispH),
-            ImVec2(0, 1),
-            ImVec2(1, 0)
-        );
+    //    float dispW = std::min((float)mipW * 2.0f, 512.0f);
+    //    float dispH = dispW * ((float)mipH / (float)mipW);
+    //    ImGui::Image(
+    //        (ImTextureID)(intptr_t)debugTex,
+    //        ImVec2(dispW, dispH),
+    //        ImVec2(0, 1),
+    //        ImVec2(1, 0)
+    //    );
 
-        ImGui::End();
-    }
+    //    ImGui::End();
+    //}
 
 
     uint32_t GetMeshCount()    const { return (uint32_t)meshesData.size(); }

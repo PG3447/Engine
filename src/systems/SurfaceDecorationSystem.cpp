@@ -7,8 +7,8 @@
 #include <shader.h>
 
 #include <glm/gtc/constants.hpp>
-#include <spdlog/spdlog.h>
-#include <imgui.h>
+//#include <spdlog/spdlog.h>
+//#include <imgui.h>
 #include <yaml-cpp/yaml.h>
 
 #include <fstream>
