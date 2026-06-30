@@ -1,0 +1,53 @@
+configs:
+  - name: Config_0
+    enabled: true
+    targetName: kredens6
+    totalCount: 5
+    minDistance: 0.5
+    padding: 3
+    voronoiPoints: 20
+    densityFalloff: 1
+    denseCenter: true
+    baseScaleX: 1
+    baseScaleY: 1
+    baseScaleZ: 1
+    candidates:
+      - label: res/models/folder.glb
+        weight: 1
+        scaleMin: 1
+        scaleMax: 1
+        rotYMin: 0
+        rotYMax: 360
+        rotXMin: 0
+        rotXMax: 0
+        rotZMin: 0
+        rotZMax: 0
+        offsetX: 0
+        offsetY: 0
+        offsetZ: 0
+      - label: res/models/papers.glb
+        weight: 1
+        scaleMin: 1
+        scaleMax: 1
+        rotYMin: 0
+        rotYMax: 360
+        rotXMin: 0
+        rotXMax: 0
+        rotZMin: 0
+        rotZMax: 0
+        offsetX: 0
+        offsetY: 0
+        offsetZ: 0
+      - label: res/models/lab_ola_1.glb
+        weight: 1
+        scaleMin: 1
+        scaleMax: 1
+        rotYMin: 0
+        rotYMax: 360
+        rotXMin: 0
+        rotXMax: 0
+        rotZMin: 0
+        rotZMax: 0
+        offsetX: 0
+        offsetY: 0
+        offsetZ: 0
