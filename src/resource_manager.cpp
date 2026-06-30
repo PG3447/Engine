@@ -141,30 +141,26 @@ TextureData ResourceManager::loadTextureFromFile(const std::string& path, const 
         glGenTextures(1, &textureID);
 
         GLenum format = GL_RED;
-        GLenum internalFormat = GL_COMPRESSED_RED;// GL_COMPRESSED_RED_RGTC1; // GL_RED
+        GLenum internalFormat = GL_COMPRESSED_RED_RGTC1; // GL_RED
         if (nrComponents == 1)
         {
             format = GL_RED;
-            internalFormat = GL_COMPRESSED_RED; // GL_COMPRESSED_RED_RGTC1; // GL_RED;
-            //internalFormat = GL_RED;
+            internalFormat = GL_COMPRESSED_RED_RGTC1; // GL_RED;
         }
         else if (nrComponents == 2)
         {
             format = GL_RG;
-            internalFormat = GL_COMPRESSED_RG;// GL_COMPRESSED_RG_RGTC2; // GL_RG;
-            //internalFormat = GL_RG;
+            internalFormat = GL_COMPRESSED_RG_RGTC2; // GL_RG;
         }
         else if (nrComponents == 3)
         {
             format = GL_RGB;
-            internalFormat = GL_COMPRESSED_RGB;//GL_COMPRESSED_RGB_S3TC_DXT1_EXT; // GL_RGB
-            //internalFormat = GL_RGB;
+            internalFormat = GL_COMPRESSED_RGB_S3TC_DXT1_EXT; // GL_RGB
         }
         else if (nrComponents == 4) {
             hasAlpha = true;
             format = GL_RGBA;
-            internalFormat = GL_COMPRESSED_RGBA;// GL_COMPRESSED_RGBA_S3TC_DXT5_EXT; // GL_RGBA;
-            //internalFormat = GL_RGBA;
+            internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT; // GL_RGBA;
         }
 
         glBindTexture(GL_TEXTURE_2D, textureID);
