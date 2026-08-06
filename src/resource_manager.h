@@ -42,7 +42,7 @@ public:
     static void LoadAssets(std::string& path);
 
 private:
-    static TextureData loadTextureFromFile(const std::string& path, const std::string& directory, const aiTexture* aiTex);
+    static TextureData loadTextureFromFile(const std::string& fullPath, const std::string& path, const std::string& directory, const aiTexture* aiTex);
 
 };
 
