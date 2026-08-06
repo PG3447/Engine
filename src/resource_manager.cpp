@@ -117,14 +117,6 @@ uint32_t fnv1aHash(const char* string)
     return hash;
 }
 
-struct CacheDXT1
-{
-    uint32_t width;
-    uint32_t height;
-    GLenum internalFormat;
-    GLint size;
-};
-
 inline static size_t TotalTextureMemory = 0;
 
 TextureData ResourceManager::loadTextureFromFile(const std::string& fullPath, const std::string& path, const std::string& directory, const aiTexture* aiTex)
@@ -194,17 +186,40 @@ TextureData ResourceManager::loadTextureFromFile(const std::string& fullPath, co
 
         if (fileCache)
         {
-            CacheDXT1 header;
+            uint32_t dwMagic;
+            fread(&dwMagic, sizeof(dwMagic), 1, fileCache);
+            
+            if (dwMagic == createFourCC('D', 'D', 'S', ' '))
+            {
+                DDS_HEADER headerDDSCache{};
 
-            fread(&header, sizeof(header), 1, fileCache);
+                fread(&headerDDSCache, sizeof(headerDDSCache), 1, fileCache);
 
-            std::vector<uint8_t> compressedData(header.size);
-            fread(compressedData.data(), 1, header.size, fileCache);
+                GLenum cachedInternalFormat = (headerDDSCache.ddspf.dwFourCC == createFourCC('D', 'X', 'T', '5')) ? GL_COMPRESSED_RGBA_S3TC_DXT5_EXT : GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
 
-            glCompressedTexImage2D(GL_TEXTURE_2D, 0, header.internalFormat, header.width, header.height, 0, header.size, compressedData.data());
-            glGenerateMipmap(GL_TEXTURE_2D);
+                uint32_t blockSize;
 
-            fclose(fileCache);
+                if (cachedInternalFormat == GL_COMPRESSED_RGB_S3TC_DXT1_EXT)
+                {
+                    blockSize = 8;
+                }
+                else
+                {
+                    blockSize = 16;
+                }
+
+                uint32_t dataSize = std::max(1u, (headerDDSCache.dwWidth + 3) / 4) * std::max(1u, (headerDDSCache.dwHeight + 3) / 4) * blockSize;
+
+
+                std::vector<uint8_t> compressedData(dataSize);
+                fread(compressedData.data(), 1, dataSize, fileCache);
+
+                glCompressedTexImage2D(GL_TEXTURE_2D, 0, cachedInternalFormat, headerDDSCache.dwWidth, headerDDSCache.dwHeight, 0, dataSize, compressedData.data());
+                glGenerateMipmap(GL_TEXTURE_2D);
+
+                fclose(fileCache);
+            }
+
         }
         else
         {
@@ -221,13 +236,21 @@ TextureData ResourceManager::loadTextureFromFile(const std::string& fullPath, co
             FILE* fileCacheSave = fopen(cachePath.c_str(), "wb");
             if (fileCacheSave)
             {
-                CacheDXT1 header {
-                    (uint32_t)width,
-                    (uint32_t)height,
-                    internalFormat,
-                    compressedSize
-                };
-                fwrite(&header, sizeof(header), 1, fileCacheSave);
+                uint32_t dwMagic = createFourCC('D', 'D', 'S', ' ');
+                DDS_HEADER headerDDS{};
+                headerDDS.dwSize = 124;
+                headerDDS.dwFlags = 0x1 | 0x2 | 0x4 | 0x1000 | 0x80000;
+                headerDDS.dwHeight = height;
+                headerDDS.dwWidth = width;
+                headerDDS.dwPitchOrLinearSize = (uint32_t)compressedSize;
+                headerDDS.dwMipMapCount = 1;
+                headerDDS.ddspf.dwSize = 32;
+                headerDDS.ddspf.dwFlags = 0x4;
+                headerDDS.ddspf.dwFourCC = (nrComponents == 4) ? createFourCC('D', 'X', 'T', '5') : createFourCC('D', 'X', 'T', '1');
+                headerDDS.dwCaps = 0x1000;
+
+                fwrite(&dwMagic, sizeof(dwMagic), 1, fileCacheSave);
+                fwrite(&headerDDS, sizeof(headerDDS), 1, fileCacheSave);
                 fwrite(compressedData.data(), 1, compressedSize, fileCacheSave);
                 fclose(fileCacheSave);
             }
