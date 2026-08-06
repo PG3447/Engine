@@ -208,14 +208,21 @@ TextureData ResourceManager::loadTextureFromFile(const std::string& fullPath, co
                     blockSize = 16;
                 }
 
-                uint32_t dataSize = std::max(1u, (headerDDSCache.dwWidth + 3) / 4) * std::max(1u, (headerDDSCache.dwHeight + 3) / 4) * blockSize;
+                uint32_t widthMip = headerDDSCache.dwWidth;
+                uint32_t heightMip = headerDDSCache.dwHeight;
 
 
-                std::vector<uint8_t> compressedData(dataSize);
-                fread(compressedData.data(), 1, dataSize, fileCache);
-
-                glCompressedTexImage2D(GL_TEXTURE_2D, 0, cachedInternalFormat, headerDDSCache.dwWidth, headerDDSCache.dwHeight, 0, dataSize, compressedData.data());
-                glGenerateMipmap(GL_TEXTURE_2D);
+                for (uint32_t level = 0; level < headerDDSCache.dwMipMapCount; level++)
+                {    
+                    uint32_t dataSize = std::max(1u, (widthMip + 3) / 4) * std::max(1u, (heightMip + 3) / 4) * blockSize;
+                    
+                    std::vector<uint8_t> bufforCompressedData(dataSize);
+                    fread(bufforCompressedData.data(), 1, dataSize, fileCache);
+                    glCompressedTexImage2D(GL_TEXTURE_2D, level, cachedInternalFormat, widthMip, heightMip, 0, dataSize, bufforCompressedData.data());
+                    
+                    widthMip = std::max(1u, widthMip / 2);
+                    heightMip = std::max(1u, heightMip / 2);
+                }
 
                 fclose(fileCache);
             }
@@ -227,11 +234,25 @@ TextureData ResourceManager::loadTextureFromFile(const std::string& fullPath, co
             glGenerateMipmap(GL_TEXTURE_2D);
 
 
-            GLint compressedSize = 0;
-            glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_COMPRESSED_IMAGE_SIZE, &compressedSize);
+            GLint numLeves = 1 + (GLint)std::floor(std::log2((float)std::max(width, height)));
 
-            std::vector<uint8_t> compressedData(compressedSize);
-            glGetCompressedTexImage(GL_TEXTURE_2D, 0, compressedData.data());
+            std::vector<std::vector<uint8_t>> mipLevels;
+            for (GLint level = 0; level < numLeves; level++)
+            {
+                GLint mipWidth = 0;
+                GLint mipHeight = 0;
+                GLint mipCompressedSize = 0;
+
+                glGetTexLevelParameteriv(GL_TEXTURE_2D, level, GL_TEXTURE_WIDTH, &mipWidth);
+                glGetTexLevelParameteriv(GL_TEXTURE_2D, level, GL_TEXTURE_HEIGHT, &mipHeight);
+                if (mipWidth == 0 || mipHeight == 0) break;
+
+                glGetTexLevelParameteriv(GL_TEXTURE_2D, level, GL_TEXTURE_COMPRESSED_IMAGE_SIZE, &mipCompressedSize);
+                
+                std::vector<uint8_t> mipBuffor(mipCompressedSize);
+                glGetCompressedTexImage(GL_TEXTURE_2D, level, mipBuffor.data());
+                mipLevels.push_back(std::move(mipBuffor));
+            }
 
             FILE* fileCacheSave = fopen(cachePath.c_str(), "wb");
             if (fileCacheSave)
@@ -239,19 +260,20 @@ TextureData ResourceManager::loadTextureFromFile(const std::string& fullPath, co
                 uint32_t dwMagic = createFourCC('D', 'D', 'S', ' ');
                 DDS_HEADER headerDDS{};
                 headerDDS.dwSize = 124;
-                headerDDS.dwFlags = 0x1 | 0x2 | 0x4 | 0x1000 | 0x80000;
+                headerDDS.dwFlags = 0x1 | 0x2 | 0x4 | 0x1000 | 0x20000 | 0x80000;
                 headerDDS.dwHeight = height;
                 headerDDS.dwWidth = width;
-                headerDDS.dwPitchOrLinearSize = (uint32_t)compressedSize;
-                headerDDS.dwMipMapCount = 1;
+                headerDDS.dwPitchOrLinearSize = (uint32_t)mipLevels[0].size();
+                headerDDS.dwMipMapCount = (uint32_t)mipLevels.size();
                 headerDDS.ddspf.dwSize = 32;
                 headerDDS.ddspf.dwFlags = 0x4;
                 headerDDS.ddspf.dwFourCC = (nrComponents == 4) ? createFourCC('D', 'X', 'T', '5') : createFourCC('D', 'X', 'T', '1');
-                headerDDS.dwCaps = 0x1000;
+                headerDDS.dwCaps = 0x1000 | 0x8 | 0x400000;
 
                 fwrite(&dwMagic, sizeof(dwMagic), 1, fileCacheSave);
                 fwrite(&headerDDS, sizeof(headerDDS), 1, fileCacheSave);
-                fwrite(compressedData.data(), 1, compressedSize, fileCacheSave);
+                for (auto& level : mipLevels)
+                    fwrite(level.data(), 1, level.size(), fileCacheSave);
                 fclose(fileCacheSave);
             }
         }
