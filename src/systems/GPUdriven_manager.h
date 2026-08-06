@@ -361,7 +361,23 @@ public:
         }
     }
 
-    void AddGameObjectToRegistries(RenderComponent* rc)
+    void FlushDirtyPasses()
+    {
+        // Flush tylko passów które dostały nowe zasoby
+        for (auto& entry : passes) {
+            if (!entry.renderer) continue;
+            entry.renderer->dirtyInstance = true;
+            auto it = meshDirty.find(entry.passID);
+            if (it == meshDirty.end() || !it->second) continue;
+
+            entry.renderer->UploadMeshes();
+            entry.renderer->UploadMaterials();
+            it->second = false;
+            spdlog::info("RendererManager: flush pass {}", entry.passID);
+        }
+    }
+
+    void AddGameObjectToRegistries(RenderComponent* rc, bool flush = true)
     {
         if (!rc) return;
 
@@ -389,21 +405,11 @@ public:
                 meshDirty[pid] = true;
         }
 
-        // Flush tylko passów które dostały nowe zasoby
-        for (auto& entry : passes) {
-            if (!entry.renderer) continue;
-            entry.renderer->dirtyInstance = true;
-            auto it = meshDirty.find(entry.passID);
-            if (it == meshDirty.end() || !it->second) continue;
-
-            entry.renderer->UploadMeshes();
-            entry.renderer->UploadMaterials();
-            it->second = false;
-            spdlog::info("RendererManager: flush pass {}", entry.passID);
+        if (flush)
+        {
+            FlushDirtyPasses();
         }
     }
-
-
 
     void CollectRenderData(uint32_t passID, Query<TransformComponent, RenderComponent>& renderQuery, bool rebuildCollectData) //, const glm::vec3& cameraPos
     {

@@ -433,7 +433,8 @@ public:
         if (groupsDirty)
         {
             for (RenderComponent* e : pendingRegistration)
-                drivenManager.AddGameObjectToRegistries(e);
+                drivenManager.AddGameObjectToRegistries(e, false);
+            drivenManager.FlushDirtyPasses();
             pendingRegistration.clear();
             groupsDirty = false;
         }
