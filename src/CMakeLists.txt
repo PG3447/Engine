@@ -89,5 +89,5 @@ endif()
 
 if(MSVC)
     target_compile_definitions(${PROJECT_NAME} PUBLIC NOMINMAX)
+	add_compile_options(/MP)
 endif()
-
