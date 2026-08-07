@@ -153,9 +153,11 @@ void main()
     float metallic = 0.0;
     float roughness = 0.5;
     float ao = 1.0;
-    ao = texture(sampler2D(mat.aoHandle), TexCoords).r;
-    
-    
+    if (mat.aoHandle != uvec2(0))
+    {
+        ao = texture(sampler2D(mat.aoHandle), TexCoords).r;
+    }
+
     if (mat.metallicRoughnessMap != uvec2(0))
     {
         vec3 mr = texture(sampler2D(mat.metallicRoughnessMap), TexCoords).rgb;
