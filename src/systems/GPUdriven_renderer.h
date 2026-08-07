@@ -152,8 +152,8 @@ private:
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, renderDataSSBO);
         glBufferData(GL_SHADER_STORAGE_BUFFER, maxRenderObjects * sizeof(RenderData), nullptr, GL_DYNAMIC_DRAW);
 
-        glBindBuffer(GL_DRAW_INDIRECT_BUFFER, drawCmdSSBO);
-        glBufferData(GL_DRAW_INDIRECT_BUFFER, maxRenderObjects * sizeof(DrawElementsIndirectCommand), nullptr, GL_DYNAMIC_DRAW);
+        //glBindBuffer(GL_DRAW_INDIRECT_BUFFER, drawCmdSSBO);
+        //glBufferData(GL_DRAW_INDIRECT_BUFFER, maxRenderObjects * sizeof(DrawElementsIndirectCommand), nullptr, GL_DYNAMIC_DRAW);
 
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
         glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
