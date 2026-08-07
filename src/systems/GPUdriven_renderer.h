@@ -142,6 +142,13 @@ private:
         GLuint64 handle = glGetTextureHandleARB(texID);
         glMakeTextureHandleResidentARB(handle);
         handleCacheTextures[texID] = handle;
+
+        spdlog::info("Rezydentnych bindless handles: {}", handleCacheTextures.size());
+
+        GLenum err = glGetError();
+        if (err != GL_NO_ERROR)
+            spdlog::error("Blad po MakeTextureHandleResidentARB (handle #{}): 0x{:x}", handleCacheTextures.size(), err);
+
         return handle;
     }
 
