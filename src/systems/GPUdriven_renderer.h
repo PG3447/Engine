@@ -16,7 +16,7 @@ struct DrawElementsIndirectCommand {
     uint32_t count;
     uint32_t instanceCount;
     uint32_t firstIndex;
-    uint32_t baseVertex;
+    int32_t baseVertex;
     uint32_t baseInstance;
 };
 
@@ -35,7 +35,7 @@ struct GPUMeshData
 {
     uint32_t indexCount;
     uint32_t firstIndex;
-    uint32_t baseVertex;
+    int32_t baseVertex;
     uint32_t padding;
 };
 
@@ -424,7 +424,7 @@ public:
         GPUMeshData meshData;
         meshData.indexCount = (uint32_t)data->indices.size();
         meshData.firstIndex = (uint32_t)allIndices.size();
-        meshData.baseVertex = (uint32_t)allVertices.size();
+        meshData.baseVertex = (int32_t)allVertices.size();
         meshData.padding = 0;
 
         // vertices
