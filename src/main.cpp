@@ -1425,7 +1425,7 @@ bool init()
     glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
     glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
 
-    window = glfwCreateWindow(mode->width, mode->height, "MimiCry", NULL, NULL);
+    window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "MimiCry", NULL, NULL);
     if (window == NULL) {
         spdlog::error("Failed to create GLFW Window!");
         return false;
