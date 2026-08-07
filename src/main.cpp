@@ -1456,6 +1456,11 @@ bool init()
         spdlog::error("Failed to initialize OpenGL loader!");
         return false;
     }
+
+    if (!GLAD_GL_ARB_bindless_texture) {
+        spdlog::error("Brak wsparcia dla GL_ARB_bindless_texture na tym GPU!");
+    }
+
     return true;
 }
 
