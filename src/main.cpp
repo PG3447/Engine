@@ -889,14 +889,14 @@ int main(int, char**)
     scena1->Update(0.16f);
     end_frame();
 
-    while (!ecs->GetSystem<HID>()->is_action_just_pressed("gamma_down")) {
 
-    }
 
     sceneManager.Update(0.16f);
     sceneManager.ChangeScene("menu");
     sceneManager.UpdateChangeScene();
+    while (!ecs->GetSystem<HID>()->is_action_just_pressed("gamma_down")) {
 
+    }
     CameraHelper::ProcessMouseMovement(*camCompLeft, *camera1->GetComponent<TransformComponent>(), 0.0f, 0.05f);
     CameraHelper::ProcessMouseMovement(*camCompRight, *camera2->GetComponent<TransformComponent>(), 0.0f, 0.05f);
 
