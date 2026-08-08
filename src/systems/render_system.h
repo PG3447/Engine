@@ -519,11 +519,11 @@ public:
         int vpY = (int)(cam.viewport.y * height);
 
         PerCameraHiZ& hiz = cameraHiZ[&cam];
-        if (hiz.width != vpW || hiz.height != vpH)
-        {
-            hiz.Destroy(); // tylko przy resize — nie co klatkę
-            hiz.Init(vpW, vpH, width, height);
-        }
+        //if (hiz.width != vpW || hiz.height != vpH)
+        //{
+        //    hiz.Destroy(); // tylko przy resize — nie co klatkę
+        //    hiz.Init(vpW, vpH, width, height);
+        //}
 
         drivenManager.AttachCameraHiZ(hiz.hizTexture, hiz.hizMipLevels, vpW, vpH, frustumCullingEnabled, occlusionCullingEnabled, vpX, vpY);
         drivenManager.RenderFrame(view, projection, vp, currentCameraPos, ambientStrength, occlusionCullingEnabled ? hiz.depthPrev : 0, cam.dirty);
