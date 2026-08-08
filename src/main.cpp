@@ -913,9 +913,6 @@ int main(int, char**)
         int display_w, display_h;
         glfwGetFramebufferSize(window, &display_w, &display_h);
 
-        while (!ecs->GetSystem<HID>()->is_action_just_pressed("gamma_down")) {
-
-        }
         // ostroznie przy zmianie rozdzielczosci recznie ciagnac myszka.
         // zmiana rozdzielczosci powinna tylko byc mozliwa poprzez ustawienia gry jak juz beda istniec
         if (display_h > 0) {
@@ -1465,6 +1462,10 @@ int main(int, char**)
         perf.inputTime = inputTime;
 
         end_frame();
+
+        while (!ecs->GetSystem<HID>()->is_action_just_pressed("gamma_down")) {
+
+        }
     }
 
     glDeleteVertexArrays(1, &VAO);
