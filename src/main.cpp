@@ -1437,9 +1437,7 @@ int main(int, char**)
     window, focused,
     display_w, display_h
 );
-        while (!ecs->GetSystem<HID>()->is_action_just_pressed("gamma_down")) {
 
-        }
         sceneManager.Update(deltaTime);
 
         if (audioSys) {
@@ -1449,6 +1447,9 @@ int main(int, char**)
         update();
         auto logicEnd = std::chrono::high_resolution_clock::now();
 
+        while (!ecs->GetSystem<HID>()->is_action_just_pressed("gamma_down")) {
+
+        }
         imgui_begin();
         imgui_render(sceneManager);
         imgui_end();
