@@ -755,6 +755,16 @@ int main(int, char**)
 
     crematoriumPuzzle.SetupAudio(audioSys, sndCoffinSlideOut, sndCoffinSlideIn, sndCoffinCollide, sndCoffinClose, sndGear);
 
+    sceneManager.UpdateChangeScene();
+    scena1->Update(0.16f);
+    sceneManager.Update(0.16f);
+    end_frame();
+    glfwGetFramebufferSize(window, &temp_w, &temp_h);
+
+    sceneManager.Update(0.16f);
+    scena1->Update(0.16f);
+    end_frame();
+
     // obracanie
     std::unordered_map<GameObject*, float> rotatingObjects;
     std::unordered_set<GameObject*> rotatingInProgress;
@@ -868,6 +878,20 @@ int main(int, char**)
     availablePrefabs,
     *scena1,
     nullptr);*/
+
+    sceneManager.UpdateChangeScene();
+    scena1->Update(0.16f);
+    sceneManager.Update(0.16f);
+    end_frame();
+    glfwGetFramebufferSize(window, &temp_w, &temp_h);
+
+    sceneManager.Update(0.16f);
+    scena1->Update(0.16f);
+    end_frame();
+
+    while (!ecs->GetSystem<HID>()->is_action_just_pressed("gamma_down")) {
+
+    }
 
     sceneManager.Update(0.16f);
     sceneManager.ChangeScene("menu");
