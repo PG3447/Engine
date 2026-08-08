@@ -1437,6 +1437,9 @@ int main(int, char**)
     window, focused,
     display_w, display_h
 );
+        while (!ecs->GetSystem<HID>()->is_action_just_pressed("gamma_down")) {
+
+        }
         sceneManager.Update(deltaTime);
 
         if (audioSys) {
@@ -1462,10 +1465,6 @@ int main(int, char**)
         perf.inputTime = inputTime;
 
         end_frame();
-
-        while (!ecs->GetSystem<HID>()->is_action_just_pressed("gamma_down")) {
-
-        }
     }
 
     glDeleteVertexArrays(1, &VAO);
