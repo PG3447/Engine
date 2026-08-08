@@ -894,9 +894,7 @@ int main(int, char**)
     sceneManager.Update(0.16f);
     sceneManager.ChangeScene("menu");
     sceneManager.UpdateChangeScene();
-    while (!ecs->GetSystem<HID>()->is_action_just_pressed("gamma_down")) {
 
-    }
     CameraHelper::ProcessMouseMovement(*camCompLeft, *camera1->GetComponent<TransformComponent>(), 0.0f, 0.05f);
     CameraHelper::ProcessMouseMovement(*camCompRight, *camera2->GetComponent<TransformComponent>(), 0.0f, 0.05f);
 
@@ -915,6 +913,9 @@ int main(int, char**)
         int display_w, display_h;
         glfwGetFramebufferSize(window, &display_w, &display_h);
 
+        while (!ecs->GetSystem<HID>()->is_action_just_pressed("gamma_down")) {
+
+        }
         // ostroznie przy zmianie rozdzielczosci recznie ciagnac myszka.
         // zmiana rozdzielczosci powinna tylko byc mozliwa poprzez ustawienia gry jak juz beda istniec
         if (display_h > 0) {
