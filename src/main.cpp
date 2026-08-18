@@ -356,6 +356,11 @@ int main(int, char**)
     Menu menu(&sceneManager, scenaMenu, window);
     menu.Init();
 
+    sceneManager.ChangeScene("menu");
+    sceneManager.UpdateChangeScene();
+    sceneManager.Update(0.16f);
+    end_frame();
+
     sceneManager.ChangeScene("Scena 1");
     sceneManager.UpdateChangeScene();
     sceneManager.Update(0.16f);
