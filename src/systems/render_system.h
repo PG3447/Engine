@@ -990,6 +990,12 @@ public:
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         glBindTexture(GL_TEXTURE_2D, 0);
+
+        GLenum err = glGetError();
+        if (err != GL_NO_ERROR)
+        {
+            printf("OpenGL error: 0x%X\n", err);
+        }
     }
 
 
