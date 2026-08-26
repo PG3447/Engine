@@ -345,45 +345,51 @@ public:
         int display_w, display_h;
         glfwGetFramebufferSize(window, &display_w, &display_h);
         drivenManager.Init(display_w, display_h);
-        glEnable(GL_DEPTH_TEST);
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        skybox.Init();
-        drivenManager.AddSkyboxPass(&skybox);
 
-        glGenQueries(2, gpuQuery.queries);
-
-        for (int i = 0; i < 2; i++) {
-            glBeginQuery(GL_TIME_ELAPSED, gpuQuery.queries[i]);
-            glEndQuery(GL_TIME_ELAPSED);
+        GLenum err5 = glGetError();
+        if (err5 != GL_NO_ERROR)
+        {
+            printf("OpenGL error5: 0x%X\n", err5);
         }
+        //glEnable(GL_DEPTH_TEST);
+        //glEnable(GL_BLEND);
+        //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        //skybox.Init();
+        //drivenManager.AddSkyboxPass(&skybox);
 
-        GLuint available = 0;
-        while (!available) {
-            glGetQueryObjectuiv(gpuQuery.queries[0], GL_QUERY_RESULT_AVAILABLE, &available);
-        }
+        //glGenQueries(2, gpuQuery.queries);
+
+        //for (int i = 0; i < 2; i++) {
+        //    glBeginQuery(GL_TIME_ELAPSED, gpuQuery.queries[i]);
+        //    glEndQuery(GL_TIME_ELAPSED);
+        //}
+
+        //GLuint available = 0;
+        //while (!available) {
+        //    glGetQueryObjectuiv(gpuQuery.queries[0], GL_QUERY_RESULT_AVAILABLE, &available);
+        //}
     }
 
     void InitOpenGL()
     {
-        int display_w, display_h;
-        glfwGetFramebufferSize(window, &display_w, &display_h);
-        drivenManager.InitSceneOpengl(display_w, display_h);
+        //int display_w, display_h;
+        //glfwGetFramebufferSize(window, &display_w, &display_h);
+        //drivenManager.InitSceneOpengl(display_w, display_h);
 
-        glEnable(GL_DEPTH_TEST);
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glGenQueries(2, gpuQuery.queries);
+        //glEnable(GL_DEPTH_TEST);
+        //glEnable(GL_BLEND);
+        //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        //glGenQueries(2, gpuQuery.queries);
 
-        for (int i = 0; i < 2; i++) {
-            glBeginQuery(GL_TIME_ELAPSED, gpuQuery.queries[i]);
-            glEndQuery(GL_TIME_ELAPSED);
-        }
+        //for (int i = 0; i < 2; i++) {
+        //    glBeginQuery(GL_TIME_ELAPSED, gpuQuery.queries[i]);
+        //    glEndQuery(GL_TIME_ELAPSED);
+        //}
 
-        GLuint available = 0;
-        while (!available) {
-            glGetQueryObjectuiv(gpuQuery.queries[0], GL_QUERY_RESULT_AVAILABLE, &available);
-        }
+        //GLuint available = 0;
+        //while (!available) {
+        //    glGetQueryObjectuiv(gpuQuery.queries[0], GL_QUERY_RESULT_AVAILABLE, &available);
+        //}
     }
 
     std::vector<RenderComponent*> pendingRegistration;
@@ -415,20 +421,39 @@ public:
 
 
     void Update(ECS& ecs, float dt) override {
+        GLenum err8 = glGetError();
+        if (err8 != GL_NO_ERROR)
+        {
+            printf("OpenGL error8: 0x%X\n", err8);
+        }
         stats.Reset();
+        GLenum err9 = glGetError();
+        if (err9 != GL_NO_ERROR)
+        {
+            printf("OpenGL error9: 0x%X\n", err9);
+        }
         gpuQuery.begin();
-
+        GLenum err7 = glGetError();
+        if (err7 != GL_NO_ERROR)
+        {
+            printf("OpenGL error7: 0x%X\n", err7);
+        }
         int display_w, display_h;
         glfwGetFramebufferSize(window, &display_w, &display_h);
+        GLenum err6 = glGetError();
+        if (err6 != GL_NO_ERROR)
+        {
+            printf("OpenGL error6: 0x%X\n", err6);
+        }
         InitFBO(display_w, display_h);
 
         glBindFramebuffer(GL_FRAMEBUFFER, sceneFBO);
-        if (occlusionCullingEnabled)
+       /* if (occlusionCullingEnabled)
         {
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, sceneDepthTexture, 0);
         }
         glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);*/
 
         if (groupsDirty)
         {
@@ -480,7 +505,7 @@ public:
         drivenManager.CollectAllPasses(*renderQuery, rebuildCollectData);
         if (rebuildCollectData)
             rebuildCollectData = false;
-        drivenManager.RenderShadow();
+        //drivenManager.RenderShadow();
         glBindFramebuffer(GL_FRAMEBUFFER, sceneFBO);
         //if (gpuRendererReady) {
         //    
@@ -521,8 +546,8 @@ public:
         PerCameraHiZ& hiz = cameraHiZ[&cam];
         if (hiz.width != vpW || hiz.height != vpH)
         {
-            hiz.Destroy(); // tylko przy resize — nie co klatkę
-            hiz.Init(vpW, vpH, width, height);
+            //hiz.Destroy(); // tylko przy resize — nie co klatkę
+            //hiz.Init(vpW, vpH, width, height);
         }
 
         drivenManager.AttachCameraHiZ(hiz.hizTexture, hiz.hizMipLevels, vpW, vpH, frustumCullingEnabled, occlusionCullingEnabled, vpX, vpY);
@@ -950,6 +975,11 @@ public:
         if (fboWidth == w && fboHeight == h && !openGL) return; // bez zmian
         fboWidth = w; fboHeight = h;
 
+        GLenum err3 = glGetError();
+        if (err3 != GL_NO_ERROR)
+        {
+            printf("OpenGL error3: 0x%X\n", err3);
+        }
         spdlog::warn("FBO sie ustawia");
         if (sceneFBO) {
             glDeleteFramebuffers(1, &sceneFBO);
@@ -965,9 +995,20 @@ public:
                 hiz.Destroy();
             cameraHiZ.clear();
         }
-        
+        GLenum err4 = glGetError();
+        if (err4 != GL_NO_ERROR)
+        {
+            printf("OpenGL error4: 0x%X\n", err4);
+        }
+
         glGenFramebuffers(1, &sceneFBO);
         glBindFramebuffer(GL_FRAMEBUFFER, sceneFBO);
+
+        GLenum err2 = glGetError();
+        if (err2 != GL_NO_ERROR)
+        {
+            printf("OpenGL error2: 0x%X\n", err2);
+        }
 
         glGenTextures(1, &sceneColorTexture);
         glBindTexture(GL_TEXTURE_2D, sceneColorTexture);

@@ -147,20 +147,20 @@ public:
         defaultShaderRender = new Shader("res/shaders/gpu_driven_PBR.vert", "res/shaders/gpu_driven_PBR.frag");
         depthShadowShader = new Shader("res/shaders/shadowDepth.vert", "res/shaders/shadowDepth.frag");
 
-        glGenBuffers(1, &frameUBO);
-        glBindBuffer(GL_UNIFORM_BUFFER, frameUBO);
-        glBufferData(GL_UNIFORM_BUFFER, sizeof(FrameUBO), nullptr, GL_DYNAMIC_DRAW);
-        glBindBufferBase(GL_UNIFORM_BUFFER, 0, frameUBO);
-        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+        //glGenBuffers(1, &frameUBO);
+        //glBindBuffer(GL_UNIFORM_BUFFER, frameUBO);
+        //glBufferData(GL_UNIFORM_BUFFER, sizeof(FrameUBO), nullptr, GL_DYNAMIC_DRAW);
+        //glBindBufferBase(GL_UNIFORM_BUFFER, 0, frameUBO);
+        //glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-        glGenBuffers(1, &lightsUBO);
-        glBindBuffer(GL_UNIFORM_BUFFER, lightsUBO);
-        glBufferData(GL_UNIFORM_BUFFER, sizeof(LightsUBO), nullptr, GL_DYNAMIC_DRAW);
-        glBindBufferBase(GL_UNIFORM_BUFFER, 1, lightsUBO);
-        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+        //glGenBuffers(1, &lightsUBO);
+        //glBindBuffer(GL_UNIFORM_BUFFER, lightsUBO);
+        //glBufferData(GL_UNIFORM_BUFFER, sizeof(LightsUBO), nullptr, GL_DYNAMIC_DRAW);
+        //glBindBufferBase(GL_UNIFORM_BUFFER, 1, lightsUBO);
+        //glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-        // HiZ
-        InitHiZ(w, h);
+        //// HiZ
+        //InitHiZ(w, h);
 
         spdlog::info("RendererManager::Init {}x{}", w, h);
     }
