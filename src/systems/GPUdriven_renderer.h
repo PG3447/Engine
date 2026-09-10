@@ -324,7 +324,7 @@ public:
         glGenBuffers(1, &totalVisibleSSBO);
 
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, shadowMatrixSSBO);
-        glBufferData(GL_SHADER_STORAGE_BUFFER, 32 * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW);
 
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, instanceSSBO);
         glBufferData(GL_SHADER_STORAGE_BUFFER, instanceBufferCapacity * sizeof(GPUInstanceData), nullptr, GL_DYNAMIC_DRAW);
@@ -744,12 +744,12 @@ public:
     void BindForDraw()
     {
 
-#ifdef _DEBUG
-        ValidateSSBO(instanceSSBO, "instanceSSBO");
-        ValidateSSBO(boneMatricesSSBO, "boneMatricesSSBO");
-        ValidateSSBO(materialSSBO, "materialSSBO");
-        ValidateSSBO(shadowMatrixSSBO, "shadowMatrixSSBO", 32 * sizeof(glm::mat4));
-#endif
+//#ifdef _DEBUG
+//        ValidateSSBO(instanceSSBO, "instanceSSBO");
+//        ValidateSSBO(boneMatricesSSBO, "boneMatricesSSBO");
+//        ValidateSSBO(materialSSBO, "materialSSBO");
+//        ValidateSSBO(shadowMatrixSSBO, "shadowMatrixSSBO", sizeof(glm::mat4));
+//#endif
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, instanceSSBO); // vertex shader
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, boneMatricesSSBO); // vertex shader
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, materialSSBO);   // fragment shader

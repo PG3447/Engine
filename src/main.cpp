@@ -368,6 +368,7 @@ int main(int, char**)
     sceneManager.ChangeScene("Scena 1");
     sceneManager.UpdateChangeScene();
     sceneManager.Update(0.16f);
+    end_frame();
     //menu->GetECS().AddExistingSystem(scena1->GetECS().GetSystem<RenderSystem>());
 
     GLenum err = glGetError();
@@ -414,8 +415,6 @@ int main(int, char**)
     //lc->linear    = 0.10f;
     //lc->quadratic = 0.00001f;
     //lc->intensity = 2.000;
-
-    sceneManager.Update(0.16f);
 
 
     //Tworzenie gracza nr.1
@@ -595,50 +594,10 @@ int main(int, char**)
     p2NoteUI->textOffset = glm::vec2(30.0f, 30.0f);
     p2NoteUI->text = "";
     p1NoteUI->fontPath = "res/fonts/NothingYouCouldDo-Regular.ttf";
-    int temp_w, temp_h;
-    glfwGetFramebufferSize(window, &temp_w, &temp_h);
-
-    sceneManager.UpdateChangeScene();
-
-    sceneManager.Update(0.16f);
-    scena1->Update(0.16f);
-    end_frame();
-    sceneManager.Update(0.16f);
-    sceneManager.Update(0.16f);
-    sceneManager.Update(0.16f);
-    sceneManager.Update(0.16f);
-    sceneManager.Update(0.16f);
-    sceneManager.Update(0.16f);
-    sceneManager.Update(0.16f);
-    sceneManager.Update(0.16f);
-    sceneManager.Update(0.16f);
-    sceneManager.Update(0.16f);
-    sceneManager.Update(0.16f);
-    sceneManager.Update(0.16f);
-    sceneManager.Update(0.16f);
-    sceneManager.Update(0.16f);
-    sceneManager.Update(0.16f);
-    sceneManager.Update(0.16f);
-    sceneManager.Update(0.16f);
-    sceneManager.Update(0.16f);
-    sceneManager.Update(0.16f);
-    sceneManager.Update(0.16f);
-    sceneManager.Update(0.16f);
-    scena1->Update(0.16f);
-
-
 
 
     connectAllModels();
-    sceneManager.UpdateChangeScene();
-    scena1->Update(0.16f);
-    sceneManager.Update(0.16f);
-    end_frame();
-    glfwGetFramebufferSize(window, &temp_w, &temp_h);
 
-    sceneManager.Update(0.16f);
-    scena1->Update(0.16f);
-    end_frame();
 
     std::string pathAssets = "res/Yaml/assets.yaml";
     ResourceManager::LoadAssets(pathAssets);
@@ -674,8 +633,6 @@ int main(int, char**)
     renderSystem         = ecs->GetSystem<RenderSystem>();
     postProcessingSystem = ecs->GetSystem<PostProcessingSystem>();
 
-    sceneManager.Update(0.16f);
-
     createFirstRoom(scena1);
     createMainRooom(scena1, menu);
     createNuclearRooom(scena1);
@@ -684,15 +641,6 @@ int main(int, char**)
     createRentgenCorridor(scena1);
     createCrematoriumCorridor(scena1);
     createTrigger(scena1);
-    sceneManager.UpdateChangeScene();
-    scena1->Update(0.16f);
-    sceneManager.Update(0.16f);
-    end_frame();
-    glfwGetFramebufferSize(window, &temp_w, &temp_h);
-
-    sceneManager.Update(0.16f);
-    scena1->Update(0.16f);
-    end_frame();
 
     scena1->GetECS().GetSystem<NavMeshSystem>()->BakeRecast(*scena1);
     //dyingModelPrefab   = std::make_unique<Prefab>("res/models/Dying.fbx");
@@ -770,16 +718,6 @@ int main(int, char**)
     audioSys->createSound("res/sound/coffin_closed.wav", sndCoffinClose, false);
 
     crematoriumPuzzle.SetupAudio(audioSys, sndCoffinSlideOut, sndCoffinSlideIn, sndCoffinCollide, sndCoffinClose, sndGear);
-
-    sceneManager.UpdateChangeScene();
-    scena1->Update(0.16f);
-    sceneManager.Update(0.16f);
-    end_frame();
-    glfwGetFramebufferSize(window, &temp_w, &temp_h);
-
-    sceneManager.Update(0.16f);
-    scena1->Update(0.16f);
-    end_frame();
 
     // obracanie
     std::unordered_map<GameObject*, float> rotatingObjects;
@@ -895,21 +833,11 @@ int main(int, char**)
     *scena1,
     nullptr);*/
 
-    sceneManager.UpdateChangeScene();
-    scena1->Update(0.16f);
-    sceneManager.Update(0.16f);
-    end_frame();
-    glfwGetFramebufferSize(window, &temp_w, &temp_h);
-
-    sceneManager.Update(0.16f);
-    scena1->Update(0.16f);
-    end_frame();
-
-
 
     sceneManager.Update(0.16f);
     sceneManager.ChangeScene("menu");
     sceneManager.UpdateChangeScene();
+    end_frame();
 
     CameraHelper::ProcessMouseMovement(*camCompLeft, *camera1->GetComponent<TransformComponent>(), 0.0f, 0.05f);
     CameraHelper::ProcessMouseMovement(*camCompRight, *camera2->GetComponent<TransformComponent>(), 0.0f, 0.05f);
