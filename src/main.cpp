@@ -314,6 +314,14 @@ int main(int, char**)
     init_imgui();
     spdlog::info("Initialized ImGui.");
 
+
+    GLenum err = glGetError();
+    if (err != GL_NO_ERROR)
+    {
+        printf("OpenGL error: 0x%X\n", err);
+        spdlog::error("error");
+    }
+
     GLint maxSSBOBindings = 0;
     glGetIntegerv(GL_MAX_SHADER_STORAGE_BUFFER_BINDINGS, &maxSSBOBindings);
     spdlog::info("GL_MAX_SHADER_STORAGE_BUFFER_BINDINGS = {}", maxSSBOBindings);
