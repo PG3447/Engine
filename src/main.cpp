@@ -371,13 +371,6 @@ int main(int, char**)
     end_frame();
     //menu->GetECS().AddExistingSystem(scena1->GetECS().GetSystem<RenderSystem>());
 
-    GLenum err = glGetError();
-    if (err != GL_NO_ERROR)
-    {
-        printf("OpenGL error: 0x%X\n", err);
-        spdlog::error("error");
-    }
-
     postacGraczaCzerw = std::make_unique<Prefab>("res/models/postac_akcje_czerw.glb");
     postacGraczaZiel = std::make_unique<Prefab>("res/models/postac_akcje_ziel.glb");
     groundModel = std::make_unique<Prefab>("res/models/podloze.glb");
