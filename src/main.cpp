@@ -322,9 +322,9 @@ int main(int, char**)
         spdlog::error("error");
     }
 
-    GLint maxSSBOBindings = 0;
-    glGetIntegerv(GL_MAX_SHADER_STORAGE_BUFFER_BINDINGS, &maxSSBOBindings);
-    spdlog::info("GL_MAX_SHADER_STORAGE_BUFFER_BINDINGS = {}", maxSSBOBindings);
+    //GLint maxSSBOBindings = 0;
+    //glGetIntegerv(GL_MAX_SHADER_STORAGE_BUFFER_BINDINGS, &maxSSBOBindings);
+    //spdlog::info("GL_MAX_SHADER_STORAGE_BUFFER_BINDINGS = {}", maxSSBOBindings);
 
     ECS* ecs;
     SceneManager sceneManager(ecs, renderSystem, postProcessingSystem, window);
@@ -1384,9 +1384,7 @@ int main(int, char**)
 );
 
         sceneManager.Update(deltaTime);
-        //while (!ecs->GetSystem<HID>()->is_action_just_pressed("gamma_down")) {
 
-        //}
         if (audioSys) {
             audioSys->Update(*ecs, deltaTime);
         }
