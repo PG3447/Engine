@@ -86,12 +86,6 @@ Placements:
     hasCollider: false
   - modelPath: res/models/eksperyment4.glb
     name: eksperyment4
-    position: [-7.46496058, 7.93014812, -162.315262]
-    rotation: [0, -7.0999999, 0]
-    scale: [7, 7, 7]
-    hasCollider: false
-  - modelPath: res/models/eksperyment4.glb
-    name: eksperyment4
     position: [-5.1540966, 7.92574072, -162.575851]
     rotation: [0, 3.29999995, 0]
     scale: [7, 7, 7]
@@ -363,18 +357,6 @@ Placements:
   - modelPath: res/models/salaOperacyjna/fiolka1.glb
     name: fiolka1
     position: [-5.99872541, 11.0246086, -180.030945]
-    rotation: [0, 23.2000008, 0]
-    scale: [7, 7, 7]
-    hasCollider: false
-  - modelPath: res/models/salaOperacyjna/fiolka1.glb
-    name: fiolka1
-    position: [-5.99872541, 11.0246086, -180.030945]
-    rotation: [0, 23.2000008, 0]
-    scale: [7, 7, 7]
-    hasCollider: false
-  - modelPath: res/models/salaOperacyjna/fiolka1.glb
-    name: fiolka1
-    position: [-5.99872541, 11.0246086, -181.357697]
     rotation: [0, 23.2000008, 0]
     scale: [7, 7, 7]
     hasCollider: false
