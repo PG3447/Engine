@@ -368,15 +368,6 @@ int main(int, char**)
     Menu menu(&sceneManager, scenaMenu, window);
     menu.Init();
 
-    sceneManager.ChangeScene("menu");
-    sceneManager.UpdateChangeScene();
-    sceneManager.Update(0.16f);
-    end_frame();
-
-    sceneManager.ChangeScene("Scena 1");
-    sceneManager.UpdateChangeScene();
-    sceneManager.Update(0.16f);
-    end_frame();
     //menu->GetECS().AddExistingSystem(scena1->GetECS().GetSystem<RenderSystem>());
 
     postacGraczaCzerw = std::make_unique<Prefab>("res/models/postac_akcje_czerw.glb");
@@ -670,7 +661,7 @@ int main(int, char**)
     rigidBodyCamera2->useGravity = true;
 
     // FMOD
-    AudioSystem* audioSys = ecs->GetSystem<AudioSystem>();
+    AudioSystem* audioSys = scena1->GetECS().GetSystem<AudioSystem>();
 
     FMOD::Sound* sound = nullptr;
     audioSys->createSound("res/sound/door_unlock.wav", sound);
