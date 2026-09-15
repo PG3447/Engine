@@ -443,7 +443,7 @@ void createMainRooom(Scene* scena, Menu& menu) {
 
             if (go->name == "lights_6")
             {
-                lc->intensity = 5.0f;
+                lc->intensity = 15.0f;
             }
 
             if (go->name == "lights_2" || go->name == "lights_5" || go->name == "lights_6") {
@@ -1069,7 +1069,7 @@ void createRentgenRoom(Scene* scena) {
             lc->constant = 1.0f;
             lc->linear = 0.22f;
             lc->quadratic = 0.20f;
-            lc->intensity = 25.0f;
+            lc->intensity = 50.0f;
             lc->isOn = true;
         }
 

@@ -783,14 +783,14 @@ int main(int, char**)
     };
     spawnFollowers(Kurorushi,   nestPos);
     spawnFollowers(KurorushiM,  glm::vec3(5.607f,  1.5f, -30.864f));
-    spawnFollowers(KurorushiM2, glm::vec3(20.499f, 1.5f, -50.071f));
+    //spawnFollowers(KurorushiM2, glm::vec3(20.499f, 1.5f, -50.071f));
     spawnFollowers(KurorushiMR1, glm::vec3(7.070f,  1.5f, -125.580f));
-    spawnFollowers(KurorushiMR2, glm::vec3(8.502f,  1.5f, -168.933f));
-    spawnFollowers(KurorushiMR3, glm::vec3(38.413f, 1.5f, -115.418f));
+    //spawnFollowers(KurorushiMR2, glm::vec3(8.502f,  1.5f, -168.933f));
+    //spawnFollowers(KurorushiMR3, glm::vec3(38.413f, 1.5f, -115.418f));
     spawnFollowers(KurorushiR1,  glm::vec3(-82.576f, 1.5f, -185.547f));
-    spawnFollowers(KurorushiR2,  glm::vec3(-52.370f, 1.5f, -157.365f));
+    //spawnFollowers(KurorushiR2,  glm::vec3(-52.370f, 1.5f, -157.365f));
     spawnFollowers(KurorushiC1,  glm::vec3(150.490f, 1.5f, -169.563f));
-    spawnFollowers(KurorushiC2,  glm::vec3(135.006f, 1.5f, -140.760f));
+    //spawnFollowers(KurorushiC2,  glm::vec3(135.006f, 1.5f, -140.760f));
 
     //interfejs sprite'y
     // Crosshair P1
