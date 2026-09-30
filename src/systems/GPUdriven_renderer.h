@@ -16,7 +16,7 @@ struct DrawElementsIndirectCommand {
     uint32_t count;
     uint32_t instanceCount;
     uint32_t firstIndex;
-    uint32_t baseVertex;
+    int32_t baseVertex;
     uint32_t baseInstance;
 };
 
@@ -35,7 +35,7 @@ struct GPUMeshData
 {
     uint32_t indexCount;
     uint32_t firstIndex;
-    uint32_t baseVertex;
+    int32_t baseVertex;
     uint32_t padding;
 };
 
@@ -152,8 +152,8 @@ private:
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, renderDataSSBO);
         glBufferData(GL_SHADER_STORAGE_BUFFER, maxRenderObjects * sizeof(RenderData), nullptr, GL_DYNAMIC_DRAW);
 
-        glBindBuffer(GL_DRAW_INDIRECT_BUFFER, drawCmdSSBO);
-        glBufferData(GL_DRAW_INDIRECT_BUFFER, maxRenderObjects * sizeof(DrawElementsIndirectCommand), nullptr, GL_DYNAMIC_DRAW);
+        //glBindBuffer(GL_DRAW_INDIRECT_BUFFER, drawCmdSSBO);
+        //glBufferData(GL_DRAW_INDIRECT_BUFFER, maxRenderObjects * sizeof(DrawElementsIndirectCommand), nullptr, GL_DYNAMIC_DRAW);
 
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
         glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
@@ -316,6 +316,9 @@ public:
 
         glGenBuffers(1, &totalVisibleSSBO);
 
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, shadowMatrixSSBO);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW);
+
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, instanceSSBO);
         glBufferData(GL_SHADER_STORAGE_BUFFER, instanceBufferCapacity * sizeof(GPUInstanceData), nullptr, GL_DYNAMIC_DRAW);
        
@@ -424,7 +427,7 @@ public:
         GPUMeshData meshData;
         meshData.indexCount = (uint32_t)data->indices.size();
         meshData.firstIndex = (uint32_t)allIndices.size();
-        meshData.baseVertex = (uint32_t)allVertices.size();
+        meshData.baseVertex = (int32_t)allVertices.size();
         meshData.padding = 0;
 
         // vertices
@@ -698,9 +701,48 @@ public:
         glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
     }
 
+    bool ValidateSSBO(GLuint buffer, const char* name, GLsizeiptr minExpectedBytes = 0)
+    {
+        if (buffer == 0) {
+            spdlog::error("SSBO '{}' ma id=0 (nigdy nie utworzony przez glGenBuffers?)", name);
+            return false;
+        }
+
+        if (!glIsBuffer(buffer)) {
+            spdlog::error("SSBO '{}' (id={}) nie jest prawidłowym obiektem bufora (usunięty?)", name, buffer);
+            return false;
+        }
+
+        GLint prevBinding = 0;
+        glGetIntegerv(GL_SHADER_STORAGE_BUFFER_BINDING, &prevBinding);
+
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, buffer);
+        GLint64 size = 0;
+        glGetBufferParameteri64v(GL_SHADER_STORAGE_BUFFER, GL_BUFFER_SIZE, &size);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, prevBinding);
+
+        if (size == 0) {
+            spdlog::error("SSBO '{}' (id={}) ma rozmiar 0 bajtów — brak glBufferData/glBufferStorage!", name, buffer);
+            return false;
+        }
+
+        if (size < minExpectedBytes) {
+            spdlog::error("SSBO '{}' (id={}) ma {} bajtów, oczekiwano min. {}", name, buffer, size, minExpectedBytes);
+            return false;
+        }
+
+        return true;
+    }
 
     void BindForDraw()
     {
+
+//#ifdef _DEBUG
+//        ValidateSSBO(instanceSSBO, "instanceSSBO");
+//        ValidateSSBO(boneMatricesSSBO, "boneMatricesSSBO");
+//        ValidateSSBO(materialSSBO, "materialSSBO");
+//        ValidateSSBO(shadowMatrixSSBO, "shadowMatrixSSBO", sizeof(glm::mat4));
+//#endif
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, instanceSSBO); // vertex shader
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, boneMatricesSSBO); // vertex shader
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, materialSSBO);   // fragment shader

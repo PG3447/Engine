@@ -95,7 +95,7 @@ void createFirstRoom(Scene* scena1) {
 
     // Drzwi do kibla
     for (int i = 0; i < 8; i++) {
-        if (i != 2 && i != 3) {
+        if (i != 0 && i != 1 && i != 2 && i != 3 && i != 5) {
             glm::vec3 doorPos      = glm::vec3{ 18.350, 9, -(17.25f + i * 8 + (int)(i / 2) * 4) };
             glm::vec3 doorScale    = glm::vec3{ 2.4f, 2.4f, 2.4f };
             glm::vec3 pivotOffset  = glm::vec3(0.0f, 0.0f, 0.0f);
@@ -195,7 +195,16 @@ void createFirstRoom(Scene* scena1) {
         auto* tr = tablicaSink[i]->GetComponent<TransformComponent>();
         tr->scale = glm::vec3(2.0f);
         tr->rotation = glm::vec3(0.0f, 90.0f, 0.0f);
-        tr->position = glm::vec3(-7.625f, 6.150f, sinkPositionsZ[i]);
+        
+
+        if (i == 0 || i == 1 || i == 5)
+        {
+            tr->position = glm::vec3(-7.625f, 5.650f, sinkPositionsZ[i]);
+        }
+        else
+        {
+            tr->position = glm::vec3(-7.625f, 6.150f, sinkPositionsZ[i]);
+        }
 
         tablicaSink[i]->AddComponent<ColliderComponent>();
     }
@@ -443,7 +452,7 @@ void createMainRooom(Scene* scena, Menu& menu) {
 
             if (go->name == "lights_6")
             {
-                lc->intensity = 5.0f;
+                lc->intensity = 50.0f;
             }
 
             if (go->name == "lights_2" || go->name == "lights_5" || go->name == "lights_6") {
@@ -1069,7 +1078,7 @@ void createRentgenRoom(Scene* scena) {
             lc->constant = 1.0f;
             lc->linear = 0.22f;
             lc->quadratic = 0.20f;
-            lc->intensity = 25.0f;
+            lc->intensity = 50.0f;
             lc->isOn = true;
         }
 

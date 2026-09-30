@@ -289,6 +289,29 @@ MeshNode Model::processMesh(aiMesh* mesh, const aiScene* scene)
         aabb.min = glm::min(aabb.min, v.Position);
         aabb.max = glm::max(aabb.max, v.Position);
     }
+
+    glm::vec3 size = aabb.max - aabb.min;
+
+    const float epsilon = 0.1f;
+
+    if (size.x < epsilon)
+    {
+        aabb.min.x -= epsilon * 0.5f;
+        aabb.max.x += epsilon * 0.5f;
+    }
+
+    if (size.y < epsilon)
+    {
+        aabb.min.y -= epsilon * 0.5f;
+        aabb.max.y += epsilon * 0.5f;
+    }
+
+    if (size.z < epsilon)
+    {
+        aabb.min.z -= epsilon * 0.5f;
+        aabb.max.z += epsilon * 0.5f;
+    }
+
     aabb.centerLocal = (aabb.min + aabb.max) * 0.5f;
     node.cpuData->aabb = aabb;
     return node;

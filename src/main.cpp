@@ -1,4 +1,4 @@
-﻿// dear imgui: standalone example application for GLFW + OpenGL 3, using programmable pipeline
+// dear imgui: standalone example application for GLFW + OpenGL 3, using programmable pipeline
 // If you are new to dear imgui, see examples/README.txt and documentation at the top of imgui.cpp.
 // (GLFW is a cross-platform general purpose library for handling windows, inputs, OpenGL/Vulkan graphics context creation, etc.)
 
@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <windows.h>
 #include <commdlg.h>
+#include <config.h>
 
 #define IMGUI_IMPL_OPENGL_LOADER_GLAD
 
@@ -97,10 +98,9 @@ void connectAllModels();
 
 void end_frame();
 
-constexpr int32_t WINDOW_WIDTH  = 1920;
-constexpr int32_t WINDOW_HEIGHT = 1080;
 
 GLFWwindow* window = nullptr;
+GLuint fullScreenTexture;
 
 // Change these to lower GL version like 4.5 if GL 4.6 can't be initialized on your machine
 const     char* glsl_version       = "#version 460";
@@ -312,6 +312,25 @@ int main(int, char**)
 
     //init_imgui();
     //spdlog::info("Initialized ImGui.");
+    glGenFramebuffers(1, &fullScreenFBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, fullScreenFBO);
+
+
+
+    //colorTexture
+    glGenTextures(1, &fullScreenTexture);
+    glBindTexture(GL_TEXTURE_2D, fullScreenTexture);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, WINDOW_WIDTH_RENDER, WINDOW_HEIGHT_RENDER, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fullScreenTexture, 0);
+
+    //GLint maxSSBOBindings = 0;
+    //glGetIntegerv(GL_MAX_SHADER_STORAGE_BUFFER_BINDINGS, &maxSSBOBindings);
+    //spdlog::info("GL_MAX_SHADER_STORAGE_BUFFER_BINDINGS = {}", maxSSBOBindings);
 
     ECS* ecs;
     SceneManager sceneManager(ecs, renderSystem, postProcessingSystem, window);
@@ -349,14 +368,16 @@ int main(int, char**)
     sceneManager.ChangeScene("loading");
     sceneManager.UpdateChangeScene();
     sceneManager.Update(0.16f);
-    end_frame();
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, fullScreenFBO);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 
+    glBlitFramebuffer(0, 0, WINDOW_WIDTH_RENDER, WINDOW_HEIGHT_RENDER, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+    end_frame();
+    glBindFramebuffer(GL_FRAMEBUFFER, fullScreenFBO);
 
     Menu menu(&sceneManager, scenaMenu, window);
     menu.Init();
 
-    sceneManager.ChangeScene("Scena 1");
-    sceneManager.UpdateChangeScene();
     //menu->GetECS().AddExistingSystem(scena1->GetECS().GetSystem<RenderSystem>());
 
     postacGraczaCzerw = std::make_unique<Prefab>("res/models/postac_akcje_czerw.glb");
@@ -396,6 +417,7 @@ int main(int, char**)
     //lc->linear    = 0.10f;
     //lc->quadratic = 0.00001f;
     //lc->intensity = 2.000;
+
 
     //Tworzenie gracza nr.1
     GameObject* gracz1 = scena1->CreateGameObject(nullptr);
@@ -575,7 +597,10 @@ int main(int, char**)
     p2NoteUI->text = "";
     p1NoteUI->fontPath = "res/fonts/NothingYouCouldDo-Regular.ttf";
 
+
     connectAllModels();
+
+
     std::string pathAssets = "res/Yaml/assets.yaml";
     ResourceManager::LoadAssets(pathAssets);
     PlacementEditor::LoadPlacements(*scena1, PlacementEditor::DefaultPrefabLookup);
@@ -646,7 +671,7 @@ int main(int, char**)
     rigidBodyCamera2->useGravity = true;
 
     // FMOD
-    AudioSystem* audioSys = ecs->GetSystem<AudioSystem>();
+    AudioSystem* audioSys = scena1->GetECS().GetSystem<AudioSystem>();
 
     FMOD::Sound* sound = nullptr;
     audioSys->createSound("res/sound/door_unlock.wav", sound);
@@ -755,7 +780,7 @@ int main(int, char**)
     GameObject* KurorushiC2 = CreateCockroachLeader(*scena1, *cockroachModel, nullptr, glm::vec3(135.006, 1.5f, -140.760), 4.0f);
     //I LOVE THE TASTE OF IRON
 
-    auto spawnFollowers = [&](GameObject* leader, const glm::vec3& pos, int count = 2) {
+    auto spawnFollowers = [&](GameObject* leader, const glm::vec3& pos, int count = 1) {
         for (int i = 0; i < count; i++) {
             glm::vec3 offset = glm::vec3(
                 (float)(rand() % 6) - 3.0f, 0,
@@ -768,14 +793,14 @@ int main(int, char**)
     };
     spawnFollowers(Kurorushi,   nestPos);
     spawnFollowers(KurorushiM,  glm::vec3(5.607f,  1.5f, -30.864f));
-    spawnFollowers(KurorushiM2, glm::vec3(20.499f, 1.5f, -50.071f));
+    //spawnFollowers(KurorushiM2, glm::vec3(20.499f, 1.5f, -50.071f));
     spawnFollowers(KurorushiMR1, glm::vec3(7.070f,  1.5f, -125.580f));
-    spawnFollowers(KurorushiMR2, glm::vec3(8.502f,  1.5f, -168.933f));
-    spawnFollowers(KurorushiMR3, glm::vec3(38.413f, 1.5f, -115.418f));
+    //spawnFollowers(KurorushiMR2, glm::vec3(8.502f,  1.5f, -168.933f));
+    //spawnFollowers(KurorushiMR3, glm::vec3(38.413f, 1.5f, -115.418f));
     spawnFollowers(KurorushiR1,  glm::vec3(-82.576f, 1.5f, -185.547f));
-    spawnFollowers(KurorushiR2,  glm::vec3(-52.370f, 1.5f, -157.365f));
+    //spawnFollowers(KurorushiR2,  glm::vec3(-52.370f, 1.5f, -157.365f));
     spawnFollowers(KurorushiC1,  glm::vec3(150.490f, 1.5f, -169.563f));
-    spawnFollowers(KurorushiC2,  glm::vec3(135.006f, 1.5f, -140.760f));
+    //spawnFollowers(KurorushiC2,  glm::vec3(135.006f, 1.5f, -140.760f));
 
     //interfejs sprite'y
     // Crosshair P1
@@ -810,9 +835,11 @@ int main(int, char**)
     *scena1,
     nullptr);*/
 
+    scena1->Update(0.16f);
     sceneManager.Update(0.16f);
     sceneManager.ChangeScene("menu");
     sceneManager.UpdateChangeScene();
+    end_frame();
 
     CameraHelper::ProcessMouseMovement(*camCompLeft, *camera1->GetComponent<TransformComponent>(), 0.0f, 0.05f);
     CameraHelper::ProcessMouseMovement(*camCompRight, *camera2->GetComponent<TransformComponent>(), 0.0f, 0.05f);
@@ -827,10 +854,12 @@ int main(int, char**)
         CpuTimer cpuTimer;
         cpuTimer.start();
 
+        glBindFramebuffer(GL_FRAMEBUFFER, fullScreenFBO);
         sceneManager.UpdateChangeScene();
 
-        int display_w, display_h;
-        glfwGetFramebufferSize(window, &display_w, &display_h);
+        int display_w = WINDOW_WIDTH_RENDER;
+        int display_h = WINDOW_HEIGHT_RENDER;
+        //glfwGetFramebufferSize(window, &display_w, &display_h);
 
         // ostroznie przy zmianie rozdzielczosci recznie ciagnac myszka.
         // zmiana rozdzielczosci powinna tylko byc mozliwa poprzez ustawienia gry jak juz beda istniec
@@ -1355,7 +1384,7 @@ int main(int, char**)
     *camCompLeft, *camTransform1,
     window, focused,
     display_w, display_h
-);*/
+    );*/
         sceneManager.Update(deltaTime);
 
         if (audioSys) {
@@ -1364,6 +1393,12 @@ int main(int, char**)
 
         update();
         auto logicEnd = std::chrono::high_resolution_clock::now();
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, fullScreenFBO);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+
+        glBlitFramebuffer(0, 0, WINDOW_WIDTH_RENDER, WINDOW_HEIGHT_RENDER, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT,  GL_COLOR_BUFFER_BIT, GL_LINEAR);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 
         //imgui_begin();
         //imgui_render(sceneManager);
@@ -1379,6 +1414,7 @@ int main(int, char**)
         perf.cpuFrameTime = cpuFrameTime;
         perf.logicTime = logicTime;
         perf.inputTime = inputTime;
+
 
         end_frame();
     }
@@ -1417,7 +1453,14 @@ bool init()
 
     GLFWmonitor* monitor = glfwGetPrimaryMonitor();
     const GLFWvidmode* mode = glfwGetVideoMode(monitor);
-    window = glfwCreateWindow(mode->width, mode->height, "MimiCry", monitor, NULL);
+    
+    glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
+
+    WINDOW_WIDTH = mode->width;
+    WINDOW_HEIGHT = mode->height;
+
+    window = glfwCreateWindow(mode->width, mode->height, "MimiCry", NULL, NULL);
+
     if (window == NULL) {
         //spdlog::error("Failed to create GLFW Window!");
         return false;
@@ -1448,6 +1491,12 @@ bool init()
         //spdlog::error("Failed to initialize OpenGL loader!");
         return false;
     }
+
+    if (!GLAD_GL_ARB_bindless_texture) {
+        spdlog::error("Brak wsparcia dla GL_ARB_bindless_texture na tym GPU!");
+        return false;
+    }
+
     return true;
 }
 

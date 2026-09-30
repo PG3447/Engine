@@ -1,6 +1,7 @@
 #ifndef SPRITE_SYSTEM_H
 #define SPRITE_SYSTEM_H
 
+#include <config.h>
 #include "core/ecs.h"
 #include "core/component.h"
 
@@ -90,8 +91,10 @@ public:
     {
         auto& sprites = std::get<0>(spriteQuery->componentsVectors);
 
-        int display_w, display_h;
-        glfwGetFramebufferSize(window, &display_w, &display_h);
+        //int display_w, display_h;
+        int display_w = WINDOW_WIDTH_RENDER;
+        int display_h = WINDOW_HEIGHT_RENDER;
+        //glfwGetFramebufferSize(window, &display_w, &display_h);
 
         dt = static_cast<float>(glfwGetTime());
         static float lastTime = dt;
