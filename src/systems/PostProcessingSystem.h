@@ -77,9 +77,9 @@ public:
 
     void Update(ECS& ecs, float dt) override {
         time += dt;
-        int display_w, display_h;
-        glfwGetFramebufferSize(window, &display_w, &display_h);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        int display_w = WINDOW_WIDTH_RENDER, display_h = WINDOW_HEIGHT_RENDER;
+        //glfwGetFramebufferSize(window, &display_w, &display_h);
+        glBindFramebuffer(GL_FRAMEBUFFER, fullScreenFBO);
         glViewport(0, 0, display_w, display_h);
         glClear(GL_COLOR_BUFFER_BIT);
 

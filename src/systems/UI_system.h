@@ -1,6 +1,7 @@
 #ifndef UI_SYSTEM_H
 #define UI_SYSTEM_H
 
+#include <config.h>
 
 class UISystem : public System {
 private:
@@ -46,9 +47,9 @@ public:
             auto* sprite = sprites[i];
             auto* button = buttons[i];
 
-            glm::vec2 pos = { sprite->screenPosition.x, sprite->screenPosition.y };
+            glm::vec2 pos = { sprite->screenPosition.x * WINDOW_WIDTH / WINDOW_WIDTH_RENDER, sprite->screenPosition.y * WINDOW_HEIGHT / WINDOW_HEIGHT_RENDER };
 
-            glm::vec2 size = { sprite->size.x, sprite->size.y };
+            glm::vec2 size = { sprite->size.x * WINDOW_WIDTH / WINDOW_WIDTH_RENDER, sprite->size.y * WINDOW_HEIGHT / WINDOW_HEIGHT_RENDER };
 
             bool inside = mouseX >= pos.x &&
                           mouseX <= pos.x + size.x &&

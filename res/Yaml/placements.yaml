@@ -679,24 +679,6 @@ Placements:
     colliderIsTrigger: false
     colliderAffectsNavMesh: false
     colliderIsWalkable: false
-  - modelPath: res/models/salaOperacyjna/fiolka1.glb
-    name: fiolka1
-    position: [-6.11807537, 7.04307938, -27.3701019]
-    rotation: [0, 0, 0]
-    scale: [6, 6, 6]
-    hasCollider: false
-  - modelPath: res/models/fiolka_nast.glb
-    name: fiolka_nast
-    position: [-9.05019188, 7.18083048, -22.9896889]
-    rotation: [0, 90, 0]
-    scale: [6, 6, 6]
-    hasCollider: false
-  - modelPath: res/models/fiolka_nast.glb
-    name: fiolka_nast
-    position: [31.7661991, 13.7523241, -22.3529606]
-    rotation: [0, 0, 0]
-    scale: [6, 6, 6]
-    hasCollider: false
   - modelPath: res/models/cup.glb
     name: cup
     position: [30.4047928, 4.24755001, -61.2181587]

@@ -13,11 +13,11 @@ struct SkeletonNode
     std::string name;
     int nodeIndex;
 
-    glm::mat4 localTransform;
+    glm::mat4 localTransform = glm::mat4(1.0f);
 
-    glm::vec3 defaultPosition;
-    glm::quat defaultRotation;
-    glm::vec3 defaultScale;
+    glm::vec3 defaultPosition = glm::vec3(0.0f);
+    glm::quat defaultRotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+    glm::vec3 defaultScale = glm::vec3(1.0f);
 
     std::vector<SkeletonNode> children;
 };

@@ -6,6 +6,7 @@
 #include <model.h>
 #include <imgui.h>
 #include <GLFW/glfw3.h>
+#include <config.h>
 
 #include "DebugDrawSystem.h"
 #include "skybox_renderer.h"
@@ -15,8 +16,6 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "../compute_shader.h"
 #include "GPUdriven_manager.h"
-
-
 
 struct PerCameraHiZ
 {
@@ -342,8 +341,8 @@ public:
     }
 
     void Init() {
-        int display_w, display_h;
-        glfwGetFramebufferSize(window, &display_w, &display_h);
+        int display_w = WINDOW_WIDTH_RENDER, display_h = WINDOW_HEIGHT_RENDER;
+        //glfwGetFramebufferSize(window, &display_w, &display_h);
         drivenManager.Init(display_w, display_h);
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_BLEND);
@@ -366,8 +365,8 @@ public:
 
     void InitOpenGL()
     {
-        int display_w, display_h;
-        glfwGetFramebufferSize(window, &display_w, &display_h);
+        int display_w = WINDOW_WIDTH_RENDER, display_h = WINDOW_HEIGHT_RENDER;
+        //glfwGetFramebufferSize(window, &display_w, &display_h);
         drivenManager.InitSceneOpengl(display_w, display_h);
 
         glEnable(GL_DEPTH_TEST);
@@ -418,8 +417,8 @@ public:
         stats.Reset();
         gpuQuery.begin();
 
-        int display_w, display_h;
-        glfwGetFramebufferSize(window, &display_w, &display_h);
+        int display_w = WINDOW_WIDTH_RENDER, display_h = WINDOW_HEIGHT_RENDER;
+        //glfwGetFramebufferSize(window, &display_w, &display_h);
         InitFBO(display_w, display_h);
 
         glBindFramebuffer(GL_FRAMEBUFFER, sceneFBO);
@@ -442,7 +441,7 @@ public:
         //BuildGroups();
         RenderAllCameras();
 
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glBindFramebuffer(GL_FRAMEBUFFER, fullScreenFBO);
 
         gpuQuery.end();
         gpuQuery.nextFrame();
@@ -464,8 +463,9 @@ public:
         auto& transforms = std::get<0>(cameraQuery->componentsVectors);
         auto& cameras = std::get<1>(cameraQuery->componentsVectors);
 
-        int display_w, display_h;
-        glfwGetFramebufferSize(window, &display_w, &display_h);
+        //int display_w, display_h;
+        int display_w = WINDOW_WIDTH_RENDER, display_h = WINDOW_HEIGHT_RENDER;
+        //glfwGetFramebufferSize(window, &display_w, &display_h);
 
         //if (!gpuRendererInitialized) { // && renderQuery->gameobjects.size() > 50
         //    //InitGPUDrivenRenderer(display_w, display_h);
@@ -987,7 +987,7 @@ public:
 
         if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
             spdlog::error("SceneFBO incomplete!");
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glBindFramebuffer(GL_FRAMEBUFFER, fullScreenFBO);
 
         glBindTexture(GL_TEXTURE_2D, 0);
     }

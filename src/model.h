@@ -104,8 +104,6 @@ public:
 
     void PrepareInstancing();
 
-    void Draw(GLsizei instanceCount = 0, Material* materialOverride = nullptr);
-
     void turnOnReflect(unsigned int cubemapTexture);
 
     MeshNode processMesh(aiMesh* mesh, const aiScene* scene);

@@ -113,7 +113,7 @@ public:
 		Cutscene_1_sprite->isVisible = true;
 		Cutscene_1_sprite->isAnimating = true;
 		Cutscene_1_sprite->loop = false;
-		Cutscene_1_sprite->frameDuration = 2.0f;
+		Cutscene_1_sprite->frameDuration = 1.5f;
 
 
 		GameObject* cutscene_1_object_procceed = scenaMenu->CreateGameObject(nullptr);
@@ -126,7 +126,7 @@ public:
 		cutscene_procced_sprite->currentSprite = 0;
 		cutscene_procced_sprite->isAnimating = true;
 		cutscene_procced_sprite->loop = false;
-		cutscene_procced_sprite->frameDuration = 34.0f;
+		cutscene_procced_sprite->frameDuration = 25.0f;
 		UIButtonComponent* Cutscene_1_button = cutscene_1_object_procceed->AddComponent<UIButtonComponent>();
 
 		Cutscene_1_button->onClick = [&](GameObject* go)

@@ -79,7 +79,7 @@ struct ShadowMapArray {
         glBindFramebuffer(GL_FRAMEBUFFER, fboShadow);
         glDrawBuffer(GL_NONE);
         glReadBuffer(GL_NONE);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glBindFramebuffer(GL_FRAMEBUFFER, fullScreenFBO);
         spdlog::critical("Inicjalizacja");
     }
 
@@ -893,7 +893,7 @@ public:
             first = false;
         }
 
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glBindFramebuffer(GL_FRAMEBUFFER, fullScreenFBO);
     }
 
     // Główna pętla renderowania
@@ -1126,7 +1126,7 @@ void main() {
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex, 0);
             if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
                 spdlog::error("ShadowDebug: FBO niekompletne");
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            glBindFramebuffer(GL_FRAMEBUFFER, fullScreenFBO);
 
             texRes = res;
         }

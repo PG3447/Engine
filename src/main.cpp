@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <windows.h>
 #include <commdlg.h>
+#include <config.h>
 
 #define IMGUI_IMPL_OPENGL_LOADER_GLAD
 
@@ -98,10 +99,9 @@ void imgui_end();
 
 void end_frame();
 
-constexpr int32_t WINDOW_WIDTH  = 1920;
-constexpr int32_t WINDOW_HEIGHT = 1080;
 
 GLFWwindow* window = nullptr;
+GLuint fullScreenTexture;
 
 // Change these to lower GL version like 4.5 if GL 4.6 can't be initialized on your machine
 const     char* glsl_version       = "#version 460";
@@ -311,6 +311,9 @@ int main(int, char**)
     }
     spdlog::info("Initialized project.");
 
+    glGenFramebuffers(1, &fullScreenFBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, fullScreenFBO);
+
     init_imgui();
     spdlog::info("Initialized ImGui.");
 
@@ -321,6 +324,19 @@ int main(int, char**)
         printf("OpenGL error: 0x%X\n", err);
         spdlog::error("error");
     }
+
+
+
+    //colorTexture
+    glGenTextures(1, &fullScreenTexture);
+    glBindTexture(GL_TEXTURE_2D, fullScreenTexture);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, WINDOW_WIDTH_RENDER, WINDOW_HEIGHT_RENDER, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fullScreenTexture, 0);
 
     //GLint maxSSBOBindings = 0;
     //glGetIntegerv(GL_MAX_SHADER_STORAGE_BUFFER_BINDINGS, &maxSSBOBindings);
@@ -362,8 +378,12 @@ int main(int, char**)
     sceneManager.ChangeScene("loading");
     sceneManager.UpdateChangeScene();
     sceneManager.Update(0.16f);
-    end_frame();
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, fullScreenFBO);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 
+    glBlitFramebuffer(0, 0, WINDOW_WIDTH_RENDER, WINDOW_HEIGHT_RENDER, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+    end_frame();
+    glBindFramebuffer(GL_FRAMEBUFFER, fullScreenFBO);
 
     Menu menu(&sceneManager, scenaMenu, window);
     menu.Init();
@@ -770,7 +790,7 @@ int main(int, char**)
     GameObject* KurorushiC2 = CreateCockroachLeader(*scena1, *cockroachModel, nullptr, glm::vec3(135.006, 1.5f, -140.760), 4.0f);
     //I LOVE THE TASTE OF IRON
 
-    auto spawnFollowers = [&](GameObject* leader, const glm::vec3& pos, int count = 2) {
+    auto spawnFollowers = [&](GameObject* leader, const glm::vec3& pos, int count = 1) {
         for (int i = 0; i < count; i++) {
             glm::vec3 offset = glm::vec3(
                 (float)(rand() % 6) - 3.0f, 0,
@@ -825,7 +845,7 @@ int main(int, char**)
     *scena1,
     nullptr);*/
 
-
+    scena1->Update(0.16f);
     sceneManager.Update(0.16f);
     sceneManager.ChangeScene("menu");
     sceneManager.UpdateChangeScene();
@@ -844,10 +864,12 @@ int main(int, char**)
         CpuTimer cpuTimer;
         cpuTimer.start();
 
+        glBindFramebuffer(GL_FRAMEBUFFER, fullScreenFBO);
         sceneManager.UpdateChangeScene();
 
-        int display_w, display_h;
-        glfwGetFramebufferSize(window, &display_w, &display_h);
+        int display_w = WINDOW_WIDTH_RENDER;
+        int display_h = WINDOW_HEIGHT_RENDER;
+        //glfwGetFramebufferSize(window, &display_w, &display_h);
 
         // ostroznie przy zmianie rozdzielczosci recznie ciagnac myszka.
         // zmiana rozdzielczosci powinna tylko byc mozliwa poprzez ustawienia gry jak juz beda istniec
@@ -1382,6 +1404,11 @@ int main(int, char**)
 
         update();
         auto logicEnd = std::chrono::high_resolution_clock::now();
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, fullScreenFBO);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+
+        glBlitFramebuffer(0, 0, WINDOW_WIDTH_RENDER, WINDOW_HEIGHT_RENDER, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT,  GL_COLOR_BUFFER_BIT, GL_LINEAR);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 
         imgui_begin();
@@ -1398,6 +1425,7 @@ int main(int, char**)
         perf.cpuFrameTime = cpuFrameTime;
         perf.logicTime = logicTime;
         perf.inputTime = inputTime;
+
 
         end_frame();
     }
@@ -1443,7 +1471,10 @@ bool init()
     glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
     glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
 
-    window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "MimiCry", NULL, NULL);
+    WINDOW_WIDTH = mode->width;
+    WINDOW_HEIGHT = mode->height;
+
+    window = glfwCreateWindow(mode->width, mode->height, "MimiCry", NULL, NULL);
     if (window == NULL) {
         spdlog::error("Failed to create GLFW Window!");
         return false;
