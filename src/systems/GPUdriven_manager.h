@@ -374,7 +374,6 @@ public:
             entry.renderer->UploadMeshes();
             entry.renderer->UploadMaterials();
             it->second = false;
-            spdlog::info("RendererManager: flush pass {}", entry.passID);
         }
     }
 

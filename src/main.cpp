@@ -1454,12 +1454,12 @@ bool init()
     GLFWmonitor* monitor = glfwGetPrimaryMonitor();
     const GLFWvidmode* mode = glfwGetVideoMode(monitor);
     
-    glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
+    glfwWindowHint(GLFW_FLOATING, GLFW_FALSE);
 
     WINDOW_WIDTH = mode->width;
     WINDOW_HEIGHT = mode->height;
 
-    window = glfwCreateWindow(mode->width, mode->height, "MimiCry", NULL, NULL);
+    window = glfwCreateWindow(mode->width, mode->height, "MimiCry", monitor, NULL);
 
     if (window == NULL) {
         //spdlog::error("Failed to create GLFW Window!");
@@ -1493,7 +1493,7 @@ bool init()
     }
 
     if (!GLAD_GL_ARB_bindless_texture) {
-        spdlog::error("Brak wsparcia dla GL_ARB_bindless_texture na tym GPU!");
+        std::cout<<"Brak wsparcia dla GL_ARB_bindless_texture na tym GPU!"<<std::endl;
         return false;
     }
 
@@ -1560,7 +1560,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 void end_frame()
 {
     glfwPollEvents();
-    glfwMakeContextCurrent(window);
+    //glfwMakeContextCurrent(window);
     glfwSwapBuffers(window);
 }
 

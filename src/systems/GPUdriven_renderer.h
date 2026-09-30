@@ -701,38 +701,6 @@ public:
         glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
     }
 
-    bool ValidateSSBO(GLuint buffer, const char* name, GLsizeiptr minExpectedBytes = 0)
-    {
-        if (buffer == 0) {
-            spdlog::error("SSBO '{}' ma id=0 (nigdy nie utworzony przez glGenBuffers?)", name);
-            return false;
-        }
-
-        if (!glIsBuffer(buffer)) {
-            spdlog::error("SSBO '{}' (id={}) nie jest prawidłowym obiektem bufora (usunięty?)", name, buffer);
-            return false;
-        }
-
-        GLint prevBinding = 0;
-        glGetIntegerv(GL_SHADER_STORAGE_BUFFER_BINDING, &prevBinding);
-
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, buffer);
-        GLint64 size = 0;
-        glGetBufferParameteri64v(GL_SHADER_STORAGE_BUFFER, GL_BUFFER_SIZE, &size);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, prevBinding);
-
-        if (size == 0) {
-            spdlog::error("SSBO '{}' (id={}) ma rozmiar 0 bajtów — brak glBufferData/glBufferStorage!", name, buffer);
-            return false;
-        }
-
-        if (size < minExpectedBytes) {
-            spdlog::error("SSBO '{}' (id={}) ma {} bajtów, oczekiwano min. {}", name, buffer, size, minExpectedBytes);
-            return false;
-        }
-
-        return true;
-    }
 
     void BindForDraw()
     {
