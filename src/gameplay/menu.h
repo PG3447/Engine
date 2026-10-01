@@ -212,7 +212,7 @@ public:
 		Cutscene_2_sprite->isVisible = true;
 		Cutscene_2_sprite->isAnimating = true;
 		Cutscene_2_sprite->loop = false;
-		Cutscene_2_sprite->frameDuration = 2.0f;
+		Cutscene_2_sprite->frameDuration = 1.5f;
 
 
 		GameObject* cutscene_2_object_procceed = scenaMenu->CreateGameObject(nullptr);
@@ -657,8 +657,8 @@ public:
 		GameObject* settings_back = scenaMenu->CreateGameObject(nullptr);
 		SpriteComponent* settings_back_sprite = settings_back->AddComponent<SpriteComponent>();
 		settings_back_sprite->sprites = {ResourceManager::LoadTexture("tlo.png", "res/sprites/menu/settings").id};
-		settings_back_sprite->screenPosition = glm::vec2(0.0f, 0.0f);
-		settings_back_sprite->size = glm::vec2( 1920.0f, 1080.0f);
+		settings_back_sprite->screenPosition = glm::vec2(-10.0f, -10.0f);
+		settings_back_sprite->size = glm::vec2( 1940.0f, 1100.0f);
 		settings_back_sprite->layer = 0;
 		settings_back_sprite->isVisible = true;
 		
