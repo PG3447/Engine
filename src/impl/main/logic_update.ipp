@@ -1099,7 +1099,7 @@ void ResetLevel(
         }
     }
     can_open_door_1 = false;
-
+    isMachineFixed = false;
     crematoriumPuzzle.Reset();
     isCrematoriumGearSpawned = false;
 
@@ -1144,6 +1144,14 @@ void ResetLevel(
         pickupObjects.insert(tutorialGearObject);
     }
 
+    scena1->GetRoot()->TraverseChildren([&](GameObject* child)
+    {
+        std::string objName = child->name;
+        if (objName == "Gear_Crematorium" || objName == "Gear_CheatSpawn_" || objName == "Gear_Rentgen")
+        {
+            removeGear(child);
+        }
+    });
    /* for (auto& room : roomsLights) {
         room.occupants.clear();
         for (size_t j = 0; j < room.savedStates.size(); j++) {

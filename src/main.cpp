@@ -100,7 +100,7 @@ void end_frame();
 
 
 GLFWwindow* window = nullptr;
-GLuint fullScreenTexture;
+
 
 // Change these to lower GL version like 4.5 if GL 4.6 can't be initialized on your machine
 const     char* glsl_version       = "#version 460";
@@ -321,7 +321,7 @@ int main(int, char**)
     glGenTextures(1, &fullScreenTexture);
     glBindTexture(GL_TEXTURE_2D, fullScreenTexture);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, WINDOW_WIDTH_RENDER, WINDOW_HEIGHT_RENDER, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, WINDOW_WIDTH_RENDER, WINDOW_HEIGHT_RENDER, 0, GL_RGBA, GL_FLOAT, nullptr);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -859,16 +859,18 @@ int main(int, char**)
 
         int display_w = WINDOW_WIDTH_RENDER;
         int display_h = WINDOW_HEIGHT_RENDER;
+        float scaleX = static_cast<float>(display_w) / 1920;
+        float scaleY = static_cast<float>(display_h) / 1080.0f;
         //glfwGetFramebufferSize(window, &display_w, &display_h);
 
         // ostroznie przy zmianie rozdzielczosci recznie ciagnac myszka.
         // zmiana rozdzielczosci powinna tylko byc mozliwa poprzez ustawienia gry jak juz beda istniec
         if (display_h > 0) {
-            float scaleY = (float)display_h / 1080.0f;
+
 
             if (p1NoteUI) {
-                p1NoteUI->size = glm::vec2(500.0f * scaleY, 700.0f * scaleY);
-                p1NoteUI->textOffset = glm::vec2(30.0f * scaleY, 30.0f * scaleY);
+                p1NoteUI->size = glm::vec2(500.0f * scaleX, 700.0f * scaleY);
+                p1NoteUI->textOffset = glm::vec2(30.0f * scaleX, 30.0f * scaleY);
 
                 p1NoteUI->fontPath = "res/fonts/Roboto-Regular.ttf";
                 p1NoteUI->fontSize = 15.0f * scaleY;
@@ -876,13 +878,14 @@ int main(int, char**)
                 p1NoteUI->fontPath2 = "res/fonts/NothingYouCouldDo-Regular.ttf";
                 p1NoteUI->fontSize2 = 18.0f * scaleY;
 
-                p1NoteUI->screenPosition = glm::vec2((display_w * 0.25f) - (p1NoteUI->size.x * 0.5f),
-                    (display_h * 0.5f) - (p1NoteUI->size.y * 0.5f));
+                p1NoteUI->screenPosition = glm::vec2((480.0f - 250.0f) * scaleX, (540.0f - 350.0f) * scaleY);
+                /*p1NoteUI->screenPosition = glm::vec2((display_w * 0.25f) - (p1NoteUI->size.x * 0.5f),
+                    (display_h * 0.5f) - (p1NoteUI->size.y * 0.5f));*/
             }
 
             if (p2NoteUI) {
-                p2NoteUI->size = glm::vec2(500.0f * scaleY, 700.0f * scaleY);
-                p2NoteUI->textOffset = glm::vec2(30.0f * scaleY, 30.0f * scaleY);
+                p2NoteUI->size = glm::vec2(500.0f * scaleX, 700.0f * scaleY);
+                p2NoteUI->textOffset = glm::vec2(30.0f * scaleX, 30.0f * scaleY);
 
 				p2NoteUI->fontPath = "res/fonts/Roboto-Regular.ttf";
 				p2NoteUI->fontSize = 15.0f * scaleY;
@@ -890,8 +893,9 @@ int main(int, char**)
 				p2NoteUI->fontPath2 = "res/fonts/NothingYouCouldDo-Regular.ttf";
                 p2NoteUI->fontSize2 = 18.0f * scaleY;
 
-                p2NoteUI->screenPosition = glm::vec2((display_w * 0.75f) - (p2NoteUI->size.x * 0.5f),
-                    (display_h * 0.5f) - (p2NoteUI->size.y * 0.5f));
+                p2NoteUI->screenPosition = glm::vec2((1440.0f - 250.0f) * scaleX, (540.0f - 350.0f) * scaleY);
+                /*p2NoteUI->screenPosition = glm::vec2((display_w * 0.75f) - (p2NoteUI->size.x * 0.5f),
+                    (display_h * 0.5f) - (p2NoteUI->size.y * 0.5f));*/
             }
         }
 
@@ -1114,7 +1118,7 @@ int main(int, char**)
             }
 
             float remaining = std::abs(it->second);
-            float step = 90.0f * deltaTime;
+            float step = 180.0f * deltaTime;
             if (step > remaining) step = remaining;
             transform->isDirty = true;
 
@@ -1274,26 +1278,30 @@ int main(int, char**)
         if (p1ShakeTimer > 0.0f) {
             float t = currentFrame * 40.0f;
             float strength = 6.0f;
-            player1InteractionInfo->screenPosition = p1BasePos + glm::vec2(
-                sin(t) * strength,
-                sin(t * 1.3f) * strength * 0.5f
+            player1InteractionInfo->screenPosition = glm::vec2(p1BasePos.x * scaleX, p1BasePos.y * scaleY) + glm::vec2(
+                sin(t) * strength * scaleX,
+                sin(t * 1.3f) * strength * 0.5f * scaleY
             );
         }
         else {
-            player1InteractionInfo->screenPosition = p1BasePos;
+            player1InteractionInfo->screenPosition =  glm::vec2(p1BasePos.x * scaleX, p1BasePos.y * scaleY);
         }
 
         if (p2ShakeTimer > 0.0f) {
             float t = currentFrame * 40.0f;
             float strength = 6.0f;
-            player2InteractionInfo->screenPosition = p2BasePos + glm::vec2(
-                sin(t + 1.0f) * strength,
-                sin(t * 1.3f + 1.0f) * strength * 0.5f
+            player2InteractionInfo->screenPosition = glm::vec2(p2BasePos.x * scaleX, p2BasePos.y * scaleY) + glm::vec2(
+                sin(t + 1.0f) * strength * scaleX,
+                sin(t * 1.3f + 1.0f) * strength * 0.5f * scaleY
             );
         }
         else {
-            player2InteractionInfo->screenPosition = p2BasePos;
+            player2InteractionInfo->screenPosition = glm::vec2(p2BasePos.x * scaleX, p2BasePos.y * scaleY);
         }
+        player1InteractionInfo->fontSize = 32.0f * scaleY;
+        player2InteractionInfo->fontSize = 32.0f * scaleY;
+        player1InteractionInfo->size = glm::vec2(64.0f * scaleX, 64.0f * scaleY);
+        player2InteractionInfo->size = glm::vec2(64.0f * scaleX, 64.0f * scaleY);
 
         float p1Int = 0.0f, p2Int = 0.0f;
 
@@ -1327,11 +1335,12 @@ int main(int, char**)
         }
 
         float chLerpSpeed = 10.0f;
-        crosshair1->size = glm::mix(crosshair1->size, p1Int > 0.5f ? CH_SIZE_BIG : CH_SIZE_NORMAL, deltaTime * chLerpSpeed);
-        crosshair2->size = glm::mix(crosshair2->size, p2Int > 0.5f ? CH_SIZE_BIG : CH_SIZE_NORMAL, deltaTime * chLerpSpeed);
 
-        crosshair1->screenPosition = CH1_CENTER - crosshair1->size * 0.5f;
-        crosshair2->screenPosition = CH2_CENTER - crosshair2->size * 0.5f;
+        crosshair1->size = glm::mix(crosshair1->size, (p1Int > 0.5f ? CH_SIZE_BIG : CH_SIZE_NORMAL) * scaleY, deltaTime * chLerpSpeed);
+        crosshair2->size = glm::mix(crosshair2->size, (p2Int > 0.5f ? CH_SIZE_BIG : CH_SIZE_NORMAL) * scaleY, deltaTime * chLerpSpeed);
+
+        crosshair1->screenPosition = CH1_CENTER * scaleY - crosshair1->size * 0.5f;
+        crosshair2->screenPosition = CH2_CENTER * scaleY - crosshair2->size * 0.5f;
 
         auto inputEnd = std::chrono::high_resolution_clock::now();
 
@@ -1453,7 +1462,7 @@ bool init()
 
     GLFWmonitor* monitor = glfwGetPrimaryMonitor();
     const GLFWvidmode* mode = glfwGetVideoMode(monitor);
-    
+
     glfwWindowHint(GLFW_FLOATING, GLFW_FALSE);
 
     WINDOW_WIDTH = mode->width;

@@ -16,6 +16,28 @@ private:
 	std::vector<GameObject*> grp_cutscene_1;
 	std::vector<GameObject*> grp_cutscene_2;
 
+	std::vector<GameObject*>* previousGroup = nullptr;
+	std::vector<GameObject*>* currentGroup = nullptr;
+
+	std::vector<std::pair<int, int>> resolutions =
+	{
+		{3840, 2160},
+		{3200, 1800},
+		{2560, 1440},
+		{2048, 1152},
+		{1920, 1080},
+		{1600, 900},
+		{1366, 768},
+		{1280, 720},
+		{1152, 648},
+		{1024, 576},
+		{960, 540},
+		{854, 480},
+		{768, 432},
+		{640, 360}
+	};
+
+
 public:
 	SpriteComponent* Cutscene_2_sprite = nullptr;
 	bool reset = false;
@@ -29,6 +51,9 @@ public:
 	void ShowOnly(std::vector<GameObject*>* group)
 	{
 		//spdlog::critical("ShowOnly wywolane, grupa ma {} obiektow", group->size());
+		previousGroup = currentGroup;
+		currentGroup = group;
+
 		std::vector<std::vector<GameObject*>*> all = {
 			&grp_main, &grp_settings, &grp_credits, &grp_load, &grp_pause, &grp_cutscene_1, &grp_cutscene_2
 		};
@@ -44,6 +69,37 @@ public:
 			}
 		}
 	}
+
+	void ScaleAllSprites(int oldWidth, int oldHeight, int newWidth, int newHeight)
+	{
+		float scaleX = static_cast<float>(newWidth) / oldWidth;
+		float scaleY = static_cast<float>(newHeight) / oldHeight;
+
+		std::vector<std::vector<GameObject*>*> all = {
+			&grp_main, &grp_settings, &grp_credits, &grp_load, &grp_pause, &grp_cutscene_1, &grp_cutscene_2
+		};
+
+		for (auto* g : all)
+		{
+			for (auto* go : *g)
+			{
+				if (auto* s = go->GetComponent<SpriteComponent>())
+				{
+					s->screenPosition.x *= scaleX;
+					s->screenPosition.y *= scaleY;
+
+					s->size.x *= scaleX;
+					s->size.y *= scaleY;
+
+					s->fontSize *= scaleY;
+
+					s->textOffset.x *= scaleX;
+					s->textOffset.y *= scaleY;
+				}
+			}
+		}
+	}
+
 
 	void ShowOutro() {
 		sceneManager->ChangeScene("menu");
@@ -352,7 +408,7 @@ public:
 
 		button5->onClick = [&](GameObject* go)
 		{
-			//ShowOnly(&grp_settings); //jebac
+			ShowOnly(&grp_settings); //jebac
 		};
 
 		button6->onClick = [&](GameObject* go)
@@ -599,28 +655,124 @@ public:
 		//settings
 		GameObject* settings_back = scenaMenu->CreateGameObject(nullptr);
 		SpriteComponent* settings_back_sprite = settings_back->AddComponent<SpriteComponent>();
-		settings_back_sprite->sprites = {ResourceManager::LoadTexture("settings.png", "res/sprites/menu/settings").id};
-		settings_back_sprite->screenPosition = glm::vec2(-10.0f, -10.0f);
-		settings_back_sprite->size = glm::vec2( 1940.0f, 1100.0f);
+		settings_back_sprite->sprites = {ResourceManager::LoadTexture("tlo.png", "res/sprites/menu/settings").id};
+		settings_back_sprite->screenPosition = glm::vec2(0.0f, 0.0f);
+		settings_back_sprite->size = glm::vec2( 1920.0f, 1080.0f);
 		settings_back_sprite->layer = 0;
 		settings_back_sprite->isVisible = true;
 		
 		GameObject* placeholder_exit_object = scenaMenu->CreateGameObject(nullptr);
 		SpriteComponent* niewiemkurwa = placeholder_exit_object->AddComponent<SpriteComponent>();
-		niewiemkurwa->sprites = {ResourceManager::LoadTexture("back_sprite.png", "res/sprites/menu/credits").id, ResourceManager::LoadTexture("back_sprite_hover.png", "res/sprites/menu/credits").id };
+		niewiemkurwa->sprites = {ResourceManager::LoadTexture("back_sprite.png", "res/sprites/menu/settings").id, ResourceManager::LoadTexture("back_sprite_hover.png", "res/sprites/menu/settings").id };
 		niewiemkurwa->screenPosition = glm::vec2(1375.0f, 922.6f);
 		niewiemkurwa->size = glm::vec2(471.0f, 106.0f);
 		niewiemkurwa->layer = 1;
 		niewiemkurwa->isVisible = true;
 		UIButtonComponent* placeholder_exit_object_button = placeholder_exit_object->AddComponent<UIButtonComponent>();
 
+		GameObject* placeholder_resolution = scenaMenu->CreateGameObject(nullptr);
+		SpriteComponent* placeholder_resolution_sprite = placeholder_resolution->AddComponent<SpriteComponent>();
+		placeholder_resolution_sprite->sprites = { ResourceManager::LoadTexture("resolution.png", "res/sprites/menu/settings").id, ResourceManager::LoadTexture("resolution_hover.png", "res/sprites/menu/settings").id };
+		placeholder_resolution_sprite->screenPosition = glm::vec2(720.0f, 300.0f);
+		placeholder_resolution_sprite->size = glm::vec2(460.0f, 100.0f);
+		placeholder_resolution_sprite->layer = 1;
+		placeholder_resolution_sprite->isVisible = true;
+		placeholder_resolution_sprite->textEnabled = true;
+		placeholder_resolution_sprite->textCentered = true;
+		placeholder_resolution_sprite->textColor = glm::vec3(1.0f, 1.0f, 1.0f);
+		placeholder_resolution_sprite->textOutlineEnabled = false;
+		placeholder_resolution_sprite->fontSize = 28.0f;
+		placeholder_resolution_sprite->textOffset = glm::vec2(230.0f, 30.0f);
+		placeholder_resolution_sprite->text = std::to_string(WINDOW_WIDTH_RENDER) + "x" + std::to_string(WINDOW_HEIGHT_RENDER);
+		placeholder_resolution_sprite->fontPath = "res/fonts/NothingYouCouldDo-Regular.ttf";
+		UIButtonComponent* placeholder_resolution_sprite_button = placeholder_resolution->AddComponent<UIButtonComponent>();
+
+		placeholder_resolution_sprite_button->onHoverEnter = [&](GameObject* go)
+		{
+			auto* sprite = go->GetComponent<SpriteComponent>();
+			if (!sprite) return;
+
+			sprite->currentSprite = 1;
+		};
+
+		placeholder_resolution_sprite_button->onHoverExit = [&](GameObject* go)
+		{
+			auto* sprite = go->GetComponent<SpriteComponent>();
+			if (!sprite) return;
+
+			sprite->currentSprite = 0;
+		};
+
+		placeholder_resolution_sprite_button->onClick = [&](GameObject* go)
+		{
+			auto* sprite = go->GetComponent<SpriteComponent>();
+				if (!sprite) return;
+
+			int indexAcutalResolution = 0;
+			int bestChoice = INT_MAX;
+
+			for (int i = 0; i < resolutions.size(); ++i)
+			{
+				int difference = std::abs(resolutions[i].first - WINDOW_WIDTH_RENDER) + std::abs(resolutions[i].second - WINDOW_HEIGHT_RENDER);
+
+				if (difference < bestChoice)
+				{
+					bestChoice = difference;
+					indexAcutalResolution = i;
+				}
+			}
+
+			int indexNextResolution = indexAcutalResolution + 1; 
+			if (indexNextResolution >= resolutions.size())
+			{
+				indexNextResolution = 0;
+			}
+
+			ScaleAllSprites(WINDOW_WIDTH_RENDER, WINDOW_HEIGHT_RENDER, resolutions[indexNextResolution].first, resolutions[indexNextResolution].second);
+
+			WINDOW_WIDTH_RENDER = resolutions[indexNextResolution].first;
+			WINDOW_HEIGHT_RENDER = resolutions[indexNextResolution].second;
+
+			glBindTexture(GL_TEXTURE_2D, fullScreenTexture);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, WINDOW_WIDTH_RENDER, WINDOW_HEIGHT_RENDER, 0, GL_RGBA, GL_FLOAT, nullptr);
+
+			sprite->text = std::to_string(WINDOW_WIDTH_RENDER) + "x" + std::to_string(WINDOW_HEIGHT_RENDER);
+
+			
+
+		};
+
+		placeholder_exit_object_button->onHoverEnter = [&](GameObject* go)
+		{
+			auto* sprite = go->GetComponent<SpriteComponent>();
+			if (!sprite) return;
+
+			sprite->currentSprite = 1;
+		};
+
+		placeholder_exit_object_button->onHoverExit = [&](GameObject* go)
+		{
+			auto* sprite = go->GetComponent<SpriteComponent>();
+			if (!sprite) return;
+
+			sprite->currentSprite = 0;
+		};
+
 		placeholder_exit_object_button->onClick = [&](GameObject* go)
 		{
-			ShowOnly(&grp_main);
+			if (previousGroup)
+			{
+				ShowOnly(previousGroup);
+			}
+			else
+			{
+				ShowOnly(&grp_main);
+			}
 		};
 
 		grp_settings.push_back(settings_back);
 		grp_settings.push_back(placeholder_exit_object);
+		grp_settings.push_back(placeholder_resolution);
 
 		//pause
 
@@ -723,7 +875,7 @@ public:
 
 		button_p_2->onClick = [&](GameObject* go)
 		{
-			//ShowOnly(&grp_settings); jebac
+			ShowOnly(&grp_settings);
 		};
 
 		button_p_3->onClick = [&](GameObject* go)

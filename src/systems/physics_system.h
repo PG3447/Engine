@@ -23,7 +23,7 @@ private:
     std::set<std::pair<GameObject*, GameObject*>> activeTriggers;
 
     float physicsAccumulator = 0.0f;
-    static constexpr float fixedDeltaTime = 0.04f;
+    static constexpr float fixedDeltaTime = 0.024f;
 
 public:
     PhysicsSystem(ECS& ecs);

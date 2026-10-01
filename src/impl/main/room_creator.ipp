@@ -448,11 +448,12 @@ void createMainRooom(Scene* scena, Menu& menu) {
             lc->constant = 1.0f;
             lc->linear = 0.22f;
             lc->quadratic = 0.20f;
+            lc->intensity = 20.0f;
             roomsLights[mainRoom.id].lights.push_back(lc);
 
             if (go->name == "lights_6")
             {
-                lc->intensity = 50.0f;
+                lc->intensity = 75.0f;
             }
 
             if (go->name == "lights_2" || go->name == "lights_5" || go->name == "lights_6") {
