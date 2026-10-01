@@ -1569,7 +1569,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 void end_frame()
 {
     glfwPollEvents();
-    //glfwMakeContextCurrent(window);
+    glfwMakeContextCurrent(window);
     glfwSwapBuffers(window);
 }
 
