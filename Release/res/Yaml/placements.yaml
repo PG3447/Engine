@@ -86,12 +86,6 @@ Placements:
     hasCollider: false
   - modelPath: res/models/eksperyment4.glb
     name: eksperyment4
-    position: [-7.46496058, 7.93014812, -162.315262]
-    rotation: [0, -7.0999999, 0]
-    scale: [7, 7, 7]
-    hasCollider: false
-  - modelPath: res/models/eksperyment4.glb
-    name: eksperyment4
     position: [-5.1540966, 7.92574072, -162.575851]
     rotation: [0, 3.29999995, 0]
     scale: [7, 7, 7]
@@ -363,18 +357,6 @@ Placements:
   - modelPath: res/models/salaOperacyjna/fiolka1.glb
     name: fiolka1
     position: [-5.99872541, 11.0246086, -180.030945]
-    rotation: [0, 23.2000008, 0]
-    scale: [7, 7, 7]
-    hasCollider: false
-  - modelPath: res/models/salaOperacyjna/fiolka1.glb
-    name: fiolka1
-    position: [-5.99872541, 11.0246086, -180.030945]
-    rotation: [0, 23.2000008, 0]
-    scale: [7, 7, 7]
-    hasCollider: false
-  - modelPath: res/models/salaOperacyjna/fiolka1.glb
-    name: fiolka1
-    position: [-5.99872541, 11.0246086, -181.357697]
     rotation: [0, 23.2000008, 0]
     scale: [7, 7, 7]
     hasCollider: false
@@ -697,24 +679,6 @@ Placements:
     colliderIsTrigger: false
     colliderAffectsNavMesh: false
     colliderIsWalkable: false
-  - modelPath: res/models/salaOperacyjna/fiolka1.glb
-    name: fiolka1
-    position: [-6.11807537, 7.04307938, -27.3701019]
-    rotation: [0, 0, 0]
-    scale: [6, 6, 6]
-    hasCollider: false
-  - modelPath: res/models/fiolka_nast.glb
-    name: fiolka_nast
-    position: [-9.05019188, 7.18083048, -22.9896889]
-    rotation: [0, 90, 0]
-    scale: [6, 6, 6]
-    hasCollider: false
-  - modelPath: res/models/fiolka_nast.glb
-    name: fiolka_nast
-    position: [31.7661991, 13.7523241, -22.3529606]
-    rotation: [0, 0, 0]
-    scale: [6, 6, 6]
-    hasCollider: false
   - modelPath: res/models/cup.glb
     name: cup
     position: [30.4047928, 4.24755001, -61.2181587]
@@ -738,12 +702,6 @@ Placements:
     position: [-7.25224876, 1.35288167, -71.7253418]
     rotation: [0, -124.400002, 0]
     scale: [3, 3, 3]
-    hasCollider: false
-  - modelPath: res/models/salaOperacyjna/fiolka1.glb
-    name: fiolka1
-    position: [31.3756504, 13.5569248, -28.0538197]
-    rotation: [0, 0, 0]
-    scale: [6, 6, 6]
     hasCollider: false
   - modelPath: res/models/papers.glb
     name: papers
@@ -792,4 +750,33 @@ Placements:
     position: [-8.22763157, 6.21385431, -81.9286575]
     rotation: [0, 0, 0]
     scale: [6, 6, 6]
+    hasCollider: false
+  - modelPath: res/models/ceiling.glb
+    name: ceiling
+    position: [-8.2855072, 6.04182196, -20.9160004]
+    rotation: [0, 0, -36.2999992]
+    scale: [0.100000001, 0.100000001, 0.100000001]
+    hasCollider: false
+  - modelPath: res/models/ceiling.glb
+    name: ceiling
+    position: [31.3843517, 4.89174366, -21.1567898]
+    rotation: [0, 0, 32]
+    scale: [0.100000001, 0.100000001, 0.100000001]
+    hasCollider: false
+  - modelPath: res/models/krzeslo.glb
+    name: krzeslo
+    position: [-3.94775271, 5.3476305, -29.7483082]
+    rotation: [-11.1000004, -135, 195.300003]
+    scale: [7, 7, 7]
+    hasCollider: true
+    colliderHalfSize: [2.50500011, 3.04500008, 2.11599994]
+    colliderOffset: [-0.409308851, 0.4010607, -0.0279750228]
+    colliderIsTrigger: false
+    colliderAffectsNavMesh: false
+    colliderIsWalkable: false
+  - modelPath: res/models/krzeslo.glb
+    name: krzeslo
+    position: [30.0199738, 7.96859741, -29.1484356]
+    rotation: [-15.5, 49.4000015, -166.399994]
+    scale: [7, 7, 7]
     hasCollider: false
