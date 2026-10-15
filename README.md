@@ -26,7 +26,7 @@ Unable to see one of the primary colors (one is red-blind, the other green-blind
 
 ## About
 
-A 3D game engine developed by Zespół pięśni i hazardu.
+A 3D game engine built with **OpenGL 4.6**, developed by Zespół pięśni i hazardu.
 
 ## How to Build?
 
