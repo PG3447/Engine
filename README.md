@@ -56,8 +56,8 @@ ergonomics of a Unity-style object model with system-driven processing over cach
 The renderer is **GPU-driven**: the GPU decides what is visible and draws it with a single indirect call, keeping CPU overhead low.
 
 - GPU-driven pipeline
-	- Objects are drawn with **`glMultiDrawElementsIndirect`** many meshes in one call, with draw commands stored in a GPU buffer.
-	- A **compute shader** culls objects on the GPU and emits draw commands only for the visible ones.
+	- Uses **`glMultiDrawElementsIndirect`** to render multiple meshes in a single call using draw commands stored in a GPU buffer.
+	- A **compute shader** performs GPU-side culling and generates draw commands for visible objects.
 
 - GPU culling
 	- **Frustum culling**: discards objects outside the camera's field of view.
@@ -70,7 +70,8 @@ The renderer is **GPU-driven**: the GPU decides what is visible and draws it wit
 	- **PBR (physically based rendering)**
 
 - Shadow mapping
-- Post-processing A custom post-processing shader allows **excluding a chosen RGB color for a given camera**.
+- Post-processing
+	- Custom post-processing shader to exclude a selected RGB color per camera.
 
 ### Animation
 
@@ -89,12 +90,12 @@ The renderer is **GPU-driven**: the GPU decides what is visible and draws it wit
 
 ### Physics
 
-The engine has its own lightweight physics system based on AABB collisions.
+The engine has its own physics system based on AABB collisions.
 
-- **Triggers**: objects can act as zones that fire events.
-- **Static objects**: immovable world geometry.
-- **Bounciness**: configurable per object.
-- **Interpolation**: reduces artifacts typical of **DCD** (*Discrete Collision Detection*).
+- **Triggers**
+- **Static objects**
+- **Bounciness**
+- **Interpolation**: reduces artifacts typical of **DCD**.
 
 ### Resource Manager
 
@@ -105,8 +106,8 @@ Centrally manages loading of game assets.
 
 
 ### Other Systems
-- **Audio** Sound system built on the FMOD library.
-- **HID** Input device handling
-- **UI** User interface: buttons and sliders 
-- **Sprite** 2D graphics: frame animation, texture scrolling, text with outline, layers
-- **Surface Decoration System**  A system for decorating surfaces
+- **Audio**: sound system built on [FMOD](https://www.fmod.com/)
+- **HID**: input device handling
+- **UI**: user interface with buttons and sliders
+- **Sprites**: 2D graphics with frame animation, texture scrolling, outlined text, and layers
+- **Surface Decoration System**: system for decorating surfaces
