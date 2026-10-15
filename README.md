@@ -43,21 +43,19 @@ To compile C++ compiler with C++20 support is required.
 
 ## Features
 
-### Animation
-
-- Skeletal animation (bones, animation clips)
-- Looping and adjustable playback speed
-
 ### Core
 
 The engine uses a **hybrid GameObject-Component / ECS architecture**. It combines the
 ergonomics of a Unity-style object model with system-driven processing over cached queries.
 
+### Animation
+
+- Skeletal animation (bones, animation clips)
+- Looping and adjustable playback speed
+
 ### Rendering
 
-The renderer follows a **GPU-driven** approach built on OpenGL. Instead of the CPU issuing
-one draw call per object, the GPU decides what is visible and draws it with a single
-indirect call, which keeps CPU overhead low even in scenes with many objects.
+The renderer is **GPU-driven**: the GPU decides what is visible and draws it with a single indirect call, keeping CPU overhead low.
 
 #### GPU-driven pipeline
 - Scene objects are drawn with **`glMultiDrawElementsIndirect`**. Draw commands are stored
@@ -66,8 +64,8 @@ indirect call, which keeps CPU overhead low even in scenes with many objects.
   commands only for objects that survive it.
 
 #### GPU culling
-**Frustum culling**: discards objects outside the camera's field of view.
-**Hierarchical Z-culling (Hi-Z)**: discards objects occluded by other geometry.
+- **Frustum culling**: discards objects outside the camera's field of view.
+- **Hierarchical Z-culling (Hi-Z)**: discards objects occluded by other geometry.
 
 A depth mip chain is built from the camera's depth buffer, and the bounds of each object are tested against it in the compute shader.
 
