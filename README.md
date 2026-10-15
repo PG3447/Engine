@@ -39,3 +39,81 @@ cmake -B build
 The generated `.sln` file will be located in the `/build` directory. Open it in Visual Studio, right-click the `MimiCry_Experiments` project in Solution Explorer, and select **Set as Startup Project**. Then build and run the application.
 
 To compile C++ compiler with C++20 support is required. 
+
+
+## Features
+
+### Animation
+
+- Skeletal animation (bones, animation clips)
+- Looping and adjustable playback speed
+
+### Core
+
+The engine uses a **hybrid GameObject-Component / ECS architecture**. It combines the
+ergonomics of a Unity-style object model with system-driven processing over cached queries.
+
+### Rendering
+
+The renderer follows a **GPU-driven** approach built on OpenGL. Instead of the CPU issuing
+one draw call per object, the GPU decides what is visible and draws it with a single
+indirect call, which keeps CPU overhead low even in scenes with many objects.
+
+#### GPU-driven pipeline
+- Scene objects are drawn with **`glMultiDrawElementsIndirect`**. Draw commands are stored
+  in a GPU buffer, so many meshes are rendered in one call.
+- A **compute shader** performs visibility culling on the GPU and writes the draw
+  commands only for objects that survive it.
+
+#### GPU culling
+**Frustum culling**: discards objects outside the camera's field of view.
+**Hierarchical Z-culling (Hi-Z)**: discards objects occluded by other geometry.
+
+A depth mip chain is built from the camera's depth buffer, and the bounds of each object are tested against it in the compute shader.
+
+#### Materials and textures
+- **Bindless textures**: textures are loaded directly into VRAM and exposed to shaders
+  through handles. A texture is sampled only if the shader of the given material requires it.
+- **PBR (physically based rendering)**: realistic lighting computed from the physical properties of materials.
+
+#### Shadows
+- Lights render a **shadow map**, which is attached to the light and sampled during
+  shading.
+
+#### Post-processing
+- A custom post-processing shader allows **excluding a chosen RGB color for a given camera**.
+
+### Navigation System
+- **NavMesh generation** with four interchangeable methods:
+  - Delaunay triangulation (Bowyer-Watson)
+  - Voxel grid with flood-fill region labeling (Recast-inspired)
+  - Voronoi (dual Delaunay)
+  - Uniform grid
+- Obstacle handling with agent radius and height; walkable surfaces taken from colliders
+- Triangle adjacency graph and **A\*** pathfinding
+- Path smoothing with the **funnel algorithm** (string pulling)
+- Agent state machine: idle, path request, moving, arrived, external control
+
+### Physics
+
+The engine has its own lightweight physics system based on AABB collisions.
+
+- **Triggers**: objects can act as zones that fire events.
+- **Static objects**: immovable world geometry.
+- **Bounciness**: configurable per object.
+- **Interpolation**: reduces artifacts typical of **DCD** (*Discrete Collision Detection*).
+
+### Resource Manager
+
+Centrally manages loading of game assets.
+
+- **Models and animations**: import of **GLB** models together with their animations.
+- **Textures**: image loading and **caching in the compressed DXT5 format**.
+
+
+### Other Systems
+- **Audio** Sound system built on the **FMOD** library.
+- **HID** Input device handling
+- **UI** User interface: buttons and sliders 
+- **Sprite** 2D graphics: frame animation, texture scrolling, text with outline, layers
+- **Surface Decoration System**  A system for decorating surfaces
