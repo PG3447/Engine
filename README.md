@@ -66,7 +66,7 @@ The renderer is **GPU-driven**: the GPU decides what is visible and draws it wit
 	A depth mip chain is built from the camera's depth buffer, and the bounds of each object are tested against it in the compute shader.
 
 - Materials and textures
-	- **Bindless textures**
+	- **Bindless textures**: shaders access textures directly through handles.
 	- **PBR (physically based rendering)**
 
 - Shadow mapping
