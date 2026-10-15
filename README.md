@@ -48,20 +48,13 @@ To compile C++ compiler with C++20 support is required.
 The engine uses a **hybrid GameObject-Component / ECS architecture**. It combines the
 ergonomics of a Unity-style object model with system-driven processing over cached queries.
 
-### Animation
-
-- Skeletal animation (bones, animation clips)
-- Looping and adjustable playback speed
-
 ### Rendering
 
 The renderer is **GPU-driven**: the GPU decides what is visible and draws it with a single indirect call, keeping CPU overhead low.
 
 #### GPU-driven pipeline
-- Scene objects are drawn with **`glMultiDrawElementsIndirect`**. Draw commands are stored
-  in a GPU buffer, so many meshes are rendered in one call.
-- A **compute shader** performs visibility culling on the GPU and writes the draw
-  commands only for objects that survive it.
+- Objects are drawn with **`glMultiDrawElementsIndirect`**: many meshes in one call, with draw commands stored in a GPU buffer.
+- A **compute shader** culls objects on the GPU and emits draw commands only for the visible ones.
 
 #### GPU culling
 - **Frustum culling**: discards objects outside the camera's field of view.
@@ -70,16 +63,19 @@ The renderer is **GPU-driven**: the GPU decides what is visible and draws it wit
 A depth mip chain is built from the camera's depth buffer, and the bounds of each object are tested against it in the compute shader.
 
 #### Materials and textures
-- **Bindless textures**: textures are loaded directly into VRAM and exposed to shaders
-  through handles. A texture is sampled only if the shader of the given material requires it.
+- **Bindless textures**: textures stay resident in VRAM, and shaders access them directly through handles whenever a material needs them.
 - **PBR (physically based rendering)**: realistic lighting computed from the physical properties of materials.
 
 #### Shadows
-- Lights render a **shadow map**, which is attached to the light and sampled during
-  shading.
+- Lights render a **shadow map**, which is attached to the light and sampled during shading.
 
 #### Post-processing
 - A custom post-processing shader allows **excluding a chosen RGB color for a given camera**.
+
+### Animation
+
+- Skeletal animation (bones, animation clips)
+- Looping and adjustable playback speed
 
 ### Navigation System
 - **NavMesh generation** with four interchangeable methods:
@@ -87,9 +83,9 @@ A depth mip chain is built from the camera's depth buffer, and the bounds of eac
   - Voxel grid with flood-fill region labeling (Recast-inspired)
   - Voronoi (dual Delaunay)
   - Uniform grid
-- Obstacle handling with agent radius and height; walkable surfaces taken from colliders
+- Obstacle handling with agent radius and height
 - Triangle adjacency graph and **A\*** pathfinding
-- Path smoothing with the **funnel algorithm** (string pulling)
+- Path smoothing with the **funnel algorithm**
 - Agent state machine: idle, path request, moving, arrived, external control
 
 ### Physics
@@ -105,12 +101,12 @@ The engine has its own lightweight physics system based on AABB collisions.
 
 Centrally manages loading of game assets.
 
-- **Models and animations**: import of **GLB** models together with their animations.
-- **Textures**: image loading and **caching in the compressed DXT5 format**.
+- **Models and animations**: import of `.glb` models together with their animations.
+- **Textures**: image loading and caching in the compressed DXT5 format.
 
 
 ### Other Systems
-- **Audio** Sound system built on the **FMOD** library.
+- **Audio** Sound system built on the FMOD library.
 - **HID** Input device handling
 - **UI** User interface: buttons and sliders 
 - **Sprite** 2D graphics: frame animation, texture scrolling, text with outline, layers
