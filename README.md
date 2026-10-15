@@ -41,7 +41,10 @@ The generated `.sln` file will be located in the `/build` directory. Open it in 
 To compile C++ compiler with C++20 support is required. 
 
 
-## Features
+## Editor
+
+
+## System
 
 ### Core
 
@@ -52,25 +55,22 @@ ergonomics of a Unity-style object model with system-driven processing over cach
 
 The renderer is **GPU-driven**: the GPU decides what is visible and draws it with a single indirect call, keeping CPU overhead low.
 
-#### GPU-driven pipeline
-- Objects are drawn with **`glMultiDrawElementsIndirect`**: many meshes in one call, with draw commands stored in a GPU buffer.
-- A **compute shader** culls objects on the GPU and emits draw commands only for the visible ones.
+- GPU-driven pipeline
+	- Objects are drawn with **`glMultiDrawElementsIndirect`** many meshes in one call, with draw commands stored in a GPU buffer.
+	- A **compute shader** culls objects on the GPU and emits draw commands only for the visible ones.
 
-#### GPU culling
-- **Frustum culling**: discards objects outside the camera's field of view.
-- **Hierarchical Z-culling (Hi-Z)**: discards objects occluded by other geometry.
+- GPU culling
+	- **Frustum culling**: discards objects outside the camera's field of view.
+	- **Hierarchical Z-culling (Hi-Z)**: discards objects occluded by other geometry.
 
-A depth mip chain is built from the camera's depth buffer, and the bounds of each object are tested against it in the compute shader.
+	A depth mip chain is built from the camera's depth buffer, and the bounds of each object are tested against it in the compute shader.
 
-#### Materials and textures
-- **Bindless textures**: textures stay resident in VRAM, and shaders access them directly through handles whenever a material needs them.
-- **PBR (physically based rendering)**: realistic lighting computed from the physical properties of materials.
+- Materials and textures
+	- **Bindless textures**
+	- **PBR (physically based rendering)**
 
-#### Shadows
-- Lights render a **shadow map**, which is attached to the light and sampled during shading.
-
-#### Post-processing
-- A custom post-processing shader allows **excluding a chosen RGB color for a given camera**.
+- Shadow mapping
+- Post-processing A custom post-processing shader allows **excluding a chosen RGB color for a given camera**.
 
 ### Animation
 
@@ -82,7 +82,6 @@ A depth mip chain is built from the camera's depth buffer, and the bounds of eac
   - Delaunay triangulation (Bowyer-Watson)
   - Voxel grid with flood-fill region labeling (Recast-inspired)
   - Voronoi (dual Delaunay)
-  - Uniform grid
 - Obstacle handling with agent radius and height
 - Triangle adjacency graph and **A\*** pathfinding
 - Path smoothing with the **funnel algorithm**
