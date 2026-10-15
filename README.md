@@ -20,13 +20,13 @@ Unable to see one of the primary colors (one is red-blind, the other green-blind
 ## Executables
 
 - `MimiCry_Experiments.exe` - Main game.
-- `MimiCry_Experiments_ImGui.exe` — Engine editor.
+- `MimiCry_Experiments_ImGui.exe` - Engine editor.
 
 # 3D Game Engine
 
 ## About
 
-A simple 3D game engine developed by a team of students.
+A 3D game engine developed by Zespół pięśni i hazardu.
 
 ## How to Build?
 
