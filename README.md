@@ -26,6 +26,8 @@ Unable to see one of the primary colors (one is red-blind, the other green-blind
 
 # 3D Game Engine
 
+![Editor](README/editor.gif)
+
 ## About
 
 A 3D game engine built with **OpenGL 4.6**, developed by Zespół pięśni i hazardu.
@@ -41,11 +43,6 @@ cmake -B build
 The generated `.sln` file will be located in the `/build` directory. Open it in Visual Studio, right-click the `MimiCry_Experiments` project in Solution Explorer, and select **Set as Startup Project**. Then build and run the application.
 
 To compile C++ compiler with C++20 support is required. 
-
-
-## Editor
-
-![Editor](README/editor.gif)
 
 ## System
 
