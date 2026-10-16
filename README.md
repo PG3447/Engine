@@ -68,7 +68,7 @@ The renderer is **GPU-driven**: the GPU decides what is visible and draws it wit
 		<em>Hi-Z depth buffer - mip level 3</em>
 	</p>
 	
-	A depth mipmap chain is generated from the camera's depth buffer. A compute shader uses it to test object visibility and cull occluded objects.
+	A depth mipmap chain is generated from the previous frame's depth buffer and used by a compute shader to test object visibility and cull occluded objects.
 
 - Materials and textures
 	- **Bindless textures**: shaders access textures directly through handles.
