@@ -66,9 +66,13 @@ The renderer is **GPU-driven**: the GPU decides what is visible and draws it wit
 	- **Frustum culling**: discards objects outside the camera's field of view.
 	- **Hierarchical Z-culling (Hi-Z)**: discards objects occluded by other geometry.
 	
-	![HZ](README/HZ.png)
+	<p align="center">
+		<img src="README/HZ.png" alt="Hi-Z mip level 3">
+		<br>
+		<em>Hi-Z depth buffer - mip level 3</em>
+	</p>
 
-	A depth mip chain is built from the camera's depth buffer, and the bounds of each object are tested against it in the compute shader.
+	A depth mipmap chain is generated from the camera's depth buffer. A compute shader uses it to test object visibility and cull occluded objects.
 
 - Materials and textures
 	- **Bindless textures**: shaders access textures directly through handles.
