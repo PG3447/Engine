@@ -5,6 +5,8 @@
 Two scientists at a secret research facility are studying demons in an attempt to harness their power. However, the experiment begins to spiral out of control.
 Unable to see one of the primary colors (one is red-blind, the other green-blind), they must work together to solve the research procedures and bring the situation under control.
 
+![Game](README/game.gif)
+
 ## Requirements
 
 - GPU supporting OpenGL 4.6
@@ -28,7 +30,7 @@ Unable to see one of the primary colors (one is red-blind, the other green-blind
 
 A 3D game engine built with **OpenGL 4.6**, developed by Zespół pięśni i hazardu.
 
-## How to Build?
+## How to Build
 
 Run the following command to generate the build:
 
@@ -43,6 +45,7 @@ To compile C++ compiler with C++20 support is required.
 
 ## Editor
 
+![Editor](README/editor.gif)
 
 ## System
 
@@ -62,7 +65,7 @@ The renderer is **GPU-driven**: the GPU decides what is visible and draws it wit
 - GPU culling
 	- **Frustum culling**: discards objects outside the camera's field of view.
 	- **Hierarchical Z-culling (Hi-Z)**: discards objects occluded by other geometry.
-
+	![HZ](README/HZ.png)
 	A depth mip chain is built from the camera's depth buffer, and the bounds of each object are tested against it in the compute shader.
 
 - Materials and textures
