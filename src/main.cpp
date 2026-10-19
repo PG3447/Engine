@@ -231,6 +231,40 @@ const float SHAKE_DURATION = 0.5f;
 const glm::vec2 p1BasePos(480.0f, 640.0f);
 const glm::vec2 p2BasePos(1440.0f, 640.0f);
 
+
+struct FpsBenchmark {
+    static constexpr double DURATION = 300.0;
+    bool   active  = false;
+    double elapsed = 0.0;
+    unsigned long long frames = 0;
+};
+FpsBenchmark fpsBench;
+
+void fpsBenchmarkStart() {
+    fpsBench.active  = true;
+    fpsBench.elapsed = 0.0;
+    fpsBench.frames  = 0;
+}
+
+void fpsBenchmarkUpdate(float dt) {
+    if (!fpsBench.active) return;
+
+    fpsBench.elapsed += dt;
+    fpsBench.frames++;
+
+    if (fpsBench.elapsed >= FpsBenchmark::DURATION) {
+        fpsBench.active = false;
+        double avgFps = fpsBench.frames / fpsBench.elapsed;
+
+        std::ofstream file("fps_result.txt");
+        if (file.is_open()) {
+            file << "Czas pomiaru: " << fpsBench.elapsed << " s\n";
+            file << "Liczba klatek: " << fpsBench.frames << "\n";
+            file << "Srednie FPS: " << avgFps << "\n";
+        }
+    }
+}
+
 void updateFPS(float deltaTime) {
     frameTimes[index] = deltaTime;
     index = (index + 1) % MAX_SAMPLES;
@@ -850,6 +884,11 @@ int main(int, char**)
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
         updateFPS(deltaTime);
+
+        if (ecs->GetSystem<HID>()->is_action_just_pressed("fps_counter_start") && !fpsBench.active) {
+            fpsBenchmarkStart();
+        }
+        fpsBenchmarkUpdate(deltaTime);
 
         CpuTimer cpuTimer;
         cpuTimer.start();
@@ -1490,7 +1529,7 @@ bool init()
     }
 
     glfwMakeContextCurrent(window);
-    glfwSwapInterval(1);
+    glfwSwapInterval(0);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetCursorPosCallback(window,       mouse_callback);
     glfwSetScrollCallback(window,          scroll_callback);
