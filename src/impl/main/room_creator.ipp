@@ -1132,12 +1132,12 @@ void createRentgenRoom(Scene* scena) {
         puzzleSlotsMap[slotGO] = slot;
     };
 
-    createPuzzleSlot(glm::vec3(-85.052+10, 11.430, -212.70+10), glm::vec3(0, -90,  -0), objPuzel2);
-    createPuzzleSlot(glm::vec3(-83.382+10, 11.430, -212.70+10), glm::vec3(0, -90, 0), objPuzel6);
-    createPuzzleSlot(glm::vec3(-81.820+10, 11.430, -212.70+10), glm::vec3(0, -90, 0), objPuzel4);
-    createPuzzleSlot(glm::vec3(-85.052+10, 9, -212.70+10), glm::vec3(0, -90, 0), objPuzel1);
-    createPuzzleSlot(glm::vec3(-83.382+10, 9, -212.70+10), glm::vec3(0, -90, 0), objPuzel3);
-    createPuzzleSlot(glm::vec3(-81.820+10, 9, -212.70+10), glm::vec3(0, -90, 0), objPuzel5);
+    createPuzzleSlot(glm::vec3(-85.052+10, 11.430, -212.70+10), glm::vec3(0, -90,  -0), objPuzel1);
+    createPuzzleSlot(glm::vec3(-83.382+10, 11.430, -212.70+10), glm::vec3(0, -90, 0), objPuzel2);
+    createPuzzleSlot(glm::vec3(-81.820+10, 11.430, -212.70+10), glm::vec3(0, -90, 0), objPuzel3);
+    createPuzzleSlot(glm::vec3(-85.052+10, 9, -212.70+10), glm::vec3(0, -90, 0), objPuzel4);
+    createPuzzleSlot(glm::vec3(-83.382+10, 9, -212.70+10), glm::vec3(0, -90, 0), objPuzel5);
+    createPuzzleSlot(glm::vec3(-81.820+10, 9, -212.70+10), glm::vec3(0, -90, 0), objPuzel6);
     
     GameObject* triggerRentgen = scena->CreateGameObject(rentgen);
     triggerRentgen->name = "triggerRentgen";
